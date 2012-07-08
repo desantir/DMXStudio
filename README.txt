@@ -2,7 +2,7 @@ DMXStudio DMX Controller
 
 Target environment:
 
-- Windows 7 or Vista 32 bit
+- Windows 7 or Vista (only tested 32 bit on either platform)
 
 Build Environment:
 
