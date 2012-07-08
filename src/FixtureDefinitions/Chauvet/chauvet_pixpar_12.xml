@@ -1,0 +1,384 @@
+<?xml version="1.0"?>
+
+<fixture_definitions>
+  <author>Robert DeSantis</author>
+  <version>1</version>
+
+  <fixture type="par" channels="9">
+    <manufacturer>Chauvet</manufacturer>
+    <model>PiX PAR 12</model>
+    <channels>
+      <channel index="0" type="dimmer" color="false" blackout="true" value="255">
+        <name>Dimmer</name>
+      </channel>
+      <channel index="1" type="red" color="true" blackout="true">
+        <name>Red</name>
+      </channel>
+      <channel index="2" type="green" color="true" blackout="true">
+        <name>Green</name>
+      </channel>
+      <channel index="3" type="blue" color="true" blackout="true">
+        <name>Blue</name>
+      </channel>
+      <channel index="4" type="color macro" color="false" blackout="true">
+        <name>Color Macros</name>
+        <ranges>
+          <range start="0" end="10">
+            <name>No function</name>
+          </range>
+          <range start="11" end="17">
+            <name>Red -> Yellow</name>
+          </range>
+          <range start="18" end="45">
+            <name>Yellow -> Green</name>
+          </range>
+          <range start="46" end="64">
+            <name>Green -> Cyan</name>
+          </range>
+          <range start="65" end="91">
+            <name>Cyan -> Blue</name>
+          </range>
+          <range start="92" end="108">
+            <name>Blue -> Violet</name>
+          </range>
+          <range start="109" end="130">
+            <name>Violet -> Red</name>
+          </range>
+          <range start="131" end="150">
+            <name>Violet -> White</name>
+          </range>
+          <range start="151" end="170">
+            <name>White -> Purple</name>
+          </range>
+          <range start="171" end="200">
+            <name>White 0</name>
+          </range>
+          <range start="201" end="205">
+            <name>White 1: 3200K</name>
+          </range>
+          <range start="206" end="210">
+            <name>White 2: 3400K</name>
+          </range>
+          <range start="211" end="215">
+            <name>White 3: 4200K</name>
+          </range>
+          <range start="216" end="220">
+            <name>White 4: 4900K</name>
+          </range>
+          <range start="221" end="225">
+            <name>White 5: 5600K</name>
+          </range>
+          <range start="226" end="230">
+            <name>White 6: 5900K</name>
+          </range>
+          <range start="231" end="235">
+            <name>White 7: 6500K</name>
+          </range>
+          <range start="236" end="240">
+            <name>White 8: 7200K</name>
+          </range>
+          <range start="241" end="245">
+            <name>White 9: 8000K</name>
+          </range>
+          <range start="246" end="250">
+            <name>White 10: 8500K</name>
+          </range>
+          <range start="251" end="255">
+            <name>White 11: 10000K</name>
+          </range>
+        </ranges>
+      </channel>
+      <channel index="5" type="strobe" color="false" blackout="false">
+        <name>Strobe</name>
+        <ranges>
+          <range start="0" end="9">
+            <name>No Function</name>
+          </range>
+          <range start="10" end="255">
+            <name>0-100% (slow-fast)</name>
+          </range>
+        </ranges>
+      </channel>
+      <channel index="6" type="auto program" color="false" blackout="false">
+        <name>Auto Program</name>
+        <ranges>
+          <range start="0" end="0">
+            <name>No function</name>
+          </range>
+          <range start="10" end="19">
+            <name>Fade transition (7 colors) 0%-100%-0%</name>
+          </range>
+          <range start="20" end="29">
+            <name>Fade transition (7 colors) 0%-100%</name>
+          </range>
+          <range start="30" end="39">
+            <name>Fade transition (7 colors) 100%-0%</name>
+          </range>
+          <range start="40" end="49">
+            <name>Auto fade transition (random)</name>
+          </range>
+          <range start="50" end="59">
+            <name>Loop of P1-P4</name>
+          </range>
+          <range start="60" end="69">
+            <name>Pixel program 1</name>
+          </range>
+          <range start="70" end="79">
+            <name>Pixel program 2</name>
+          </range>
+          <range start="80" end="89">
+            <name>Pixel program 3</name>
+          </range>
+          <range start="90" end="99">
+            <name>Pixel program 4</name>
+          </range>
+          <range start="100" end="109">
+            <name>Pixel program 5</name>
+          </range>
+          <range start="110" end="119">
+            <name>Pixel program 6</name>
+          </range>
+          <range start="120" end="129">
+            <name>Pixel program 7</name>
+          </range>
+          <range start="130" end="139">
+            <name>Pixel program 8</name>
+          </range>
+          <range start="140" end="149">
+            <name>Pixel program 9</name>
+          </range>
+          <range start="150" end="159">
+            <name>Pixel program 10</name>
+          </range>
+          <range start="160" end="169">
+            <name>Pixel program 11</name>
+          </range>
+          <range start="170" end="179">
+            <name>Pixel program 12</name>
+          </range>
+          <range start="180" end="189">
+            <name>Pixel program 13</name>
+          </range>
+          <range start="190" end="199">
+            <name>Pixel program 14</name>
+          </range>
+          <range start="200" end="209">
+            <name>Pixel program 15</name>
+          </range>
+          <range start="210" end="219">
+            <name>Pixel program 16</name>
+          </range>
+          <range start="220" end="229">
+            <name>Pixel program 17</name>
+          </range>
+          <range start="230" end="239">
+            <name>Random pixel program</name>
+          </range>
+          <range start="240" end="249">
+            <name>Pixel program scroll 1-17</name>
+          </range>
+          <range start="250" end="255">
+            <name>Pixel program sound active 1-17</name>
+          </range>
+        </ranges>
+      </channel>
+      <channel index="7" type="program speed" color="false" blackout="false">
+        <name>Auto Program Speed</name>
+      </channel>
+      <channel index="8" type="control" color="false" blackout="false">
+        <name>Dimmer Curve</name>
+        <ranges>
+          <range start="0" end="51">
+            <name>Default speed</name>
+          </range>
+          <range start="52" end="101">
+            <name>Linear dimmer</name>
+          </range>
+          <range start="102" end="152">
+            <name>Nonlinear dimmer 1</name>
+          </range>
+          <range start="153" end="203">
+            <name>Nonlinear dimmer 2</name>
+          </range>
+          <range start="204" end="255">
+            <name>Nonlinear dimmer 3</name>
+          </range>
+        </ranges>
+      </channel>
+    </channels>
+  </fixture>
+  
+  <fixture type="par" channels="12">
+    <manufacturer>Chauvet</manufacturer>
+    <model>PiX PAR 12</model>
+    <channels>
+      <channel index="0" type="red" color="true" blackout="true">
+        <name>Quadrant 1 Red</name>
+      </channel>
+      <channel index="1" type="green" color="true" blackout="true">
+        <name>Quadrant 1 Green</name>
+      </channel>
+      <channel index="2" type="blue" color="true" blackout="true">
+        <name>Quadrant 1 Blue</name>
+      </channel>
+      <channel index="3" type="red" color="true" blackout="true">
+        <name>Quadrant 2 Red</name>
+      </channel>
+      <channel index="4" type="green" color="true" blackout="true">
+        <name>Quadrant 2 Green</name>
+      </channel>
+      <channel index="5" type="blue" color="true" blackout="true">
+        <name>Quadrant 2 Blue</name>
+      </channel>
+      <channel index="6" type="red" color="true" blackout="true">
+        <name>Quadrant 3 Red</name>
+      </channel>
+      <channel index="7" type="green" color="true" blackout="true">
+        <name>Quadrant 3 Green</name>
+      </channel>
+      <channel index="8" type="blue" color="true" blackout="true">
+        <name>Quadrant 3 Blue</name>
+      </channel>
+      <channel index="9" type="red" color="true" blackout="true">
+        <name>Quadrant 4 Red</name>
+      </channel>
+      <channel index="10" type="green" color="true" blackout="true">
+        <name>Quadrant 4 Green</name>
+      </channel>
+      <channel index="11" type="blue" color="true" blackout="true">
+        <name>Quadrant4 Blue</name>
+      </channel>
+    </channels>
+  </fixture>
+  
+  <fixture type="par" channels="3">
+    <manufacturer>Chauvet</manufacturer>
+    <model>PiX PAR 12</model>
+    <channels>
+      <channel index="0" type="red" color="true" blackout="true">
+        <name>Red</name>
+      </channel>
+      <channel index="1" type="green" color="true" blackout="true">
+        <name>Green</name>
+      </channel>
+      <channel index="2" type="blue" color="true" blackout="true">
+        <name>Blue</name>
+      </channel>
+    </channels>
+  </fixture>
+  
+  <fixture type="par" channels="12">
+    <manufacturer>Chauvet</manufacturer>
+    <model>PiX PAR 12</model>
+    <channels>
+      <channel index="0" type="red" color="true" blackout="true">
+        <name>LED 1 Red</name>
+      </channel>
+      <channel index="1" type="green" color="true" blackout="true">
+        <name>LED 1 Green</name>
+      </channel>
+      <channel index="2" type="blue" color="true" blackout="true">
+        <name>LED 1 Blue</name>
+      </channel>
+      <channel index="3" type="red" color="true" blackout="true">
+        <name>LED 2 Red</name>
+      </channel>
+      <channel index="4" type="green" color="true" blackout="true">
+        <name>LED 2 Green</name>
+      </channel>
+      <channel index="5" type="blue" color="true" blackout="true">
+        <name>LED 2 Blue</name>
+      </channel>
+      <channel index="6" type="red" color="true" blackout="true">
+        <name>LED 3 Red</name>
+      </channel>
+      <channel index="7" type="green" color="true" blackout="true">
+        <name>LED 3 Green</name>
+      </channel>
+      <channel index="8" type="blue" color="true" blackout="true">
+        <name>LED 3 Blue</name>
+      </channel>
+      <channel index="9" type="red" color="true" blackout="true">
+        <name>LED 4 Red</name>
+      </channel>
+      <channel index="10" type="green" color="true" blackout="true">
+        <name>LED 4 Green</name>
+      </channel>
+      <channel index="11" type="blue" color="true" blackout="true">
+        <name>LED 4 Blue</name>
+      </channel>
+      <channel index="12" type="red" color="true" blackout="true">
+        <name>LED 5 Red</name>
+      </channel>
+      <channel index="13" type="green" color="true" blackout="true">
+        <name>LED 5 Green</name>
+      </channel>
+      <channel index="14" type="blue" color="true" blackout="true">
+        <name>LED 5 Blue</name>
+      </channel>
+      <channel index="15" type="red" color="true" blackout="true">
+        <name>LED 6 Red</name>
+      </channel>
+      <channel index="16" type="green" color="true" blackout="true">
+        <name>LED 6 Green</name>
+      </channel>
+      <channel index="17" type="blue" color="true" blackout="true">
+        <name>LED 6 Blue</name>
+      </channel>
+      <channel index="18" type="red" color="true" blackout="true">
+        <name>LED 7 Red</name>
+      </channel>
+      <channel index="19" type="green" color="true" blackout="true">
+        <name>LED 7 Green</name>
+      </channel>
+      <channel index="20" type="blue" color="true" blackout="true">
+        <name>LED 7 Blue</name>
+      </channel>
+      <channel index="21" type="red" color="true" blackout="true">
+        <name>LED 8 Red</name>
+      </channel>
+      <channel index="22" type="green" color="true" blackout="true">
+        <name>LED 8 Green</name>
+      </channel>
+      <channel index="23" type="blue" color="true" blackout="true">
+        <name>LED 8 Blue</name>
+      </channel>
+      <channel index="24" type="red" color="true" blackout="true">
+        <name>LED 9 Red</name>
+      </channel>
+      <channel index="25" type="green" color="true" blackout="true">
+        <name>LED 9 Green</name>
+      </channel>
+      <channel index="26" type="blue" color="true" blackout="true">
+        <name>LED 9 Blue</name>
+      </channel>
+      <channel index="27" type="red" color="true" blackout="true">
+        <name>LED 10 Red</name>
+      </channel>
+      <channel index="28" type="green" color="true" blackout="true">
+        <name>LED 10 Green</name>
+      </channel>
+      <channel index="29" type="blue" color="true" blackout="true">
+        <name>LED 10 Blue</name>
+      </channel>
+      <channel index="30" type="red" color="true" blackout="true">
+        <name>LED 11 Red</name>
+      </channel>
+      <channel index="31" type="green" color="true" blackout="true">
+        <name>LED 11 Green</name>
+      </channel>
+      <channel index="32" type="blue" color="true" blackout="true">
+        <name>LED 11 Blue</name>
+      </channel>
+      <channel index="33" type="red" color="true" blackout="true">
+        <name>LED 12 Red</name>
+      </channel>
+      <channel index="34" type="green" color="true" blackout="true">
+        <name>LED 12 Green</name>
+      </channel>
+      <channel index="35" type="blue" color="true" blackout="true">
+        <name>LED 12 Blue</name>
+      </channel>
+    </channels>
+  </fixture>
+</fixture_definitions>

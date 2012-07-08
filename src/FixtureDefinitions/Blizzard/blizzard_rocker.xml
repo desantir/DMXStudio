@@ -1,0 +1,118 @@
+<?xml version="1.0"?>
+
+<fixture_definitions>
+    <author>Robert DeSantis</author>
+    <version>1</version>
+  
+    <fixture type="par" channels="9">
+        <manufacturer>Blizzard</manufacturer>
+        <model>Rocker Panel</model>
+        <channels>
+            <channel index="0" type="red" color="true" blackout="true">
+                <name>Red</name>
+            </channel>
+            <channel index="1" type="green" color="true" blackout="true">
+                <name>Green</name>
+            </channel>
+            <channel index="2" type="blue" color="true" blackout="true">
+                <name>Blue</name>
+            </channel>
+            <channel index="3" type="amber" color="true" blackout="true">
+                <name>Amber</name>
+            </channel>
+            <channel index="4" type="white" color="true" blackout="true">
+                <name>White</name>
+            </channel>
+            <channel index="5" type="dimmer" color="false" blackout="true" value="0">
+              <dimmer lowest_intensity="255" highest_intensity="0" />
+              <name>Dimmer</name>
+            </channel>
+            <channel index="6" type="color macro" color="false" blackout="true">
+                <name>Color Macro</name>
+                <ranges>
+                    <range start="0" end="9">
+                        <name>No Function</name>
+                    </range>
+                    <range start="10" end="19">
+                        <name>Red</name>
+                    </range>
+                    <range start="20" end="29">
+                        <name>Green</name>
+                    </range>
+                    <range start="30" end="39">
+                        <name>Blue</name>
+                    </range>
+                    <range start="40" end="49">
+                        <name>Amber</name>
+                    </range>
+                    <range start="50" end="59">
+                        <name>White</name>
+                    </range>
+                    <range start="60" end="69">
+                        <name>Yellow (RG)</name>
+                    </range>
+                    <range start="70" end="79">
+                        <name>Magenta (RB)</name>
+                    </range>
+                    <range start="80" end="89">
+                        <name>Pink (RW)</name>
+                    </range>
+                    <range start="90" end="99">
+                        <name>Orange (RA)</name>
+                    </range>
+                    <range start="100" end="109">
+                        <name>Cyan (GB)</name>
+                    </range>
+                    <range start="110" end="119">
+                        <name>Light Green (GW)</name>
+                    </range>
+                    <range start="120" end="129">
+                        <name>Green</name>
+                    </range>
+                    <range start="130" end="139">
+                        <name>Light Blue (BW)</name>
+                    </range>
+                    <range start="140" end="149">
+                        <name>Blue</name>
+                    </range>
+                    <range start="150" end="159">
+                        <name>Light Orange (RAW)</name>
+                    </range>
+                    <range start="160" end="179">
+                        <name>White (RGB)</name>
+                    </range>
+                    <range start="180" end="189">
+                        <name>Yellow</name>
+                    </range>
+                    <range start="190" end="199">
+                        <name>Magenta</name>
+                    </range>
+                    <range start="200" end="209">
+                        <name>White (RGBAW)</name>
+                    </range>
+                    <range start="210" end="219">
+                        <name>Magenta</name>
+                    </range>
+                    <range start="220" end="229">
+                        <name>Light Cyan</name>
+                    </range>
+                    <range start="230" end="239">
+                        <name>Cyan #3</name>
+                    </range>
+                    <range start="240" end="249">
+                        <name>White</name>
+                    </range>
+                    <range start="250" end="255">
+                        <name>Color Change (Dimmer controls speed)</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="7" type="strobe" color="false" blackout="false">
+                <name>Strobe</name>
+            </channel>
+            <channel index="8" type="auto program" color="false" blackout="false">
+                <name>Auto Program</name>
+            </channel>
+        </channels>
+    </fixture>
+</fixture_definitions>

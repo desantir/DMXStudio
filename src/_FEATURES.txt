@@ -1,0 +1,100 @@
+
+Channel
+	// Offset (0-4)
+	// Type (R,G,B,White, Amber, dimmer, pan, gobo, tilt)
+	// Channel range descriptions
+
+Fixture
+	// Manufacturer
+	// Name
+	// Type (par, dimmer, spot, fog, strobe, effect, etc)
+	// Moving or Fixed
+	// 1-n ChannelDefinition(s)
+	// Fixture UID
+
+FixtureInstance(s)
+	// Name
+	// Universe ID (future)
+	// FixtureDefinition UID
+	// Fixture physical location (future)
+	// Fixture base DMX address
+
+Scene
+	// FixtureInstance(s)
+		// Fixture ID
+		// ChannelInfo
+
+Group
+	// Physical fixtures(s)
+
+Chase
+	// Scene(s) (repeatable - yikes! - with local delay)
+	// Delay
+	// Fade
+	// Triggers (tap, audio, etc);
+
+Animations
+	// Scene animations/effects Apply to all / select
+		// Sequence fixtures (with delay)
+		// Fade in/out (with sound level immediate/moving average)
+		// Generic channel(s) change over time
+		// on/off groups of fixtures (with delay, fade) bank A on / bank B off / bank A off / bank B on
+		// On/off with beat detection
+		// Dimmer based on power / dB
+		// Control channel range based on beat or level (gobo shake rate for example)
+		// Map beat detector frequency level and/or beat to fixture and channel
+		// Color switching to beat/sound level
+			// Faster switching on high level
+			// Cycle through flashes, static color, switching colors
+		// Movement macros 
+		Strobe only with setable times
+		Laser bean movement animation (move to point, strobe, move, strobe, etc) (use coord movement, strobe fixture setting, off on home return true)
+		// Stop reseting channel animation during auto blackout
+		Run once channel animations
+
+Selectable audio input ( listener, mic, none )
+Sound level animations (level, freq) need modifiers to make more effective
+Global sound fade
+Andriod Remote control (simple - blackout, select scene, select chase )
+Whiteout mode with on/off/strobe
+Log to file
+Convert to server, text UI is server UI??
+Fixture initial channel values (set when adding)
+DMXStudio INI file (start http server, threads, whiteout strobe timings, etc)
+Cross scene home position (stop pan/tilt re-seek to home)
+Multiple personality fixtures (i.e. 3, 5, 9 channels) (multiple definitions that are consolidated in the UI per fixture)
+Dimmer channel: Arbitrary ranges, any channel can be a dimmer,  high/low any order, all suported by animations
+Copyright statements
+Choose license scheme - GPL 3
+PC volume control / mute
+Loadable connectors to Spotify, iTunes, etc.
+Attach scenes/chases to tracks
+Break up into fixture files
+Generate FUID unique hash
+
+/*
+	workspace:
+		- default scene where fixtures can be controlled in real time
+		- overrides any scene or chase in effect
+		- contents can be written to a scene
+
+	fixture change model:
+		- ui adds pf channel values to actors in the default scene
+		- default scene actors can be added to any scene (multiple)
+		- default scene actors can be cleared
+		- default scene actors cleared automatically when scene is loaded
+			- loading a scene starts playing of transitions
+		- default scene actors override scene actors
+		- can remove individual scene actors (even default)
+		- don't need the dmx packet here in venue - load scene just needs a local one (or none)
+
+	scene modification:
+		- load scene
+		- manually modify 1-n fixtures with control fixture
+		- copy fixtures from other scenes
+		- select scene update
+
+	scene create:
+		- manually modify fixtures and/or load existing scene
+		- select scene create with copy
+*/

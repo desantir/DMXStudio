@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+
+<fixture_definitions>
+  <author>Robert DeSantis</author>
+  <version>1</version>
+
+  <fixture type="wash" channels="3">
+    <manufacturer>ADJ</manufacturer>
+    <model>UVLED BAR 16</model>
+    <channels>
+      <channel index="0" type="dimmer" color="false" blackout="true" value="255">
+        <name>Dimmer</name>
+      </channel>
+      <channel index="1" type="program speed" color="false" blackout="false">
+        <name>Program Speed (slow to fast)</name>
+      </channel>
+      <channel index="2" type="auto program" color="false" blackout="false">
+        <name>Auto Program</name>
+        <ranges>
+          <range start="0" end="30">
+            <name>Dimming</name>
+          </range>
+          <range start="31" end="61">
+            <name>Strobe</name>
+          </range>
+          <range start="62" end="92">
+            <name>Increasing Intensity</name>
+          </range>
+          <range start="93" end="123">
+            <name>Decreasing intensity</name>
+          </range>
+          <range start="124" end="154">
+            <name>Increase - Decrease intensity</name>
+          </range>
+          <range start="155" end="185">
+            <name>Three flash</name>
+          </range>
+          <range start="186" end="216">
+            <name>One and two flash</name>
+          </range>
+          <range start="217" end="247">
+            <name>Flash</name>
+          </range>
+          <range start="248" end="255">
+            <name>Sound active</name>
+          </range>
+        </ranges>
+      </channel>
+    </channels>
+  </fixture>
+</fixture_definitions>

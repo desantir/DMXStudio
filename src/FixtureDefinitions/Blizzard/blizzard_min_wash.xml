@@ -1,0 +1,191 @@
+<?xml version="1.0"?>
+
+<fixture_definitions>
+  <author>Robert DeSantis</author>
+  <version>1</version>
+
+  <fixture type="wash" channels="12">
+    <manufacturer>Blizzard</manufacturer>
+    <model>Min Wash</model>
+    <channels>
+      <channel index="0" type="pan" color="false" blackout="false" home_value="169">
+        <name>Pan</name>
+        <angles>
+          <angle degrees="0" value="0" />
+          <angle degrees="90" value="43" />
+          <angle degrees="180" value="84" />
+          <angle degrees="270" value="127" />
+          <angle degrees="360" value="169" />
+          <angle degrees="450" value="210" />
+          <angle degrees="540" value="255" />
+        </angles>
+      </channel>
+      <channel index="1" type="pan fine" color="false" blackout="false">
+        <name>Pan Fine</name>
+      </channel>
+      <channel index="2" type="tilt" color="false" blackout="false" home_value="139">
+        <name>Tilt</name>
+        <angles>
+          <angle degrees="45" value="0" />
+          <angle degrees="90" value="29" />
+          <angle degrees="180" value="139" />
+          <angle degrees="270" value="255" />
+        </angles>
+      </channel>
+      <channel index="3" type="tilt fine" color="false" blackout="false">
+        <name>Tilt Fine</name>
+      </channel>
+      <channel index="4" type="movement speed" color="false" blackout="false">
+        <name>Movement Speed</name>
+      </channel>
+      <channel index="5" type="dimmer/strobe" color="false" blackout="true" value="8">
+        <dimmer lowest_intensity="134" highest_intensity="8" />
+        <name>Dimmer/Strobe</name>
+        <ranges>
+          <range start="0" end="7">
+            <name>No Strobe</name>
+          </range>
+          <range start="8" end="134">
+            <name>Light to dark dimmer</name>
+          </range>
+          <range start="135" end="239">
+            <name>Strobe speed</name>
+          </range>
+          <range start="240" end="251">
+            <name>Strobe option</name>
+          </range>
+        </ranges>
+      </channel>
+      <channel index="6" type="red" color="true" blackout="true">
+        <name>Red</name>
+      </channel>
+      <channel index="7" type="green" color="true" blackout="true">
+        <name>Green</name>
+      </channel>
+      <channel index="8" type="blue" color="true" blackout="true">
+        <name>Blue</name>
+      </channel>
+      <channel index="9" type="color macro" color="false" blackout="true">
+        <name>Color Macro</name>
+        <ranges>
+          <range start="0" end="7">
+            <name>No Function</name>
+          </range>
+          <range start="8" end="21">
+            <name>White</name>
+          </range>
+          <range start="22" end="35">
+            <name>Red</name>
+          </range>
+          <range start="36" end="49">
+            <name>Green</name>
+          </range>
+          <range start="50" end="62">
+            <name>Blue</name>
+          </range>
+          <range start="63" end="76">
+            <name>Cyan</name>
+          </range>
+          <range start="77" end="90">
+            <name>Magenta</name>
+          </range>
+          <range start="91" end="104">
+            <name>Yellow</name>
+          </range>
+          <range start="105" end="118">
+            <name>Purple / Orange</name>
+          </range>
+          <range start="119" end="132">
+            <name>Orange / Purple</name>
+          </range>
+          <range start="133" end="146">
+            <name>Chartruese / Pink</name>
+          </range>
+          <range start="147" end="160">
+            <name>Pink / Light Blue</name>
+          </range>
+          <range start="161" end="174">
+            <name>Brown / Auqa</name>
+          </range>
+          <range start="175" end="188">
+            <name>Gold / Chartreuse</name>
+          </range>
+          <range start="189" end="202">
+            <name>Crimson / Light Blue</name>
+          </range>
+          <range start="203" end="216">
+            <name>Violet / Light Pink</name>
+          </range>
+          <range start="217" end="230">
+            <name>Crepe / Light Purple</name>
+          </range>
+          <range start="231" end="243">
+            <name>Color Change Macro #1</name>
+          </range>
+          <range start="244" end="255">
+            <name>Color Change Macro #2</name>
+          </range>
+        </ranges>
+      </channel>
+      <channel index="10" type="color speed" color="false" blackout="false">
+        <name>Color Speed</name>
+      </channel>
+      <channel index="11" type="movement macro" color="false" blackout="false">
+        <name>Movement Macro</name>
+        <ranges>
+          <range start="0" end="7">
+            <name>No Function</name>
+          </range>
+          <range start="8" end="23">
+            <name>Auto #1</name>
+          </range>
+          <range start="24" end="39">
+            <name>Auto #2</name>
+          </range>
+          <range start="40" end="55">
+            <name>Auto #3</name>
+          </range>
+          <range start="56" end="71">
+            <name>Auto #4</name>
+          </range>
+          <range start="72" end="87">
+            <name>Auto #5</name>
+          </range>
+          <range start="88" end="104">
+            <name>Auto #6</name>
+          </range>
+          <range start="105" end="117">
+            <name>Auto #7</name>
+          </range>
+          <range start="118" end="135">
+            <name>Auto #8</name>
+          </range>
+          <range start="136" end="151">
+            <name>Sound Active #1</name>
+          </range>
+          <range start="152" end="167">
+            <name>Sound Active #2</name>
+          </range>
+          <range start="168" end="183">
+            <name>Sound Active #3</name>
+          </range>
+          <range start="184" end="199">
+            <name>Sound Active #4</name>
+          </range>
+          <range start="200" end="215">
+            <name>Sound Active #5</name>
+          </range>
+          <range start="216" end="231">
+            <name>Sound Active #6</name>
+          </range>
+          <range start="232" end="246">
+            <name>Sound Active #7</name>
+          </range>
+          <range start="247" end="255">
+            <name>Sound Active #8</name>
+          </range>
+        </ranges>
+      </channel>
+    </channels>
+  </fixture>
+</fixture_definitions>

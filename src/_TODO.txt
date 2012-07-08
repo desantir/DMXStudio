@@ -1,0 +1,75 @@
+TODO ------------------------------------------------------------------------ TODO
+
+	L Scene Animations:
+		L Movement animation travel time
+		L Programs should control travel time rather than fixed signal input
+		L Global animations or attached to a fixture
+		L Animation speed changes based on beat
+		L Multiple animations per fixture (deal with channel contention)
+		L Pixel Map support (single/multiple fixtures)
+		L Sine wave movement
+		L Loadable, scripted, self contained animations with specific properties (versus the current rat's nest)
+
+	L Sound processing
+		M Beat detector scaling, better detection algorithm, logarithmic scaling
+		L Add channel mixing to audio stream class
+		L Support format conversion in audio output
+
+	M Fixture Definitions
+		L Simple angle->value options (angle*xx) == DMX code
+		L Multiple universes (increase DMX packet size, zero-based universe ID is simply the high byte)
+		L Movement speed abstraction
+		L Add icon image
+		L Dimmer curve (LEDs can fall off fast at the end)
+		L Editable fixture defaults
+		L Minimum dimmer setting
+
+	M Code Maintainence
+		M Bullet proof error detection and automatic restart
+		H Comments - doxygen?
+		L Introduce studio fault to kill and restart program (vs error based execeptions)
+		M Unit tests
+
+	L Scene / Chase Improvements
+		L Scene selection based on the music beat (BPM)
+		L Chase changed based on beat, time or track transition
+		L Chase random scene from all/pool
+		L Chase crossfade = % of time cues fading into each other (kill fade time change to crossfade model)?
+
+	L General Enhancements
+		L MIDI fogger control with ready indicator (auto fog timer?)
+		L Midi controller support ( tablet support )
+		L Fixture duty cycle support?
+		L Video support
+
+	H Full User Interface
+		H Full access GUI (definition, control, etc)
+		H HTTP server / REST protocol (what about taps and audio display?)
+		L Auto color set RGBAW channels from palette, HSV? UI issue?
+		L Game engine such as http://www.panda3d.org/ for lighting simulation?
+		  MS XNA? http://msdn.microsoft.com/en-us/library/ff827897.aspx
+	
+ 	M Test Targets
+		Verify channel remapping works across UI, ACTORS, and ANIMATIONS 
+			Seems possible to double map or not map scene actor channels
+			Check UI->SceneChannelAnimator and SceneMovementAnimator->SceneChannelAnimator
+
+TODO ------------------------------------------------------------------------ TODO
+
+GUI IDEAS
+
+Insure updates and error checking spans UIs
+
+Scene
+	Show fixtures
+		Indicate on
+		Animations
+	Fixtures can be positioned
+		Have an image(s) on/off
+
+	Click on fixture shows mixer
+		lock attribute for local control (how to unlock)
+		can unlock to remove local (option to update)
+		show sliders
+		quick scene update
+

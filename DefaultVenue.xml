@@ -1,0 +1,1840 @@
+<!--DMX Studio Venue definition-->
+<venue version="0.2" next_uid="107" current_scene="104">
+    <name>Upstair&apos;s lab</name>
+    <dmx_universes>
+        <universe index="0">
+            <interface>usb_dmx</interface>
+            <comm_port>com6</comm_port>
+        </universe>
+    </dmx_universes>
+    <dimmer master_dimmer="100" auto_blackout="2000" whiteout_strobe="75" />
+    <audio scale="0.00" floor="0.00">
+        <capture_device>Stereo Mix</capture_device>
+    </audio>
+    <fixtures>
+        <fixture uid="1" fixture_number="1" fuid="3006783682" universe="1" dmx_address="49">
+            <name>Audio right</name>
+        </fixture>
+        <fixture uid="2" fixture_number="2" fuid="3006783682" universe="1" dmx_address="1">
+            <name>Audio left</name>
+        </fixture>
+        <fixture uid="3" fixture_number="3" fuid="3006783682" universe="1" dmx_address="17">
+            <name>Back left</name>
+        </fixture>
+        <fixture uid="4" fixture_number="4" fuid="3006783682" universe="1" dmx_address="33">
+            <name>Back right</name>
+        </fixture>
+        <fixture uid="5" fixture_number="5" fuid="3989062184" universe="1" dmx_address="129">
+            <name>Audio Center</name>
+        </fixture>
+        <fixture uid="6" fixture_number="6" fuid="3989062184" universe="1" dmx_address="97">
+            <name>Back Center</name>
+        </fixture>
+        <fixture uid="7" fixture_number="7" fuid="3989062184" universe="1" dmx_address="470">
+            <name>New</name>
+        </fixture>
+        <fixture uid="8" fixture_number="8" fuid="713752631" universe="1" dmx_address="113">
+            <name>Audio Center</name>
+        </fixture>
+        <fixture uid="9" fixture_number="9" fuid="984018742" universe="1" dmx_address="8">
+            <name>Back Center</name>
+        </fixture>
+        <fixture uid="10" fixture_number="10" fuid="763040369" universe="1" dmx_address="65">
+            <name>Audio Center</name>
+        </fixture>
+        <fixture uid="11" fixture_number="11" fuid="343754930" universe="1" dmx_address="81">
+            <name>Left</name>
+        </fixture>
+        <fixture uid="12" fixture_number="12" fuid="3807256092" universe="1" dmx_address="145">
+            <name>Left</name>
+        </fixture>
+        <fixture uid="13" fixture_number="13" fuid="2876665011" universe="1" dmx_address="178">
+            <name>Back Left</name>
+        </fixture>
+        <fixture uid="30" fixture_number="14" fuid="4232149305" universe="1" dmx_address="500">
+            <name>UV Bar</name>
+        </fixture>
+        <fixture uid="96" fixture_number="15" fuid="2422697663" universe="1" dmx_address="190">
+            <name>Lab</name>
+        </fixture>
+    </fixtures>
+    <scenes>
+        <scene uid="20" scene_number="0" private="false">
+            <name>Default Scene</name>
+            <actors />
+        </scene>
+        <scene uid="21" scene_number="1" private="false">
+            <name>Green</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="30" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="79" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="255" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                    </channels>
+                </actor>
+            </actors>
+            <animations>
+                <animation uid="94" class="SceneStrobeAnimator" strobe_neg_color="0" strobe_pos_ms="200" strobe_neg_ms="50">
+                    <signal sample_rate_ms="200" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="1" />
+                    <pfuids>
+                        <uid value="1" />
+                    </pfuids>
+                </animation>
+            </animations>
+        </scene>
+        <scene uid="22" scene_number="2" private="false">
+            <name>Blue</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="30" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="79" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="255" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="20" />
+                        <channel number="2" value="72" />
+                    </channels>
+                </actor>
+            </actors>
+        </scene>
+        <scene uid="23" scene_number="3" private="false">
+            <name>Red</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="30" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="79" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="255" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+            </actors>
+        </scene>
+        <scene uid="24" scene_number="4" private="false">
+            <name>White</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="30" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="79" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="255" />
+                        <channel number="7" value="255" />
+                        <channel number="8" value="255" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+            </actors>
+        </scene>
+        <scene uid="25" scene_number="5" private="false">
+            <name>Strobes</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="220" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="2">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="220" />
+                        <channel number="5" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="3">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="220" />
+                        <channel number="5" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="220" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="30" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="79" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="200" />
+                        <channel number="5" value="200" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="20" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="30" />
+                        <channel number="12" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                    </channels>
+                </actor>
+            </actors>
+        </scene>
+        <scene uid="28" scene_number="7" private="false">
+            <name>Animations</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="30" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="79" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="255" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+            </actors>
+        </scene>
+        <scene uid="29" scene_number="8" private="false">
+            <name>Average fade</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="30" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="79" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="155" />
+                        <channel number="7" value="172" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="96" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                    </channels>
+                </actor>
+            </actors>
+            <animations>
+                <animation uid="47" class="SoundLevel" fade="255">
+                    <signal sample_rate_ms="25" sample_decay_ms="0" input_type="3" scale_factor="0" max_threshold="0" apply_to="1" />
+                    <pfuids>
+                        <uid value="1" />
+                        <uid value="4" />
+                    </pfuids>
+                </animation>
+            </animations>
+        </scene>
+        <scene uid="31" scene_number="9" private="false">
+            <name>Level fade</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="14" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="88" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="155" />
+                        <channel number="7" value="172" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="80" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                    </channels>
+                </actor>
+            </actors>
+            <animations>
+                <animation uid="48" class="SoundLevel" fade="3">
+                    <signal sample_rate_ms="150" sample_decay_ms="0" input_type="3" scale_factor="0" max_threshold="0" apply_to="1" />
+                    <pfuids>
+                        <uid value="1" />
+                        <uid value="4" />
+                        <uid value="30" />
+                    </pfuids>
+                </animation>
+            </animations>
+        </scene>
+        <scene uid="32" scene_number="10" private="false">
+            <name>Animations</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="14" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="88" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="155" />
+                        <channel number="7" value="172" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="80" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                    </channels>
+                </actor>
+            </actors>
+        </scene>
+        <scene uid="33" scene_number="11" private="false">
+            <name>Freq level</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="14" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="88" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="155" />
+                        <channel number="7" value="172" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="80" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                    </channels>
+                </actor>
+            </actors>
+            <animations>
+                <animation uid="49" class="SceneChannelAnimator">
+                    <signal sample_rate_ms="25" sample_decay_ms="50" input_type="3" scale_factor="0" max_threshold="0" apply_to="1" />
+                    <channel_animations>
+                        <channel_animation actor_uid="1" channel="5" style="2" />
+                        <channel_animation actor_uid="4" channel="5" style="2" />
+                    </channel_animations>
+                </animation>
+            </animations>
+        </scene>
+        <scene uid="42" scene_number="12" private="false">
+            <name>Speed level</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="14" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="88" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="155" />
+                        <channel number="7" value="172" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="80" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                    </channels>
+                </actor>
+            </actors>
+        </scene>
+        <scene uid="50" scene_number="13" private="false">
+            <name>Color Switcher</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                    </channels>
+                </actor>
+            </actors>
+            <animations>
+                <animation uid="87" class="SceneColorSwitcher" strobe_neg_color="0" strobe_pos_ms="200" strobe_neg_ms="75">
+                    <signal sample_rate_ms="2500" sample_decay_ms="0" input_type="2" scale_factor="1" max_threshold="100" apply_to="2" />
+                    <pfuids>
+                        <uid value="1" />
+                        <uid value="4" />
+                    </pfuids>
+                </animation>
+            </animations>
+        </scene>
+        <scene uid="53" scene_number="14" private="false">
+            <name>Shapes</name>
+            <actors>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="234" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="1" />
+                    </channels>
+                </actor>
+            </actors>
+        </scene>
+        <scene uid="55" scene_number="15" private="false">
+            <name>Level fade scale factor</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="2">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="3">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                    </channels>
+                </actor>
+            </actors>
+            <animations>
+                <animation uid="60" class="SceneColorSwitcher" strobe_neg_color="0" strobe_pos_ms="200" strobe_neg_ms="50">
+                    <signal sample_rate_ms="1500" sample_decay_ms="0" input_type="2" scale_factor="1" max_threshold="90" apply_to="1" />
+                    <pfuids>
+                        <uid value="1" />
+                        <uid value="2" />
+                        <uid value="3" />
+                        <uid value="4" />
+                    </pfuids>
+                </animation>
+            </animations>
+        </scene>
+        <scene uid="61" scene_number="16" private="false">
+            <name>Yellow</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="239" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="2">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="239" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="3">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="239" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="239" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="30" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="79" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="255" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                    </channels>
+                </actor>
+            </actors>
+        </scene>
+        <scene uid="63" scene_number="6" private="true">
+            <name>test scene</name>
+            <actors />
+        </scene>
+        <scene uid="66" scene_number="17" private="false">
+            <name>Moving yoke random tests</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="2">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="3">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="5">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="255" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="8" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="233" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="6">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="255" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="8" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="233" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="255" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="8" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="233" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="56" />
+                        <channel number="2" value="166" />
+                    </channels>
+                </actor>
+            </actors>
+            <animations>
+                <animation uid="70" class="SceneMovementAnimator">
+                    <signal sample_rate_ms="500" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="2" />
+                    <pfuids>
+                        <uid value="5" />
+                        <uid value="6" />
+                        <uid value="7" />
+                    </pfuids>
+                    <movement type="1" tilt_start_angle="120" tilt_end_angle="180" pan_start_angle="315" pan_end_angle="405" pan_increment="1" speed="0" home_wait_periods="2" dest_wait_periods="4" group_size="1" positions="12" alternate_groups="false" blackout_return="false" run_once="false" home_x="0.00" home_y="0.00" height="0.00" fixture_spacing="0.00" radius="0.00" />
+                </animation>
+            </animations>
+        </scene>
+        <scene uid="71" scene_number="18" private="false">
+            <name>Moving yoke rotate test</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="2">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="3">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="5">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="255" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="233" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="6">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="233" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="233" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="56" />
+                        <channel number="2" value="166" />
+                    </channels>
+                </actor>
+            </actors>
+            <animations>
+                <animation uid="73" class="SceneMovementAnimator">
+                    <signal sample_rate_ms="2500" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="2" />
+                    <pfuids>
+                        <uid value="5" />
+                        <uid value="6" />
+                        <uid value="7" />
+                    </pfuids>
+                    <movement type="3" tilt_start_angle="125" tilt_end_angle="125" pan_start_angle="0" pan_end_angle="360" pan_increment="1" speed="0" home_wait_periods="1" dest_wait_periods="2" group_size="1" positions="5" alternate_groups="true" blackout_return="true" run_once="false" home_x="0.00" home_y="0.00" height="0.00" fixture_spacing="0.00" radius="0.00" />
+                </animation>
+            </animations>
+        </scene>
+        <scene uid="74" scene_number="19" private="false">
+            <name>Moving yoke nod test</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="2">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="3">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="5">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="1" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="233" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="6">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="1" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="233" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="1" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="233" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="56" />
+                        <channel number="2" value="166" />
+                    </channels>
+                </actor>
+            </actors>
+            <animations>
+                <animation uid="77" class="SceneMovementAnimator">
+                    <signal sample_rate_ms="1200" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="2" />
+                    <pfuids>
+                        <uid value="5" />
+                        <uid value="6" />
+                        <uid value="7" />
+                    </pfuids>
+                    <movement type="4" tilt_start_angle="90" tilt_end_angle="160" pan_start_angle="330" pan_end_angle="380" pan_increment="10" speed="0" home_wait_periods="1" dest_wait_periods="1" group_size="1" positions="5" alternate_groups="true" blackout_return="false" run_once="false" home_x="0.00" home_y="0.00" height="0.00" fixture_spacing="0.00" radius="0.00" />
+                </animation>
+            </animations>
+        </scene>
+        <scene uid="79" scene_number="20" private="false">
+            <name>Moving yoke fan test</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="2">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="3">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="5">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="1" />
+                        <channel number="5" value="8" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="233" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="6">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="1" />
+                        <channel number="5" value="8" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="233" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="1" />
+                        <channel number="5" value="8" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="233" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="56" />
+                        <channel number="2" value="166" />
+                    </channels>
+                </actor>
+            </actors>
+            <animations>
+                <animation uid="81" class="SceneMovementAnimator">
+                    <signal sample_rate_ms="1200" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="2" />
+                    <pfuids>
+                        <uid value="5" />
+                        <uid value="6" />
+                        <uid value="7" />
+                    </pfuids>
+                    <movement type="2" tilt_start_angle="170" tilt_end_angle="60" pan_start_angle="320" pan_end_angle="400" pan_increment="1" speed="230" home_wait_periods="3" dest_wait_periods="2" group_size="1" positions="5" alternate_groups="false" blackout_return="true" run_once="false" home_x="0.00" home_y="0.00" height="0.00" fixture_spacing="0.00" radius="0.00" />
+                </animation>
+            </animations>
+        </scene>
+        <scene uid="82" scene_number="21" private="false">
+            <name>Moving yoke xcross test</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="2">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="3">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="5">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="1" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="233" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="6">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="1" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="233" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="1" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="233" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="22" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="56" />
+                        <channel number="2" value="166" />
+                    </channels>
+                </actor>
+            </actors>
+            <animations>
+                <animation uid="84" class="SceneMovementAnimator">
+                    <signal sample_rate_ms="1500" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="2" />
+                    <pfuids>
+                        <uid value="5" />
+                        <uid value="6" />
+                        <uid value="7" />
+                    </pfuids>
+                    <movement type="5" tilt_start_angle="160" tilt_end_angle="80" pan_start_angle="320" pan_end_angle="400" pan_increment="1" speed="240" home_wait_periods="1" dest_wait_periods="2" group_size="1" positions="5" alternate_groups="true" blackout_return="true" run_once="false" home_x="0.00" home_y="0.00" height="0.00" fixture_spacing="0.00" radius="0.00" />
+                </animation>
+                <animation uid="85" class="SceneColorSwitcher" strobe_neg_color="0" strobe_pos_ms="200" strobe_neg_ms="50">
+                    <signal sample_rate_ms="1200" sample_decay_ms="0" input_type="2" scale_factor="2" max_threshold="90" apply_to="2" />
+                    <pfuids>
+                        <uid value="1" />
+                        <uid value="2" />
+                        <uid value="3" />
+                        <uid value="4" />
+                    </pfuids>
+                </animation>
+            </animations>
+        </scene>
+        <scene uid="88" scene_number="22" private="false">
+            <name>Moving yokes absolute coords</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="2">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="3">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="5">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="255" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="255" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="6">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="255" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="255" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="2" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="71" />
+                        <channel number="3" value="255" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                        <channel number="6" value="255" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="38" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="56" />
+                        <channel number="2" value="224" />
+                    </channels>
+                </actor>
+            </actors>
+            <animations>
+                <animation uid="92" class="SceneMovementAnimator">
+                    <signal sample_rate_ms="1000" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="1" />
+                    <pfuids>
+                        <uid value="5" />
+                        <uid value="6" />
+                        <uid value="7" />
+                    </pfuids>
+                    <movement type="6" tilt_start_angle="90" tilt_end_angle="270" pan_start_angle="0" pan_end_angle="360" pan_increment="1" speed="0" home_wait_periods="1" dest_wait_periods="4" group_size="1" positions="5" alternate_groups="false" blackout_return="true" run_once="false" home_x="0.00" home_y="0.00" height="0.00" fixture_spacing="0.00" radius="0.00">
+                        <coordinate_list>
+                            <coordinate pan="360" tilt="120" />
+                            <coordinate pan="320" tilt="110" />
+                            <coordinate pan="400" tilt="110" />
+                        </coordinate_list>
+                    </movement>
+                </animation>
+            </animations>
+        </scene>
+        <scene uid="97" scene_number="23" private="false">
+            <name>Pix PAR</name>
+            <actors>
+                <actor fixure_uid="96">
+                    <channels>
+                        <channel number="0" value="125" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="123" />
+                        <channel number="5" value="22" />
+                        <channel number="6" value="251" />
+                        <channel number="7" value="239" />
+                        <channel number="8" value="0" />
+                    </channels>
+                </actor>
+            </actors>
+        </scene>
+        <scene uid="98" scene_number="24" private="false">
+            <name>Pulse Green</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="5">
+                    <channels>
+                        <channel number="0" value="169" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="66" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="8" />
+                        <channel number="6" value="255" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="6">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="56" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="8" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="255" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="9">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="255" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="0" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="30">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="96">
+                    <channels>
+                        <channel number="0" value="255" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="255" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="0" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                    </channels>
+                </actor>
+            </actors>
+            <animations>
+                <animation uid="99" class="ScenePatternDimmer" dimmer_pattern="1">
+                    <signal sample_rate_ms="500" sample_decay_ms="0" input_type="3" scale_factor="1" max_threshold="100" apply_to="2" />
+                    <pfuids>
+                        <uid value="9" />
+                        <uid value="4" />
+                        <uid value="1" />
+                        <uid value="96" />
+                    </pfuids>
+                </animation>
+                <animation uid="101" class="SceneMovementAnimator">
+                    <signal sample_rate_ms="2000" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="1" />
+                    <pfuids>
+                        <uid value="6" />
+                    </pfuids>
+                    <movement type="6" tilt_start_angle="90" tilt_end_angle="270" pan_start_angle="0" pan_end_angle="360" pan_increment="1" speed="0" home_wait_periods="1" dest_wait_periods="1" group_size="1" positions="5" alternate_groups="false" blackout_return="false" run_once="false" home_x="0.00" home_y="0.00" height="0.00" fixture_spacing="0.00" radius="0.00">
+                        <coordinate_list>
+                            <coordinate pan="300" tilt="120" />
+                            <coordinate pan="420" tilt="120" />
+                        </coordinate_list>
+                    </movement>
+                </animation>
+                <animation uid="103" class="SceneMovementAnimator">
+                    <signal sample_rate_ms="2000" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="1" />
+                    <pfuids>
+                        <uid value="5" />
+                    </pfuids>
+                    <movement type="6" tilt_start_angle="90" tilt_end_angle="270" pan_start_angle="0" pan_end_angle="360" pan_increment="1" speed="0" home_wait_periods="1" dest_wait_periods="1" group_size="1" positions="5" alternate_groups="false" blackout_return="false" run_once="false" home_x="0.00" home_y="0.00" height="0.00" fixture_spacing="0.00" radius="0.00">
+                        <coordinate_list>
+                            <coordinate pan="420" tilt="120" />
+                            <coordinate pan="300" tilt="120" />
+                        </coordinate_list>
+                    </movement>
+                </animation>
+            </animations>
+        </scene>
+        <scene uid="104" scene_number="25" private="false">
+            <name>Moonflower test</name>
+            <actors>
+                <actor fixure_uid="5">
+                    <channels>
+                        <channel number="0" value="169" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="139" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="8" />
+                        <channel number="6" value="255" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="6">
+                    <channels>
+                        <channel number="0" value="169" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="139" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="8" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="255" />
+                        <channel number="8" value="0" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="169" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="139" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="8" />
+                        <channel number="6" value="0" />
+                        <channel number="7" value="0" />
+                        <channel number="8" value="255" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="0" />
+                    </channels>
+                </actor>
+            </actors>
+            <animations>
+                <animation uid="106" class="SceneMovementAnimator">
+                    <signal sample_rate_ms="700" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="1" />
+                    <pfuids>
+                        <uid value="5" />
+                        <uid value="6" />
+                        <uid value="7" />
+                    </pfuids>
+                    <movement type="7" tilt_start_angle="90" tilt_end_angle="270" pan_start_angle="0" pan_end_angle="360" pan_increment="25" speed="0" home_wait_periods="2" dest_wait_periods="2" group_size="1" positions="10" alternate_groups="false" blackout_return="false" run_once="false" home_x="0.00" home_y="-3.00" height="7.00" fixture_spacing="2.00" radius="3.00" />
+                </animation>
+            </animations>
+        </scene>
+    </scenes>
+    <fixture_groups>
+        <fixture_group uid="27">
+            <name>PUCKS</name>
+            <pfuids>
+                <uid value="1" />
+                <uid value="2" />
+                <uid value="3" />
+                <uid value="4" />
+            </pfuids>
+        </fixture_group>
+        <fixture_group uid="65">
+            <name>Spots</name>
+            <pfuids>
+                <uid value="5" />
+                <uid value="6" />
+                <uid value="7" />
+            </pfuids>
+        </fixture_group>
+    </fixture_groups>
+    <chases>
+        <chase uid="16" chase_number="1" delay_ms="4000" fade_ms="1000" private="false">
+            <name>Cycle RGB</name>
+            <description>Cycle RGB</description>
+            <chase_steps>
+                <chase_step scene_uid="23" delay_ms="0" />
+                <chase_step scene_uid="22" delay_ms="0" />
+                <chase_step scene_uid="21" delay_ms="0" />
+                <chase_step scene_uid="24" delay_ms="0" />
+            </chase_steps>
+        </chase>
+        <chase uid="17" chase_number="2" delay_ms="2000" fade_ms="0" private="false">
+            <name>White and Blue</name>
+            <description>White and Blue</description>
+            <chase_steps>
+                <chase_step scene_uid="24" delay_ms="0" />
+                <chase_step scene_uid="22" delay_ms="0" />
+            </chase_steps>
+        </chase>
+        <chase uid="18" chase_number="3" delay_ms="300" fade_ms="300" private="false">
+            <name>test</name>
+            <description>test</description>
+            <chase_steps>
+                <chase_step scene_uid="23" delay_ms="0" />
+                <chase_step scene_uid="21" delay_ms="0" />
+                <chase_step scene_uid="22" delay_ms="0" />
+                <chase_step scene_uid="61" delay_ms="0" />
+            </chase_steps>
+        </chase>
+        <chase uid="19" chase_number="4" delay_ms="10000" fade_ms="0" private="false">
+            <name>Blink</name>
+            <description>Blink</description>
+            <chase_steps>
+                <chase_step scene_uid="25" delay_ms="0" />
+                <chase_step scene_uid="66" delay_ms="0" />
+                <chase_step scene_uid="79" delay_ms="0" />
+            </chase_steps>
+        </chase>
+        <chase uid="62" chase_number="6" delay_ms="2000" fade_ms="1000" private="false">
+            <name>Primary colors</name>
+            <description>Primary colors</description>
+            <chase_steps>
+                <chase_step scene_uid="21" delay_ms="0" />
+                <chase_step scene_uid="22" delay_ms="0" />
+                <chase_step scene_uid="23" delay_ms="0" />
+                <chase_step scene_uid="61" delay_ms="0" />
+            </chase_steps>
+        </chase>
+        <chase uid="95" chase_number="7" delay_ms="5000" fade_ms="0" private="false">
+            <name>New chase</name>
+            <chase_steps>
+                <chase_step scene_uid="66" delay_ms="0" />
+                <chase_step scene_uid="50" delay_ms="0" />
+            </chase_steps>
+        </chase>
+    </chases>
+    <music_scenes enabled="true">
+        <music_mapping uid="16" type="2">
+            <track_full_name>Maneater by The Retrosic</track_full_name>
+        </music_mapping>
+        <music_mapping uid="20" type="1">
+            <track_full_name>Music Watcher Silence by DMXStudio</track_full_name>
+        </music_mapping>
+        <music_mapping uid="0" type="3">
+            <track_full_name>Music Watcher Unrecognized Track Name by DMXStudio</track_full_name>
+        </music_mapping>
+        <music_mapping uid="104" type="1">
+            <track_full_name>Sweet Shop by Doctor P</track_full_name>
+        </music_mapping>
+    </music_scenes>
+</venue>
