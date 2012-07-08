@@ -31,34 +31,34 @@ class SceneSequence : public AbstractAnimation
     friend class VenueWriter;
     friend class VenueReader;
 
-	unsigned			m_current_actor;
-	DWORD				m_next_actor_ms;
-	UIDArray			m_running_actors;
+    unsigned			m_current_actor;
+    DWORD				m_next_actor_ms;
+    UIDArray			m_running_actors;
 
-	SceneSequence(SceneSequence& other) {}
-	SceneSequence& operator=(SceneSequence& rhs) { return *this; }
+    SceneSequence(SceneSequence& other) {}
+    SceneSequence& operator=(SceneSequence& rhs) { return *this; }
 
 public:
-	static const char* className;
+    static const char* className;
 
-	SceneSequence( void ) {};
-	SceneSequence( UID animation_uid, AnimationSignal signal, UIDArray actors );
-	virtual ~SceneSequence(void);
+    SceneSequence( void ) {};
+    SceneSequence( UID animation_uid, AnimationSignal signal, UIDArray actors );
+    virtual ~SceneSequence(void);
 
-	AbstractAnimation* clone();
+    AbstractAnimation* clone();
 
-	const char* getName() { return "Fixture Sequencer"; }
-	const char* getClassName() { return SceneSequence::className; }
+    const char* getName() { return "Fixture Sequencer"; }
+    const char* getClassName() { return SceneSequence::className; }
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
 
-	void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
-	bool sliceAnimation( DWORD time_ms, BYTE* dmx_packet );
-	void stopAnimation( void );
+    void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
+    bool sliceAnimation( DWORD time_ms, BYTE* dmx_packet );
+    void stopAnimation( void );
 
 private:
-	void unselectActor( unsigned actor, BYTE* dmx_packet );
-	void selectActor( unsigned actor, BYTE* dmx_packet );
+    void unselectActor( unsigned actor, BYTE* dmx_packet );
+    void selectActor( unsigned actor, BYTE* dmx_packet );
 };

@@ -27,76 +27,76 @@ MA 02111-1307, USA.
 
 class ColorFader
 {
-	BYTE		m_current_color[COLOR_CHANNELS];			// Current RGBWA
-	BYTE		m_target_color[COLOR_CHANNELS];				// Blend RGBWA targets
-	int			m_blend_delta[COLOR_CHANNELS];				// Channel value blending deltas
-	DWORD		m_blend_next_ms[COLOR_CHANNELS];
+    BYTE		m_current_color[COLOR_CHANNELS];			// Current RGBWA
+    BYTE		m_target_color[COLOR_CHANNELS];				// Blend RGBWA targets
+    int			m_blend_delta[COLOR_CHANNELS];				// Channel value blending deltas
+    DWORD		m_blend_next_ms[COLOR_CHANNELS];
 
 public:
-	ColorFader( void ) {
-		for ( int i=0; i < COLOR_CHANNELS; i++ )
-			m_current_color[i] = m_target_color[i] = 0;
-	}
+    ColorFader( void ) {
+        for ( int i=0; i < COLOR_CHANNELS; i++ )
+            m_current_color[i] = m_target_color[i] = 0;
+    }
 
-	~ColorFader(void) {}
+    ~ColorFader(void) {}
 
-	inline void setTargets( const BYTE rgbw[COLOR_CHANNELS] ) {
-		for ( int i=0; i < COLOR_CHANNELS; i++ )
-			m_target_color[i] = rgbw[i];
-	}
+    inline void setTargets( const BYTE rgbw[COLOR_CHANNELS] ) {
+        for ( int i=0; i < COLOR_CHANNELS; i++ )
+            m_target_color[i] = rgbw[i];
+    }
 
-	inline void setCurrent( const BYTE rgbw[COLOR_CHANNELS] ) {
-		for ( int i=0; i < COLOR_CHANNELS; i++ )
-			m_current_color[i] = rgbw[i];
-	}
+    inline void setCurrent( const BYTE rgbw[COLOR_CHANNELS] ) {
+        for ( int i=0; i < COLOR_CHANNELS; i++ )
+            m_current_color[i] = rgbw[i];
+    }
 
-	inline BYTE red() const { return m_current_color[0]; }
-	inline BYTE green() const { return m_current_color[1]; }
-	inline BYTE blue() const { return m_current_color[2]; }
-	inline BYTE white() const { return m_current_color[3]; }
-	inline BYTE amber() const { return m_current_color[4]; }
+    inline BYTE red() const { return m_current_color[0]; }
+    inline BYTE green() const { return m_current_color[1]; }
+    inline BYTE blue() const { return m_current_color[2]; }
+    inline BYTE white() const { return m_current_color[3]; }
+    inline BYTE amber() const { return m_current_color[4]; }
 
-	inline BYTE* rgbwa() { return m_current_color; }
+    inline BYTE* rgbwa() { return m_current_color; }
 
-	void start( DWORD time_ms, int fade_time ) {
-		for ( int i=0; i < COLOR_CHANNELS; i++ ) {
-			int delta = m_target_color[i]-m_current_color[i];
-			if ( delta != 0 ) {
-				m_blend_delta[i] = fade_time / delta;
-				m_blend_next_ms[i] = time_ms;
-			}
-			else {
-				m_blend_delta[i] = 0;
-			}
-		}
-	}
+    void start( DWORD time_ms, int fade_time ) {
+        for ( int i=0; i < COLOR_CHANNELS; i++ ) {
+            int delta = m_target_color[i]-m_current_color[i];
+            if ( delta != 0 ) {
+                m_blend_delta[i] = fade_time / delta;
+                m_blend_next_ms[i] = time_ms;
+            }
+            else {
+                m_blend_delta[i] = 0;
+            }
+        }
+    }
 
-	bool fade( DWORD time_ms ) {
-		bool changed = false;
+    bool fade( DWORD time_ms ) {
+        bool changed = false;
 
-		for ( int i=0; i < COLOR_CHANNELS; i++ ) {
-			if ( m_target_color[i] == m_current_color[i] )
-				continue;
+        for ( int i=0; i < COLOR_CHANNELS; i++ ) {
+            if ( m_target_color[i] == m_current_color[i] )
+                continue;
 
-			while ( m_blend_next_ms[i] < time_ms && m_blend_delta[i] != 0 ) {
-				if ( m_blend_delta[i] > 0 ) {
-					if ( m_current_color[i] < 255 ) {
-						m_current_color[i]++;
-						changed = true;
-					}
-					m_blend_next_ms[i] += m_blend_delta[i];
-				}
-				else {
-					if ( m_current_color[i] > 0 ) {
-						m_current_color[i]--;
-						changed = true;
-					}
-					m_blend_next_ms[i] += -m_blend_delta[i];
-				}
-			}
-		}
+            while ( m_blend_next_ms[i] < time_ms && m_blend_delta[i] != 0 ) {
+                if ( m_blend_delta[i] > 0 ) {
+                    if ( m_current_color[i] < 255 ) {
+                        m_current_color[i]++;
+                        changed = true;
+                    }
+                    m_blend_next_ms[i] += m_blend_delta[i];
+                }
+                else {
+                    if ( m_current_color[i] > 0 ) {
+                        m_current_color[i]--;
+                        changed = true;
+                    }
+                    m_blend_next_ms[i] += -m_blend_delta[i];
+                }
+            }
+        }
 
-		return changed;
-	}
+        return changed;
+    }
 };
 

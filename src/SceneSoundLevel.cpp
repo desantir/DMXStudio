@@ -28,13 +28,13 @@ const char* SceneSoundLevel::className = "SoundLevel";
 // ----------------------------------------------------------------------------
 //
 SceneSoundLevel::SceneSoundLevel( UID animation_uid,
-								  AnimationSignal signal,
-								  UIDArray actors,
-								  WORD fade_what ) :
-	SceneChannelAnimator( animation_uid, signal ),
-	m_fade_what( fade_what )
+                                  AnimationSignal signal,
+                                  UIDArray actors,
+                                  WORD fade_what ) :
+    SceneChannelAnimator( animation_uid, signal ),
+    m_fade_what( fade_what )
 {
-	m_actors = actors;
+    m_actors = actors;
 }
 
 // ----------------------------------------------------------------------------
@@ -46,49 +46,49 @@ SceneSoundLevel::~SceneSoundLevel(void)
 // ----------------------------------------------------------------------------
 //
 AbstractAnimation* SceneSoundLevel::clone() {
-	return new SceneSoundLevel( m_uid, m_signal, m_actors, m_fade_what );
+    return new SceneSoundLevel( m_uid, m_signal, m_actors, m_fade_what );
 }
 
 // ----------------------------------------------------------------------------
 //
 CString SceneSoundLevel::getSynopsis(void) {
-	CString synopsis;
-	CString fade;
+    CString synopsis;
+    CString fade;
 
-	if ( m_fade_what & FADE_COLORS )
-		fade += "colors ";
-	if ( m_fade_what & FADE_DIMMERS )
-		fade += "dimmers ";
+    if ( m_fade_what & FADE_COLORS )
+        fade += "colors ";
+    if ( m_fade_what & FADE_DIMMERS )
+        fade += "dimmers ";
 
-	synopsis.Format( "Fade ( %s) %s", fade, AbstractAnimation::getSynopsis() );
+    synopsis.Format( "Fade ( %s) %s", fade, AbstractAnimation::getSynopsis() );
 
-	return synopsis;
+    return synopsis;
 }
 
 // ----------------------------------------------------------------------------
 //
 void SceneSoundLevel::initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet )
 {
-	m_animation_task = task;
-	m_channel_animations.clear();
+    m_animation_task = task;
+    m_channel_animations.clear();
 
-	UIDArray actors = populateActors( m_animation_task->getScene() );
-	ChannelValueArray value_array;
+    UIDArray actors = populateActors( m_animation_task->getScene() );
+    ChannelValueArray value_array;
 
-	// Determine which channel will be participating
-	for ( UIDArray::iterator it=actors.begin(); it != actors.end(); it++ ) {
-		Fixture* pf = m_animation_task->getFixture( (*it) );
-		STUDIO_ASSERT( pf != NULL, "Missing fixture UID=%lu", (*it) );
+    // Determine which channel will be participating
+    for ( UIDArray::iterator it=actors.begin(); it != actors.end(); it++ ) {
+        Fixture* pf = m_animation_task->getFixture( (*it) );
+        STUDIO_ASSERT( pf != NULL, "Missing fixture UID=%lu", (*it) );
 
-		for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
-			Channel* cp = pf->getChannel( channel );
+        for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+            Channel* cp = pf->getChannel( channel );
 
-			if ( ((m_fade_what & FADE_COLORS) && cp->isColor()) ) {
-				m_channel_animations.push_back( 
-					ChannelAnimation(  pf->getUID(), channel, CAM_SCALE, value_array ) );
-			}
-		}
-	}
+            if ( ((m_fade_what & FADE_COLORS) && cp->isColor()) ) {
+                m_channel_animations.push_back( 
+                    ChannelAnimation(  pf->getUID(), channel, CAM_SCALE, value_array ) );
+            }
+        }
+    }
 
-	return SceneChannelAnimator::initAnimation( task, time_ms, dmx_packet );
+    return SceneChannelAnimator::initAnimation( task, time_ms, dmx_packet );
 }

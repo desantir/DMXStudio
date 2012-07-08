@@ -24,29 +24,29 @@ MA 02111-1307, USA.
 #pragma once
 
 /**
-	Open DMX driver class utilizing FTDI USB to Serial port
+    Open DMX driver class utilizing FTDI USB to Serial port
 */
 
 #include "abstractdmxdriver.h"
 #include "ftd2xx.h"
 
 class OpenDMXDriver :
-	public AbstractDMXDriver
+    public AbstractDMXDriver
 {
-	FT_HANDLE m_fthandle;
+    FT_HANDLE m_fthandle;
 
 public:
-	OpenDMXDriver(void);
-	virtual ~OpenDMXDriver(void);
+    OpenDMXDriver(void);
+    virtual ~OpenDMXDriver(void);
 
-	DMX_STATUS display_dmx_info( void );
+    DMX_STATUS display_dmx_info( void );
 
 protected:
-	virtual DMX_STATUS dmx_send( unsigned length, BYTE * packet );
-	virtual DMX_STATUS dmx_open( const char * connection_info );
-	virtual DMX_STATUS dmx_close( void );
+    virtual DMX_STATUS dmx_send( unsigned length, BYTE * packet );
+    virtual DMX_STATUS dmx_open( const char * connection_info );
+    virtual DMX_STATUS dmx_close( void );
 
 private:
-	int map_name_to_id( const char * com_port_name );
+    int map_name_to_id( const char * com_port_name );
 };
 

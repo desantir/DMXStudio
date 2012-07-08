@@ -39,93 +39,93 @@ TextIO::~TextIO(void)
 //
 void TextIO::printf( const char *format, ... )
 {
-	va_list args;
-	va_start( args, format );
-	vprintf( format, args );
-	va_end( args );
+    va_list args;
+    va_start( args, format );
+    vprintf( format, args );
+    va_end( args );
 }
 
 // ----------------------------------------------------------------------------
 //
 void TextIO::tokenize( CString& str ) {
-	int curPos = 0;
+    int curPos = 0;
 
-	m_tokens.clear();
+    m_tokens.clear();
 
-	do {
-		CString resToken = str.Tokenize( _T(" \t"), curPos );
-		if ( resToken.IsEmpty() )
-			break;
+    do {
+        CString resToken = str.Tokenize( _T(" \t"), curPos );
+        if ( resToken.IsEmpty() )
+            break;
 
-		m_tokens.push_back( resToken );
-	} 
-	while ( true );
+        m_tokens.push_back( resToken );
+    } 
+    while ( true );
 }
 
 // ----------------------------------------------------------------------------
 //
 bool TextIO::nextToken( CString& str ) {
-	if ( !haveTokens() )
-		return false;
+    if ( !haveTokens() )
+        return false;
 
-	str = m_tokens[0];
-	m_tokens.erase( m_tokens.begin() );
-	return true;
+    str = m_tokens[0];
+    m_tokens.erase( m_tokens.begin() );
+    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
 int TextIO::getString( CString& result, bool password ) {
-	if  ( nextToken( result ) )
-		return INPUT_SUCCESS;
+    if  ( nextToken( result ) )
+        return INPUT_SUCCESS;
 
-	char buffer[80];
-	int retcode = get_line( buffer, sizeof(buffer), password );
-	if ( retcode != INPUT_SUCCESS && retcode != INPUT_SUCCESS_AND_EXIT )
-		return retcode;
+    char buffer[80];
+    int retcode = get_line( buffer, sizeof(buffer), password );
+    if ( retcode != INPUT_SUCCESS && retcode != INPUT_SUCCESS_AND_EXIT )
+        return retcode;
 
-	result = buffer;
+    result = buffer;
 
-	return retcode;
+    return retcode;
 }
 
 
 // ----------------------------------------------------------------------------
 //
 int TextIO::get_line( char * buffer, int length, bool password ) {
-	int index = 0;
-	buffer[0] = '\0';
+    int index = 0;
+    buffer[0] = '\0';
 
-	while ( true ) {
-		int ch = _getch();
+    while ( true ) {
+        int ch = _getch();
 
-		switch ( ch ){
-			case 224:
-				ch = _getch();
-				//printf( "%d\n", ch );
-				return ch;
+        switch ( ch ){
+            case 224:
+                ch = _getch();
+                //printf( "%d\n", ch );
+                return ch;
 
-			case 8:
-				if ( index > 0 ) {
-					buffer[--index] = '\0';
-					printf( "\x08 \x08" );
-				}
-				break;
+            case 8:
+                if ( index > 0 ) {
+                    buffer[--index] = '\0';
+                    printf( "\x08 \x08" );
+                }
+                break;
 
-			case INPUT_EXIT:
-			case INPUT_SUCCESS:
+            case INPUT_EXIT:
+            case INPUT_SUCCESS:
             case INPUT_SUCCESS_AND_EXIT:
-				return ch;
+                return ch;
 
-			default:
-				if ( index < length-1 ) {
-					buffer[index++ ] = ch;
-					buffer[index] = '\0';
-					printf( "%c", password ? '*' : ch );
-				}
-				break;
-		}
-	}
+            default:
+                if ( index < length-1 ) {
+                    buffer[index++ ] = ch;
+                    buffer[index] = '\0';
+                    printf( "%c", password ? '*' : ch );
+                }
+                break;
+        }
+    }
 
-	return -1;
+    return -1;
 }

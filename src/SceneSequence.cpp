@@ -28,9 +28,9 @@ const char* SceneSequence::className = "FixtureSequencer";
 // ----------------------------------------------------------------------------
 //
 SceneSequence::SceneSequence( UID animation_uid, AnimationSignal signal, UIDArray actors ) :
-	AbstractAnimation( animation_uid, signal )
+    AbstractAnimation( animation_uid, signal )
 {
-	m_actors = actors;
+    m_actors = actors;
 }
 
 // ----------------------------------------------------------------------------
@@ -42,7 +42,7 @@ SceneSequence::~SceneSequence(void)
 // ----------------------------------------------------------------------------
 //
 AbstractAnimation* SceneSequence::clone() {
-	return new SceneSequence( m_uid, m_signal, m_actors );
+    return new SceneSequence( m_uid, m_signal, m_actors );
 }
 
 // ----------------------------------------------------------------------------
@@ -55,62 +55,62 @@ void SceneSequence::stopAnimation( )
 //
 void SceneSequence::initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet )
 {
-	m_animation_task = task;
+    m_animation_task = task;
 
-	m_running_actors = populateActors( m_animation_task->getScene() );
+    m_running_actors = populateActors( m_animation_task->getScene() );
 
-	for ( unsigned i=0; i < m_running_actors.size(); i++ )
-		unselectActor( i, dmx_packet );
+    for ( unsigned i=0; i < m_running_actors.size(); i++ )
+        unselectActor( i, dmx_packet );
 
-	m_current_actor = 0;
+    m_current_actor = 0;
 
-	selectActor( m_current_actor, dmx_packet );
+    selectActor( m_current_actor, dmx_packet );
 
-	m_next_actor_ms = time_ms + m_signal.getSampleRateMS();
+    m_next_actor_ms = time_ms + m_signal.getSampleRateMS();
 }
 
 // ----------------------------------------------------------------------------
 //
 bool SceneSequence::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
 {
-	if ( time_ms < m_next_actor_ms )
-		return false;
+    if ( time_ms < m_next_actor_ms )
+        return false;
 
-	unselectActor( m_current_actor, dmx_packet );
+    unselectActor( m_current_actor, dmx_packet );
 
-	if ( ++m_current_actor == m_running_actors.size() )
-		m_current_actor = 0;
+    if ( ++m_current_actor == m_running_actors.size() )
+        m_current_actor = 0;
 
-	selectActor( m_current_actor, dmx_packet );
+    selectActor( m_current_actor, dmx_packet );
 
-	m_next_actor_ms = time_ms + m_signal.getSampleRateMS();
+    m_next_actor_ms = time_ms + m_signal.getSampleRateMS();
 
-	return true;
+    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
 void SceneSequence::unselectActor( unsigned actor, BYTE* dmx_packet )
 {
-	Fixture* pf = m_animation_task->getFixture( m_running_actors[actor] );
+    Fixture* pf = m_animation_task->getFixture( m_running_actors[actor] );
 
-	for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
-		if ( pf->getChannel( channel )->canBlackout() )
-			m_animation_task->loadChannel( dmx_packet, pf, channel, 0 );
-	}
+    for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+        if ( pf->getChannel( channel )->canBlackout() )
+            m_animation_task->loadChannel( dmx_packet, pf, channel, 0 );
+    }
 }
 
 // ----------------------------------------------------------------------------
 //
 void SceneSequence::selectActor( unsigned actor, BYTE* dmx_packet )
 {
-	Fixture* pf = m_animation_task->getFixture( m_running_actors[actor] );
-	SceneActor* ap = m_animation_task->getScene()->getActor( m_running_actors[actor] );
+    Fixture* pf = m_animation_task->getFixture( m_running_actors[actor] );
+    SceneActor* ap = m_animation_task->getScene()->getActor( m_running_actors[actor] );
 
-	for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
-		if ( pf->getChannel( channel )->canBlackout() ) {
-			BYTE value = ap->getChannelValue( channel );
-			m_animation_task->loadChannel( dmx_packet, pf, channel, value );
-		}
-	}
+    for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+        if ( pf->getChannel( channel )->canBlackout() ) {
+            BYTE value = ap->getChannelValue( channel );
+            m_animation_task->loadChannel( dmx_packet, pf, channel, value );
+        }
+    }
 }

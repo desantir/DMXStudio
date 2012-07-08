@@ -63,21 +63,21 @@ typedef std::vector<UID> UIDArray;
 typedef std::vector<LPCSTR> LPCSTRArray;
 
 inline UIDSet UIDArrayToSet( UIDArray& uid_array ) {
-	UIDSet uid_set;
-	uid_set.insert( uid_array.begin(), uid_array.end() );
-	return uid_set;
+    UIDSet uid_set;
+    uid_set.insert( uid_array.begin(), uid_array.end() );
+    return uid_set;
 }
 
 template <class T, class R>
 R maxKeyValue( T& map ) {
-	R maxValue = 0;
+    R maxValue = 0;
 
-	for ( T::iterator it=map.begin(); it != map.end(); it++ ) {
-		if ( it->first > maxValue )
-			maxValue = it->first;
-	}
+    for ( T::iterator it=map.begin(); it != map.end(); it++ ) {
+        if ( it->first > maxValue )
+            maxValue = it->first;
+    }
 
-	return maxValue;
+    return maxValue;
 }
 
 class Venue;

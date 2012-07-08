@@ -139,7 +139,7 @@ UINT DMXHttpServer::run()
             if (retCode != NO_ERROR)
                 throw StudioException( "HttpAddUrl failed with %lu", retCode );
 
-	        DMXStudio::log_status( "HTTP request listener started on '%s'", listener_url );
+            DMXStudio::log_status( "HTTP request listener started on '%s'", listener_url );
         }
 
         createThreadPool( 2, hReqQueue );
@@ -162,7 +162,7 @@ UINT DMXHttpServer::run()
     HttpRemoveUrl( hReqQueue, CA2W(listener_url) );
     HttpTerminate( HTTP_INITIALIZE_SERVER, 0 );
 
-	DMXStudio::log_status( "HTTP request listener stopped" );
+    DMXStudio::log_status( "HTTP request listener stopped" );
 
     return 0;
 }
@@ -221,7 +221,7 @@ UINT HttpWorkerThread::run()
     HTTP_REQUEST_ID     requestId;
     OVERLAPPED          overlapped;
 
-	DMXStudio::log_status( "HTTP worker thread %d started", m_worker_id );
+    DMXStudio::log_status( "HTTP worker thread %d started", m_worker_id );
 
     CEvent event;
 
@@ -328,7 +328,7 @@ DWORD HttpWorkerThread::sendFile( LPCSTR file_name, IRequestHandler* handler )
     FILE* pFile = NULL;
     fopen_s( &pFile, full_file_path, "rb" );
     if ( pFile == NULL ) {
-	    DMXStudio::log( "%d: HTTP file not found (404) '%s'", m_worker_id, (LPCSTR)full_file_path );
+        DMXStudio::log( "%d: HTTP file not found (404) '%s'", m_worker_id, (LPCSTR)full_file_path );
         return error_404( );
     }
 
@@ -544,7 +544,7 @@ DWORD HttpWorkerThread::processGetRequest()
 {
     CString path( CW2A( m_pRequest->CookedUrl.pAbsPath ) );
 
-	DMXStudio::log( "WORKER %d: HTTP GET request '%s'", m_worker_id, (LPCSTR)path );
+    DMXStudio::log( "WORKER %d: HTTP GET request '%s'", m_worker_id, (LPCSTR)path );
 
     IRequestHandler* handler = m_httpServer->getHandler( path, getRequestPort() );
     if ( handler != NULL )
@@ -564,7 +564,7 @@ DWORD HttpWorkerThread::processPostRequest()
     DWORD           result;
     
     CString path( CW2A( m_pRequest->CookedUrl.pAbsPath ) );
-	DMXStudio::log( "WORKER %d: HTTP POST request '%s'", m_worker_id, (LPCSTR)path );
+    DMXStudio::log( "WORKER %d: HTTP POST request '%s'", m_worker_id, (LPCSTR)path );
 
     pEntityBuffer = (LPBYTE)ALLOC_MEM( EntityBufferLength );
     if (pEntityBuffer == NULL) 

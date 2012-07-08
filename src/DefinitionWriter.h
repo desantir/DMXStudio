@@ -42,39 +42,39 @@ public:
     void visit( ChannelAngle* channel_angle );
     void visit( ChannelValueRange* range );
     
-	template <class T>
-	void visit_object( TiXmlElement& parent, T& object ) {
+    template <class T>
+    void visit_object( TiXmlElement& parent, T& object ) {
         push_parent( parent );
-		object.accept( this );
+        object.accept( this );
         pop_parent( );
-	}
+    }
 
-	template <class T>
-	void visit_map( TiXmlElement& parent, T& list ) {
+    template <class T>
+    void visit_map( TiXmlElement& parent, T& list ) {
         push_parent( parent );
-		for ( T::iterator it=list.begin();
-			  it != list.end(); it++ )
-			it->second.accept( this );
+        for ( T::iterator it=list.begin();
+              it != list.end(); it++ )
+            it->second.accept( this );
         pop_parent( );
-	}
+    }
 
-	template <class T>
-	void visit_ptr_array( TiXmlElement &container, T& list ) {
+    template <class T>
+    void visit_ptr_array( TiXmlElement &container, T& list ) {
         push_parent( container );
-		for ( T::iterator it=list.begin();
-			  it != list.end(); it++ )
-			(*it)->accept( this );
+        for ( T::iterator it=list.begin();
+              it != list.end(); it++ )
+            (*it)->accept( this );
         pop_parent( );
-	}
+    }
 
-	template <class T>
-	void visit_array( TiXmlElement &container, T& list ) {
+    template <class T>
+    void visit_array( TiXmlElement &container, T& list ) {
         push_parent( container );
-		for ( T::iterator it=list.begin();
-			  it != list.end(); it++ )
-			(*it).accept( this );
+        for ( T::iterator it=list.begin();
+              it != list.end(); it++ )
+            (*it).accept( this );
         pop_parent( );
-	}
+    }
 
 protected:
     void push_parent( TiXmlElement& parent ) {

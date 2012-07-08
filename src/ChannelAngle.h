@@ -31,25 +31,25 @@ class ChannelAngle
     friend class DefinitionWriter;
     friend class DefinitionReader;
 
-	int			m_angle;			// Angle (degrees)
-	BYTE		m_value;			// DMX channel value
+    int			m_angle;			// Angle (degrees)
+    BYTE		m_value;			// DMX channel value
 
 public:
-	ChannelAngle() {}
-	ChannelAngle( int angle, BYTE channel_value );
-	~ChannelAngle(void);
+    ChannelAngle() {}
+    ChannelAngle( int angle, BYTE channel_value );
+    ~ChannelAngle(void);
 
     void accept( IDefinitionVisitor* visitor) {
         visitor->visit(this);
     }
 
-	int getAngle() const {
-		return m_angle;
-	}
+    int getAngle() const {
+        return m_angle;
+    }
 
-	BYTE getValue() const {
-		return m_value;
-	}
+    BYTE getValue() const {
+        return m_value;
+    }
 };
 
 typedef std::vector<ChannelAngle> ChannelAngleArray;

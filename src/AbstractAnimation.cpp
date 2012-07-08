@@ -34,40 +34,40 @@ MA 02111-1307, USA.
 // ----------------------------------------------------------------------------
 //
 CString AbstractAnimation::getSynopsis(void) {
-	CString synopsis;
+    CString synopsis;
 
-	synopsis.Format( "UIDs( " );
-	for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); it++ )
-		synopsis.AppendFormat( "%lu ", (*it) );
-	synopsis += ")";
+    synopsis.Format( "UIDs( " );
+    for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); it++ )
+        synopsis.AppendFormat( "%lu ", (*it) );
+    synopsis += ")";
 
-	return synopsis;
+    return synopsis;
 }
 
 // ----------------------------------------------------------------------------
 //
 UIDArray AbstractAnimation::populateActors( Scene* scene ) {
-	UIDArray resolved_actors;
+    UIDArray resolved_actors;
 
-	if ( m_actors.size() > 0 ) {
-		resolved_actors = m_actors;
-	}
-	else {
-		ActorPtrArray actors = scene->getActors();
-		for ( ActorPtrArray::iterator it=actors.begin(); it !=actors.end(); it++ )
-			resolved_actors.push_back( (*it)->getPFUID() );
-	}
+    if ( m_actors.size() > 0 ) {
+        resolved_actors = m_actors;
+    }
+    else {
+        ActorPtrArray actors = scene->getActors();
+        for ( ActorPtrArray::iterator it=actors.begin(); it !=actors.end(); it++ )
+            resolved_actors.push_back( (*it)->getPFUID() );
+    }
 
-	return resolved_actors;
+    return resolved_actors;
 }
 
 // ----------------------------------------------------------------------------
 //
 void AbstractAnimation::removeActor( UID actor ) {
-	for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); ) {
-		if ( (*it) == actor )
-			it = m_actors.erase( it );
-		else
-			it++;
-	}
+    for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); ) {
+        if ( (*it) == actor )
+            it = m_actors.erase( it );
+        else
+            it++;
+    }
 }

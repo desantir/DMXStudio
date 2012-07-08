@@ -65,17 +65,17 @@ class MusicWatcher : public Threadable
     Venue*                  m_venue;
     MusicPlayer*            m_player;
 
-	MusicWatcher(MusicWatcher& other) {}
-	MusicWatcher& operator=(MusicWatcher& rhs) { return *this; }
+    MusicWatcher(MusicWatcher& other) {}
+    MusicWatcher& operator=(MusicWatcher& rhs) { return *this; }
 
 public:
     MusicWatcher( MusicPlayer* player, Venue* venue );
     ~MusicWatcher(void);
 
-	bool start();
-	bool stop();
+    bool start();
+    bool stop();
 
 protected:
-	UINT run(void);
+    UINT run(void);
 };
 

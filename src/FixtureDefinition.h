@@ -28,17 +28,17 @@ MA 02111-1307, USA.
 #include "IDefinitionVisitor.h"
 
 typedef enum fixture_type {
-	FIXT_UNKNOWN = 0,
-	FIXT_PAR = 1,
-	FIXT_SPOT = 2,
-	FIXT_STROBE = 3,
-	FIXT_LASER = 4,
-	FIXT_FOG = 5,
-	FIXT_EFFECT = 6,			// EFX
-	FIXT_WASH = 7,
-	FIXT_DIMMER = 8,
-	FIXT_DOTS = 9,
-	FIXT_H2O = 10,
+    FIXT_UNKNOWN = 0,
+    FIXT_PAR = 1,
+    FIXT_SPOT = 2,
+    FIXT_STROBE = 3,
+    FIXT_LASER = 4,
+    FIXT_FOG = 5,
+    FIXT_EFFECT = 6,			// EFX
+    FIXT_WASH = 7,
+    FIXT_DIMMER = 8,
+    FIXT_DOTS = 9,
+    FIXT_H2O = 10,
     FIXT_NUM_TYPES
 } FixtureType;
 
@@ -64,30 +64,30 @@ class FixtureDefinition
 
     CString         m_source_filename;      // Track source file in case we need it
 
-	FUID			m_fuid;
-	CString	        m_manufacturer;
-	CString	        m_model;
-	FixtureType		m_type;
-	bool			m_can_tilt;
-	bool			m_can_pan;
+    FUID			m_fuid;
+    CString	        m_manufacturer;
+    CString	        m_model;
+    FixtureType		m_type;
+    bool			m_can_tilt;
+    bool			m_can_pan;
     bool            m_can_whiteout;
 
-	ChannelArray	m_channels;				// Ordered list of channels
+    ChannelArray	m_channels;				// Ordered list of channels
 
 public:
     static void readFixtureDefinitions();
-	static FixtureDefinition* lookupFixture( FUID fuid );
-	static FixtureDefinitionMap FixtureDefinitions;
+    static FixtureDefinition* lookupFixture( FUID fuid );
+    static FixtureDefinitionMap FixtureDefinitions;
     static FixtureDefinitionHierarchy FixtureDefinition::FixtureDefinitionHierarchy;
 
     static LPCSTRArray getUniqueManufacturers();
     static LPCSTRArray getUniqueModels( LPCSTR manufacturer );
     static FixturePersonalityToFUID getModelPersonalities( LPCSTR manufacturer, LPCSTR model );
 
-	FixtureDefinition( FUID fuid=0, const char *manufacturer="", const char *model="", 
-					   FixtureType type=FIXT_UNKNOWN );
+    FixtureDefinition( FUID fuid=0, const char *manufacturer="", const char *model="", 
+                       FixtureType type=FIXT_UNKNOWN );
 
-	virtual ~FixtureDefinition(void);
+    virtual ~FixtureDefinition(void);
 
     void accept( IDefinitionVisitor* visitor) {
         visitor->visit(this);
@@ -97,55 +97,55 @@ public:
         m_source_filename = source_filename;
     }
 
-	FUID getFUID( ) const {
-		return m_fuid;
-	}
+    FUID getFUID( ) const {
+        return m_fuid;
+    }
 
-	const char * getManufacturer( ) const {
-		return m_manufacturer;
-	}
+    const char * getManufacturer( ) const {
+        return m_manufacturer;
+    }
 
-	const char * getModel( ) const {
-		return m_model;
-	}
+    const char * getModel( ) const {
+        return m_model;
+    }
 
-	FixtureType getType() const {
-		return m_type;
-	}
+    FixtureType getType() const {
+        return m_type;
+    }
 
-	bool canPan() const {
-		return m_can_pan;
-	}
+    bool canPan() const {
+        return m_can_pan;
+    }
 
-	bool canTilt() const {
-		return m_can_tilt;
-	}
+    bool canTilt() const {
+        return m_can_tilt;
+    }
 
     bool canWhiteout() const { 
         return m_can_whiteout;
     }
 
-	size_t getNumChannels() const {
-		return m_channels.size();
-	}
+    size_t getNumChannels() const {
+        return m_channels.size();
+    }
 
-	Channel* getChannel( size_t offset ) {
-		if ( offset >= m_channels.size() )
-			return NULL;
-		return &m_channels[offset];
-	}
+    Channel* getChannel( size_t offset ) {
+        if ( offset >= m_channels.size() )
+            return NULL;
+        return &m_channels[offset];
+    }
 
-	void print() {
-		printf( "FUID %ld: %s %s type=%d tilt=%d pan=%d\n", 
-			m_fuid, (const char*)m_manufacturer, (const char*)m_model, m_type, m_can_tilt, m_can_pan );
-		
-		ChannelArray::iterator it;
+    void print() {
+        printf( "FUID %ld: %s %s type=%d tilt=%d pan=%d\n", 
+            m_fuid, (const char*)m_manufacturer, (const char*)m_model, m_type, m_can_tilt, m_can_pan );
+        
+        ChannelArray::iterator it;
 
-		for ( it=m_channels.begin(); it != m_channels.end(); it++ ) {
-			Channel& ch = *it;
-			printf ( "Channel %d: %s type=%d\n", ch.getOffset(), ch.getName(), ch.getType() );
-		}
-	}
+        for ( it=m_channels.begin(); it != m_channels.end(); it++ ) {
+            Channel& ch = *it;
+            printf ( "Channel %d: %s type=%d\n", ch.getOffset(), ch.getName(), ch.getType() );
+        }
+    }
 
 private:
     void chooseCapabilities( void );

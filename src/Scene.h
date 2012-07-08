@@ -34,70 +34,70 @@ class Scene : public DObject
     friend class VenueWriter;
     friend class VenueReader;
 
-	SceneNumber			m_scene_number;
-	ActorMap			m_actors;						// "Actors" in this scene
+    SceneNumber			m_scene_number;
+    ActorMap			m_actors;						// "Actors" in this scene
 
-	AnimationPtrArray	m_animations;
+    AnimationPtrArray	m_animations;
 
-	void copy_animations( Scene& rhs );
+    void copy_animations( Scene& rhs );
 
 public:
-	Scene() {}
-	Scene( Scene& other );
-	Scene( UID uid, SceneNumber scene_number, const char * name = NULL, const char *description = NULL );
-	~Scene(void);
+    Scene() {}
+    Scene( Scene& other );
+    Scene( UID uid, SceneNumber scene_number, const char * name = NULL, const char *description = NULL );
+    ~Scene(void);
 
-	Scene& operator=( Scene& rhs );
+    Scene& operator=( Scene& rhs );
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
 
-	void addActor( SceneActor& actor );
-	bool removeActor( UID uid );
-	SceneActor* getActor( UID uid );
-	ActorPtrArray getActors( void );
-	UIDArray getActorUIDs( void );
+    void addActor( SceneActor& actor );
+    bool removeActor( UID uid );
+    SceneActor* getActor( UID uid );
+    ActorPtrArray getActors( void );
+    UIDArray getActorUIDs( void );
 
-	size_t getNumActors( void ) const {
-		return m_actors.size();
-	}
+    size_t getNumActors( void ) const {
+        return m_actors.size();
+    }
 
-	void removeAllActors() {
-		m_actors.clear();
-	}
+    void removeAllActors() {
+        m_actors.clear();
+    }
 
-	SceneNumber getSceneNumber( void ) const {
-		return m_scene_number;
-	}
-	void setSceneNumber( SceneNumber scene_number ) {
-		m_scene_number = scene_number;
-	}
+    SceneNumber getSceneNumber( void ) const {
+        return m_scene_number;
+    }
+    void setSceneNumber( SceneNumber scene_number ) {
+        m_scene_number = scene_number;
+    }
 
-	bool hasAnimations() const {
-		return m_animations.size() > 0;
-	}
+    bool hasAnimations() const {
+        return m_animations.size() > 0;
+    }
 
-	size_t getNumAnimations() const {
-		return m_animations.size();
-	}
+    size_t getNumAnimations() const {
+        return m_animations.size();
+    }
 
-	AbstractAnimation* getAnimation( size_t animation_num );
-	void addAnimation( AbstractAnimation* animation );
-	void removeAnimation( UID animation_uid );
-	void insertAnimation( unsigned animation_num, AbstractAnimation* animation );
-	void clearAnimations( );
+    AbstractAnimation* getAnimation( size_t animation_num );
+    void addAnimation( AbstractAnimation* animation );
+    void removeAnimation( UID animation_uid );
+    void insertAnimation( unsigned animation_num, AbstractAnimation* animation );
+    void clearAnimations( );
 
-	AbstractAnimation* getAnimation( UID animation_uid ) {
-		for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
-			if ( (*it)->getUID() == animation_uid )
-				return (*it);
-		return NULL;
-	}
+    AbstractAnimation* getAnimation( UID animation_uid ) {
+        for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
+            if ( (*it)->getUID() == animation_uid )
+                return (*it);
+        return NULL;
+    }
 
-	AnimationPtrArray& animations() {
-		return m_animations;
-	}
+    AnimationPtrArray& animations() {
+        return m_animations;
+    }
 };
 
 typedef std::map<UID,Scene> SceneMap;

@@ -142,10 +142,10 @@ void DMXTextUI::listTracks()
 {
     VERIFY_PLAYER_LOGGED_IN;
 
-	PlaylistField playlist_field( "Playlist" );
+    PlaylistField playlist_field( "Playlist" );
 
-	Form form( &m_text_io );
-	form.add( playlist_field );
+    Form form( &m_text_io );
+    form.add( playlist_field );
 
     if ( form.play() ) {
         PlayerItems tracks;
@@ -250,10 +250,10 @@ void DMXTextUI::selectPlaylist( bool queue )
 {
     VERIFY_PLAYER_LOGGED_IN;
 
-	PlaylistField playlist_field( "Playlist" );
+    PlaylistField playlist_field( "Playlist" );
 
-	Form form( &m_text_io );
-	form.add( playlist_field );
+    Form form( &m_text_io );
+    form.add( playlist_field );
 
     if ( form.play() ) {
         studio.getMusicPlayer()->playAllTracks( playlist_field.getPlaylist(), queue );
@@ -264,26 +264,26 @@ void DMXTextUI::selectPlaylist( bool queue )
 //
 void DMXTextUI::selectTrack( bool queue )
 {
-	PlaylistField playlist_field( "Playlist" );
+    PlaylistField playlist_field( "Playlist" );
     TrackListField tracks_field( "Track" );
 
-	class MyForm : public Form {
-		void fieldLeaveNotify( size_t field_num ) {
-			if ( field_num == 0 ) {
-				PlaylistField* playlist_field = getField<PlaylistField>( 0 );
-				TrackListField* tracks_field = getField<TrackListField>( 1 );
+    class MyForm : public Form {
+        void fieldLeaveNotify( size_t field_num ) {
+            if ( field_num == 0 ) {
+                PlaylistField* playlist_field = getField<PlaylistField>( 0 );
+                TrackListField* tracks_field = getField<TrackListField>( 1 );
                 tracks_field->setPlaylist( playlist_field->getPlaylist() );
-			}
-		}
+            }
+        }
 
-	public:
-		MyForm( TextIO* input_stream ) :
+    public:
+        MyForm( TextIO* input_stream ) :
             Form( input_stream ) {}
-	};
+    };
 
-	MyForm form( &m_text_io );
-	form.add( playlist_field );
-	form.add( tracks_field );
+    MyForm form( &m_text_io );
+    form.add( playlist_field );
+    form.add( tracks_field );
 
     if ( form.play() ) {
         studio.getMusicPlayer()->playTrack( tracks_field.getTrack(), queue );
@@ -303,44 +303,44 @@ void DMXTextUI::musicMapTrack(void)
 {
     VERIFY_PLAYER_LOGGED_IN;
 
-	class MyForm : public Form {
+    class MyForm : public Form {
         Venue*              m_venue;
 
         NumberedListField   m_map_target_field;
-	    PlaylistField       m_playlist_field;
+        PlaylistField       m_playlist_field;
         TrackListField      m_tracks_field;
         NumberedListField   m_map_to_field;
         ChaseSelectField    m_chase_select_field;
         SceneSelectField    m_scene_select_field;
 
-		void fieldLeaveNotify( size_t field_num ) {
-		    if ( getField<Field>(field_num) == &m_map_target_field ) {
+        void fieldLeaveNotify( size_t field_num ) {
+            if ( getField<Field>(field_num) == &m_map_target_field ) {
                 m_playlist_field.setHidden( m_map_target_field.getListValue() != 1 );
                 m_tracks_field.setHidden( m_map_target_field.getListValue() != 1 );
             }
-		    else if ( getField<Field>(field_num) == &m_map_to_field ) {
+            else if ( getField<Field>(field_num) == &m_map_to_field ) {
                 m_chase_select_field.setHidden( m_map_to_field.getListValue() != 2 );
                 m_scene_select_field.setHidden( m_map_to_field.getListValue() != 1 );
             }
             else if ( getField<Field>(field_num) == &m_playlist_field ) {
                 m_tracks_field.setPlaylist( m_playlist_field.getPlaylist() );
             }
-		}
+        }
 
-	public:
-		MyForm( TextIO* input_stream, Venue* venue ) :
+    public:
+        MyForm( TextIO* input_stream, Venue* venue ) :
             Form( input_stream, "Map Track To Scene" ),
             m_venue( venue ),
             m_map_target_field( "Map" ),
-	        m_playlist_field( "Playlist" ),
+            m_playlist_field( "Playlist" ),
             m_tracks_field( "Track" ),
             m_map_to_field( "Show" ),
             m_chase_select_field( "Chase", venue ),
             m_scene_select_field( "Scene", venue )          
         {
-	        m_map_target_field.addKeyValue( 1, "Track" );
-	        m_map_target_field.addKeyValue( 2, "Silence" );
-	        m_map_target_field.addKeyValue( 3, "Unmapped tracks" );
+            m_map_target_field.addKeyValue( 1, "Track" );
+            m_map_target_field.addKeyValue( 2, "Silence" );
+            m_map_target_field.addKeyValue( 3, "Unmapped tracks" );
             m_map_target_field.setDefaultListValue( 1 );
 
             m_map_to_field.addKeyValue( 1, "Scene" );
@@ -350,7 +350,7 @@ void DMXTextUI::musicMapTrack(void)
             m_map_to_field.setDefaultListValue( 1 );
 
             add( m_map_target_field );
-	        add( m_playlist_field );
+            add( m_playlist_field );
             add( m_tracks_field );
             add( m_map_to_field );
             add( m_chase_select_field );
@@ -382,9 +382,9 @@ void DMXTextUI::musicMapTrack(void)
             MusicSceneSelector music_scene_selector( track_full_name, type, uid );
             m_venue->addMusicMapping( music_scene_selector );
         }
-	};
+    };
 
-	MyForm form( &m_text_io, getVenue() );
+    MyForm form( &m_text_io, getVenue() );
     if ( form.play() ) {
         form.addMusicMapping();
     }
@@ -396,26 +396,26 @@ void DMXTextUI::musicRemoveMapping(void)
 {
     VERIFY_PLAYER_LOGGED_IN;
 
-	PlaylistField playlist_field( "Playlist" );
+    PlaylistField playlist_field( "Playlist" );
     TrackListField tracks_field( "Track" );
 
-	class MyForm : public Form {
-		void fieldLeaveNotify( size_t field_num ) {
-			if ( field_num == 0 ) {
-				PlaylistField* playlist_field = getField<PlaylistField>( 0 );
-				TrackListField* tracks_field = getField<TrackListField>( 1 );
+    class MyForm : public Form {
+        void fieldLeaveNotify( size_t field_num ) {
+            if ( field_num == 0 ) {
+                PlaylistField* playlist_field = getField<PlaylistField>( 0 );
+                TrackListField* tracks_field = getField<TrackListField>( 1 );
                 tracks_field->setPlaylist( playlist_field->getPlaylist() );
-			}
-		}
+            }
+        }
 
-	public:
-		MyForm( TextIO* input_stream ) :
+    public:
+        MyForm( TextIO* input_stream ) :
             Form( input_stream, "Remove Track Mapping" ) {}
-	};
+    };
 
-	MyForm form( &m_text_io );
-	form.add( playlist_field );
-	form.add( tracks_field );
+    MyForm form( &m_text_io );
+    form.add( playlist_field );
+    form.add( tracks_field );
 
     if ( form.play() ) {
         getVenue()->deleteMusicMapping( tracks_field.getTrackFullName() );

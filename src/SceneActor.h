@@ -31,45 +31,45 @@ class SceneActor
     friend class VenueWriter;
     friend class VenueReader;
 
-	UID				m_pfuid;									// Physical fixture UID
-	size_t			m_channels;
+    UID				m_pfuid;									// Physical fixture UID
+    size_t			m_channels;
 
     // m_channel_values always contains unmapped fixture channel values. For
     // example, if a fixture maps channel 3 to channel 0, the value for physical
     // channel 3 will be stored in m_channel_values[0].  The value will be 
     // remapped from channel 0 to 3 when added to the DMX packet.
 
-	BYTE			m_channel_values[DMX_PACKET_SIZE];			// Not worth a container for this
+    BYTE			m_channel_values[DMX_PACKET_SIZE];			// Not worth a container for this
 
 public:
-	SceneActor(void) :
-		m_pfuid(0),
-		m_channels(0) { reset_channel_values(); }
+    SceneActor(void) :
+        m_pfuid(0),
+        m_channels(0) { reset_channel_values(); }
 
-	SceneActor( Fixture * );
-	~SceneActor(void);
+    SceneActor( Fixture * );
+    ~SceneActor(void);
 
-	void reset_channel_values( void ) {
-		memset( m_channel_values, 0, sizeof(m_channel_values) );
-	}
+    void reset_channel_values( void ) {
+        memset( m_channel_values, 0, sizeof(m_channel_values) );
+    }
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
 
-	UID getPFUID() const {
-		return m_pfuid;
-	}
+    UID getPFUID() const {
+        return m_pfuid;
+    }
 
-	BYTE getChannelValue( channel_t channel ) {
-		STUDIO_ASSERT( channel < m_channels, "Channel out of range" );
-		return m_channel_values[ channel ];
-	}
+    BYTE getChannelValue( channel_t channel ) {
+        STUDIO_ASSERT( channel < m_channels, "Channel out of range" );
+        return m_channel_values[ channel ];
+    }
 
-	void setChannelValue( channel_t channel, BYTE value ) {
-		STUDIO_ASSERT( channel < m_channels, "Channel out of range" );
-		m_channel_values[ channel ] = value;
-	}
+    void setChannelValue( channel_t channel, BYTE value ) {
+        STUDIO_ASSERT( channel < m_channels, "Channel out of range" );
+        m_channel_values[ channel ] = value;
+    }
 };
 
 typedef std::map< UID, SceneActor > ActorMap;	

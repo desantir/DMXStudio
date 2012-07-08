@@ -39,5 +39,5 @@ public:
     virtual void visit( ChannelValueRange* cvr ) = 0;
 
 protected:
-	virtual ~IDefinitionVisitor() {}
+    virtual ~IDefinitionVisitor() {}
 };

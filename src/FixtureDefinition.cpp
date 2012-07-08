@@ -40,16 +40,16 @@ static FixtureTypeToNameMap fixtureTypeToNameMap;
 
 static int populateFixtureTypes() {
     fixtureTypeToNameMap[FIXT_UNKNOWN] = "Unknown";
-	fixtureTypeToNameMap[FIXT_PAR] = "Par";
-	fixtureTypeToNameMap[FIXT_SPOT] = "Spot";
-	fixtureTypeToNameMap[FIXT_STROBE] = "Strobe";
-	fixtureTypeToNameMap[FIXT_LASER] = "Laser";
-	fixtureTypeToNameMap[FIXT_FOG] = "Fog";
-	fixtureTypeToNameMap[FIXT_EFFECT] = "Effect";		
-	fixtureTypeToNameMap[FIXT_WASH] = "Wash";
-	fixtureTypeToNameMap[FIXT_DIMMER] = "Dimmer";
-	fixtureTypeToNameMap[FIXT_DOTS] = "Dots";
-	fixtureTypeToNameMap[FIXT_H2O] = "H2O";
+    fixtureTypeToNameMap[FIXT_PAR] = "Par";
+    fixtureTypeToNameMap[FIXT_SPOT] = "Spot";
+    fixtureTypeToNameMap[FIXT_STROBE] = "Strobe";
+    fixtureTypeToNameMap[FIXT_LASER] = "Laser";
+    fixtureTypeToNameMap[FIXT_FOG] = "Fog";
+    fixtureTypeToNameMap[FIXT_EFFECT] = "Effect";		
+    fixtureTypeToNameMap[FIXT_WASH] = "Wash";
+    fixtureTypeToNameMap[FIXT_DIMMER] = "Dimmer";
+    fixtureTypeToNameMap[FIXT_DOTS] = "Dots";
+    fixtureTypeToNameMap[FIXT_H2O] = "H2O";
 
     return 0;
 }
@@ -59,12 +59,12 @@ static int static_kludge = populateFixtureTypes();
 // ----------------------------------------------------------------------------
 //
 FixtureDefinition::FixtureDefinition( FUID fuid, const char *manufacturer, const char *model, FixtureType type ) :
-	m_fuid( fuid ),
-	m_manufacturer( manufacturer ),
-	m_model( model ),
-	m_type( type ),
-	m_can_tilt( false ),
-	m_can_pan( false ),
+    m_fuid( fuid ),
+    m_manufacturer( manufacturer ),
+    m_model( model ),
+    m_type( type ),
+    m_can_tilt( false ),
+    m_can_pan( false ),
     m_can_whiteout( false )
 {
 }
@@ -90,7 +90,7 @@ void FixtureDefinition::chooseCapabilities()
 
         switch ( channel.getType() ) {
             case CHNLT_TILT:    m_can_tilt = true;     break;
-	        case CHNLT_PAN:	    m_can_pan = true;      break;
+            case CHNLT_PAN:	    m_can_pan = true;      break;
             case CHNLT_RED:     red = true;            break;
             case CHNLT_BLUE:    blue = true;           break;
             case CHNLT_GREEN:   green = true;          break;
@@ -100,14 +100,14 @@ void FixtureDefinition::chooseCapabilities()
 
     // Set whiteout support
     switch ( getType() ) {
-	    case FIXT_DIMMER:
-	    case FIXT_STROBE:
+        case FIXT_DIMMER:
+        case FIXT_STROBE:
             m_can_whiteout = (dimmer == true);
             break;
 
-	    case FIXT_PAR:
-	    case FIXT_SPOT:
-	    case FIXT_WASH:
+        case FIXT_PAR:
+        case FIXT_SPOT:
+        case FIXT_WASH:
             m_can_whiteout = (white || (red && blue && green));
             break;
     }
@@ -117,11 +117,11 @@ void FixtureDefinition::chooseCapabilities()
 //
 FixtureDefinition* FixtureDefinition::lookupFixture( FUID fuid ) {
 
-	FixtureDefinitionMap::iterator it = FixtureDefinitions.find( fuid );
-	if ( it == FixtureDefinitions.end() )
-		return NULL;
+    FixtureDefinitionMap::iterator it = FixtureDefinitions.find( fuid );
+    if ( it == FixtureDefinitions.end() )
+        return NULL;
 
-	return &it->second;				// Not sure about this - I hope the iterator is not a copy ...
+    return &it->second;				// Not sure about this - I hope the iterator is not a copy ...
 }
 
 // ----------------------------------------------------------------------------

@@ -70,5 +70,5 @@ public:
     virtual void visit( MusicSceneSelector* music_scene_selection ) = 0;
 
 protected:
-	virtual ~IVisitor() {}
+    virtual ~IVisitor() {}
 };

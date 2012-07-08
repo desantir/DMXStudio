@@ -23,9 +23,9 @@ MA 02111-1307, USA.
 #pragma once
 
 /**
-	Venue class contains a persitable installation.  Multiple venues are allowed, each
-	consisting of universe description, fixtures scenes, chases and any other
-	artifacts specific to a particular installation.
+    Venue class contains a persitable installation.  Multiple venues are allowed, each
+    consisting of universe description, fixtures scenes, chases and any other
+    artifacts specific to a particular installation.
 */
 
 #include "IVisitor.h"
@@ -56,31 +56,31 @@ typedef enum {
 
 class Venue : public DObject
 {
-	friend class ChaseTask;
-	friend class AnimationTask;
-	friend class ChaseController;
+    friend class ChaseTask;
+    friend class AnimationTask;
+    friend class ChaseController;
     friend class VenueWriter;
     friend class VenueReader;
 
-	CMutex				    m_venue_mutex;						// Protect venue objects
+    CMutex				    m_venue_mutex;						// Protect venue objects
 
-	UID					    m_uid_pool;
-	AbstractDMXDriver*      m_universe;
-	FixtureMap			    m_fixtures;							// List of fixture instances
-	SceneMap			    m_scenes;
-	FixtureGroupMap		    m_fixtureGroups;
-	ChaseMap			    m_chases;
+    UID					    m_uid_pool;
+    AbstractDMXDriver*      m_universe;
+    FixtureMap			    m_fixtures;							// List of fixture instances
+    SceneMap			    m_scenes;
+    FixtureGroupMap		    m_fixtureGroups;
+    ChaseMap			    m_chases;
 
-	BYTE				    m_master_dimmer;					// Master dimmer( 0 -> 100 )
-	UID					    m_current_scene;					// Currently active scene
-	ChaseTask*			    m_chase_task;
-	AnimationTask*		    m_animation_task;
-	DWORD				    m_auto_backout_ms;					// Auto backout timer (TODO: FADE OUT)
-	bool				    m_light_blackout;					// Blackout only colors / dimmer
-	CString			        m_dmx_port;							// DMX port connection information
-	unsigned                m_dmx_packet_delay;					// DMX delay between packets
+    BYTE				    m_master_dimmer;					// Master dimmer( 0 -> 100 )
+    UID					    m_current_scene;					// Currently active scene
+    ChaseTask*			    m_chase_task;
+    AnimationTask*		    m_animation_task;
+    DWORD				    m_auto_backout_ms;					// Auto backout timer (TODO: FADE OUT)
+    bool				    m_light_blackout;					// Blackout only colors / dimmer
+    CString			        m_dmx_port;							// DMX port connection information
+    unsigned                m_dmx_packet_delay;					// DMX delay between packets
     unsigned                m_dmx_packet_min_delay;             // DMX minimum time between packets
-	CString			        m_audio_capture_device;				// Audio capture device name
+    CString			        m_audio_capture_device;				// Audio capture device name
     float                   m_audio_boost;                      // Scales incoming audio signal
     float                   m_audio_boost_floor;                // Minimum signal sample value (used when scaling)
     StrobeTime              m_whiteout_strobe_slow;
@@ -90,8 +90,8 @@ class Venue : public DObject
     ColorStrobe             m_whiteout_strobe;                  // Whiteout strobe control
     UINT                    m_whiteout_strobe_ms;               // Manual strobe time MS
 
-	AudioInputStream*	    m_audio;
-	SoundDetector*		    m_sound_detector;
+    AudioInputStream*	    m_audio;
+    SoundDetector*		    m_sound_detector;
     AudioVolumeController*  m_volume;
     MusicWatcher*           m_music_watcher;
     bool                    m_music_scene_select_enabled;
@@ -99,19 +99,19 @@ class Venue : public DObject
 
     UID                     m_captured_actor;                   // Last actor captured to default
 
-	Venue(Venue& other) {}
-	Venue& operator=(Venue& rhs) { return *this; }
+    Venue(Venue& other) {}
+    Venue& operator=(Venue& rhs) { return *this; }
 
 public:
-	Venue(void);
-	~Venue(void);
+    Venue(void);
+    ~Venue(void);
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
 
-	bool open(void);
-	bool close(void);
+    bool open(void);
+    bool close(void);
     bool isRunning() const { return m_universe != NULL; }
 
     bool isMusicSceneSelectEnabled() const {
@@ -179,19 +179,19 @@ public:
         return m_audio_boost_floor;
     }
 
-	const char* getDmxPort() const {
-		return m_dmx_port;
-	}
-	void setDmxPort( const char* dmx_port ) {
-		m_dmx_port = dmx_port;
-	}
+    const char* getDmxPort() const {
+        return m_dmx_port;
+    }
+    void setDmxPort( const char* dmx_port ) {
+        m_dmx_port = dmx_port;
+    }
 
-	inline unsigned getDmxPacketDelayMS() const {
-		return m_dmx_packet_delay;
-	}
-	void setDmxPacketDelayMS( unsigned delay ) {
-		m_dmx_packet_delay = delay;
-	}
+    inline unsigned getDmxPacketDelayMS() const {
+        return m_dmx_packet_delay;
+    }
+    void setDmxPacketDelayMS( unsigned delay ) {
+        m_dmx_packet_delay = delay;
+    }
 
     inline unsigned getDmxMinimumDelayMS( ) const {
         return m_dmx_packet_min_delay;
@@ -200,221 +200,221 @@ public:
         m_dmx_packet_min_delay = packet_min_delay;
     }
 
-	const char* getAudioCaptureDevice( ) const {
-		return m_audio_capture_device;
-	}
-	void setAudioCaptureDevice( const char* audio_capture_device ) {
-		m_audio_capture_device = audio_capture_device;
-	}
+    const char* getAudioCaptureDevice( ) const {
+        return m_audio_capture_device;
+    }
+    void setAudioCaptureDevice( const char* audio_capture_device ) {
+        m_audio_capture_device = audio_capture_device;
+    }
 
-	AudioInputStream* getAudio() {
-		STUDIO_ASSERT( m_sound_detector != NULL, "No audio stream" );
-		return m_audio;
-	}
+    AudioInputStream* getAudio() {
+        STUDIO_ASSERT( m_sound_detector != NULL, "No audio stream" );
+        return m_audio;
+    }
 
-	inline SoundDetector* getSoundDetector() const {
-		STUDIO_ASSERT( m_sound_detector != NULL, "No sound detector" );
-		return m_sound_detector;
-	}
+    inline SoundDetector* getSoundDetector() const {
+        STUDIO_ASSERT( m_sound_detector != NULL, "No sound detector" );
+        return m_sound_detector;
+    }
 
-	bool isMute() const {
-		return getSoundDetector()->isMute();
-	}
+    bool isMute() const {
+        return getSoundDetector()->isMute();
+    }
 
-	unsigned getSoundLevel( ) const {
-		return getSoundDetector()->getAmplitude();
-	}
+    unsigned getSoundLevel( ) const {
+        return getSoundDetector()->getAmplitude();
+    }
 
-	unsigned getAvgAmplitude( ) const {
-		return getSoundDetector()->getAvgAmplitude();
-	}
+    unsigned getAvgAmplitude( ) const {
+        return getSoundDetector()->getAvgAmplitude();
+    }
 
-	void writePacket( const BYTE* dmx_packet );
-	void readPacket( BYTE* dmx_packet );
+    void writePacket( const BYTE* dmx_packet );
+    void readPacket( BYTE* dmx_packet );
 
-	inline UID allocUID() {
-		return m_uid_pool++;
-	}
+    inline UID allocUID() {
+        return m_uid_pool++;
+    }
 
-	UID whoIsAddressRange( universe_t universe, channel_t start_address, channel_t end_address );
+    UID whoIsAddressRange( universe_t universe, channel_t start_address, channel_t end_address );
     channel_t findFreeAddressRange( UINT num_channels );
 
-	AbstractDMXDriver* getUniverse() {
-		return m_universe;
-	}
+    AbstractDMXDriver* getUniverse() {
+        return m_universe;
+    }
 
-	void setMasterDimmer( BYTE dimmer ) {
-		STUDIO_ASSERT( dimmer <= 100, "Master dimmer level must be between 0 and 100" );
-		m_master_dimmer = dimmer;
-	}
-	BYTE getMasterDimmer( ) const {
-		return m_master_dimmer;
-	}
+    void setMasterDimmer( BYTE dimmer ) {
+        STUDIO_ASSERT( dimmer <= 100, "Master dimmer level must be between 0 and 100" );
+        m_master_dimmer = dimmer;
+    }
+    BYTE getMasterDimmer( ) const {
+        return m_master_dimmer;
+    }
 
-	void setLightBlackout( bool blackout ) {
-		m_light_blackout = blackout;
-	}
-	bool isLightBlackout( ) const {
-		return m_light_blackout;
-	}
+    void setLightBlackout( bool blackout ) {
+        m_light_blackout = blackout;
+    }
+    bool isLightBlackout( ) const {
+        return m_light_blackout;
+    }
 
-	void setAutoBlackout( DWORD black_out ) {
-		m_auto_backout_ms = black_out;
-		getSoundDetector()->setMuteMS( black_out );
-		if ( black_out == 0 )
-			setLightBlackout( false );
-		loadScene();
-	}
-	DWORD getAutoBlackout( ) const {
-		return m_auto_backout_ms;
-	}
+    void setAutoBlackout( DWORD black_out ) {
+        m_auto_backout_ms = black_out;
+        getSoundDetector()->setMuteMS( black_out );
+        if ( black_out == 0 )
+            setLightBlackout( false );
+        loadScene();
+    }
+    DWORD getAutoBlackout( ) const {
+        return m_auto_backout_ms;
+    }
 
-	// Physical fixture methods
-	Fixture* getFixture( UID pfuid );
-	FixturePtrArray getFixtures();
-	Fixture *getFixtureByNumber( FixtureNumber fixture_number );
-	FixtureNumber nextAvailableFixtureNumber( void );
-	void addFixture( Fixture& pfixture );
-	void deleteFixture( UID pfuid );
+    // Physical fixture methods
+    Fixture* getFixture( UID pfuid );
+    FixturePtrArray getFixtures();
+    Fixture *getFixtureByNumber( FixtureNumber fixture_number );
+    FixtureNumber nextAvailableFixtureNumber( void );
+    void addFixture( Fixture& pfixture );
+    void deleteFixture( UID pfuid );
 
-	// Default Scene methods
-	void copyDefaultFixturesToScene( UID scene_id );
-	void copySceneFixtureToDefault( UID scene_id, UID fixture_id );
+    // Default Scene methods
+    void copyDefaultFixturesToScene( UID scene_id );
+    void copySceneFixtureToDefault( UID scene_id, UID fixture_id );
 
     SceneActor* captureActor( UID fixture_id );
     SceneActor* getCapturedActor();
     void releaseActor( UID fixture_id );
-	void clearAllCapturedActors( );
+    void clearAllCapturedActors( );
 
-	BYTE getChannelValue( Fixture* pfixture, channel_t channel );
-	void setChannelValue( Fixture* pfixture, channel_t channel, BYTE value );
+    BYTE getChannelValue( Fixture* pfixture, channel_t channel );
+    void setChannelValue( Fixture* pfixture, channel_t channel, BYTE value );
 
-	// Scene methods
-	Scene *getScene( UID scene_uid );
-	ScenePtrArray getScenes();
-	void selectScene( UID scene_uid );
-	void deleteScene( UID scene_uid );
-	void updateCurrentScene( );
-	void addScene( Scene& scene );
-	void loadScene();
-	void clearAnimations();
-	Scene *getSceneByNumber( SceneNumber scene_number );
-	SceneNumber nextAvailableSceneNumber( void );
+    // Scene methods
+    Scene *getScene( UID scene_uid );
+    ScenePtrArray getScenes();
+    void selectScene( UID scene_uid );
+    void deleteScene( UID scene_uid );
+    void updateCurrentScene( );
+    void addScene( Scene& scene );
+    void loadScene();
+    void clearAnimations();
+    Scene *getSceneByNumber( SceneNumber scene_number );
+    SceneNumber nextAvailableSceneNumber( void );
 
-	UID getCurrentSceneUID() const {
-		return m_current_scene;
-	}
+    UID getCurrentSceneUID() const {
+        return m_current_scene;
+    }
 
-	Scene *getScene( ) {
-		return getScene( m_current_scene );
-	}
+    Scene *getScene( ) {
+        return getScene( m_current_scene );
+    }
 
-	Scene *getDefaultScene() {
-		return getSceneByNumber( DEFAULT_SCENE_NUMBER );
-	}
+    Scene *getDefaultScene() {
+        return getSceneByNumber( DEFAULT_SCENE_NUMBER );
+    }
 
-	bool isDefaultScene() {
-		return (getScene()->getSceneNumber() == DEFAULT_SCENE_NUMBER );
-	}
+    bool isDefaultScene() {
+        return (getScene()->getSceneNumber() == DEFAULT_SCENE_NUMBER );
+    }
 
-	size_t getNumScenes( ) const {
-		return m_scenes.size();
-	}
+    size_t getNumScenes( ) const {
+        return m_scenes.size();
+    }
 
-	// Fixture group methods
-	void addFixtureGroup( FixtureGroup& group );
-	FixtureGroupPtrArray getFixtureGroups( );
-	FixtureGroup* getFixtureGroup( UID group_id );
-	void deleteFixtureGroup( UID group_id );
+    // Fixture group methods
+    void addFixtureGroup( FixtureGroup& group );
+    FixtureGroupPtrArray getFixtureGroups( );
+    FixtureGroup* getFixtureGroup( UID group_id );
+    void deleteFixtureGroup( UID group_id );
 
-	// Scene chase methods
-	Chase *getChase( UID chase_uid );
-	void addChase( Chase& chase );
-	ChasePtrArray getChases( );
-	Chase* getChaseByNumber( ChaseNumber chase_number );
-	void deleteChase( UID chase_id );
-	bool copyChaseSteps( UID source_chase_id, UID target_chase_id );
-	ChaseNumber nextAvailableChaseNumber( void );
+    // Scene chase methods
+    Chase *getChase( UID chase_uid );
+    void addChase( Chase& chase );
+    ChasePtrArray getChases( );
+    Chase* getChaseByNumber( ChaseNumber chase_number );
+    void deleteChase( UID chase_id );
+    bool copyChaseSteps( UID source_chase_id, UID target_chase_id );
+    ChaseNumber nextAvailableChaseNumber( void );
 
     inline size_t getNumChases() const {
         return m_chases.size();
     }
 
-	// TODO: These chase functions below vvv and the ChaseController need to be synchronized
-	ChaseController startChase( UID chase_id, ChaseRunMode run_mode = CHASE_AUTO );
-	bool stopChase();
+    // TODO: These chase functions below vvv and the ChaseController need to be synchronized
+    ChaseController startChase( UID chase_id, ChaseRunMode run_mode = CHASE_AUTO );
+    bool stopChase();
 
-	bool isChaseRunning() const {
-		return m_chase_task && m_chase_task->isRunning();
-	}
+    bool isChaseRunning() const {
+        return m_chase_task && m_chase_task->isRunning();
+    }
 
-	bool isChaseFading() const {
-		return m_chase_task && m_chase_task->isRunning() && m_chase_task->isFading();
-	}
+    bool isChaseFading() const {
+        return m_chase_task && m_chase_task->isRunning() && m_chase_task->isFading();
+    }
 
-	UID getRunningChase() const {
-		if ( !isChaseRunning() )
-			return 0;
-		return m_chase_task->getChase()->getUID();
-	}
-	// TODO: These chase functions above ^^^ and the ChaseController need to be synchronized
+    UID getRunningChase() const {
+        if ( !isChaseRunning() )
+            return 0;
+        return m_chase_task->getChase()->getUID();
+    }
+    // TODO: These chase functions above ^^^ and the ChaseController need to be synchronized
 
 private:
-	SceneActor * getDefaultActor( UID pfuid );
-	void loadSceneChannels( BYTE *dmx_packet, Scene * scene );
-	void loadChannel( BYTE *dmx_packet, Fixture* pf, channel_t channel, BYTE value );
+    SceneActor * getDefaultActor( UID pfuid );
+    void loadSceneChannels( BYTE *dmx_packet, Scene * scene );
+    void loadChannel( BYTE *dmx_packet, Fixture* pf, channel_t channel, BYTE value );
     void whiteoutChannels( LPBYTE dmx_packet );
     BYTE adjustChannelValue( Fixture* pf, channel_t channel, BYTE value );
 };
 
 class ChaseController {
 
-	ChaseTask*			m_chase_task;
-	Venue*				m_venue;
+    ChaseTask*			m_chase_task;
+    Venue*				m_venue;
 
 public:
-	ChaseController( Venue* venue, ChaseTask* chase_task ) :
-		m_venue( venue ),
-		m_chase_task( chase_task )
-	{}
+    ChaseController( Venue* venue, ChaseTask* chase_task ) :
+        m_venue( venue ),
+        m_chase_task( chase_task )
+    {}
 
-	~ChaseController( void ) {}
+    ~ChaseController( void ) {}
 
-	void tap() {
-		getChaseTrigger()->SetEvent();
-	}
+    void tap() {
+        getChaseTrigger()->SetEvent();
+    }
 
-	CEvent* getChaseTrigger() {
-		ChaseTask* task = getTask();
-		return task->getTrigger();
-	}
+    CEvent* getChaseTrigger() {
+        ChaseTask* task = getTask();
+        return task->getTrigger();
+    }
 
-	bool loopTap() {
-		ChaseTask* task = getTask();
-		if ( !task->isRunning() )
-			return false;
+    bool loopTap() {
+        ChaseTask* task = getTask();
+        if ( !task->isRunning() )
+            return false;
 
-		task->loopTap();
-		return true;
-	}
+        task->loopTap();
+        return true;
+    }
 
-	bool stop() {
-		ChaseTask* task = getTask();
-		m_venue->stopChase();
-		m_chase_task = NULL;
-		return true;
-	}
+    bool stop() {
+        ChaseTask* task = getTask();
+        m_venue->stopChase();
+        m_chase_task = NULL;
+        return true;
+    }
 
-	bool followBeat( unsigned start_freq, unsigned end_freq ) {
-		ChaseTask* task = getTask();
-		return task->followBeat( start_freq, end_freq );
-	}
+    bool followBeat( unsigned start_freq, unsigned end_freq ) {
+        ChaseTask* task = getTask();
+        return task->followBeat( start_freq, end_freq );
+    }
 
 private:
-	ChaseTask* getTask() {
-		// There are some obvious thread syncronization issues here - careful
-		if ( !m_chase_task || m_venue->m_chase_task != m_chase_task )
-			throw StudioException( "Using stale chase controller" );
-		return m_chase_task;
-	}
+    ChaseTask* getTask() {
+        // There are some obvious thread syncronization issues here - careful
+        if ( !m_chase_task || m_venue->m_chase_task != m_chase_task )
+            throw StudioException( "Using stale chase controller" );
+        return m_chase_task;
+    }
 };

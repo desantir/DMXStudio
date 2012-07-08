@@ -32,60 +32,60 @@ class SceneMovementAnimator :public SceneChannelAnimator
     friend class VenueWriter;
     friend class VenueReader;
 
-	typedef std::vector<UINT> AngleList;
+    typedef std::vector<UINT> AngleList;
 
-	MovementAnimation		m_movement;			// Movement animation description
+    MovementAnimation		m_movement;			// Movement animation description
 
 public:
-	static const char* className;
+    static const char* className;
 
-	SceneMovementAnimator() {}
+    SceneMovementAnimator() {}
 
-	SceneMovementAnimator( UID animation_uid, 
-						AnimationSignal signal,
-						UIDArray actors,
-						MovementAnimation movement );
-	~SceneMovementAnimator(void);
+    SceneMovementAnimator( UID animation_uid, 
+                        AnimationSignal signal,
+                        UIDArray actors,
+                        MovementAnimation movement );
+    ~SceneMovementAnimator(void);
 
-	MovementAnimation& movement( ) {
-		return m_movement;
-	}
+    MovementAnimation& movement( ) {
+        return m_movement;
+    }
 
-	AbstractAnimation* clone();
+    AbstractAnimation* clone();
 
-	const char* getName() { return "Scene Movement Animator"; }
-	const char* getClassName() { return SceneMovementAnimator::className; }
+    const char* getName() { return "Scene Movement Animator"; }
+    const char* getClassName() { return SceneMovementAnimator::className; }
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
 
-	void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
+    void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
 
-	virtual CString getSynopsis(void);
+    virtual CString getSynopsis(void);
 
 private:
-	void genRandomMovement( AnimationTask* task, FixturePtrArray& participants );
-	void genRotateMovement( AnimationTask* task, FixturePtrArray& participants );
-	void genNodMovement( AnimationTask* task, FixturePtrArray& participants );
-	void genFanMovement( AnimationTask* task, FixturePtrArray& participants );
-	void genXcrossMovement( AnimationTask* task, FixturePtrArray& participants );
-	void genMoonflowerMovement( AnimationTask* task, FixturePtrArray& participants );
-	void genCoordinatesMovement( AnimationTask* task, FixturePtrArray& participants );
+    void genRandomMovement( AnimationTask* task, FixturePtrArray& participants );
+    void genRotateMovement( AnimationTask* task, FixturePtrArray& participants );
+    void genNodMovement( AnimationTask* task, FixturePtrArray& participants );
+    void genFanMovement( AnimationTask* task, FixturePtrArray& participants );
+    void genXcrossMovement( AnimationTask* task, FixturePtrArray& participants );
+    void genMoonflowerMovement( AnimationTask* task, FixturePtrArray& participants );
+    void genCoordinatesMovement( AnimationTask* task, FixturePtrArray& participants );
 
-	void getFixtureChannels( Fixture* pf, channel_t& speed_channel, channel_t& pan_channel, 
-							 channel_t& tilt_channel, channel_t& dimmer_channel );
+    void getFixtureChannels( Fixture* pf, channel_t& speed_channel, channel_t& pan_channel, 
+                             channel_t& tilt_channel, channel_t& dimmer_channel );
 
-	ChannelValueArray anglesToValues( Channel* channel, AngleList& tilt );
+    ChannelValueArray anglesToValues( Channel* channel, AngleList& tilt );
 
-	void populateChannelAnimations( AnimationTask* task, FixturePtrArray& participants, size_t& particpant_index, 
-									AngleList& tilt, AngleList& pan, ChannelValueArray& dimmer,
-									ChannelValueArray& speed, size_t group_size );
+    void populateChannelAnimations( AnimationTask* task, FixturePtrArray& participants, size_t& particpant_index, 
+                                    AngleList& tilt, AngleList& pan, ChannelValueArray& dimmer,
+                                    ChannelValueArray& speed, size_t group_size );
 
-	template <class T>
-	void swap( T& s1, T& s2 ) {
-		T tmp = s1;
-		s1 = s2;
-		s2 = tmp;
-	}
+    template <class T>
+    void swap( T& s1, T& s2 ) {
+        T tmp = s1;
+        s1 = s2;
+        s2 = tmp;
+    }
 };

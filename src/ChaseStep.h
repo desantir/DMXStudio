@@ -30,34 +30,34 @@ class ChaseStep
     friend class VenueWriter;
     friend class VenueReader;
 
-	UID					m_scene_uid;
-	ULONG				m_delay_ms;					// Step delay in milliseconds (0 indicates use default)
+    UID					m_scene_uid;
+    ULONG				m_delay_ms;					// Step delay in milliseconds (0 indicates use default)
 
 public:
-	ChaseStep(void) : 
-	  m_scene_uid(0), 
-	  m_delay_ms(0) {}
+    ChaseStep(void) : 
+      m_scene_uid(0), 
+      m_delay_ms(0) {}
 
-	ChaseStep( UID scene_uid, ULONG delay );
-	~ChaseStep(void);
+    ChaseStep( UID scene_uid, ULONG delay );
+    ~ChaseStep(void);
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
 
-	void setSceneUID( UID scene_uid ) {
-		m_scene_uid = scene_uid;
-	}
-	UID getSceneUID() const {
-		return m_scene_uid;
-	}
+    void setSceneUID( UID scene_uid ) {
+        m_scene_uid = scene_uid;
+    }
+    UID getSceneUID() const {
+        return m_scene_uid;
+    }
 
-	void setDelayMS( ULONG delay_ms ) {
-		m_delay_ms = delay_ms;
-	}
-	ULONG getDelayMS() const {
-		return m_delay_ms;
-	}
+    void setDelayMS( ULONG delay_ms ) {
+        m_delay_ms = delay_ms;
+    }
+    ULONG getDelayMS() const {
+        return m_delay_ms;
+    }
 };
 
 typedef std::vector<ChaseStep> ChaseStepArray;

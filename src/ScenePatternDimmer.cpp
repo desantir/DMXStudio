@@ -28,13 +28,13 @@ const char* ScenePatternDimmer::className = "ScenePatternDimmer";
 // ----------------------------------------------------------------------------
 //
 ScenePatternDimmer::ScenePatternDimmer( UID animation_uid, 
-										AnimationSignal signal,
-										UIDArray actors,
-										DimmerPattern pattern ) :
-	SceneChannelAnimator( animation_uid, signal ),
-	m_dimmer_pattern( pattern )
+                                        AnimationSignal signal,
+                                        UIDArray actors,
+                                        DimmerPattern pattern ) :
+    SceneChannelAnimator( animation_uid, signal ),
+    m_dimmer_pattern( pattern )
 {
-	m_actors = actors;
+    m_actors = actors;
 }
 
 // ----------------------------------------------------------------------------
@@ -46,36 +46,36 @@ ScenePatternDimmer::~ScenePatternDimmer(void)
 // ----------------------------------------------------------------------------
 //
 AbstractAnimation* ScenePatternDimmer::clone() {
-	return new ScenePatternDimmer( m_uid, m_signal, m_actors, m_dimmer_pattern );
+    return new ScenePatternDimmer( m_uid, m_signal, m_actors, m_dimmer_pattern );
 }
 
 // ----------------------------------------------------------------------------
 //
 CString ScenePatternDimmer::getSynopsis(void) {
-	CString synopsis;
-	const char *pattern_name;
+    CString synopsis;
+    const char *pattern_name;
 
-	switch ( m_dimmer_pattern ) {
-		case DP_SEQUENCE:		pattern_name = "Sequence";		break;
-		case DP_CYLON:			pattern_name = "Cylon";			break;
-		case DP_PAIRS:			pattern_name = "Pairs";			break;
-		case DP_TOCENTER:		pattern_name = "Center";		break;
-		case DP_ALTERNATE:		pattern_name = "Alternate";		break;
-		case DP_ALL:			pattern_name = "All";			break;
-	}
+    switch ( m_dimmer_pattern ) {
+        case DP_SEQUENCE:		pattern_name = "Sequence";		break;
+        case DP_CYLON:			pattern_name = "Cylon";			break;
+        case DP_PAIRS:			pattern_name = "Pairs";			break;
+        case DP_TOCENTER:		pattern_name = "Center";		break;
+        case DP_ALTERNATE:		pattern_name = "Alternate";		break;
+        case DP_ALL:			pattern_name = "All";			break;
+    }
 
-	synopsis.Format( "Pattern( %s ) %s", pattern_name,
-		AbstractAnimation::getSynopsis() );
+    synopsis.Format( "Pattern( %s ) %s", pattern_name,
+        AbstractAnimation::getSynopsis() );
 
-	return synopsis;
+    return synopsis;
 }
 
 // ----------------------------------------------------------------------------
 //
 void ScenePatternDimmer::initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet )
 {
-	m_animation_task = task;
-	m_channel_animations.clear();
+    m_animation_task = task;
+    m_channel_animations.clear();
 
     struct DimmerValue {
         BYTE m_on;
@@ -91,107 +91,107 @@ void ScenePatternDimmer::initAnimation( AnimationTask* task, DWORD time_ms, BYTE
         }
     };
        
-	ChannelValueArray value_array;
+    ChannelValueArray value_array;
     std::vector<DimmerValue> dimmer_values_array;
 
-	// Determine which channels will be participating
-	for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); it++ ) {
-		Fixture* pf = m_animation_task->getFixture( (*it) );
-		STUDIO_ASSERT( pf != NULL, "Missing fixture UID=%lu", (*it) );
+    // Determine which channels will be participating
+    for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); it++ ) {
+        Fixture* pf = m_animation_task->getFixture( (*it) );
+        STUDIO_ASSERT( pf != NULL, "Missing fixture UID=%lu", (*it) );
 
-		for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
-			Channel* cp = pf->getChannel( channel );
+        for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+            Channel* cp = pf->getChannel( channel );
 
-			if ( cp->isDimmer() ) {
-				m_channel_animations.push_back( 
-					ChannelAnimation( pf->getUID(), channel, CAM_LIST, value_array ) );
+            if ( cp->isDimmer() ) {
+                m_channel_animations.push_back( 
+                    ChannelAnimation( pf->getUID(), channel, CAM_LIST, value_array ) );
                 dimmer_values_array.push_back( DimmerValue( cp ) );
-			}
-		}
-	}
+            }
+        }
+    }
 
-	int num_channels = m_channel_animations.size();
+    int num_channels = m_channel_animations.size();
 
-	switch ( m_dimmer_pattern ) {
-		case DP_SEQUENCE: {
-			int target = 0; // X - - - -> - X - - -> - - X - -> - - - X
+    switch ( m_dimmer_pattern ) {
+        case DP_SEQUENCE: {
+            int target = 0; // X - - - -> - X - - -> - - X - -> - - - X
             for ( size_t i=0; i < m_channel_animations.size(); i++ ) {
                 ChannelAnimation& chan_anim = m_channel_animations[i];
                 DimmerValue& dimmer_values = dimmer_values_array[i];
 
-				for ( int index=0; index < num_channels; index++ )
-					chan_anim.valueList().push_back( dimmer_values.getValue( target == index ) );
+                for ( int index=0; index < num_channels; index++ )
+                    chan_anim.valueList().push_back( dimmer_values.getValue( target == index ) );
 
-				target++;
-			}
-			break;
-		}
+                target++;
+            }
+            break;
+        }
 
-		case DP_CYLON: { // X - - -> - X - -> - - X -> - X - -> - - X
-			int target = 0;
+        case DP_CYLON: { // X - - -> - X - -> - - X -> - X - -> - - X
+            int target = 0;
 
             for ( size_t i=0; i < m_channel_animations.size(); i++ ) {
                 ChannelAnimation& chan_anim = m_channel_animations[i];
                 DimmerValue& dimmer_values = dimmer_values_array[i];
 
-				for ( int index=0; index < num_channels*2-2; index++ )
-					chan_anim.valueList().push_back( dimmer_values.getValue( target == index || num_channels*2-2-index == target ) );
-				target++;
-			}
-			break;
-		}
+                for ( int index=0; index < num_channels*2-2; index++ )
+                    chan_anim.valueList().push_back( dimmer_values.getValue( target == index || num_channels*2-2-index == target ) );
+                target++;
+            }
+            break;
+        }
 
-		case DP_PAIRS: { // X X - - -> - - X X 
-			int target = 0;
+        case DP_PAIRS: { // X X - - -> - - X X 
+            int target = 0;
             for ( size_t i=0; i < m_channel_animations.size(); i++ ) {
                 ChannelAnimation& chan_anim = m_channel_animations[i];
                 DimmerValue& dimmer_values = dimmer_values_array[i];
 
-				for ( int index=0; index < num_channels; index++ )
-					chan_anim.valueList().push_back( dimmer_values.getValue( target == index || target+1 == index ) );
-				target += 2;
-			}
-			break;
-		}
+                for ( int index=0; index < num_channels; index++ )
+                    chan_anim.valueList().push_back( dimmer_values.getValue( target == index || target+1 == index ) );
+                target += 2;
+            }
+            break;
+        }
 
-		case DP_TOCENTER: { // X - - X -> - X X -
-			int target = 0;
+        case DP_TOCENTER: { // X - - X -> - X X -
+            int target = 0;
             for ( size_t i=0; i < m_channel_animations.size(); i++ ) {
                 ChannelAnimation& chan_anim = m_channel_animations[i];
                 DimmerValue& dimmer_values = dimmer_values_array[i];
 
-				for ( int index=0; index < num_channels; index++ )
-					chan_anim.valueList().push_back( dimmer_values.getValue( target == index || num_channels-index-1 == target ) );
-				target += 1;
-			}
-			break;
-		}
+                for ( int index=0; index < num_channels; index++ )
+                    chan_anim.valueList().push_back( dimmer_values.getValue( target == index || num_channels-index-1 == target ) );
+                target += 1;
+            }
+            break;
+        }
 
-		case DP_ALTERNATE: { // X - X - -> - X - X 
-			int target = 1;
+        case DP_ALTERNATE: { // X - X - -> - X - X 
+            int target = 1;
             for ( size_t i=0; i < m_channel_animations.size(); i++ ) {
                 ChannelAnimation& chan_anim = m_channel_animations[i];
                 DimmerValue& dimmer_values = dimmer_values_array[i];
 
-				for ( int index=0; index < num_channels; index++ )
-					chan_anim.valueList().push_back( dimmer_values.getValue( index ^ target ? true : false ) );
-				target ^= 1;
-			}
-			break;
-		}
+                for ( int index=0; index < num_channels; index++ )
+                    chan_anim.valueList().push_back( dimmer_values.getValue( index ^ target ? true : false ) );
+                target ^= 1;
+            }
+            break;
+        }
 
-		case DP_ALL: { // X X X X -> - - - - 
+        case DP_ALL: { // X X X X -> - - - - 
             for ( size_t i=0; i < m_channel_animations.size(); i++ ) {
                 ChannelAnimation& chan_anim = m_channel_animations[i];
                 DimmerValue& dimmer_values = dimmer_values_array[i];
 
-				for ( int index=0; index < 2; index++ )
-					chan_anim.valueList().push_back( dimmer_values.getValue( index ? true : false ) );
-			}
-			break;
-		}
-	}
+                for ( int index=0; index < 2; index++ )
+                    chan_anim.valueList().push_back( dimmer_values.getValue( index ? true : false ) );
+            }
+            break;
+        }
+    }
 
-	return SceneChannelAnimator::initAnimation( task, time_ms, dmx_packet );
+    return SceneChannelAnimator::initAnimation( task, time_ms, dmx_packet );
 }
 

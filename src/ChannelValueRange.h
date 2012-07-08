@@ -30,31 +30,31 @@ class ChannelValueRange
     friend class DefinitionWriter;
     friend class DefinitionReader;
 
-	BYTE		m_start;						// Start value (inclusive)
-	BYTE		m_end;							// End value (inclusive)
-	CString		m_name;							// Range name
+    BYTE		m_start;						// Start value (inclusive)
+    BYTE		m_end;							// End value (inclusive)
+    CString		m_name;							// Range name
 
-	ChannelValueRange() {}
+    ChannelValueRange() {}
 
 public:
-	ChannelValueRange( BYTE start, BYTE end, const char *name );
-	~ChannelValueRange(void);
+    ChannelValueRange( BYTE start, BYTE end, const char *name );
+    ~ChannelValueRange(void);
 
     void accept( IDefinitionVisitor* visitor) {
         visitor->visit(this);
     }
 
-	BYTE getStart() const {
-		return m_start;
-	}
+    BYTE getStart() const {
+        return m_start;
+    }
 
-	BYTE getEnd() const {
-		return m_end;
-	}
+    BYTE getEnd() const {
+        return m_end;
+    }
 
-	const char * getName() const {
-		return m_name;
-	}
+    const char * getName() const {
+        return m_name;
+    }
 };
 
 typedef std::vector<ChannelValueRange> ChannelValueRangeArray;

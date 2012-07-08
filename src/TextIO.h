@@ -44,26 +44,26 @@ typedef std::vector<CString> TokenArray;
 
 class TextIO
 {
-	TokenArray		m_tokens;				// List of available command tokens
+    TokenArray		m_tokens;				// List of available command tokens
 
-	int get_line( char * buffer, int length, bool password=false );
+    int get_line( char * buffer, int length, bool password=false );
 
 public:
-	TextIO(void);
-	~TextIO(void);
+    TextIO(void);
+    ~TextIO(void);
 
-	void tokenize( CString& str );
-	bool nextToken( CString& str );
+    void tokenize( CString& str );
+    bool nextToken( CString& str );
 
-	bool haveTokens( ) {
-		return m_tokens.size() > 0;
-	}
+    bool haveTokens( ) {
+        return m_tokens.size() > 0;
+    }
 
-	void clear() {
-		m_tokens.clear();
-	}
+    void clear() {
+        m_tokens.clear();
+    }
 
-	int getString( CString& string, bool password=false );
-	void printf( const char *format, ... );
+    int getString( CString& string, bool password=false );
+    void printf( const char *format, ... );
 };
 

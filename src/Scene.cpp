@@ -27,138 +27,138 @@ MA 02111-1307, USA.
 // ----------------------------------------------------------------------------
 //
 Scene::Scene( UID uid, SceneNumber scene_number, const char * name, const char *description ) : 
-	DObject( uid, name, description ),
-	m_scene_number( scene_number )
+    DObject( uid, name, description ),
+    m_scene_number( scene_number )
 {
 }
 
 // ----------------------------------------------------------------------------
 //
 Scene::Scene( Scene& other ) :
-		DObject( other ),
-		m_scene_number( other.m_scene_number ),
-		m_actors( other.m_actors )
+        DObject( other ),
+        m_scene_number( other.m_scene_number ),
+        m_actors( other.m_actors )
 {
-	copy_animations( other );
+    copy_animations( other );
 }
 
 // ----------------------------------------------------------------------------
 //
 Scene& Scene::operator=( Scene& rhs ) {
-	DObject::operator=( rhs ); 
-	m_scene_number = rhs.m_scene_number;
-	m_actors = rhs.m_actors;
-	copy_animations(rhs );
-	return *this;
+    DObject::operator=( rhs ); 
+    m_scene_number = rhs.m_scene_number;
+    m_actors = rhs.m_actors;
+    copy_animations(rhs );
+    return *this;
 }
 
 // ----------------------------------------------------------------------------
 //
 void Scene::copy_animations( Scene& rhs ) {
-	for ( AnimationPtrArray::iterator it=rhs.m_animations.begin();
-		  it != rhs.m_animations.end(); it++ ) {
-		m_animations.push_back( (*it)->clone() );
-	}
+    for ( AnimationPtrArray::iterator it=rhs.m_animations.begin();
+          it != rhs.m_animations.end(); it++ ) {
+        m_animations.push_back( (*it)->clone() );
+    }
 }
 
 // ----------------------------------------------------------------------------
 //
 Scene::~Scene(void)
 {
-	clearAnimations();
+    clearAnimations();
 }
 
 // ----------------------------------------------------------------------------
 //
 void Scene::addActor( SceneActor& actor ) {
-	m_actors[ actor.getPFUID() ] = actor;
+    m_actors[ actor.getPFUID() ] = actor;
 }
 
 // ----------------------------------------------------------------------------
 //
 bool Scene::removeActor( UID uid ) {
-	ActorMap::iterator it = m_actors.find( uid );
-	if ( it == m_actors.end() )
-		return false;
+    ActorMap::iterator it = m_actors.find( uid );
+    if ( it == m_actors.end() )
+        return false;
 
-	m_actors.erase( it );
+    m_actors.erase( it );
 
-	// Remove actor from all animations
-	for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
-		(*it)->removeActor( uid );
+    // Remove actor from all animations
+    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
+        (*it)->removeActor( uid );
 
-	return true;
+    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
 SceneActor* Scene::getActor( UID uid ) {
-	ActorMap::iterator it = m_actors.find( uid );
-	if ( it != m_actors.end() )
-		return &it->second;
-	return NULL;
+    ActorMap::iterator it = m_actors.find( uid );
+    if ( it != m_actors.end() )
+        return &it->second;
+    return NULL;
 }
 
 // ----------------------------------------------------------------------------
 //
 ActorPtrArray Scene::getActors( ) {
-	ActorPtrArray list;
-	ActorMap::iterator it;
+    ActorPtrArray list;
+    ActorMap::iterator it;
 
-	for ( it=m_actors.begin(); it != m_actors.end(); it++ )
-		list.push_back( &it->second );
+    for ( it=m_actors.begin(); it != m_actors.end(); it++ )
+        list.push_back( &it->second );
 
-	return list;
+    return list;
 }
 
 // ----------------------------------------------------------------------------
 //
 UIDArray Scene::getActorUIDs( ) {
-	UIDArray list;
-	ActorMap::iterator it;
+    UIDArray list;
+    ActorMap::iterator it;
 
-	for ( it=m_actors.begin(); it != m_actors.end(); it++ )
-		list.push_back( it->first );
+    for ( it=m_actors.begin(); it != m_actors.end(); it++ )
+        list.push_back( it->first );
 
-	return list;
+    return list;
 }
 
 // ----------------------------------------------------------------------------
 // Transfers animation life-cycle responsibilty to the scene
 void Scene::addAnimation( AbstractAnimation* animation ) {
-	m_animations.push_back( animation );
+    m_animations.push_back( animation );
 }
 
 // ----------------------------------------------------------------------------
 // Animation destructor will be called
 void Scene::clearAnimations( ) {
-	for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
-		delete (*it);
-	m_animations.clear();
+    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
+        delete (*it);
+    m_animations.clear();
 }
 
 // ----------------------------------------------------------------------------
 // 
 AbstractAnimation* Scene::getAnimation( size_t animation_num ) {
-	STUDIO_ASSERT( animation_num < m_animations.size(), "Requested invalid animation" );
-	return m_animations[ animation_num ];
+    STUDIO_ASSERT( animation_num < m_animations.size(), "Requested invalid animation" );
+    return m_animations[ animation_num ];
 }
 
 // ----------------------------------------------------------------------------
 // Animation destructor will be called
 void Scene::removeAnimation( UID animation_uid ) {
-	for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
-		if ( (*it)->getUID() == animation_uid ) {
-			AbstractAnimation* animation = (*it);
-			m_animations.erase( it );
-			delete animation;
-			break;
-		}
+    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
+        if ( (*it)->getUID() == animation_uid ) {
+            AbstractAnimation* animation = (*it);
+            m_animations.erase( it );
+            delete animation;
+            break;
+        }
 }
 
 // ----------------------------------------------------------------------------
 // Transfers animation life-cycle responsibilty to the scene
 void Scene::insertAnimation( unsigned animation_num, AbstractAnimation* animation ) {
-	STUDIO_ASSERT( animation_num <= m_animations.size(), "Animation insert step out of range" );
-	m_animations.insert( m_animations.begin()+animation_num, animation );
+    STUDIO_ASSERT( animation_num <= m_animations.size(), "Animation insert step out of range" );
+    m_animations.insert( m_animations.begin()+animation_num, animation );
 }

@@ -27,8 +27,8 @@ MA 02111-1307, USA.
 // ----------------------------------------------------------------------------
 //
 ChaseStep::ChaseStep( UID scene_uid, ULONG delay_ms ) :
-	m_scene_uid(scene_uid), 
-	m_delay_ms(delay_ms)
+    m_scene_uid(scene_uid), 
+    m_delay_ms(delay_ms)
 {
 }
 

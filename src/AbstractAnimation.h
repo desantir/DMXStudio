@@ -32,45 +32,45 @@ class Scene;
 class AbstractAnimation : public DObject
 {
 protected:
-	UIDArray			m_actors;
-	AnimationSignal		m_signal;
+    UIDArray			m_actors;
+    AnimationSignal		m_signal;
 
-	AnimationTask*		m_animation_task;
+    AnimationTask*		m_animation_task;
 
 public:
-	AbstractAnimation( ) :
-		m_animation_task(NULL)
-	{}
+    AbstractAnimation( ) :
+        m_animation_task(NULL)
+    {}
 
-	AbstractAnimation( UID animation_uid, AnimationSignal signal ) :
-		DObject( animation_uid, NULL, NULL ),
-		m_signal( signal ),
-		m_animation_task(NULL)
-	{}
+    AbstractAnimation( UID animation_uid, AnimationSignal signal ) :
+        DObject( animation_uid, NULL, NULL ),
+        m_signal( signal ),
+        m_animation_task(NULL)
+    {}
 
-	virtual ~AbstractAnimation( void ) {}
-	
-	AnimationSignal& signal( ) { return m_signal; }	
+    virtual ~AbstractAnimation( void ) {}
+    
+    AnimationSignal& signal( ) { return m_signal; }	
 
-	UIDArray getActors() const { 
-		return UIDArray( m_actors );
-	}
-	void setActors( UIDArray actors ) {
-		m_actors = actors;
-	}
+    UIDArray getActors() const { 
+        return UIDArray( m_actors );
+    }
+    void setActors( UIDArray actors ) {
+        m_actors = actors;
+    }
 
     virtual void accept( IVisitor* visitor) = 0;
-	virtual const char* getName(void) = 0;
-	virtual const char* getClassName(void) = 0;
-	virtual CString getSynopsis(void);
-	virtual AbstractAnimation* clone(void) = 0;
+    virtual const char* getName(void) = 0;
+    virtual const char* getClassName(void) = 0;
+    virtual CString getSynopsis(void);
+    virtual AbstractAnimation* clone(void) = 0;
 
-	virtual void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet ) = 0;
-	virtual bool sliceAnimation( DWORD time_ms, BYTE* dmx_packet ) = 0;
-	virtual void stopAnimation( void ) = 0;
-	virtual void removeActor( UID actor );
+    virtual void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet ) = 0;
+    virtual bool sliceAnimation( DWORD time_ms, BYTE* dmx_packet ) = 0;
+    virtual void stopAnimation( void ) = 0;
+    virtual void removeActor( UID actor );
 
-	UIDArray populateActors( Scene* scene );
+    UIDArray populateActors( Scene* scene );
 };
 
 typedef std::vector<AbstractAnimation*> AnimationPtrArray;

@@ -31,32 +31,32 @@ class SceneStrobeAnimator : public SceneColorSwitcher
     friend class VenueReader;
 
 public:
-	static const char* className;
+    static const char* className;
 
-	SceneStrobeAnimator( UID animation_uid, 
-						AnimationSignal signal,
-						UIDArray actors,
-						unsigned strobe_neg_color,
-						unsigned strobe_pos_ms,
-						unsigned strobe_neg_ms );
+    SceneStrobeAnimator( UID animation_uid, 
+                        AnimationSignal signal,
+                        UIDArray actors,
+                        unsigned strobe_neg_color,
+                        unsigned strobe_pos_ms,
+                        unsigned strobe_neg_ms );
 
-	SceneStrobeAnimator(void) :
-    	SceneColorSwitcher( )
-	{}
+    SceneStrobeAnimator(void) :
+        SceneColorSwitcher( )
+    {}
 
-	virtual ~SceneStrobeAnimator(void);
+    virtual ~SceneStrobeAnimator(void);
 
-	AbstractAnimation* clone();
-	CString getSynopsis(void);
+    AbstractAnimation* clone();
+    CString getSynopsis(void);
 
-	const char* getName() { return "Scene Strobe Animator"; }
-	const char* getClassName() { return SceneStrobeAnimator::className; }
+    const char* getName() { return "Scene Strobe Animator"; }
+    const char* getClassName() { return SceneStrobeAnimator::className; }
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
 
-	bool sliceAnimation( DWORD time_ms, BYTE* dmx_packet );
-	void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
+    bool sliceAnimation( DWORD time_ms, BYTE* dmx_packet );
+    void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
 };
 

@@ -35,34 +35,34 @@ class SceneSoundLevel : public SceneChannelAnimator
     friend class VenueWriter;
     friend class VenueReader;
 
-	WORD				m_fade_what;						// What to fade
+    WORD				m_fade_what;						// What to fade
 
-	SceneSoundLevel(SceneSoundLevel& other) {}
-	SceneSoundLevel& operator=(SceneSoundLevel& rhs) { return *this; }
+    SceneSoundLevel(SceneSoundLevel& other) {}
+    SceneSoundLevel& operator=(SceneSoundLevel& rhs) { return *this; }
 
 public:
-	static const char* className;
+    static const char* className;
 
-	SceneSoundLevel( void ) {};
-	SceneSoundLevel( UID animation_uid, AnimationSignal signal, UIDArray actors, WORD fade_what );
-	virtual ~SceneSoundLevel(void);
+    SceneSoundLevel( void ) {};
+    SceneSoundLevel( UID animation_uid, AnimationSignal signal, UIDArray actors, WORD fade_what );
+    virtual ~SceneSoundLevel(void);
 
-	AbstractAnimation* clone();
-	CString getSynopsis(void);
+    AbstractAnimation* clone();
+    CString getSynopsis(void);
 
-	const char* getName() { return "Sound Level"; }
-	const char* getClassName() { return SceneSoundLevel::className; }
+    const char* getName() { return "Sound Level"; }
+    const char* getClassName() { return SceneSoundLevel::className; }
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
 
-	WORD getFadeWhat() const {
-		return m_fade_what;
-	}
-	void setFadeWhat( WORD fade_what ) {
-		m_fade_what = fade_what;
-	}
+    WORD getFadeWhat() const {
+        return m_fade_what;
+    }
+    void setFadeWhat( WORD fade_what ) {
+        m_fade_what = fade_what;
+    }
 
-	void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
+    void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
 };

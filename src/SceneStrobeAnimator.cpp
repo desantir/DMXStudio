@@ -28,12 +28,12 @@ const char* SceneStrobeAnimator::className = "SceneStrobeAnimator";
 // ----------------------------------------------------------------------------
 //
 SceneStrobeAnimator::SceneStrobeAnimator( UID animation_uid, 
-										  AnimationSignal signal,
-										  UIDArray actors,
-										  unsigned strobe_neg_color,
-										  unsigned strobe_pos_ms,
-										  unsigned strobe_neg_ms ) :
-	SceneColorSwitcher( animation_uid, signal, actors, strobe_neg_color, strobe_pos_ms, strobe_neg_ms, ColorProgression() )
+                                          AnimationSignal signal,
+                                          UIDArray actors,
+                                          unsigned strobe_neg_color,
+                                          unsigned strobe_pos_ms,
+                                          unsigned strobe_neg_ms ) :
+    SceneColorSwitcher( animation_uid, signal, actors, strobe_neg_color, strobe_pos_ms, strobe_neg_ms, ColorProgression() )
 {
 }
 
@@ -46,20 +46,20 @@ SceneStrobeAnimator::~SceneStrobeAnimator(void)
 // ----------------------------------------------------------------------------
 //
 AbstractAnimation* SceneStrobeAnimator::clone() {
-	return new SceneStrobeAnimator( m_uid, m_signal, m_actors, m_strobe_neg_color, 
-								     m_strobe_pos_ms, m_strobe_neg_ms );
+    return new SceneStrobeAnimator( m_uid, m_signal, m_actors, m_strobe_neg_color, 
+                                     m_strobe_pos_ms, m_strobe_neg_ms );
 }
 
 // ----------------------------------------------------------------------------
 //
 CString SceneStrobeAnimator::getSynopsis(void) {
-	CString synopsis;
+    CString synopsis;
 
     synopsis.AppendFormat( "Strobe( -color=%s +ms=%u -ms=%u ) %s", color_names[m_strobe_neg_color],
-		m_strobe_pos_ms, m_strobe_neg_ms, 
-		AbstractAnimation::getSynopsis() );
+        m_strobe_pos_ms, m_strobe_neg_ms, 
+        AbstractAnimation::getSynopsis() );
 
-	return synopsis;
+    return synopsis;
 }
 
 // ----------------------------------------------------------------------------
@@ -75,13 +75,13 @@ void SceneStrobeAnimator::initAnimation( AnimationTask* task, DWORD time_ms, BYT
 bool SceneStrobeAnimator::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
 {
     if ( m_strobe.strobe( time_ms ) ) {
-		for ( SwitcherFixtureArray::iterator it=m_fixtures.begin(); it != m_fixtures.end(); it++ ) {
-			SwitcherFixture& sfixture = (*it);
-			loadColorChannels( dmx_packet, sfixture, m_strobe.isOn() ? m_strobe.rgbwa() : sfixture.m_channel_values );
-		}
+        for ( SwitcherFixtureArray::iterator it=m_fixtures.begin(); it != m_fixtures.end(); it++ ) {
+            SwitcherFixture& sfixture = (*it);
+            loadColorChannels( dmx_packet, sfixture, m_strobe.isOn() ? m_strobe.rgbwa() : sfixture.m_channel_values );
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	return false;
+    return false;
 }

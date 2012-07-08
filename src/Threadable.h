@@ -29,26 +29,26 @@ extern UINT __cdecl _run( LPVOID object );
 
 class Threadable
 {
-	friend UINT __cdecl _run( LPVOID object );
+    friend UINT __cdecl _run( LPVOID object );
 
-	bool		m_running;								// Thread is running
-	CWinThread* m_thread;								// The thread
+    bool		m_running;								// Thread is running
+    CWinThread* m_thread;								// The thread
 
-	Threadable(Threadable& other) {}
-	Threadable& operator=(Threadable& rhs) { return *this; }
+    Threadable(Threadable& other) {}
+    Threadable& operator=(Threadable& rhs) { return *this; }
 
 public:
-	Threadable(void);
-	virtual ~Threadable(void);
+    Threadable(void);
+    virtual ~Threadable(void);
 
-	bool startThread();
-	bool stopThread();
+    bool startThread();
+    bool stopThread();
 
-	inline bool isRunning() { 
-		return m_running;
-	}
+    inline bool isRunning() { 
+        return m_running;
+    }
 
 protected:
-	virtual UINT run() = 0;
+    virtual UINT run() = 0;
 };
 

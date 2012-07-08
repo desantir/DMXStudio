@@ -39,21 +39,21 @@ IniFile::~IniFile(void)
 //
 void IniFile::read( LPCSTR filename, DMXStudio* studio )
 {
-	TiXmlDocument doc;
-	if ( !doc.LoadFile( filename ) ) {
-		DMXStudio::log( "Unable to load DMXStudio configuration file '%s' (%s)", filename, doc.ErrorDesc() );
-		return;
+    TiXmlDocument doc;
+    if ( !doc.LoadFile( filename ) ) {
+        DMXStudio::log( "Unable to load DMXStudio configuration file '%s' (%s)", filename, doc.ErrorDesc() );
+        return;
     }
 
-	TiXmlElement* dmx_studio = doc.FirstChildElement( "dmx_studio" );
+    TiXmlElement* dmx_studio = doc.FirstChildElement( "dmx_studio" );
 
     studio->setVenueFileName( read_text_element( dmx_studio, "venue_filename" ) );
 
-	TiXmlElement* mobile = dmx_studio->FirstChildElement( "mobile" );
-	if ( mobile ) {
+    TiXmlElement* mobile = dmx_studio->FirstChildElement( "mobile" );
+    if ( mobile ) {
         studio->setHttpPort( read_unsigned_attribute( mobile, "http_port" ) );
         studio->setEnableMobile( read_bool_attribute( mobile, "enable", true ) );
-	}
+    }
 
     TiXmlElement* whiteout_slow = dmx_studio->FirstChildElement( "whiteout_slow" );
     if ( whiteout_slow ) {
@@ -84,25 +84,25 @@ void IniFile::write( LPCSTR filename, DMXStudio* studio )
 {
     TiXmlDocument doc;
 
-	TiXmlElement dmx_studio( "dmx_studio" );
+    TiXmlElement dmx_studio( "dmx_studio" );
     add_text_element( dmx_studio, "venue_filename", studio->getVenueFileName() );
 
-	TiXmlElement mobile( "mobile" );
+    TiXmlElement mobile( "mobile" );
     add_attribute( mobile, "enable", studio->getEnableMobile() );
     add_attribute( mobile, "http_port", studio->getHttpPort() );
-	dmx_studio.InsertEndChild( mobile );
+    dmx_studio.InsertEndChild( mobile );
 
     TiXmlElement whiteout_slow( "whiteout_slow" );
     add_attribute( whiteout_slow, "on_ms", studio->getWhiteoutStrobeSlow().m_on_ms );
     add_attribute( whiteout_slow, "of_ms", studio->getWhiteoutStrobeSlow().m_off_ms );
-	dmx_studio.InsertEndChild( whiteout_slow );
+    dmx_studio.InsertEndChild( whiteout_slow );
 
     TiXmlElement whiteout_fast( "whiteout_fast" );
     add_attribute( whiteout_fast, "on_ms", studio->getWhiteoutStrobeFast().m_on_ms );
     add_attribute( whiteout_fast, "of_ms", studio->getWhiteoutStrobeFast().m_off_ms );
-	dmx_studio.InsertEndChild( whiteout_fast );
+    dmx_studio.InsertEndChild( whiteout_fast );
 
     doc.InsertEndChild( dmx_studio );
 
-	doc.SaveFile( filename );
+    doc.SaveFile( filename );
 }

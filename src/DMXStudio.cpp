@@ -67,12 +67,12 @@ int main( int argc, char* argv[] ) {
 //
 void DMXStudio::runStudio()
 {
-	CoInitializeEx( NULL, COINIT_MULTITHREADED );
+    CoInitializeEx( NULL, COINIT_MULTITHREADED );
 
-	try {
+    try {
         openStudioLogFile();
 
-		log_status( "DMX Studio v0.0.11" );
+        log_status( "DMX Studio v0.0.11" );
 
         readIniFile();
 
@@ -80,15 +80,15 @@ void DMXStudio::runStudio()
         FixtureDefinition::readFixtureDefinitions();
 
         // Load all available audio capture devices
-		AudioInputStream::collectAudioCaptureDevices();
+        AudioInputStream::collectAudioCaptureDevices();
 
         // Enumerate the IP addresses
         showIpAddress();
 
         // Start the request server
-		DMXHttpServer server;
+        DMXHttpServer server;
         if ( m_enable_mobile )
-		    server.start();
+            server.start();
 
         // Connect to the music player if available
         if ( hasMusicPlayer() ) {
@@ -97,27 +97,27 @@ void DMXStudio::runStudio()
         }
 
         // Load the default venue
-	    if ( !DMXStudio::loadVenue( getDefaultVenueFilename() ) )
+        if ( !DMXStudio::loadVenue( getDefaultVenueFilename() ) )
             m_venue = new Venue();
 
         // Start the console UI
-		DMXTextUI ui;
-		ui.run();
+        DMXTextUI ui;
+        ui.run();
 
         if ( m_enable_mobile )
             server.stop();
-	}
-	catch ( StudioException& ex ) {
-		log( ex );
-		getchar();
-	}
-	catch ( std::exception& ex ) {
-		log( ex );
-		getchar();
-	}
+    }
+    catch ( StudioException& ex ) {
+        log( ex );
+        getchar();
+    }
+    catch ( std::exception& ex ) {
+        log( ex );
+        getchar();
+    }
 
     if ( m_venue )
-		delete m_venue;
+        delete m_venue;
 
     if ( hasMusicPlayer() && getMusicPlayer()->isLoaded() )
         getMusicPlayer()->disconnect( );
@@ -126,7 +126,7 @@ void DMXStudio::runStudio()
 
     //writeIniFile();
 
-	CoUninitialize();
+    CoUninitialize();
 }
 // ----------------------------------------------------------------------------
 //
@@ -139,28 +139,28 @@ void DMXStudio::createMusicPlayer( LPCSTR username, LPCSTR player_dll_path )
 //
 bool DMXStudio::loadVenue( LPCSTR venue_filename )
 {
-	CSingleLock lock( &m_venue_mutex, TRUE );
+    CSingleLock lock( &m_venue_mutex, TRUE );
 
-	Venue* new_venue = DMXStudio::readVenue( venue_filename );
-	if ( !new_venue )
-		return false;
+    Venue* new_venue = DMXStudio::readVenue( venue_filename );
+    if ( !new_venue )
+        return false;
 
-	if ( m_venue )
-		delete m_venue;
+    if ( m_venue )
+        delete m_venue;
 
-	m_venue = new_venue;
-	m_venue_filename = venue_filename;
+    m_venue = new_venue;
+    m_venue_filename = venue_filename;
 
-	m_venue->open( );
+    m_venue->open( );
 
-	return true;
+    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
 bool DMXStudio::saveVenue( LPCSTR venue_filename )
 {
-	CSingleLock lock( &m_venue_mutex, TRUE );
+    CSingleLock lock( &m_venue_mutex, TRUE );
 
     writeVenue( venue_filename );
 
@@ -173,10 +173,10 @@ bool DMXStudio::saveVenue( LPCSTR venue_filename )
 //
 CString getUserDocumentDirectory()
 {
-	char input_file[MAX_PATH]; 
-	HRESULT result = SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS, NULL, SHGFP_TYPE_CURRENT, input_file); 
-	if ( result != S_OK )
-		throw StudioException( "Error %d finding document directory", result );
+    char input_file[MAX_PATH]; 
+    HRESULT result = SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS, NULL, SHGFP_TYPE_CURRENT, input_file); 
+    if ( result != S_OK )
+        throw StudioException( "Error %d finding document directory", result );
     return CString( input_file );
 }
 
@@ -186,18 +186,18 @@ CString DMXStudio::getDefaultVenueFilename( )
 {
     if ( m_venue_filename.GetLength() )
         return m_venue_filename;
-	
-	CString filename;
-	filename.Format( "%s\\DMXStudio\\DefaultVenue.xml", getUserDocumentDirectory() );
-	return filename;
+    
+    CString filename;
+    filename.Format( "%s\\DMXStudio\\DefaultVenue.xml", getUserDocumentDirectory() );
+    return filename;
 }
 
 // ----------------------------------------------------------------------------
 //
 void DMXStudio::openStudioLogFile( )
 {
-	CString filename;
-	filename.Format( "%s\\DMXStudio\\DMXStudio.log", getUserDocumentDirectory() );
+    CString filename;
+    filename.Format( "%s\\DMXStudio\\DMXStudio.log", getUserDocumentDirectory() );
 
     m_hLog = _fsopen( filename, "at", _SH_DENYWR );
     fputs( "\n", m_hLog );
@@ -218,12 +218,12 @@ void DMXStudio::closeStudioLogFile( )
 //
 Venue* DMXStudio::readVenue( LPCSTR input_file )
 {
-	if ( GetFileAttributes( input_file ) == INVALID_FILE_ATTRIBUTES )
-		return NULL;
+    if ( GetFileAttributes( input_file ) == INVALID_FILE_ATTRIBUTES )
+        return NULL;
 
     VenueReader reader;
 
-	CSingleLock lock( &m_venue_mutex, TRUE );
+    CSingleLock lock( &m_venue_mutex, TRUE );
 
     return reader.read( input_file );
 }
@@ -232,19 +232,19 @@ Venue* DMXStudio::readVenue( LPCSTR input_file )
 //
 void DMXStudio::writeVenue( LPCSTR output_file )
 {
-	// Create the path if it does not exist
-	CString path( output_file ); 
+    // Create the path if it does not exist
+    CString path( output_file ); 
     int pos = path.ReverseFind( '\\' ); 
  
     if ( pos != -1) {
-		path = path.Left( pos+1 );      
-		if ( !PathFileExists( path ) )
-			if ( !CreateDirectory( path, NULL ) )	// TODO - need to created entire path
-				throw StudioException( "Cannot create directory '%s' (ERROR %lu)", 
-									   path, GetLastError() );
-	}
+        path = path.Left( pos+1 );      
+        if ( !PathFileExists( path ) )
+            if ( !CreateDirectory( path, NULL ) )	// TODO - need to created entire path
+                throw StudioException( "Cannot create directory '%s' (ERROR %lu)", 
+                                       path, GetLastError() );
+    }
 
-	CSingleLock lock( &m_venue_mutex, TRUE );
+    CSingleLock lock( &m_venue_mutex, TRUE );
 
     VenueWriter writer;
     writer.write( m_venue, output_file );
@@ -253,47 +253,47 @@ void DMXStudio::writeVenue( LPCSTR output_file )
 // ----------------------------------------------------------------------------
 //
 void DMXStudio::log( std::exception& ex ) {
-	CString output;
-	output.Format( "EXCEPTION: %s", ex.what() );
+    CString output;
+    output.Format( "EXCEPTION: %s", ex.what() );
 
-	printf( "%s\n", (LPCSTR)output );
-	log( output );
+    printf( "%s\n", (LPCSTR)output );
+    log( output );
 }
 
 // ----------------------------------------------------------------------------
 //
 void DMXStudio::log( StudioException& ex ) {
-	CString output;
+    CString output;
 
-	if ( strlen( ex.getFile() ) > 0 )
-		output.Format( "EXCEPTION: %s (%s:%ld)", ex.what(), ex.getFile(), ex.getLine() );
-	else
-		output.Format( "EXCEPTION: %s", ex.what() );
+    if ( strlen( ex.getFile() ) > 0 )
+        output.Format( "EXCEPTION: %s (%s:%ld)", ex.what(), ex.getFile(), ex.getLine() );
+    else
+        output.Format( "EXCEPTION: %s", ex.what() );
 
-	printf( "%s\n", (LPCSTR)output );
-	log( output );
+    printf( "%s\n", (LPCSTR)output );
+    log( output );
 }
 
 // ----------------------------------------------------------------------------
 //
 void DMXStudio::log_status( const char *fmt, ... ) {
-	va_list list;
-	va_start( list, fmt );
+    va_list list;
+    va_start( list, fmt );
 
-	CString output( "STATUS: " );
-	output.AppendFormatV( fmt, list );
+    CString output( "STATUS: " );
+    output.AppendFormatV( fmt, list );
 
-	printf( "%s\n", (LPCSTR)output );
-	log( output );
+    printf( "%s\n", (LPCSTR)output );
+    log( output );
 
-	va_end( list );
+    va_end( list );
 }
 
 // ----------------------------------------------------------------------------
 //
 void DMXStudio::log( const char *fmt, ... ) {
-	va_list list;
-	va_start( list, fmt );
+    va_list list;
+    va_start( list, fmt );
 
     if ( studio.m_hLog ) {
         time_t rawtime;
@@ -305,17 +305,17 @@ void DMXStudio::log( const char *fmt, ... ) {
 
         strftime( buffer, sizeof(buffer), "[%x %X] ", &timeinfo );
 
-	    CString output;
+        CString output;
         output = buffer;
-	    output.AppendFormatV( fmt, list );
-	    output.Append( "\n" );
+        output.AppendFormatV( fmt, list );
+        output.Append( "\n" );
         
         // fputs should be a sigle atomic operation (i.e. no log collisions)
         fputs( output, studio.m_hLog );
         fflush( studio.m_hLog );
     }
 
-	va_end( list );
+    va_end( list );
 }
 
 // ----------------------------------------------------------------------------
@@ -356,8 +356,8 @@ void DMXStudio::showIpAddress()
 //
 void DMXStudio::readIniFile()
 {
-	CString filename;
-	filename.Format( "%s\\DMXStudio\\DMXStudio.ini", getUserDocumentDirectory() );
+    CString filename;
+    filename.Format( "%s\\DMXStudio\\DMXStudio.ini", getUserDocumentDirectory() );
 
     IniFile iniFile;
     iniFile.read( filename, this );
@@ -367,8 +367,8 @@ void DMXStudio::readIniFile()
 //
 void DMXStudio::writeIniFile( )
 {
-	CString filename;
-	filename.Format( "%s\\DMXStudio\\DMXStudio.ini", getUserDocumentDirectory() );
+    CString filename;
+    filename.Format( "%s\\DMXStudio\\DMXStudio.ini", getUserDocumentDirectory() );
 
     IniFile iniFile;
     iniFile.write( filename, this );

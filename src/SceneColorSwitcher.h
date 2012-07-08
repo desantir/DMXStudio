@@ -29,27 +29,27 @@ MA 02111-1307, USA.
 #include "ColorStrobe.h"
 
 typedef enum {
-	COLOR_EFFECT_CHANGE = 0,				// Simple color changer
-	COLOR_EFFECT_STROBE = 1,				// Strobing color
-	COLOR_EFFECT_BLEND = 2,					// Blending colors together
-	COLOR_EFFECT_COUNT						// Must be last
+    COLOR_EFFECT_CHANGE = 0,				// Simple color changer
+    COLOR_EFFECT_STROBE = 1,				// Strobing color
+    COLOR_EFFECT_BLEND = 2,					// Blending colors together
+    COLOR_EFFECT_COUNT						// Must be last
 } ColorEffect;
 
 typedef std::map<UINT, CString> ColorNames;
 
 struct SwitcherFixture
 {
-	Fixture*				m_pf;
-	channel_t				m_channels[COLOR_CHANNELS];             // Channel numbers for all colors
+    Fixture*				m_pf;
+    channel_t				m_channels[COLOR_CHANNELS];             // Channel numbers for all colors
     BYTE                    m_channel_values[COLOR_CHANNELS];       // Actors initial values for all colors
-	ColorFader				m_fader;
+    ColorFader				m_fader;
 
-	SwitcherFixture( Fixture* pf, channel_t channels[], BYTE channel_values[] ) :
-		m_pf( pf )
+    SwitcherFixture( Fixture* pf, channel_t channels[], BYTE channel_values[] ) :
+        m_pf( pf )
     {
         memcpy( m_channels, channels, sizeof(m_channels) );
-		memcpy( m_channel_values, channel_values, sizeof(m_channel_values) );
-	}
+        memcpy( m_channel_values, channel_values, sizeof(m_channel_values) );
+    }
 };
 
 typedef std::vector< SwitcherFixture > SwitcherFixtureArray;
@@ -61,65 +61,65 @@ class SceneColorSwitcher : public AbstractAnimation
     friend class VenueReader;
 
 protected:
-	AnimationSignalProcessor*	m_signal_processor;
-	SwitcherFixtureArray		m_fixtures;
-	ColorEffect					m_color_effect;
-	UINT       					m_color_index;
-	ColorStrobe					m_strobe;
+    AnimationSignalProcessor*	m_signal_processor;
+    SwitcherFixtureArray		m_fixtures;
+    ColorEffect					m_color_effect;
+    UINT       					m_color_index;
+    ColorStrobe					m_strobe;
     UINT                        m_custom_index;
     UINT                        m_strobe_periods;
 
-	// Configuration
-	unsigned					m_strobe_neg_color;
-	unsigned					m_strobe_neg_ms;
-	unsigned					m_strobe_pos_ms;
+    // Configuration
+    unsigned					m_strobe_neg_color;
+    unsigned					m_strobe_neg_ms;
+    unsigned					m_strobe_pos_ms;
     ColorProgression            m_custom_colors;
 
 public:
-	static const char* className;
+    static const char* className;
 
     static ColorNames color_names;
 
-	SceneColorSwitcher( UID animation_uid, 
-						AnimationSignal signal,
-						UIDArray actors,
-						unsigned strobe_neg_color,
-						unsigned strobe_pos_ms,
-						unsigned strobe_neg_ms,
+    SceneColorSwitcher( UID animation_uid, 
+                        AnimationSignal signal,
+                        UIDArray actors,
+                        unsigned strobe_neg_color,
+                        unsigned strobe_pos_ms,
+                        unsigned strobe_neg_ms,
                         ColorProgression custom_colors );
 
-	SceneColorSwitcher(void) :
-		m_signal_processor( NULL )
-	{}
+    SceneColorSwitcher(void) :
+        m_signal_processor( NULL )
+    {}
 
-	virtual ~SceneColorSwitcher(void);
+    virtual ~SceneColorSwitcher(void);
 
-	AbstractAnimation* clone();
-	CString getSynopsis(void);
+    AbstractAnimation* clone();
+    CString getSynopsis(void);
 
-	const char* getName() { return "Scene Color Switcher"; }
-	const char* getClassName() { return SceneColorSwitcher::className; }
+    const char* getName() { return "Scene Color Switcher"; }
+    const char* getClassName() { return SceneColorSwitcher::className; }
 
-	unsigned getStrobeNegColor() const {
-		return m_strobe_neg_color;
-	}
-	void setStrobeNegColor( unsigned strobe_neg_color ) {
-		m_strobe_neg_color = strobe_neg_color;
-	}
+    unsigned getStrobeNegColor() const {
+        return m_strobe_neg_color;
+    }
+    void setStrobeNegColor( unsigned strobe_neg_color ) {
+        m_strobe_neg_color = strobe_neg_color;
+    }
 
-	unsigned getStrobeNegMS() const {
-		return m_strobe_neg_ms;
-	}
-	void setStrobeNegMS( unsigned strobe_neg_ms ) {
-		m_strobe_neg_ms = strobe_neg_ms;
-	}
+    unsigned getStrobeNegMS() const {
+        return m_strobe_neg_ms;
+    }
+    void setStrobeNegMS( unsigned strobe_neg_ms ) {
+        m_strobe_neg_ms = strobe_neg_ms;
+    }
 
-	unsigned getStrobePosMS() const {
-		return m_strobe_pos_ms;
-	}
-	void setStrobePosMS( unsigned strobe_pos_ms ) {
-		m_strobe_pos_ms = strobe_pos_ms;
-	}
+    unsigned getStrobePosMS() const {
+        return m_strobe_pos_ms;
+    }
+    void setStrobePosMS( unsigned strobe_pos_ms ) {
+        m_strobe_pos_ms = strobe_pos_ms;
+    }
 
     ColorProgression getCustomColors( ) const {
         return m_custom_colors;
@@ -132,11 +132,11 @@ public:
         visitor->visit(this);
     }
 
-	virtual void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
-	virtual bool sliceAnimation( DWORD time_ms, BYTE* dmx_packet );
-	virtual void stopAnimation( void );
+    virtual void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
+    virtual bool sliceAnimation( DWORD time_ms, BYTE* dmx_packet );
+    virtual void stopAnimation( void );
 
 protected:
-	void loadColorChannels( BYTE* dmx_packet, SwitcherFixture& sfixture, const BYTE *rgbw );
+    void loadColorChannels( BYTE* dmx_packet, SwitcherFixture& sfixture, const BYTE *rgbw );
 };
 

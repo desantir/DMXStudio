@@ -25,13 +25,13 @@ MA 02111-1307, USA.
 // ----------------------------------------------------------------------------
 //
 SceneActor::SceneActor( Fixture *pf ) :
-	m_pfuid( pf->getUID() ),
-	m_channels( pf->getNumChannels() )
+    m_pfuid( pf->getUID() ),
+    m_channels( pf->getNumChannels() )
 {
-	reset_channel_values();
+    reset_channel_values();
 
     // Copy channel defaults
-	for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+    for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
         m_channel_values[ channel ] = pf->getChannel( channel )->getDefaultValue();
     }
 }

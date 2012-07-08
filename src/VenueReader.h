@@ -53,22 +53,22 @@ public:
     ChannelAnimation* read( TiXmlElement* self, ChannelAnimation* channel_animation );
     MusicSceneSelector* read( TiXmlElement* self, MusicSceneSelector* music_scene_selection );
 
-	template <class T>
-	std::vector<T *> read_xml_list( TiXmlElement *container, const char *element_name ) {
-		std::vector<T *> list;
+    template <class T>
+    std::vector<T *> read_xml_list( TiXmlElement *container, const char *element_name ) {
+        std::vector<T *> list;
 
-		if ( container ) {
-			TiXmlElement* element = container->FirstChildElement( element_name );
-			while ( element ) {
-				T * instance = read( element, (T *)NULL );
-				if ( instance ) {
-					list.push_back( instance );
-				}
-				element = element->NextSiblingElement();
-			}
-		}
+        if ( container ) {
+            TiXmlElement* element = container->FirstChildElement( element_name );
+            while ( element ) {
+                T * instance = read( element, (T *)NULL );
+                if ( instance ) {
+                    list.push_back( instance );
+                }
+                element = element->NextSiblingElement();
+            }
+        }
 
-		return list;
-	}
+        return list;
+    }
 };
 

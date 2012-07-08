@@ -23,7 +23,7 @@ MA 02111-1307, USA.
 #pragma once
 
 /**
-	Group of similar fixture types.
+    Group of similar fixture types.
 */
 
 #include "IVisitor.h"
@@ -34,33 +34,33 @@ class FixtureGroup : public DObject
     friend class VenueWriter;
     friend class VenueReader;
 
-	UIDSet	m_fixtures;
+    UIDSet	m_fixtures;
 
 public:
-	FixtureGroup(void) :
-	  DObject() {}
-	  
-	FixtureGroup( UID uid, const char * name, const char *description );
-	~FixtureGroup(void);
+    FixtureGroup(void) :
+      DObject() {}
+      
+    FixtureGroup( UID uid, const char * name, const char *description );
+    ~FixtureGroup(void);
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
 
-	void addFixture( UID pfuid ) {
-		m_fixtures.insert( pfuid );
-	}
+    void addFixture( UID pfuid ) {
+        m_fixtures.insert( pfuid );
+    }
 
-	void setFixtures( UIDSet fixtures ) {
-		m_fixtures = fixtures;
-	}
+    void setFixtures( UIDSet fixtures ) {
+        m_fixtures = fixtures;
+    }
 
-	bool removeFixture( UID pfuid );
-	bool containsFixture( UID pfuid );
+    bool removeFixture( UID pfuid );
+    bool containsFixture( UID pfuid );
 
-	UIDSet getFixtures( ) const {
-		return UIDSet( m_fixtures );
-	}
+    UIDSet getFixtures( ) const {
+        return UIDSet( m_fixtures );
+    }
 };
 
 typedef std::map< UID, FixtureGroup > FixtureGroupMap;

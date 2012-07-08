@@ -59,18 +59,18 @@ static int static_kludge = populateChannelTypes();
 // ----------------------------------------------------------------------------
 //
 Channel::Channel( channel_t offset, ChannelType type, const char *name ) :
-	m_channel_offset( offset ),
-	m_type( type ),
+    m_channel_offset( offset ),
+    m_type( type ),
     m_default_value( 0 ),
     m_home_value( 0 ),
     m_is_dimmer( false ),
     m_lowest_intensity( 0 ),
     m_highest_intensity( 255 )
 {
-	if ( name == NULL )
-		m_name = getTypeName( m_type );
-	else
-		m_name = name;
+    if ( name == NULL )
+        m_name = getTypeName( m_type );
+    else
+        m_name = name;
 }
 
 // ----------------------------------------------------------------------------
@@ -83,108 +83,108 @@ Channel::~Channel(void)
 //
 BYTE Channel::convertAngleToValue( int angle ) 
 {
-	AngleTable::iterator it = m_angle_table.find( angle );
-	if ( it == m_angle_table.end() )
-		return 0;
-	return it->second;
+    AngleTable::iterator it = m_angle_table.find( angle );
+    if ( it == m_angle_table.end() )
+        return 0;
+    return it->second;
 }
 
 // ----------------------------------------------------------------------------
 //
 void Channel::generateAngleTable(void) {
-	m_angle_table.clear();
+    m_angle_table.clear();
 
-	if ( m_angles.size() == 0 )
-		return;
+    if ( m_angles.size() == 0 )
+        return;
 
-	// I hope this is not overkill, but there does not appear to be simple, consistent
-	// conversion from value to angle and vise versa for pan & tilt channels
+    // I hope this is not overkill, but there does not appear to be simple, consistent
+    // conversion from value to angle and vise versa for pan & tilt channels
 
-	int angle_low = -1;
-	int angle_high = 0;
-	int value_low = 0;
-	int value_high = 0;
+    int angle_low = -1;
+    int angle_high = 0;
+    int value_low = 0;
+    int value_high = 0;
 
-	for ( ChannelAngleMap::iterator it=m_angles.begin(); it != m_angles.end(); it++ ) {
-		if ( angle_low == -1 || it->first < angle_low ) {
-			angle_low = it->first;
-			value_low = it->second.getValue();
-		}
-	}
+    for ( ChannelAngleMap::iterator it=m_angles.begin(); it != m_angles.end(); it++ ) {
+        if ( angle_low == -1 || it->first < angle_low ) {
+            angle_low = it->first;
+            value_low = it->second.getValue();
+        }
+    }
 
-	int range_angle = -1;
-	BYTE range_low = 0;
-	BYTE range_high = 0;
+    int range_angle = -1;
+    BYTE range_low = 0;
+    BYTE range_high = 0;
 
-	struct range_def {
-		int range_angle;
-		BYTE range_low;
-		BYTE range_high;
+    struct range_def {
+        int range_angle;
+        BYTE range_low;
+        BYTE range_high;
 
-		range_def( int angle, int low, int high ) :
-			range_angle( angle ), range_low( low ), range_high( high ) {}
-	};
+        range_def( int angle, int low, int high ) :
+            range_angle( angle ), range_low( low ), range_high( high ) {}
+    };
 
-	std::vector<range_def> ranges;
+    std::vector<range_def> ranges;
 
-	while ( true ) {
-		m_angle_table[ angle_low ] = value_low;
+    while ( true ) {
+        m_angle_table[ angle_low ] = value_low;
 
-		if ( range_angle == -1 ) {
-			range_low = value_low;
-		}
-		else {
-			if ( value_low > range_high ) {
-				ranges.push_back( range_def( range_angle, range_low, range_high ) );
-				range_low = range_high + 1;		// Make sure we don't skip any values
-			}
-		}
+        if ( range_angle == -1 ) {
+            range_low = value_low;
+        }
+        else {
+            if ( value_low > range_high ) {
+                ranges.push_back( range_def( range_angle, range_low, range_high ) );
+                range_low = range_high + 1;		// Make sure we don't skip any values
+            }
+        }
 
-		range_angle = angle_low;		// This is an absolute
-		range_high = value_low;
+        range_angle = angle_low;		// This is an absolute
+        range_high = value_low;
 
-		angle_high = -1;
+        angle_high = -1;
 
-		// Find next highest angle in the angle map
+        // Find next highest angle in the angle map
 
-		for ( ChannelAngleMap::iterator it=m_angles.begin(); it != m_angles.end(); it++ ) {
-			if ( it->first > angle_low && (angle_high == -1 || it->first < angle_high) ) {
-				angle_high = it->first;
-				value_high = it->second.getValue();
-			}
-		}
+        for ( ChannelAngleMap::iterator it=m_angles.begin(); it != m_angles.end(); it++ ) {
+            if ( it->first > angle_low && (angle_high == -1 || it->first < angle_high) ) {
+                angle_high = it->first;
+                value_high = it->second.getValue();
+            }
+        }
 
-		if ( angle_high == -1 )
-			break;
+        if ( angle_high == -1 )
+            break;
 
-		float step = (float)(value_high-value_low) / (float)(angle_high-angle_low);
+        float step = (float)(value_high-value_low) / (float)(angle_high-angle_low);
 
-		for ( int angle=angle_low+1; angle < angle_high; angle++ ) {
-			BYTE value = value_low + (BYTE)((angle-angle_low)*step+0.5);
-			m_angle_table[ angle ] = value;
+        for ( int angle=angle_low+1; angle < angle_high; angle++ ) {
+            BYTE value = value_low + (BYTE)((angle-angle_low)*step+0.5);
+            m_angle_table[ angle ] = value;
 
-			if ( value > range_high ) {
-				ranges.push_back( range_def( range_angle, range_low, range_high ) );
-				range_angle = angle;
-				range_low = range_high + 1;		// Make sure we don't skip any values
-			}
+            if ( value > range_high ) {
+                ranges.push_back( range_def( range_angle, range_low, range_high ) );
+                range_angle = angle;
+                range_low = range_high + 1;		// Make sure we don't skip any values
+            }
 
-			range_high = value;
-		}
+            range_high = value;
+        }
 
-		angle_low = angle_high;
-		value_low = value_high;
-	}
+        angle_low = angle_high;
+        value_low = value_high;
+    }
 
-	ranges.push_back( range_def( range_angle, range_low, range_high ) );
+    ranges.push_back( range_def( range_angle, range_low, range_high ) );
 
-	if ( m_ranges.size() == 0 ) {
-		CString range_name;
-		for ( size_t i=0; i < ranges.size(); i++ ) {
-			range_name.Format( "%d degrees", ranges[i].range_angle);
-			m_ranges.push_back( ChannelValueRange( ranges[i].range_low, ranges[i].range_high, range_name ) );
-		}
-	}
+    if ( m_ranges.size() == 0 ) {
+        CString range_name;
+        for ( size_t i=0; i < ranges.size(); i++ ) {
+            range_name.Format( "%d degrees", ranges[i].range_angle);
+            m_ranges.push_back( ChannelValueRange( ranges[i].range_low, ranges[i].range_high, range_name ) );
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------

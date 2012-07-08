@@ -26,12 +26,12 @@ MA 02111-1307, USA.
 #include "SceneChannelAnimator.h"
 
 typedef enum {
-	DP_SEQUENCE = 1,
-	DP_CYLON = 2,
-	DP_PAIRS = 3,
-	DP_TOCENTER = 4,
-	DP_ALTERNATE = 5,
-	DP_ALL = 6
+    DP_SEQUENCE = 1,
+    DP_CYLON = 2,
+    DP_PAIRS = 3,
+    DP_TOCENTER = 4,
+    DP_ALTERNATE = 5,
+    DP_ALL = 6
 } DimmerPattern;
 
 class ScenePatternDimmer : 	public SceneChannelAnimator
@@ -39,36 +39,36 @@ class ScenePatternDimmer : 	public SceneChannelAnimator
     friend class VenueWriter;
     friend class VenueReader;
 
-	DimmerPattern			m_dimmer_pattern;
+    DimmerPattern			m_dimmer_pattern;
 
 public:
-	static const char* className;
+    static const char* className;
 
-	ScenePatternDimmer( UID animation_uid, 
-						AnimationSignal signal,
-						UIDArray actors,
-						DimmerPattern pattern );
+    ScenePatternDimmer( UID animation_uid, 
+                        AnimationSignal signal,
+                        UIDArray actors,
+                        DimmerPattern pattern );
 
-	ScenePatternDimmer(void) {}
-	virtual ~ScenePatternDimmer(void);
+    ScenePatternDimmer(void) {}
+    virtual ~ScenePatternDimmer(void);
 
-	AbstractAnimation* clone();
-	CString getSynopsis(void);
+    AbstractAnimation* clone();
+    CString getSynopsis(void);
 
-	const char* getName() { return "Scene Pattern Sequencer"; }
-	const char* getClassName() { return ScenePatternDimmer::className; }
+    const char* getName() { return "Scene Pattern Sequencer"; }
+    const char* getClassName() { return ScenePatternDimmer::className; }
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
 
-	DimmerPattern getDimmerPattern() const {
-		return m_dimmer_pattern;
-	}
-	void setDimmerPattern( DimmerPattern dimmer_pattern ) {
-		m_dimmer_pattern = dimmer_pattern;
-	}
+    DimmerPattern getDimmerPattern() const {
+        return m_dimmer_pattern;
+    }
+    void setDimmerPattern( DimmerPattern dimmer_pattern ) {
+        m_dimmer_pattern = dimmer_pattern;
+    }
 
-	void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
+    void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
 };
 

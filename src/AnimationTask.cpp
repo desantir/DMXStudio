@@ -25,8 +25,8 @@ MA 02111-1307, USA.
 // ----------------------------------------------------------------------------
 //
 AnimationTask::AnimationTask( Venue* venue ) :
-	m_venue( venue ),
-	m_scene( NULL ),
+    m_venue( venue ),
+    m_scene( NULL ),
     m_load_channels( false )
 {
 }
@@ -35,28 +35,28 @@ AnimationTask::AnimationTask( Venue* venue ) :
 //
 AnimationTask::~AnimationTask(void)
 {
-	stop();
+    stop();
 }
 
 // ----------------------------------------------------------------------------
 //
 UINT AnimationTask::run(void) {
-	DMXStudio::log_status( "Scene animator running" );
+    DMXStudio::log_status( "Scene animator running" );
 
     m_load_channels = true;
 
     CSingleLock lock( &m_animation_mutex, FALSE );
 
-	while ( isRunning() ) {
-	    try { 
+    while ( isRunning() ) {
+        try { 
             lock.Lock();
 
-			DWORD time_ms = GetCurrentTime();
-          	bool changed = m_load_channels;
+            DWORD time_ms = GetCurrentTime();
+            bool changed = m_load_channels;
             m_load_channels = false;
 
-			for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
-				changed |= (*it)->sliceAnimation( time_ms, m_dmx_packet );
+            for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
+                changed |= (*it)->sliceAnimation( time_ms, m_dmx_packet );
 
             if ( m_venue->getWhiteout() == WHITEOUT_STROBE_SLOW ||
                  m_venue->getWhiteout() == WHITEOUT_STROBE_FAST ||
@@ -66,40 +66,40 @@ UINT AnimationTask::run(void) {
             if ( m_venue->isLightBlackout() )
                 changed = false;
 
-			// Check auto blackout situation
-			if ( m_venue->getAutoBlackout() != 0 && m_venue->isMute() && !m_venue->isLightBlackout() ) {
-				m_venue->setLightBlackout( true );
+            // Check auto blackout situation
+            if ( m_venue->getAutoBlackout() != 0 && m_venue->isMute() && !m_venue->isLightBlackout() ) {
+                m_venue->setLightBlackout( true );
                 if ( m_scene )
-	                m_venue->loadSceneChannels( m_dmx_packet, m_scene );
-				changed = true;
-			}
-			else if ( !m_venue->isMute() && m_venue->isLightBlackout() ) {
-				m_venue->setLightBlackout( false );
+                    m_venue->loadSceneChannels( m_dmx_packet, m_scene );
+                changed = true;
+            }
+            else if ( !m_venue->isMute() && m_venue->isLightBlackout() ) {
+                m_venue->setLightBlackout( false );
                 if ( m_scene )
-	                m_venue->loadSceneChannels( m_dmx_packet, m_scene );
-				changed = true;
-			}
+                    m_venue->loadSceneChannels( m_dmx_packet, m_scene );
+                changed = true;
+            }
 
             lock.Unlock();
 
-			if ( changed )
-				m_venue->writePacket( m_dmx_packet );
+            if ( changed )
+                m_venue->writePacket( m_dmx_packet );
 
-			Sleep(1);
-		}
-	    catch ( std::exception& ex ) {
-		    DMXStudio::log( ex );
+            Sleep(1);
+        }
+        catch ( std::exception& ex ) {
+            DMXStudio::log( ex );
 
             if ( lock.IsLocked() )
                 lock.Unlock();
 
             clearAnimations();
-	    }
-	}
+        }
+    }
 
-	DMXStudio::log_status( "Scene animator stopped" );
+    DMXStudio::log_status( "Scene animator stopped" );
 
-	return 0;
+    return 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -113,7 +113,7 @@ void AnimationTask::stageScene( Scene* scene )
     // Stage new scene animations
     m_scene = scene;
 
-	memset( m_dmx_packet, 0, DMX_PACKET_SIZE );
+    memset( m_dmx_packet, 0, DMX_PACKET_SIZE );
 
     m_venue->setHomePositions( m_dmx_packet );
 
@@ -122,14 +122,14 @@ void AnimationTask::stageScene( Scene* scene )
     for ( size_t i=0; i < animationPtrs.size(); i++ )
         m_animations.push_back( animationPtrs[i]->clone() );
 
-	// Latch in scene actors
-	m_venue->loadSceneChannels( m_dmx_packet, m_scene );
+    // Latch in scene actors
+    m_venue->loadSceneChannels( m_dmx_packet, m_scene );
 
-	// Initialize animations
-	DWORD time_ms = GetCurrentTime();
+    // Initialize animations
+    DWORD time_ms = GetCurrentTime();
 
-	for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
-		(*it)->initAnimation( this, time_ms, m_dmx_packet );
+    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
+        (*it)->initAnimation( this, time_ms, m_dmx_packet );
 
     m_load_channels = true;             // Make sure we load channels at least once
 }
@@ -138,7 +138,7 @@ void AnimationTask::stageScene( Scene* scene )
 //
 bool AnimationTask::start()
 {
-	return startThread();
+    return startThread();
 }
 
 // ----------------------------------------------------------------------------
@@ -147,10 +147,10 @@ bool AnimationTask::stop()
 {
     clearAnimations();
 
-	if ( !stopThread() )
-		return false;
+    if ( !stopThread() )
+        return false;
 
-	return true;
+    return true;
 }
 
 // ----------------------------------------------------------------------------
@@ -161,7 +161,7 @@ void AnimationTask::clearAnimations()
 
     // Clear out all animations
     for ( size_t i=0; i < m_animations.size(); i++ ) {
-		m_animations[i]->stopAnimation( );
+        m_animations[i]->stopAnimation( );
         delete m_animations[i];
     }
 

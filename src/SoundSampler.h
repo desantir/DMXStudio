@@ -27,80 +27,80 @@ MA 02111-1307, USA.
 #include "AudioInputStream.h"
 
 class SampleEntry {
-	AudioChannel			m_channel;
-	unsigned				m_bin;
-	float					m_frequency;
-	int						m_db;
-	unsigned				m_power;
+    AudioChannel			m_channel;
+    unsigned				m_bin;
+    float					m_frequency;
+    int						m_db;
+    unsigned				m_power;
 
-	// Buffer and values to compute power moving average
-	unsigned				m_power_buffer[ 4 ];
-	unsigned				m_power_index;
-	unsigned				m_power_sum;
-	unsigned				m_power_count;
+    // Buffer and values to compute power moving average
+    unsigned				m_power_buffer[ 4 ];
+    unsigned				m_power_index;
+    unsigned				m_power_sum;
+    unsigned				m_power_count;
 
 public:
-	SampleEntry( AudioChannel channel, unsigned bin );
-	~SampleEntry() {}
+    SampleEntry( AudioChannel channel, unsigned bin );
+    ~SampleEntry() {}
 
-	inline float getFrequency() const {
-		return m_frequency;
-	}
+    inline float getFrequency() const {
+        return m_frequency;
+    }
 
-	inline AudioChannel getChannel() const {
-		return m_channel;
-	}
+    inline AudioChannel getChannel() const {
+        return m_channel;
+    }
 
-	inline unsigned getBin() const {
-		return m_bin;
-	}
+    inline unsigned getBin() const {
+        return m_bin;
+    }
 
-	inline unsigned getPower() const {
-		return m_power;
-	}
+    inline unsigned getPower() const {
+        return m_power;
+    }
 
-	inline unsigned getDB() const {
-		return m_db;
-	}
+    inline unsigned getDB() const {
+        return m_db;
+    }
 
-	inline unsigned getAvgPower() const {
-		return m_power_sum / m_power_count;
-	}
+    inline unsigned getAvgPower() const {
+        return m_power_sum / m_power_count;
+    }
 
-	void setSample( float frequency, unsigned power, int db );
+    void setSample( float frequency, unsigned power, int db );
 };
 
 typedef std::vector<SampleEntry> SampleSet;
 
 class SoundSampler : public IAudioProcessor
 {
-	AudioInputStream*		m_audio_stream;
-	unsigned				m_channels;
-	CMutex					m_mutex;
-	SampleSet				m_samples;
-	ULONG					m_sample_number;
-	CEvent*					m_listener;
+    AudioInputStream*		m_audio_stream;
+    unsigned				m_channels;
+    CMutex					m_mutex;
+    SampleSet				m_samples;
+    ULONG					m_sample_number;
+    CEvent*					m_listener;
 
-	SoundSampler(SoundSampler& other) {}
-	SoundSampler& operator=(SoundSampler& rhs) { return *this; }
+    SoundSampler(SoundSampler& other) {}
+    SoundSampler& operator=(SoundSampler& rhs) { return *this; }
 
 public:
-	SoundSampler( unsigned channels, CEvent* listener=NULL );
-	~SoundSampler(void);
+    SoundSampler( unsigned channels, CEvent* listener=NULL );
+    ~SoundSampler(void);
 
-	void attach( AudioInputStream* stream );
-	void detach();
+    void attach( AudioInputStream* stream );
+    void detach();
 
-	HRESULT ProcessFFT( WORD channels, FFT_Result* fft_result[] );  
-	HRESULT ProcessAmplitudes( WORD channels, size_t sample_size, float* sample_data[] ) { return 0; }
+    HRESULT ProcessFFT( WORD channels, FFT_Result* fft_result[] );  
+    HRESULT ProcessAmplitudes( WORD channels, size_t sample_size, float* sample_data[] ) { return 0; }
 
-	bool setFrequencySamples( unsigned channels, const unsigned* frequencies );
+    bool setFrequencySamples( unsigned channels, const unsigned* frequencies );
 
-	SampleSet getSampleSet( ULONG &sample_number );
-	int getLevel( unsigned freq_low, unsigned freq_high );
+    SampleSet getSampleSet( ULONG &sample_number );
+    int getLevel( unsigned freq_low, unsigned freq_high );
 
 private:
-	void processChannelFFT( AudioChannel channel, FFT_Result* fft_data );
+    void processChannelFFT( AudioChannel channel, FFT_Result* fft_data );
 };
 
 

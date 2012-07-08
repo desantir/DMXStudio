@@ -31,9 +31,9 @@ MA 02111-1307, USA.
 typedef ULONG ChaseNumber;
 
 typedef enum {
-	CHASE_MANUAL = 1,
-	CHASE_AUTO,
-	CHASE_RECORD
+    CHASE_MANUAL = 1,
+    CHASE_AUTO,
+    CHASE_RECORD
 } ChaseRunMode;
 
 class Chase : public DObject
@@ -41,86 +41,86 @@ class Chase : public DObject
     friend class VenueWriter;
     friend class VenueReader;
 
-	ChaseNumber		m_chase_number;
-	ULONG			m_delay_ms;						// Scene delay in milliseconds
-	ULONG			m_fade_ms;						// Fade time - transition between scenes
-	ChaseStepArray	m_chase_steps;
+    ChaseNumber		m_chase_number;
+    ULONG			m_delay_ms;						// Scene delay in milliseconds
+    ULONG			m_fade_ms;						// Fade time - transition between scenes
+    ChaseStepArray	m_chase_steps;
 
 public:
-	Chase(void) : 
-		m_chase_number(0),
-		m_delay_ms( DEFAULT_CHASE_DELAY ),
-		m_fade_ms( 0 ) {}
+    Chase(void) : 
+        m_chase_number(0),
+        m_delay_ms( DEFAULT_CHASE_DELAY ),
+        m_fade_ms( 0 ) {}
 
-	Chase( UID uid, ChaseNumber chase_number, ULONG delay_ms, ULONG fade_ms, const char * name, const char *description );
-	~Chase(void);
+    Chase( UID uid, ChaseNumber chase_number, ULONG delay_ms, ULONG fade_ms, const char * name, const char *description );
+    ~Chase(void);
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
 
-	ChaseNumber getChaseNumber( ) const {
-		return m_chase_number;
-	}
-	void setChaseNumber( ChaseNumber chase_number ) {
-		m_chase_number = chase_number;
-	}
+    ChaseNumber getChaseNumber( ) const {
+        return m_chase_number;
+    }
+    void setChaseNumber( ChaseNumber chase_number ) {
+        m_chase_number = chase_number;
+    }
 
-	void setDelayMS( ULONG delay_ms ) {
-		m_delay_ms = delay_ms;
-	}
-	ULONG getDelayMS() const {
-		return m_delay_ms;
-	}
+    void setDelayMS( ULONG delay_ms ) {
+        m_delay_ms = delay_ms;
+    }
+    ULONG getDelayMS() const {
+        return m_delay_ms;
+    }
 
-	void setFadeMS( ULONG fade_ms ) {
-		m_fade_ms = fade_ms;
-	}
-	ULONG getFadeMS() const {
-		return m_fade_ms;
-	}
+    void setFadeMS( ULONG fade_ms ) {
+        m_fade_ms = fade_ms;
+    }
+    ULONG getFadeMS() const {
+        return m_fade_ms;
+    }
 
-	bool removeScene( UID scene_uid );
+    bool removeScene( UID scene_uid );
 
-	size_t getNumSteps() const {
-		return m_chase_steps.size();
-	}
+    size_t getNumSteps() const {
+        return m_chase_steps.size();
+    }
 
-	void appendStep( ChaseStep& step ) {
-		m_chase_steps.push_back( step );
-	}
+    void appendStep( ChaseStep& step ) {
+        m_chase_steps.push_back( step );
+    }
 
-	void appendStep( ChaseStepArray& steps ) {
-		m_chase_steps.insert<ChaseStepArray::iterator>(
-			m_chase_steps.end(),
-			steps.begin(), steps.end() );
-	}
+    void appendStep( ChaseStepArray& steps ) {
+        m_chase_steps.insert<ChaseStepArray::iterator>(
+            m_chase_steps.end(),
+            steps.begin(), steps.end() );
+    }
 
-	void deleteStep( unsigned step_number ) {
-		STUDIO_ASSERT( step_number < m_chase_steps.size(), "Chase delete step out of range" );
-		m_chase_steps.erase( m_chase_steps.begin()+step_number );
-	}
+    void deleteStep( unsigned step_number ) {
+        STUDIO_ASSERT( step_number < m_chase_steps.size(), "Chase delete step out of range" );
+        m_chase_steps.erase( m_chase_steps.begin()+step_number );
+    }
 
-	void insertStep( unsigned step_number, ChaseStep& step ) {
-		STUDIO_ASSERT( step_number <= m_chase_steps.size(), "Chase insert step out of range" );
-		m_chase_steps.insert( m_chase_steps.begin()+step_number, step );
-	}
+    void insertStep( unsigned step_number, ChaseStep& step ) {
+        STUDIO_ASSERT( step_number <= m_chase_steps.size(), "Chase insert step out of range" );
+        m_chase_steps.insert( m_chase_steps.begin()+step_number, step );
+    }
 
-	void insertStep( unsigned step_number, ChaseStepArray& steps ) {
-		STUDIO_ASSERT( step_number <= m_chase_steps.size(), "Chase insert step out of range" );
-		m_chase_steps.insert<ChaseStepArray::iterator>(
-			m_chase_steps.begin()+step_number, 
-			steps.begin(), steps.end() );
-	}
+    void insertStep( unsigned step_number, ChaseStepArray& steps ) {
+        STUDIO_ASSERT( step_number <= m_chase_steps.size(), "Chase insert step out of range" );
+        m_chase_steps.insert<ChaseStepArray::iterator>(
+            m_chase_steps.begin()+step_number, 
+            steps.begin(), steps.end() );
+    }
 
-	ChaseStep* getStep( unsigned step_number ) {
-		STUDIO_ASSERT( step_number <= m_chase_steps.size(), "Chase insert step out of range" );
-		return &m_chase_steps.at( step_number );
-	}
+    ChaseStep* getStep( unsigned step_number ) {
+        STUDIO_ASSERT( step_number <= m_chase_steps.size(), "Chase insert step out of range" );
+        return &m_chase_steps.at( step_number );
+    }
 
-	ChaseStepArray getSteps() const {
-		return m_chase_steps;
-	}
+    ChaseStepArray getSteps() const {
+        return m_chase_steps;
+    }
 };
 
 typedef std::map<UID, Chase> ChaseMap;

@@ -28,55 +28,55 @@ MA 02111-1307, USA.
 
 class SoundDetector : public IAudioProcessor
 {
-	AudioInputStream* m_audio_stream;
-	DWORD			m_mute_ms;				// Length in MS of no amplitude before silence (zero = OFF)
+    AudioInputStream* m_audio_stream;
+    DWORD			m_mute_ms;				// Length in MS of no amplitude before silence (zero = OFF)
 
-	unsigned		m_amplitude;			// Current sound amplitude
-	DWORD			m_last_sound_ms;		// Last time sounds was detected
-	DWORD			m_last_quiet_ms;		// Last time silence was detected
+    unsigned		m_amplitude;			// Current sound amplitude
+    DWORD			m_last_sound_ms;		// Last time sounds was detected
+    DWORD			m_last_quiet_ms;		// Last time silence was detected
 
-	// Buffer and values to compute moving average
-	unsigned		m_amplitude_buffer_size;
-	unsigned*		m_amplitude_buffer;
-	unsigned		m_ampbuf_index;
-	unsigned		m_ampbuf_sum;
-	unsigned		m_ampbuf_count;
+    // Buffer and values to compute moving average
+    unsigned		m_amplitude_buffer_size;
+    unsigned*		m_amplitude_buffer;
+    unsigned		m_ampbuf_index;
+    unsigned		m_ampbuf_sum;
+    unsigned		m_ampbuf_count;
 
-	SoundDetector(SoundDetector& other) {}
-	SoundDetector& operator=(SoundDetector& rhs) { return *this; }
+    SoundDetector(SoundDetector& other) {}
+    SoundDetector& operator=(SoundDetector& rhs) { return *this; }
 
 public:
-	static unsigned	maxAmplitude;
+    static unsigned	maxAmplitude;
 
-	SoundDetector( DWORD mute_ms=500 );
-	~SoundDetector(void);
+    SoundDetector( DWORD mute_ms=500 );
+    ~SoundDetector(void);
 
-	void attach( AudioInputStream* stream );
-	void detach();
+    void attach( AudioInputStream* stream );
+    void detach();
 
-	HRESULT ProcessFFT( WORD channels, FFT_Result* fft_result[] ) { return 0; } 
-	HRESULT ProcessAmplitudes( WORD channels, size_t sample_size, float* sample_data[] );
+    HRESULT ProcessFFT( WORD channels, FFT_Result* fft_result[] ) { return 0; } 
+    HRESULT ProcessAmplitudes( WORD channels, size_t sample_size, float* sample_data[] );
 
-	unsigned getAmplitude( ) const {
-		return m_amplitude;
-	}
+    unsigned getAmplitude( ) const {
+        return m_amplitude;
+    }
 
-	unsigned getAvgAmplitude( ) const {
-		return m_ampbuf_sum/m_ampbuf_count;
-	}
+    unsigned getAvgAmplitude( ) const {
+        return m_ampbuf_sum/m_ampbuf_count;
+    }
 
-	bool isMute() const {
-		if ( m_mute_ms == 0 )				// Zero MS delay means mute detection is OFF
-			return false;
+    bool isMute() const {
+        if ( m_mute_ms == 0 )				// Zero MS delay means mute detection is OFF
+            return false;
 
-		DWORD time = GetTickCount();
-		return (time-m_last_sound_ms) > m_mute_ms;
-	}
+        DWORD time = GetTickCount();
+        return (time-m_last_sound_ms) > m_mute_ms;
+    }
 
-	void setMuteMS( DWORD mute_ms ) {
-		m_mute_ms = mute_ms;
-	}
-	DWORD getMuteMS( ) const {
-		return m_mute_ms;
-	}
+    void setMuteMS( DWORD mute_ms ) {
+        m_mute_ms = mute_ms;
+    }
+    DWORD getMuteMS( ) const {
+        return m_mute_ms;
+    }
 };

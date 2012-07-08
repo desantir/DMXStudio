@@ -27,67 +27,67 @@ MA 02111-1307, USA.
 
 class ColorStrobe
 {
-	BYTE			m_current_color[COLOR_CHANNELS];			// Current RGBWA
-	BYTE			m_target_color[COLOR_CHANNELS];			    // RGBWA targets
-	BYTE			m_strobe_negative[COLOR_CHANNELS];
+    BYTE			m_current_color[COLOR_CHANNELS];			// Current RGBWA
+    BYTE			m_target_color[COLOR_CHANNELS];			    // RGBWA targets
+    BYTE			m_strobe_negative[COLOR_CHANNELS];
 
     StrobeTime      m_timing;
 
-	DWORD			m_strobe_next_ms;
-	bool			m_strobe_on;
+    DWORD			m_strobe_next_ms;
+    bool			m_strobe_on;
 
 public:
-	ColorStrobe( void ) {
-		for ( int i=0; i < COLOR_CHANNELS; i++ ) 
-			m_strobe_negative[i] = 0;
-	}
+    ColorStrobe( void ) {
+        for ( int i=0; i < COLOR_CHANNELS; i++ ) 
+            m_strobe_negative[i] = 0;
+    }
 
-	~ColorStrobe(void) {}
+    ~ColorStrobe(void) {}
 
-	inline BYTE red() const { return m_current_color[0]; }
-	inline BYTE green() const { return m_current_color[1]; }
-	inline BYTE blue() const { return m_current_color[2]; }
-	inline BYTE white() const { return m_current_color[3]; }
-	inline BYTE amber() const { return m_current_color[4]; }
+    inline BYTE red() const { return m_current_color[0]; }
+    inline BYTE green() const { return m_current_color[1]; }
+    inline BYTE blue() const { return m_current_color[2]; }
+    inline BYTE white() const { return m_current_color[3]; }
+    inline BYTE amber() const { return m_current_color[4]; }
     inline bool isOn() const { return m_strobe_on; }
 
-	inline BYTE* rgbwa() { return m_current_color; }
+    inline BYTE* rgbwa() { return m_current_color; }
 
-	inline void setColor( const BYTE rgbwa[COLOR_CHANNELS] ) {
+    inline void setColor( const BYTE rgbwa[COLOR_CHANNELS] ) {
         memcpy( m_target_color, rgbwa, COLOR_CHANNELS );
-	}
+    }
 
-	inline void setNegative( const BYTE rgbwa[COLOR_CHANNELS] ) {
+    inline void setNegative( const BYTE rgbwa[COLOR_CHANNELS] ) {
         memcpy( m_strobe_negative, rgbwa, COLOR_CHANNELS );
-	}
+    }
 
-	void start( DWORD time_ms, UINT light_ms, UINT dark_ms ) {
-		m_timing.m_on_ms = light_ms;
-		m_timing.m_off_ms = dark_ms;
-		m_strobe_on = true;
-		m_strobe_next_ms = time_ms;		
-	}
+    void start( DWORD time_ms, UINT light_ms, UINT dark_ms ) {
+        m_timing.m_on_ms = light_ms;
+        m_timing.m_off_ms = dark_ms;
+        m_strobe_on = true;
+        m_strobe_next_ms = time_ms;		
+    }
 
     void start( DWORD time_ms, const StrobeTime& timing ) {
-		m_timing = timing;
-		m_strobe_on = true;
-		m_strobe_next_ms = time_ms;		
-	}
+        m_timing = timing;
+        m_strobe_on = true;
+        m_strobe_next_ms = time_ms;		
+    }
 
     // Returns true if strobe state changed
-	bool strobe( DWORD time_ms ) {
-		if ( time_ms <= m_strobe_next_ms )
-			return false;
+    bool strobe( DWORD time_ms ) {
+        if ( time_ms <= m_strobe_next_ms )
+            return false;
 
         memcpy( m_current_color, ( m_strobe_on ) ? m_target_color : m_strobe_negative, COLOR_CHANNELS );
 
-		m_strobe_on = !m_strobe_on;
+        m_strobe_on = !m_strobe_on;
 
-		if ( m_strobe_on )
-			m_strobe_next_ms = time_ms + m_timing.m_on_ms;
-		else
-			m_strobe_next_ms = time_ms + m_timing.m_off_ms;
+        if ( m_strobe_on )
+            m_strobe_next_ms = time_ms + m_timing.m_on_ms;
+        else
+            m_strobe_next_ms = time_ms + m_timing.m_off_ms;
 
-		return true;
-	}
+        return true;
+    }
 };

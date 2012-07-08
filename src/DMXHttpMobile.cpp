@@ -178,7 +178,7 @@ bool DMXHttpMobile::query_sound( CString& response, LPCSTR path_fragment )
 //
 bool DMXHttpMobile::control_music_play_track( CString& response, LPCSTR path_fragment )
 {
-	if ( !studio.hasMusicPlayer() )
+    if ( !studio.hasMusicPlayer() )
         return false;
 
     UINT        playlist_number, track_number;
@@ -208,7 +208,7 @@ bool DMXHttpMobile::control_music_play_track( CString& response, LPCSTR path_fra
 //
 bool DMXHttpMobile::control_music_play_playlist( CString& response, LPCSTR path_fragment )
 {
-	if ( !studio.hasMusicPlayer() )
+    if ( !studio.hasMusicPlayer() )
         return false;
 
     UINT       playlist_number;
@@ -231,7 +231,7 @@ bool DMXHttpMobile::control_music_play_playlist( CString& response, LPCSTR path_
 //
 bool DMXHttpMobile::query_music_playlists( CString& response, LPCSTR path_fragment )
 {
-	if ( !studio.hasMusicPlayer() )
+    if ( !studio.hasMusicPlayer() )
         return false;
 
     response =  "{ \"playlists\": [ ";
@@ -255,7 +255,7 @@ bool DMXHttpMobile::query_music_playlists( CString& response, LPCSTR path_fragme
 //
 bool DMXHttpMobile::query_music_playlist_tracks( CString& response, LPCSTR path_fragment )
 {
-	if ( !studio.hasMusicPlayer() )
+    if ( !studio.hasMusicPlayer() )
         return false;
 
     UINT playlist_number;
@@ -292,7 +292,7 @@ bool DMXHttpMobile::query_music_playlist_tracks( CString& response, LPCSTR path_
 //
 bool DMXHttpMobile::control_music_track_back( CString& response, LPCSTR path_fragment )
 {
-	if ( !studio.hasMusicPlayer() )
+    if ( !studio.hasMusicPlayer() )
         return false;
 
     studio.getMusicPlayer()->backTrack( );
@@ -303,7 +303,7 @@ bool DMXHttpMobile::control_music_track_back( CString& response, LPCSTR path_fra
 //
 bool DMXHttpMobile::control_music_track_forward( CString& response, LPCSTR path_fragment )
 {
-	if ( !studio.hasMusicPlayer() )
+    if ( !studio.hasMusicPlayer() )
         return false;
 
     studio.getMusicPlayer()->forwardTrack( );
@@ -314,7 +314,7 @@ bool DMXHttpMobile::control_music_track_forward( CString& response, LPCSTR path_
 //
 bool DMXHttpMobile::control_music_track_stop( CString& response, LPCSTR path_fragment )
 {
-	if ( !studio.hasMusicPlayer() )
+    if ( !studio.hasMusicPlayer() )
         return false;
 
     studio.getMusicPlayer()->stopTrack( );
@@ -325,7 +325,7 @@ bool DMXHttpMobile::control_music_track_stop( CString& response, LPCSTR path_fra
 //
 bool DMXHttpMobile::control_music_track_pause( CString& response, LPCSTR path_fragment )
 {
-	if ( !studio.hasMusicPlayer() )
+    if ( !studio.hasMusicPlayer() )
         return false;
 
     studio.getMusicPlayer()->pauseTrack( true );
@@ -336,7 +336,7 @@ bool DMXHttpMobile::control_music_track_pause( CString& response, LPCSTR path_fr
 //
 bool DMXHttpMobile::control_music_track_play( CString& response, LPCSTR path_fragment )
 {
-	if ( !studio.hasMusicPlayer() )
+    if ( !studio.hasMusicPlayer() )
         return false;
 
     studio.getMusicPlayer()->pauseTrack( false );
@@ -438,7 +438,7 @@ bool DMXHttpMobile::control_venue_dimmer( CString& response, LPCSTR path_fragmen
         return false;
 
     studio.getVenue()->setMasterDimmer( dimmer );
-	studio.getVenue()->loadScene();
+    studio.getVenue()->loadScene();
 
     return true;
 }  
@@ -455,7 +455,7 @@ bool DMXHttpMobile::control_venue_whiteout( CString& response, LPCSTR path_fragm
         return false;
 
     studio.getVenue()->setWhiteout( (WhiteoutMode)whiteout );
-	studio.getVenue()->loadScene();
+    studio.getVenue()->loadScene();
 
     return true;
 }
@@ -472,7 +472,7 @@ bool DMXHttpMobile::control_venue_strobe( CString& response, LPCSTR path_fragmen
         return false;
 
     studio.getVenue()->setWhiteoutStrobeMS( whiteout_strobe_ms );
-	studio.getVenue()->loadScene();
+    studio.getVenue()->loadScene();
 
     return true;
 }
@@ -569,7 +569,7 @@ bool DMXHttpMobile::substitute( LPCSTR marker, LPCSTR data, CString& marker_cont
         marker_content = getFixtureDivContent();
     }
     else if ( !strcmp( marker, "fixture_select" ) ) {
-	    FixturePtrArray fixtures = studio.getVenue()->getFixtures();
+        FixturePtrArray fixtures = studio.getVenue()->getFixtures();
         SceneActor* actor = studio.getVenue()->getCapturedActor();
 
         for ( FixturePtrArray::iterator it=fixtures.begin(); it != fixtures.end(); it++ ) {
@@ -581,7 +581,7 @@ bool DMXHttpMobile::substitute( LPCSTR marker, LPCSTR data, CString& marker_cont
         }
     }
     else if ( !strcmp( marker, "scene_buttons" ) ) {
-	    ScenePtrArray scenes = studio.getVenue()->getScenes();
+        ScenePtrArray scenes = studio.getVenue()->getScenes();
         for ( ScenePtrArray::iterator it=scenes.begin(); it != scenes.end(); it++ ) {
             Scene* scene = (*it);
             CString active;
@@ -604,7 +604,7 @@ bool DMXHttpMobile::substitute( LPCSTR marker, LPCSTR data, CString& marker_cont
                                      ( studio.getVenue()->getRunningChase() != 0 ) ? "" : " checked=\"checked\"" );
         marker_content.AppendFormat( "<label for=\"chase_0\">Chase Stopped</label>\n" );
 
-	    ChasePtrArray chases = studio.getVenue()->getChases();
+        ChasePtrArray chases = studio.getVenue()->getChases();
 
         for ( ChasePtrArray::iterator it=chases.begin(); it != chases.end(); it++ ) {
             Chase* chase = (*it);

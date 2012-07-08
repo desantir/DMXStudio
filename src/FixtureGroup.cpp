@@ -27,7 +27,7 @@ MA 02111-1307, USA.
 // ----------------------------------------------------------------------------
 //
 FixtureGroup::FixtureGroup( UID uid, const char * name, const char *description ) :
-	DObject( uid, name, description )
+    DObject( uid, name, description )
 {
 }
 
@@ -40,17 +40,17 @@ FixtureGroup::~FixtureGroup(void)
 // ----------------------------------------------------------------------------
 //
 bool FixtureGroup::removeFixture( UID pfuid ) {
-	UIDSet::iterator it = m_fixtures.find( pfuid );
-	if ( it != m_fixtures.end() ) {
-		m_fixtures.erase( it );
-		return true;
-	}
-	return false;
+    UIDSet::iterator it = m_fixtures.find( pfuid );
+    if ( it != m_fixtures.end() ) {
+        m_fixtures.erase( it );
+        return true;
+    }
+    return false;
 }
 
 // ----------------------------------------------------------------------------
 //
 bool FixtureGroup::containsFixture( UID pfuid ) {
-	UIDSet::iterator it = m_fixtures.find( pfuid );
-	return ( it != m_fixtures.end() );
+    UIDSet::iterator it = m_fixtures.find( pfuid );
+    return ( it != m_fixtures.end() );
 }

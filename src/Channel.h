@@ -27,27 +27,27 @@ MA 02111-1307, USA.
 #include "IDefinitionVisitor.h"
 
 typedef enum channel_type {
-	CHNLT_UNKNOWN = 0,
-	CHNLT_RED = 1,
-	CHNLT_GREEN = 2,
-	CHNLT_BLUE = 3,
-	CHNLT_AMBER = 4,
-	CHNLT_WHITE = 5,
-	CHNLT_DIMMER = 6,
-	CHNLT_STROBE = 7,
-	CHNLT_GOBO = 8,
-	CHNLT_PAN = 9,
-	CHNLT_TILT = 10,
-	CHNLT_AUTOPROG = 11,
-	CHNLT_COLOR_MACRO = 12,
-	CHNLT_PAN_FINE = 13,
-	CHNLT_TILT_FINE = 14,
-	CHNLT_MOVEMENT_SPEED = 15,
-	CHNLT_COLOR_SPEED = 16,
-	CHNLT_MOVEMENT_MACRO = 17,
-	CHNLT_CONTROL = 18,
-	CHNLT_DIMMER_AND_STROBE = 19,
-	CHNLT_PROG_SPEED = 20,
+    CHNLT_UNKNOWN = 0,
+    CHNLT_RED = 1,
+    CHNLT_GREEN = 2,
+    CHNLT_BLUE = 3,
+    CHNLT_AMBER = 4,
+    CHNLT_WHITE = 5,
+    CHNLT_DIMMER = 6,
+    CHNLT_STROBE = 7,
+    CHNLT_GOBO = 8,
+    CHNLT_PAN = 9,
+    CHNLT_TILT = 10,
+    CHNLT_AUTOPROG = 11,
+    CHNLT_COLOR_MACRO = 12,
+    CHNLT_PAN_FINE = 13,
+    CHNLT_TILT_FINE = 14,
+    CHNLT_MOVEMENT_SPEED = 15,
+    CHNLT_COLOR_SPEED = 16,
+    CHNLT_MOVEMENT_MACRO = 17,
+    CHNLT_CONTROL = 18,
+    CHNLT_DIMMER_AND_STROBE = 19,
+    CHNLT_PROG_SPEED = 20,
     CHNLT_NUM_TYPES
 
 } ChannelType;
@@ -59,11 +59,11 @@ class Channel
     friend class DefinitionWriter;
     friend class DefinitionReader;
 
-	channel_t				m_channel_offset;		// Channel offset
-	CString				    m_name;					// Channel name
-	ChannelType				m_type;					// Channel type
-	bool					m_is_color;				// Is a color channel
-	bool					m_can_blackout;			// Should be blacked out
+    channel_t				m_channel_offset;		// Channel offset
+    CString				    m_name;					// Channel name
+    ChannelType				m_type;					// Channel type
+    bool					m_is_color;				// Is a color channel
+    bool					m_can_blackout;			// Should be blacked out
     BYTE                    m_default_value;        // Default channel value (when added to scenee)
     BYTE                    m_home_value;           // Default home value for ALL scenes (use to park robot position)
 
@@ -71,44 +71,44 @@ class Channel
     BYTE                    m_lowest_intensity;     // Dimmer value for lowest intensity
     BYTE                    m_highest_intensity;    // Dimmer value for highest intensity
 
-	ChannelValueRangeArray	m_ranges;				// Describes channel value ranges
-	ChannelAngleMap			m_angles;				// Angles for pan/tilt
+    ChannelValueRangeArray	m_ranges;				// Describes channel value ranges
+    ChannelAngleMap			m_angles;				// Angles for pan/tilt
 
-	AngleTable				m_angle_table;			// Table of angle -> DMX value
+    AngleTable				m_angle_table;			// Table of angle -> DMX value
 
-	void generateAngleTable(void);
+    void generateAngleTable(void);
 
 public:
-	Channel( channel_t offset=0, ChannelType type=CHNLT_UNKNOWN, const char *name = NULL );
-	~Channel(void);
+    Channel( channel_t offset=0, ChannelType type=CHNLT_UNKNOWN, const char *name = NULL );
+    ~Channel(void);
 
     void accept( IDefinitionVisitor* visitor) {
         visitor->visit(this);
     }
 
-	inline channel_t getOffset( ) const {
-		return m_channel_offset;
-	}
+    inline channel_t getOffset( ) const {
+        return m_channel_offset;
+    }
 
-	inline const char* getName( ) const {
-		return m_name;
-	}
+    inline const char* getName( ) const {
+        return m_name;
+    }
 
-	inline ChannelType getType() const {
-		return m_type;
-	}
+    inline ChannelType getType() const {
+        return m_type;
+    }
 
-	inline bool canBlackout() const {
-		return m_can_blackout;
-	}
+    inline bool canBlackout() const {
+        return m_can_blackout;
+    }
 
-	inline bool isColor() const {
-		return m_is_color;
-	}
+    inline bool isColor() const {
+        return m_is_color;
+    }
 
-	inline bool isDimmer() const { 
-		return m_is_dimmer;
-	}
+    inline bool isDimmer() const { 
+        return m_is_dimmer;
+    }
 
     inline BYTE getDimmerLowestIntensity() const {
         return m_lowest_intensity;
@@ -118,9 +118,9 @@ public:
         return m_highest_intensity;
     }
 
-	static const char *getTypeName( ChannelType type );
+    static const char *getTypeName( ChannelType type );
 
-	BYTE convertAngleToValue( int angle );
+    BYTE convertAngleToValue( int angle );
 
     inline BYTE getDefaultValue() const { 
         return m_default_value;
@@ -130,18 +130,18 @@ public:
         return m_home_value;
     }
 
-	ChannelValueRangeArray getRanges() const {
-		return m_ranges;
-	}
+    ChannelValueRangeArray getRanges() const {
+        return m_ranges;
+    }
 
-	ChannelValueRange* getRange( BYTE value ) {
-		for ( ChannelValueRangeArray::iterator rit=m_ranges.begin(); rit != m_ranges.end(); rit++ ) {
-			if ( value >= (*rit).getStart() && value <= (*rit).getEnd() ) {
-				return &(*rit);
-			}
-		}
-		return NULL;
-	}
+    ChannelValueRange* getRange( BYTE value ) {
+        for ( ChannelValueRangeArray::iterator rit=m_ranges.begin(); rit != m_ranges.end(); rit++ ) {
+            if ( value >= (*rit).getStart() && value <= (*rit).getEnd() ) {
+                return &(*rit);
+            }
+        }
+        return NULL;
+    }
 
 private:
     static ChannelType convertTextToChannelType( LPCSTR text_type );

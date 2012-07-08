@@ -25,37 +25,37 @@ MA 02111-1307, USA.
 
 class StudioException : public std::exception 
 {
-	CString	    m_message;
-	CString	    m_file;
-	long		m_lineno;
+    CString	    m_message;
+    CString	    m_file;
+    long		m_lineno;
 
 public:
-	StudioException( const char *format, ... ) :
-		m_lineno( 0 )
-	{
-		va_list args;
-		va_start( args, format );
-		m_message.FormatV( format, args );
-		va_end( args );
-	}
+    StudioException( const char *format, ... ) :
+        m_lineno( 0 )
+    {
+        va_list args;
+        va_start( args, format );
+        m_message.FormatV( format, args );
+        va_end( args );
+    }
 
-	StudioException( const char * file, long lineno, const char *format, ... ) :
-		m_file( file ),
-		m_lineno( lineno )
-	{
-		va_list args;
-		va_start( args, format );
-		m_message.FormatV( format, args );
-		va_end( args );
-	}
+    StudioException( const char * file, long lineno, const char *format, ... ) :
+        m_file( file ),
+        m_lineno( lineno )
+    {
+        va_list args;
+        va_start( args, format );
+        m_message.FormatV( format, args );
+        va_end( args );
+    }
 
-	virtual const char* what() const throw() {
-		return (LPCSTR)m_message;
-	 }
+    virtual const char* what() const throw() {
+        return (LPCSTR)m_message;
+     }
 
-	const char *getFile() { return m_file; }
-	long getLine() { return m_lineno; }
+    const char *getFile() { return m_file; }
+    long getLine() { return m_lineno; }
 };
 
 #define STUDIO_ASSERT( cond, ... )		\
-	if ( !(cond) ) { throw StudioException( __FILE__, __LINE__, __VA_ARGS__ ); }
+    if ( !(cond) ) { throw StudioException( __FILE__, __LINE__, __VA_ARGS__ ); }

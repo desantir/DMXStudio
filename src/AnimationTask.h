@@ -29,61 +29,61 @@ MA 02111-1307, USA.
 
 class AnimationTask : public Threadable
 {
-	CMutex				m_animation_mutex;						// Protect animation objects
+    CMutex				m_animation_mutex;						// Protect animation objects
 
-	Venue*				m_venue;
-	Scene*				m_scene;
+    Venue*				m_venue;
+    Scene*				m_scene;
 
-	BYTE				m_dmx_packet[DMX_PACKET_SIZE];
+    BYTE				m_dmx_packet[DMX_PACKET_SIZE];
 
-	AnimationPtrArray	m_animations;
+    AnimationPtrArray	m_animations;
     bool                m_load_channels;
 
-	AnimationTask(AnimationTask& other) {}
-	AnimationTask& operator=(AnimationTask& rhs) { return *this; }
+    AnimationTask(AnimationTask& other) {}
+    AnimationTask& operator=(AnimationTask& rhs) { return *this; }
 
 public:
-	AnimationTask( Venue* venue );
-	~AnimationTask(void);
+    AnimationTask( Venue* venue );
+    ~AnimationTask(void);
 
     void stageScene( Scene* scene );
     void clearAnimations();
 
-	bool start();
-	bool stop();
+    bool start();
+    bool stop();
 
-	inline Scene* getScene() const {
-		return m_scene;
-	}
+    inline Scene* getScene() const {
+        return m_scene;
+    }
 
-	inline Fixture* getFixture( UID pfuid ) const {
-		return m_venue->getFixture( pfuid );
-	}
+    inline Fixture* getFixture( UID pfuid ) const {
+        return m_venue->getFixture( pfuid );
+    }
 
-	inline void loadChannel( BYTE *dmx_packet, Fixture* pf, channel_t channel, BYTE value ) {
-		m_venue->loadChannel( dmx_packet, pf, channel, value );
-	}
+    inline void loadChannel( BYTE *dmx_packet, Fixture* pf, channel_t channel, BYTE value ) {
+        m_venue->loadChannel( dmx_packet, pf, channel, value );
+    }
 
-	inline AudioInputStream* getAudio( ) {
-		return m_venue->getAudio();
-	}
+    inline AudioInputStream* getAudio( ) {
+        return m_venue->getAudio();
+    }
 
-	bool isMute() const {
-		return m_venue->isMute();
-	}
+    bool isMute() const {
+        return m_venue->isMute();
+    }
 
-	unsigned getSoundLevel( ) const {
-		return m_venue->getSoundLevel();
-	}
+    unsigned getSoundLevel( ) const {
+        return m_venue->getSoundLevel();
+    }
 
-	unsigned getAvgAmplitude( ) const {
-		return m_venue->getAvgAmplitude();
-	}
+    unsigned getAvgAmplitude( ) const {
+        return m_venue->getAvgAmplitude();
+    }
 
     DWORD getAnimationSampleRate();
     void setAnimationSampleSampleRate( DWORD sample_rate_ms );
 
 protected:
-	UINT run(void);
+    UINT run(void);
 };
 

@@ -35,18 +35,18 @@ MusicWatcher::MusicWatcher( MusicPlayer* player, Venue* venue ) :
 //
 MusicWatcher::~MusicWatcher(void)
 {
-	stop();
+    stop();
 }
 
 // ----------------------------------------------------------------------------
 //
 UINT MusicWatcher::run(void) {
-	DMXStudio::log_status( "Music watcher running" );
+    DMXStudio::log_status( "Music watcher running" );
 
     DWORD current_track_id = 0;
     bool current_track_paused = false;
 
-	while ( isRunning() ) {
+    while ( isRunning() ) {
         try {
             DWORD track_id;
             bool track_paused;
@@ -103,7 +103,7 @@ UINT MusicWatcher::run(void) {
                 Scene* scene = m_venue->getScene( type_uid );
                 STUDIO_ASSERT( scene, "Music watcher scene %lu does not exist for track '%s'", type_uid, track_name );
                 DMXStudio::log_status( "Music watcher selected scene '%s' for track '%s'", scene->getName(), track_name );
-	            m_venue->selectScene( type_uid );
+                m_venue->selectScene( type_uid );
             }
             else if ( type == MST_CHASE ) {
                 Chase* chase = m_venue->getChase( type_uid );
@@ -111,33 +111,33 @@ UINT MusicWatcher::run(void) {
                 DMXStudio::log_status( "Music watcher selected chase '%s' for track '%s'", chase->getName(), track_name );
                 m_venue->startChase( type_uid );
             }
-		}
-	    catch ( std::exception& ex ) {
-		    DMXStudio::log( ex );
-		    return -1;
-	    }
+        }
+        catch ( std::exception& ex ) {
+            DMXStudio::log( ex );
+            return -1;
+        }
     }
 
-	DMXStudio::log_status( "Music watcher stopped" );
+    DMXStudio::log_status( "Music watcher stopped" );
 
-	return 0;
+    return 0;
 }
 
 // ----------------------------------------------------------------------------
 //
 bool MusicWatcher::start()
 {
-	return startThread();
+    return startThread();
 }
 
 // ----------------------------------------------------------------------------
 //
 bool MusicWatcher::stop()
 {
-	if ( !stopThread() )
-		return false;
+    if ( !stopThread() )
+        return false;
 
-	return true;
+    return true;
 }
 
 

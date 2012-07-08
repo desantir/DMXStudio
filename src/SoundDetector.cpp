@@ -28,14 +28,14 @@ unsigned SoundDetector::maxAmplitude = 999;
 // ----------------------------------------------------------------------------
 //
 SoundDetector::SoundDetector( DWORD mute_ms ) :
-	m_audio_stream( NULL ),
-	m_mute_ms( mute_ms ),
-	m_amplitude( 0 ),
-	m_last_sound_ms( 0 ),
-	m_ampbuf_index( 0 ),
-	m_ampbuf_sum( 0 ),
-	m_ampbuf_count( 0 ),
-	m_amplitude_buffer( NULL )
+    m_audio_stream( NULL ),
+    m_mute_ms( mute_ms ),
+    m_amplitude( 0 ),
+    m_last_sound_ms( 0 ),
+    m_ampbuf_index( 0 ),
+    m_ampbuf_sum( 0 ),
+    m_ampbuf_count( 0 ),
+    m_amplitude_buffer( NULL )
 {
 }
 
@@ -43,75 +43,75 @@ SoundDetector::SoundDetector( DWORD mute_ms ) :
 //
 SoundDetector::~SoundDetector(void)
 {
-	detach();
+    detach();
 }
 
 // ----------------------------------------------------------------------------
 //
 void SoundDetector::attach( AudioInputStream* audio ) {
-	detach();
+    detach();
 
-	m_audio_stream = audio;
+    m_audio_stream = audio;
 
-	if ( audio ) {
-		m_amplitude_buffer_size = audio->getSamplesPerSecond() / audio->getSampleSize();
+    if ( audio ) {
+        m_amplitude_buffer_size = audio->getSamplesPerSecond() / audio->getSampleSize();
 
-		if ( m_amplitude_buffer_size > 0 ) {
-			m_amplitude_buffer = new unsigned[m_amplitude_buffer_size];
-			memset( m_amplitude_buffer, 0 , sizeof(m_amplitude_buffer) );
-		}
+        if ( m_amplitude_buffer_size > 0 ) {
+            m_amplitude_buffer = new unsigned[m_amplitude_buffer_size];
+            memset( m_amplitude_buffer, 0 , sizeof(m_amplitude_buffer) );
+        }
 
-		m_audio_stream->addAudioProcessor( this, ProcessorFormat( 2, false) );
-	}
+        m_audio_stream->addAudioProcessor( this, ProcessorFormat( 2, false) );
+    }
 }
 
 // ----------------------------------------------------------------------------
 //
 void SoundDetector::detach( ) {
-	if ( m_audio_stream ) {
-		m_audio_stream->removeAudioProcessor( this );
+    if ( m_audio_stream ) {
+        m_audio_stream->removeAudioProcessor( this );
 
-		if ( m_amplitude_buffer ) 
-			delete m_amplitude_buffer;
+        if ( m_amplitude_buffer ) 
+            delete m_amplitude_buffer;
 
-		m_audio_stream = NULL;
-		m_amplitude_buffer = NULL;
-	}
+        m_audio_stream = NULL;
+        m_amplitude_buffer = NULL;
+    }
 }
 
 // ----------------------------------------------------------------------------
 //
 HRESULT SoundDetector::ProcessAmplitudes( WORD channels, size_t sample_size, float* sample_data[] ) {
 
-	// Determine peak amplitude for both channels (values approach 1.0 where .999 is loudest and .000 is no sound)
-	float peak_amplitude = 0;
-	for ( size_t i=0; i < sample_size; i++ ) {
-		if ( sample_data[LEFT_CHANNEL][i] > peak_amplitude )
-			peak_amplitude = sample_data[LEFT_CHANNEL][i];
-		if ( channels > 1 && sample_data[RIGHT_CHANNEL][i] > peak_amplitude )
-			peak_amplitude = sample_data[RIGHT_CHANNEL][i];
-	}
+    // Determine peak amplitude for both channels (values approach 1.0 where .999 is loudest and .000 is no sound)
+    float peak_amplitude = 0;
+    for ( size_t i=0; i < sample_size; i++ ) {
+        if ( sample_data[LEFT_CHANNEL][i] > peak_amplitude )
+            peak_amplitude = sample_data[LEFT_CHANNEL][i];
+        if ( channels > 1 && sample_data[RIGHT_CHANNEL][i] > peak_amplitude )
+            peak_amplitude = sample_data[RIGHT_CHANNEL][i];
+    }
 
-	// Convert to 0 - 999
-	m_amplitude = (unsigned)(peak_amplitude * 1000.0);
+    // Convert to 0 - 999
+    m_amplitude = (unsigned)(peak_amplitude * 1000.0);
 
-	DWORD time = GetTickCount();
-	if ( m_amplitude > 0 )
-		m_last_sound_ms = time;
-	else
-		m_last_quiet_ms = time;
+    DWORD time = GetTickCount();
+    if ( m_amplitude > 0 )
+        m_last_sound_ms = time;
+    else
+        m_last_quiet_ms = time;
 
-	// Compute moving average 
-	if ( m_ampbuf_count < m_amplitude_buffer_size )
-		m_ampbuf_count++;
-	else
-		m_ampbuf_sum -= m_amplitude_buffer[m_ampbuf_index];
+    // Compute moving average 
+    if ( m_ampbuf_count < m_amplitude_buffer_size )
+        m_ampbuf_count++;
+    else
+        m_ampbuf_sum -= m_amplitude_buffer[m_ampbuf_index];
 
-	m_ampbuf_sum += m_amplitude;
-	m_amplitude_buffer[m_ampbuf_index] = m_amplitude;
+    m_ampbuf_sum += m_amplitude;
+    m_amplitude_buffer[m_ampbuf_index] = m_amplitude;
 
-	if ( ++m_ampbuf_index >= m_amplitude_buffer_size )
-		m_ampbuf_index = 0;
+    if ( ++m_ampbuf_index >= m_amplitude_buffer_size )
+        m_ampbuf_index = 0;
 
-	return 0;
+    return 0;
 }

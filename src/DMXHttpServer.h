@@ -57,7 +57,7 @@ class HttpWorkerThread;
 class IRequestHandler
 {
 public:
-	virtual ~IRequestHandler() {}
+    virtual ~IRequestHandler() {}
     
     virtual LPCSTR getPrefix() = 0;
     virtual UINT getPort() = 0;
@@ -76,11 +76,11 @@ class DMXHttpServer : public Threadable
     RequestHandlerPtrArray  m_request_handlers;
     MimeMap                 m_mime_map;
 
-	UINT run(void);
+    UINT run(void);
 
 public:
-	DMXHttpServer(void);
-	~DMXHttpServer(void);
+    DMXHttpServer(void);
+    ~DMXHttpServer(void);
 
     void start( void ) {
         startThread();
@@ -118,11 +118,11 @@ class HttpWorkerThread : public Threadable
     DMXHttpServer*      m_httpServer;
     CString             m_docroot;
 
-	UINT run(void);
+    UINT run(void);
 
 public:
-	HttpWorkerThread( DMXHttpServer* httpServer, UINT worker_id, HANDLE hReqQueue, LPCSTR docroot );
-	~HttpWorkerThread(void);
+    HttpWorkerThread( DMXHttpServer* httpServer, UINT worker_id, HANDLE hReqQueue, LPCSTR docroot );
+    ~HttpWorkerThread(void);
 
     void start( void ) {
         startThread();
