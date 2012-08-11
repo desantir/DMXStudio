@@ -29,7 +29,7 @@ MA 02111-1307, USA.
 
 class AnimationTask : public Threadable
 {
-    CMutex				m_animation_mutex;						// Protect animation objects
+    CCriticalSection    m_animation_mutex;						// Protect animation objects
 
     Venue*				m_venue;
     Scene*				m_scene;

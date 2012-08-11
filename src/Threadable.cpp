@@ -26,10 +26,11 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
-Threadable::Threadable(void) :
+Threadable::Threadable( LPCSTR name ) :
     m_running( false ),
     m_thread( NULL )
 {
+    m_name.Format( "DMXStudio!%s", name ? name : "Threadable" );
 }
 
 // ----------------------------------------------------------------------------
@@ -96,11 +97,45 @@ UINT __cdecl _run( LPVOID object )
 {
     try {
         Threadable* t = reinterpret_cast<Threadable *>(object);
+        t->setThreadName();
         t->m_running = true;
         return t->run();
     }
     catch ( std::exception& ex ) {
         DMXStudio::log( ex );
         return -1;
+    }
+}
+
+// ----------------------------------------------------------------------------
+// From http://msdn.microsoft.com/en-us/library/xcb2z8hs(v=vs.110).aspx
+//
+
+const DWORD MS_VC_EXCEPTION=0x406D1388;
+
+#pragma pack(push,8)
+typedef struct tagTHREADNAME_INFO
+{
+   DWORD dwType; // Must be 0x1000.
+   LPCSTR szName; // Pointer to name (in user addr space).
+   DWORD dwThreadID; // Thread ID (-1=caller thread).
+   DWORD dwFlags; // Reserved for future use, must be zero.
+} THREADNAME_INFO;
+#pragma pack(pop)
+
+void Threadable::setThreadName()
+{
+    if ( m_name.GetLength() > 0 ) {
+        THREADNAME_INFO info;
+        info.dwType = 0x1000;
+        info.szName = (LPCSTR)m_name;
+        info.dwThreadID = -1;                // dwThreadID;
+        info.dwFlags = 0;
+
+        __try {
+            RaiseException( MS_VC_EXCEPTION, 0, sizeof(info)/sizeof(ULONG_PTR), (ULONG_PTR*)&info );
+        }
+        __except(EXCEPTION_EXECUTE_HANDLER) {
+        }
     }
 }

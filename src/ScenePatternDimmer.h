@@ -34,7 +34,7 @@ typedef enum {
     DP_ALL = 6
 } DimmerPattern;
 
-class ScenePatternDimmer : 	public SceneChannelAnimator
+class ScenePatternDimmer : public SceneChannelAnimator
 {
     friend class VenueWriter;
     friend class VenueReader;

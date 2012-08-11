@@ -30,7 +30,6 @@ MA 02111-1307, USA.
 // ----------------------------------------------------------------------------
 //
 Venue::Venue(void) :
-    m_venue_mutex( FALSE, "venue_mutex" ),
     m_uid_pool( 1L ),
     m_universe( NULL ),
     m_chase_task( NULL ),
@@ -331,6 +330,33 @@ FixtureGroup* Venue::getFixtureGroup( UID group_id ) {
 
 // ----------------------------------------------------------------------------
 //
+GroupNumber Venue::nextAvailableFixtureGroupNumber( void )
+{
+    CSingleLock lock( &m_venue_mutex, TRUE );
+
+    GroupNumber group_number = 1;
+
+    for ( FixtureGroupMap::iterator it=m_fixtureGroups.begin(); it != m_fixtureGroups.end(); it++ )
+        if ( it->second.getGroupNumber() >= group_number )
+            group_number = it->second.getGroupNumber()+1;
+
+    return group_number;
+}
+
+// ----------------------------------------------------------------------------
+//
+FixtureGroup* Venue::getFixtureGroupByNumber( GroupNumber group_number )
+{
+    CSingleLock lock( &m_venue_mutex, TRUE );
+
+    for ( FixtureGroupMap::iterator it=m_fixtureGroups.begin(); it != m_fixtureGroups.end(); it++ )
+        if ( it->second.getGroupNumber() == group_number )
+            return &it->second;
+    return NULL;
+}
+
+// ----------------------------------------------------------------------------
+//
 void Venue::addChase( Chase& chase ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
@@ -600,7 +626,8 @@ void Venue::loadScene() {
 
     STUDIO_ASSERT( scene != NULL, "Missing scene" );
 
-    m_animation_task->stageScene( scene );
+    if ( m_animation_task )
+        m_animation_task->stageScene( scene );
 }
 
 // ----------------------------------------------------------------------------
@@ -608,7 +635,8 @@ void Venue::loadScene() {
 void Venue::clearAnimations() {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    m_animation_task->clearAnimations();
+    if ( m_animation_task )
+        m_animation_task->clearAnimations();
 }
 
 // ----------------------------------------------------------------------------
@@ -698,6 +726,8 @@ void Venue::whiteoutChannels( LPBYTE dmx_packet ) {
 
         for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
             Channel* cp = pf->getChannel(channel);
+            if ( !cp->canWhiteout() )       // Do not modify this channel during whiteout
+                continue;
 
             switch ( cp->getType() ) {
                 case CHNLT_RED:
@@ -713,7 +743,7 @@ void Venue::whiteoutChannels( LPBYTE dmx_packet ) {
                 case CHNLT_COLOR_SPEED:
                 case CHNLT_PROG_SPEED:
                 case CHNLT_GOBO:
-                    loadChannel( dmx_packet,pf, channel, 0 );
+                    loadChannel( dmx_packet, pf, channel, 0 );
                     break;
             }
 

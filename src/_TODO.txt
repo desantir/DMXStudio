@@ -4,7 +4,7 @@ TODO ------------------------------------------------------------------------ TO
 		L Movement animation travel time
 		L Programs should control travel time rather than fixed signal input
 		L Global animations or attached to a fixture
-		L Animation speed changes based on beat
+		L Animation speed changes based on beat detection
 		L Multiple animations per fixture (deal with channel contention)
 		L Pixel Map support (single/multiple fixtures)
 		L Sine wave movement
@@ -14,12 +14,13 @@ TODO ------------------------------------------------------------------------ TO
 		M Beat detector scaling, better detection algorithm, logarithmic scaling
 		L Add channel mixing to audio stream class
 		L Support format conversion in audio output
+		H Much better sound animation affects
 
-	M Fixture Definitions
+	M Fixtures / Fixture Definitions
 		L Simple angle->value options (angle*xx) == DMX code
 		L Multiple universes (increase DMX packet size, zero-based universe ID is simply the high byte)
 		L Movement speed abstraction
-		L Add icon image
+		L Add fixture icon images
 		L Dimmer curve (LEDs can fall off fast at the end)
 		L Editable fixture defaults
 		L Minimum dimmer setting
@@ -55,21 +56,4 @@ TODO ------------------------------------------------------------------------ TO
 			Check UI->SceneChannelAnimator and SceneMovementAnimator->SceneChannelAnimator
 
 TODO ------------------------------------------------------------------------ TODO
-
-GUI IDEAS
-
-Insure updates and error checking spans UIs
-
-Scene
-	Show fixtures
-		Indicate on
-		Animations
-	Fixtures can be positioned
-		Have an image(s) on/off
-
-	Click on fixture shows mixer
-		lock attribute for local control (how to unlock)
-		can unlock to remove local (option to update)
-		show sliders
-		quick scene update
 

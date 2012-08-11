@@ -145,15 +145,22 @@ Venue * VenueReader::read( TiXmlElement* self, Venue* venue ) {
 
 // ----------------------------------------------------------------------------
 //
+void VenueReader::readDObject( TiXmlElement* self, DObject* dobject, LPCSTR number_name )
+{
+    dobject->m_uid = (UID)read_dword_attribute( self, "uid" );
+    dobject->m_number = (SceneNumber)read_word_attribute( self, number_name );
+    dobject->m_name = read_text_element( self, "name" );
+    dobject->m_description = read_text_element( self, "description" );
+    dobject->m_private = read_bool_attribute( self, "private" );
+}
+
+// ----------------------------------------------------------------------------
+//
 Scene* VenueReader::read( TiXmlElement* self, Scene* scene )
 {
     scene = new Scene();
 
-    scene->m_uid = (UID)read_dword_attribute( self, "uid" );
-    scene->m_scene_number = (SceneNumber)read_word_attribute( self, "scene_number" );
-    scene->m_name = read_text_element( self, "name" );
-    scene->m_description = read_text_element( self, "description" );
-    scene->m_private = read_bool_attribute( self, "private" );
+    readDObject( self, scene, "scene_number" );
 
     std::vector<SceneActor *> actors = 
         read_xml_list<SceneActor>( self->FirstChildElement( "actors" ), "actor" );
@@ -202,12 +209,10 @@ Chase* VenueReader::read( TiXmlElement* self, Chase* chase )
 {
     chase = new Chase;
 
-    chase->m_uid = (UID)read_dword_attribute( self, "uid" );
-    chase->m_chase_number = (ChaseNumber)read_dword_attribute( self, "chase_number" );
+    readDObject( self, chase, "chase_number" );
+
     chase->m_delay_ms = (ULONG)read_dword_attribute( self, "delay_ms" );
     chase->m_fade_ms = (ULONG)read_dword_attribute( self, "fade_ms" );
-    chase->m_name = read_text_element( self, "name" );
-    chase->m_description = read_text_element( self, "description" );
     chase->m_private = read_bool_attribute( self, "private" );
 
     // Add chase steps
@@ -240,9 +245,7 @@ FixtureGroup* VenueReader::read( TiXmlElement* self, FixtureGroup* fixture_group
 {
     fixture_group = new FixtureGroup();
 
-    fixture_group->m_uid = (UID)read_dword_attribute( self, "uid" );
-    fixture_group->m_name = read_text_element( self, "name" );
-    fixture_group->m_description = read_text_element( self, "description" );
+    readDObject( self, fixture_group, "group_number" );
 
     TiXmlElement * container = self->FirstChildElement( "pfuids" );
     if ( container ) {
@@ -305,14 +308,12 @@ Fixture* VenueReader::read( TiXmlElement* self, Fixture* fixture )
 {
     fixture = new Fixture();
 
-    fixture->m_uid = read_dword_attribute( self, "uid" );
-    fixture->m_fixture_number = (FixtureNumber)read_dword_attribute( self, "fixture_number" );
+    readDObject( self, fixture, "fixture_number" );
+
     fixture->m_fuid = read_dword_attribute( self, "fuid" );
     fixture->m_universe = read_int_attribute( self, "universe" );
     fixture->m_address = read_int_attribute( self, "dmx_address" );
-    fixture->m_name = read_text_element( self, "name" );
-    fixture->m_description = read_text_element( self, "description" );
-
+    
     TiXmlElement * container = self->FirstChildElement( "channel_map" );
     if ( container ) {
         TiXmlElement* element = container->FirstChildElement( "map" );

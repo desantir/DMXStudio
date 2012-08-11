@@ -29,6 +29,8 @@ MA 02111-1307, USA.
 #include "IVisitor.h"
 #include "Fixture.h"
 
+typedef ULONG GroupNumber;
+
 class FixtureGroup : public DObject
 {
     friend class VenueWriter;
@@ -40,11 +42,18 @@ public:
     FixtureGroup(void) :
       DObject() {}
       
-    FixtureGroup( UID uid, const char * name, const char *description );
+    FixtureGroup( UID uid, ULONG group_number, const char * name, const char *description );
     ~FixtureGroup(void);
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
+    }
+
+    GroupNumber getGroupNumber( ) const {
+        return getNumber();
+    }
+    void setGroupNumber( GroupNumber group_number ) {
+        setNumber( group_number );
     }
 
     void addFixture( UID pfuid ) {

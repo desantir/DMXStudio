@@ -40,7 +40,6 @@ class Fixture : public DObject
     friend class VenueWriter;
     friend class VenueReader;
 
-    FixtureNumber		m_fixture_number;		// User's fixture number
     universe_t			m_universe;				// Ignored for now - only a single DMX universe
     channel_t			m_address;				// Base address
     FUID				m_fuid;
@@ -52,11 +51,12 @@ class Fixture : public DObject
 
 public:
     Fixture() :
-        m_fixture_number(0),
         m_universe(0),
         m_address(0),
         m_fuid(0),
-        m_fixture_definition(NULL) {}
+        m_fixture_definition(NULL),
+        DObject() 
+    {}
 
     Fixture( UID uid, FixtureNumber fixture_number, universe_t universe, 
                      channel_t base_address, FUID fuid, 
@@ -75,7 +75,7 @@ public:
     }
 
     FixtureNumber getFixtureNumber( ) const {
-        return m_fixture_number;
+        return getNumber();
     }
 
     universe_t getUniverse( ) const {

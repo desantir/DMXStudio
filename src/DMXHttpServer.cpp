@@ -28,7 +28,8 @@ static const HTTPAPI_VERSION HttpApiVersion = HTTPAPI_VERSION_1;
 
 // ----------------------------------------------------------------------------
 //
-DMXHttpServer::DMXHttpServer(void)
+DMXHttpServer::DMXHttpServer(void) :
+    Threadable( "DMXHttpServer" )
 {
     registerHandler( new DMXHttpMobile() );
 
@@ -171,6 +172,7 @@ UINT DMXHttpServer::run()
 //
 HttpWorkerThread::HttpWorkerThread( DMXHttpServer* httpServer, UINT worker_id, 
                                     HANDLE hReqQueue, LPCSTR docroot ) :
+    Threadable( "HttpWorkerThread" ),
     m_httpServer( httpServer ),
     m_worker_id( worker_id ),
     m_hReqQueue( hReqQueue ),

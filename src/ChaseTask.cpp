@@ -27,6 +27,7 @@ MA 02111-1307, USA.
 // ----------------------------------------------------------------------------
 //
 ChaseTask::ChaseTask( Venue* venue, Chase* chase, ChaseRunMode run_mode ) :
+    Threadable( "ChaseTask" ),
     m_venue( venue ),
     m_chase( chase ),
     m_run_mode( run_mode ),

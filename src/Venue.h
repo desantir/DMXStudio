@@ -62,7 +62,7 @@ class Venue : public DObject
     friend class VenueWriter;
     friend class VenueReader;
 
-    CMutex				    m_venue_mutex;						// Protect venue objects
+    CCriticalSection        m_venue_mutex;						// Protect venue objects
 
     UID					    m_uid_pool;
     AbstractDMXDriver*      m_universe;
@@ -240,6 +240,8 @@ public:
     channel_t findFreeAddressRange( UINT num_channels );
 
     AbstractDMXDriver* getUniverse() {
+        STUDIO_ASSERT( m_universe, "Venue's DMX universe has not been started" );
+
         return m_universe;
     }
 
@@ -326,6 +328,8 @@ public:
     FixtureGroupPtrArray getFixtureGroups( );
     FixtureGroup* getFixtureGroup( UID group_id );
     void deleteFixtureGroup( UID group_id );
+    GroupNumber nextAvailableFixtureGroupNumber( void );
+    FixtureGroup* getFixtureGroupByNumber( GroupNumber group_number );
 
     // Scene chase methods
     Chase *getChase( UID chase_uid );

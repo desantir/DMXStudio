@@ -26,8 +26,8 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
-FixtureGroup::FixtureGroup( UID uid, const char * name, const char *description ) :
-    DObject( uid, name, description )
+FixtureGroup::FixtureGroup( UID uid, GroupNumber group_number, const char * name, const char *description ) :
+    DObject( uid, group_number, name, description )
 {
 }
 

@@ -64,6 +64,7 @@ class Channel
     ChannelType				m_type;					// Channel type
     bool					m_is_color;				// Is a color channel
     bool					m_can_blackout;			// Should be blacked out
+    bool                    m_can_whiteout;         // Modify value on whiteout
     BYTE                    m_default_value;        // Default channel value (when added to scenee)
     BYTE                    m_home_value;           // Default home value for ALL scenes (use to park robot position)
 
@@ -100,6 +101,10 @@ public:
 
     inline bool canBlackout() const {
         return m_can_blackout;
+    }
+
+    inline bool canWhiteout() const {
+        return m_can_whiteout;
     }
 
     inline bool isColor() const {

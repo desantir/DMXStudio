@@ -59,7 +59,7 @@ class AbstractDMXDriver : public Threadable
     bool m_debug;										// Output packet contents
     CString m_connection_info;							// Current connection information
 
-    CMutex m_write_mutex;								// Write mutex
+    CCriticalSection m_write_mutex;						// Write mutex
     CEvent m_wake;										// Wake up DMX transmitter
 
     UINT run(void);

@@ -29,8 +29,7 @@ MA 02111-1307, USA.
 Fixture::Fixture( UID uid, FixtureNumber fixture_number,
                                   universe_t universe, channel_t base_address, 
                                   FUID fuid, const char *name, const char *description ) :
-    DObject( uid, name, description ),
-    m_fixture_number( fixture_number ),
+    DObject( uid, fixture_number, name, description ),
     m_universe( universe ),
     m_address( base_address ),
     m_fuid( fuid ),

@@ -27,12 +27,12 @@ MA 02111-1307, USA.
 // ----------------------------------------------------------------------------
 //
 AbstractDMXDriver::AbstractDMXDriver(void) :
+    Threadable( "AbstractDMXDriver" ),
     m_blackout( false ),
     m_latch( false ),
     m_packet_delay( DEFAULT_PACKET_DELAY_MS ),
     m_packet_min_delay( DEFAULT_MINIMUM_DELAY_MS ),
-    m_debug( false ),
-    m_write_mutex( FALSE, "write_mutex" )
+    m_debug( false )
 {
     memset( m_packet, 0 , sizeof( m_packet ) );
     memset( m_pending_packet, 0 , sizeof( m_pending_packet ) );

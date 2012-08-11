@@ -30,7 +30,9 @@ BeatDetector::BeatDetector( unsigned frequency_bins, unsigned sensitivity ) :
     m_sensitivity_ms( sensitivity ),
     m_frequency_bins( frequency_bins ),
     m_sample_size(0),
-    m_samples_per_second(0)
+    m_samples_per_second(0),
+    m_B( NULL ),
+    m_Es( NULL )
 {
 }
 
@@ -52,9 +54,8 @@ void BeatDetector::attach( AudioInputStream* audio ) {
         m_sample_size = m_audio_stream->getSampleSize();
         m_samples_per_second = m_audio_stream->getFormat().Format.nSamplesPerSec;
 
-        STUDIO_ASSERT( m_frequency_bins < m_sample_size/2, "Too many frequency bins" );		 // THROW ERROR
+        STUDIO_ASSERT( m_frequency_bins <= m_sample_size/2, "Too many frequency bins" );		 // THROW ERROR
         STUDIO_ASSERT( m_frequency_bins > 0, "Too few frequency bins" );
-        STUDIO_ASSERT( m_frequency_bins <= 64, "Too many frequency bins" );
 
         for ( unsigned i=0; i < m_frequency_bins; i++ )
             m_bins.push_back( FreqBin( m_samples_per_second / m_sample_size, m_sensitivity_ms ) );
@@ -73,16 +74,17 @@ void BeatDetector::attach( AudioInputStream* audio ) {
 // ----------------------------------------------------------------------------
 //
 void BeatDetector::detach( ) {
-    if ( m_audio_stream ) {
+    if ( m_audio_stream )
         m_audio_stream->removeAudioProcessor( this );
 
+    if ( m_B )
         delete m_B;
+    if ( m_Es )
         delete m_Es;
 
-        m_audio_stream = NULL;
-        m_B = NULL;
-        m_Es = NULL;
-    }
+    m_audio_stream = NULL;
+    m_B = NULL;
+    m_Es = NULL;
 }
 
 // ----------------------------------------------------------------------------

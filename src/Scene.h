@@ -34,7 +34,6 @@ class Scene : public DObject
     friend class VenueWriter;
     friend class VenueReader;
 
-    SceneNumber			m_scene_number;
     ActorMap			m_actors;						// "Actors" in this scene
 
     AnimationPtrArray	m_animations;
@@ -68,10 +67,10 @@ public:
     }
 
     SceneNumber getSceneNumber( void ) const {
-        return m_scene_number;
+        return getNumber();
     }
     void setSceneNumber( SceneNumber scene_number ) {
-        m_scene_number = scene_number;
+        setNumber( scene_number );
     }
 
     bool hasAnimations() const {

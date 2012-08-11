@@ -32,7 +32,6 @@ void DMXTextUI::initializeAnimationEditors() {
     animEditors.push_back( AnimationEditor( "Color switcher",		SceneColorSwitcher::className, &DMXTextUI::animColorSwitcherEditor) );
     animEditors.push_back( AnimationEditor( "Movement animator",	SceneMovementAnimator::className, &DMXTextUI::animMovementEditor) );
     animEditors.push_back( AnimationEditor( "Strobe animator",	    SceneStrobeAnimator::className, &DMXTextUI::animStrobeEditor) );
-
 }
 
 // ----------------------------------------------------------------------------
@@ -93,10 +92,16 @@ public:
     void updateAnimationSignal( AnimationSignal& signal ) {
         signal.setInputType( (AnimationSignalInput)(m_input_type.getListValue()) );
         signal.setSampleRateMS( m_sample_ms.getLongValue() );
-        signal.setInputLow( m_freq_low.getLongValue() );
-        signal.setInputHigh( m_freq_high.getLongValue() );
-        signal.setInputLow( m_random_low.getLongValue() );
-        signal.setInputHigh( m_random_high.getLongValue() );
+
+        if ( signal.getInputType() != CAI_RANDOM ) {
+            signal.setInputLow( m_freq_low.getLongValue() );
+            signal.setInputHigh( m_freq_high.getLongValue() );
+        }
+        else {
+            signal.setInputLow( m_random_low.getLongValue() );
+            signal.setInputHigh( m_random_high.getLongValue() );
+        }
+
         signal.setSampleDecayMS( m_decay_ms.getLongValue() );
         signal.setApplyTo( (ApplySignal)m_apply_to.getListValue() );
         signal.setScaleFactor( m_scale_factor.getLongValue() );

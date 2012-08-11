@@ -87,6 +87,7 @@ void AudioInputStream::releaseAudioStream( AudioInputStream* audio_stream )
 // ----------------------------------------------------------------------------
 //
 AudioInputStream::AudioInputStream( LPCWSTR endpoint_id, unsigned sample_size, float scale_factor, float audio_sample_min ) :
+    Threadable( "AudioInputStream" ),
     m_endpoint_id( endpoint_id ),
     m_scale_factor( scale_factor ),
     m_audio_sample_min( audio_sample_min ),

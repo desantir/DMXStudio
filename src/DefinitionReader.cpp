@@ -145,6 +145,7 @@ Channel* DefinitionReader::read( TiXmlElement* self, Channel* channel )
         channel->m_name = read_text_element( self, "name" );
         channel->m_is_color = read_bool_attribute( self, "color" );
         channel->m_can_blackout = read_bool_attribute( self, "blackout" );
+        channel->m_can_whiteout = read_bool_attribute( self, "whiteout", true );
         channel->m_default_value = (BYTE)read_int_attribute( self, "value" );
         channel->m_home_value = (BYTE)read_int_attribute( self, "home_value" );
 

@@ -70,5 +70,8 @@ public:
 
         return list;
     }
+
+private:
+    void readDObject( TiXmlElement* self, DObject* dobject, LPCSTR number_name );
 };
 

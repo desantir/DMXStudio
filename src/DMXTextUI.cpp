@@ -81,8 +81,9 @@ DMXTextUI::DMXTextUI(void)
 
     function_map[ "hz" ] = HandlerInfo( &DMXTextUI::soundDb,                    true,   "Sound sample tests" );
     function_map[ "hy" ] = HandlerInfo( &DMXTextUI::soundDetect,                true,   "Sound peak test" );
-    function_map[ "hm" ] = HandlerInfo( &DMXTextUI::soundBPM,                   true,   "Sound energy beat test" );
-    function_map[ "hb" ] = HandlerInfo( &DMXTextUI::soundDebug,                 true,   "Sound beat test" );
+    function_map[ "hbpm" ] = HandlerInfo( &DMXTextUI::soundBPM,                 true,   "Sound energy beat test" );
+    function_map[ "hb" ] = HandlerInfo( &DMXTextUI::soundDebug,                 true,   "Sound debug toggle" );
+    function_map[ "hfb" ] = HandlerInfo( &DMXTextUI::soundBeat,                 true,   "Sound frequency beat test" );
             
     function_map[ "b" ] = HandlerInfo( &DMXTextUI::blackout,                    true,   "Blackout" );
     function_map[ "ba" ] = HandlerInfo( &DMXTextUI::autoBlackout,               true,   "Set venue auto blackout" );
@@ -226,8 +227,8 @@ void DMXTextUI::run()
         if ( it == function_map.end() ) {
             m_text_io.printf( "Unrecognized command '%s' - Type ? for list of commands\n", (LPCTSTR)cmd );
         }
-        else if ( !m_running && (*it).second.m_running ) {
-            m_text_io.printf( "Venue must be running to use '%s'\n", (LPCTSTR)cmd );
+        else if ( !getVenue()->isRunning() && (*it).second.m_running ) {
+            m_text_io.printf( "Venue must be running to use '%s'\n", (*it).second.m_desc );
         }
         else {
             try {
@@ -449,7 +450,6 @@ void DMXTextUI::configVenue()
     FloatField audio_scale_field( "Audio boost", getVenue()->getAudioBoost(), "%3.1f" );
     FloatField audio_floor_field( "Audio boost sample floor", getVenue()->getAudioBoostFloor(), "%5.3f" );
 
-
     Form form( &m_text_io );
 
     form.add( name_field );
@@ -557,6 +557,38 @@ void DMXTextUI::soundBPM( )
         bool beat = ( ::WaitForSingleObject( beat_event.m_hObject, 50 ) == WAIT_OBJECT_0 );
 
         m_text_io.printf( "%s     \r", (beat) ? "*" : " " );
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::soundBeat( )
+{
+    static IntegerField start_freq__field( "Starting frequency", 150, 0, 128000 );
+    static IntegerField end_freq_field( "Ending frequency", 500, 0, 128000 );
+
+    Form form( &m_text_io );
+
+    form.add( start_freq__field );
+    form.add( end_freq_field );
+
+    if ( !form.play() )
+        return;
+
+    BeatDetector detector( 512 );
+    detector.attach( getVenue()->getAudio() );
+
+    CEvent beat_event;
+
+    detector.addFrequencyEvent( &beat_event, start_freq__field.getIntValue(), end_freq_field.getIntValue() );
+
+    while ( true ) {
+        if ( _kbhit() && _getch() == 27 )
+            break;
+
+        bool beat = ( ::WaitForSingleObject( beat_event.m_hObject, 50 ) == WAIT_OBJECT_0 );
+
+        m_text_io.printf( "%s        \r", (beat) ? " *" : " " );
     }
 }
 
@@ -1461,7 +1493,7 @@ void DMXTextUI::describeFixtureGroup( ) {
         return;
 
     FixtureGroup *group = getVenue()->getFixtureGroup( group_select_field.getFixtureGroupUID() );
-    m_text_io.printf( "\nFixture Group: %s (ID=%lu)\n\n", group->getName(), group->getUID() );
+    m_text_io.printf( "\nFixture Group #%u: %s (ID=%lu)\n\n", group->getGroupNumber(), group->getName(), group->getUID() );
 
     UIDSet uids = group->getFixtures( );
     for ( UIDSet::iterator it=uids.begin(); it != uids.end(); it++ ) {
@@ -1538,6 +1570,7 @@ void DMXTextUI::createFixture(void)
         UniqueFixtureNumberField fixture_number_field;
         InputField name_field;
         InputField description_field;
+        BooleanField address_overlap_field;
         DmxAddressField dmx_address_field;
         Venue*	m_venue;
 
@@ -1557,6 +1590,9 @@ void DMXTextUI::createFixture(void)
                     throw FieldException( "There are no empty address ranges available for %d channels", fixdef->getNumChannels() );
                 dmx_address_field.setInitialValue( base_address ); 
             }
+            else if ( field_num == 6 ) {
+                dmx_address_field.setAllowAddressOverlap( address_overlap_field.isSet() );
+            }
         }
 
     public:
@@ -1569,6 +1605,7 @@ void DMXTextUI::createFixture(void)
             fixture_number_field( "Fixture number", venue ),
             name_field( "Fixture location", "Somewhere" ),
             description_field( "Fixture description", "" ),
+            address_overlap_field( "Allow DMX addresses to overlap", false ),  
             dmx_address_field( "DMX base address", venue, NULL )
         {
             add( manufacturer_field );
@@ -1577,6 +1614,7 @@ void DMXTextUI::createFixture(void)
             add( fixture_number_field );
             add( name_field );
             add( description_field );
+            add( address_overlap_field );
             add( dmx_address_field );
         }
     };
@@ -1604,18 +1642,24 @@ void DMXTextUI::createFixtureGroup( ) {
     for ( FixturePtrArray::iterator it=fixtures.begin(); it != fixtures.end(); it++ )
         fixture_uids.push_back( (*it)->getUID() );
         
-    InputField name_field( "New group name", "New group" );
+    UniqueGroupNumberField group_number_field( "Create group number", getVenue() );
+    InputField name_field( "Group name", "New group" );
     InputField description_field( "Group description", "" );
     FixtureSelect fixture_select( "Fixtures (comma separated)", getVenue(), fixture_uids, UIDArray() );
 
     Form form( &m_text_io );
+    form.add( group_number_field );
     form.add( name_field );
     form.add( description_field );
     form.add( fixture_select );
     if ( !form.play() )
         return;
 
-    FixtureGroup group( getVenue()->allocUID(), name_field.getValue(), description_field.getValue() );
+    FixtureGroup group( getVenue()->allocUID(), 
+                        group_number_field.getGroupNumber(),
+                        name_field.getValue(), 
+                        description_field.getValue() );
+
     group.setFixtures( UIDArrayToSet( fixture_select.getUIDs() ) );
     getVenue()->addFixtureGroup( group );
 }

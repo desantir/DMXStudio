@@ -62,6 +62,16 @@ void VenueWriter::write( Venue* venue, LPCSTR output_file )
 
 // ----------------------------------------------------------------------------
 //
+void VenueWriter::writeDObject( TiXmlElement& element, DObject* dobject, LPCSTR number_name )
+{
+    add_attribute( element, "uid", dobject->m_uid );
+    add_attribute( element, number_name, dobject->m_number );
+    add_text_element( element, "name", dobject->m_name );
+    add_text_element( element, "description", dobject->m_description );
+}
+
+// ----------------------------------------------------------------------------
+//
 void VenueWriter::visit( Venue* venue ) {
     TiXmlElement venueElement( "venue" );
 
@@ -129,14 +139,11 @@ void VenueWriter::visit( Fixture* fixture )
 {
     TiXmlElement element( "fixture" );
 
-    add_attribute( element, "uid", fixture->m_uid );
-    add_attribute( element, "fixture_number", fixture->m_fixture_number );
+    writeDObject( element, fixture, "fixture_number" );
+
     add_attribute( element, "fuid", fixture->m_fuid );
     add_attribute( element, "universe", (int)fixture->m_universe );
     add_attribute( element, "dmx_address", (int)fixture->m_address );
-
-    add_text_element( element, "name", fixture->m_name );
-    add_text_element( element, "description", fixture->m_description );
 
     if ( fixture->m_channel_map.size() > 0 ) {
         TiXmlElement channel_map( "channel_map" );
@@ -161,11 +168,7 @@ void VenueWriter::visit( Scene* scene )
 {
     TiXmlElement element( "scene" );
 
-    add_attribute( element, "uid", scene->m_uid );
-    add_attribute( element, "scene_number", scene->m_scene_number );
-    add_text_element( element, "name", scene->m_name );
-    add_text_element( element, "description", scene->m_description );
-    add_attribute( element, "private", scene->m_private );
+    writeDObject( element, scene, "scene_number" );
 
     // Write all scene actors
     TiXmlElement actors( "actors" );
@@ -211,13 +214,10 @@ void VenueWriter::visit( Chase* chase )
 {
     TiXmlElement chase_element( "chase" );
 
-    add_attribute( chase_element, "uid", chase->m_uid );
-    add_attribute( chase_element, "chase_number", chase->m_chase_number );
+    writeDObject( chase_element, chase, "chase_number" );
+
     add_attribute( chase_element, "delay_ms", chase->m_delay_ms );
     add_attribute( chase_element, "fade_ms", chase->m_fade_ms );
-    add_text_element( chase_element, "name", chase->m_name );
-    add_text_element( chase_element, "description", chase->m_description );
-    add_attribute( chase_element, "private", chase->m_private );
 
     TiXmlElement steps( "chase_steps" );
     visit_array<ChaseStepArray>( steps, chase->m_chase_steps );
@@ -233,9 +233,7 @@ void VenueWriter::visit( FixtureGroup* fixture_group )
 {
     TiXmlElement element( "fixture_group" );
 
-    add_attribute( element, "uid", fixture_group->m_uid );
-    add_text_element( element, "name", fixture_group->m_name );
-    add_text_element( element, "description", fixture_group->m_description );
+    writeDObject( element, fixture_group, "group_number" );
 
     add_pfuids_element<UIDSet>( element, fixture_group->m_fixtures );
 
@@ -261,14 +259,12 @@ void VenueWriter::visit( SceneStrobeAnimator* animation )
 {
     TiXmlElement element( "animation" );
 
-    add_attribute( element, "uid", animation->m_uid );
+    writeDObject( element, animation, "number" );
+
     add_attribute( element, "class", animation->getClassName() );
     add_attribute( element, "strobe_neg_color", animation->m_strobe_neg_color );
     add_attribute( element, "strobe_pos_ms", animation->m_strobe_pos_ms );
     add_attribute( element, "strobe_neg_ms", animation->m_strobe_neg_ms );
-
-    add_text_element( element, "name", animation->m_name );
-    add_text_element( element, "description", animation->m_description );
 
     visit_object<AnimationSignal>( element, animation->m_signal );
 
@@ -283,12 +279,10 @@ void VenueWriter::visit( ScenePatternDimmer* animation )
 {
     TiXmlElement element( "animation" );
 
-    add_attribute( element, "uid", animation->m_uid );
+    writeDObject( element, animation, "number" );
+
     add_attribute( element, "class", animation->getClassName() );
     add_attribute( element, "dimmer_pattern", (int)animation->m_dimmer_pattern );
-
-    add_text_element( element, "name", animation->m_name );
-    add_text_element( element, "description", animation->m_description );
 
     visit_object<AnimationSignal>( element, animation->m_signal );
 
@@ -303,11 +297,9 @@ void VenueWriter::visit( SceneMovementAnimator* animation )
 {
     TiXmlElement element( "animation" );
 
-    add_attribute( element, "uid", animation->m_uid );
-    add_attribute( element, "class", animation->getClassName() );
+    writeDObject( element, animation, "number" );
 
-    add_text_element( element, "name", animation->m_name );
-    add_text_element( element, "description", animation->m_description );
+    add_attribute( element, "class", animation->getClassName() );
 
     visit_object<AnimationSignal>( element, animation->m_signal );
 
@@ -324,14 +316,12 @@ void VenueWriter::visit( SceneColorSwitcher* animation )
 {
     TiXmlElement element( "animation" );
 
-    add_attribute( element, "uid", animation->m_uid );
+    writeDObject( element, animation, "number" );
+
     add_attribute( element, "class", animation->getClassName() );
     add_attribute( element, "strobe_neg_color", animation->m_strobe_neg_color );
     add_attribute( element, "strobe_pos_ms", animation->m_strobe_pos_ms );
     add_attribute( element, "strobe_neg_ms", animation->m_strobe_neg_ms );
-
-    add_text_element( element, "name", animation->m_name );
-    add_text_element( element, "description", animation->m_description );
 
     visit_object<AnimationSignal>( element, animation->m_signal );
 
@@ -359,10 +349,9 @@ void VenueWriter::visit( SceneChannelAnimator* animation )
 {
     TiXmlElement element( "animation" );
 
-    add_attribute( element, "uid", animation->m_uid );
+    writeDObject( element, animation, "number" );
+
     add_attribute( element, "class", animation->getClassName() );
-    add_text_element( element, "name", animation->m_name );
-    add_text_element( element, "description", animation->m_description );
 
     visit_object<AnimationSignal>( element, animation->m_signal );
 
@@ -379,10 +368,9 @@ void VenueWriter::visit( SceneSequence* animation )
 {
     TiXmlElement element( "animation" );
 
-    add_attribute( element, "uid", animation->m_uid );
+    writeDObject( element, animation, "number" );
+
     add_attribute( element, "class", animation->getClassName() );
-    add_text_element( element, "name", animation->m_name );
-    add_text_element( element, "description", animation->m_description );
 
     visit_object<AnimationSignal>( element, animation->m_signal );
 
@@ -397,11 +385,10 @@ void VenueWriter::visit( SceneSoundLevel* animation )
 {
     TiXmlElement element( "animation" );
 
-    add_attribute( element, "uid", animation->m_uid );
+    writeDObject( element, animation, "number" );
+
     add_attribute( element, "class", animation->getClassName() );
     add_attribute( element, "fade", animation->m_fade_what );
-    add_text_element( element, "name", animation->m_name );
-    add_text_element( element, "description", animation->m_description );
 
     visit_object<AnimationSignal>( element, animation->m_signal );
 

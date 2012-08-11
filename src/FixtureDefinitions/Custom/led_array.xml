@@ -1,0 +1,160 @@
+<?xml version="1.0"?>
+
+<fixture_definitions>
+    <author>Robert DeSantis</author>
+    <version>1</version>
+  
+    <fixture type="par" channels="8">
+        <manufacturer>Custom</manufacturer>
+        <model>LED Array</model>
+        <channels>
+            <channel index="0" type="auto program" color="false" blackout="false" whiteout="false">
+                <name>Program</name>
+                <ranges>
+                   <range start="0" end="9">
+                      <name>Off</name>
+                   </range>
+                   <range start="10" end="19">
+                      <name>Test</name>
+                   </range>
+                   <range start="20" end="29">
+                      <name>Sound Activated Colors</name>
+                   </range>
+                   <range start="30" end="39">
+                      <name>Fixed Strobe</name>
+                   </range>
+                   <range start="40" end="49">
+                      <name>Random Strobe</name>
+                   </range>
+                   <range start="50" end="59">
+                     <name>Sparkle</name>
+                   </range>                  
+                   <range start="60" end="69">
+                      <name>Animated Shapes</name>
+                   </range>
+                   <range start="70" end="79">
+                      <name>Twirlers</name>
+                   </range>
+                   <range start="80" end="89">
+                      <name>Chase</name>
+                   </range>
+                   <range start="90" end="99">
+                      <name>Growing Spots</name>
+                   </range>
+                   <range start="100" end="109">
+                      <name>Rain</name>
+                   </range>
+                   <range start="110" end="119">
+                      <name>Boxes</name>
+                   </range>
+                   <range start="120" end="129">
+                      <name>Lines</name>
+                   </range>
+                   <range start="130" end="139">
+                      <name>Fill Effects</name>
+                   </range>
+                   <range start="140" end="149">
+                      <name>Sound Meter</name>
+                   </range>
+                   <range start="150" end="159">
+                      <name>Soft Patterns</name>
+                   </range>
+                  <range start="160" end="169">
+                    <name>Color Fade</name>
+                  </range>
+                  <range start="170" end="255">
+                      <name>Color Fill</name>
+                   </range>
+                </ranges>
+            </channel>
+            <channel index="1" type="control" color="false" blackout="false">
+                <name>Sub Program</name>
+            </channel>
+            <channel index="2" type="color macro" color="false" blackout="false"  whiteout="false">
+                <name>Color Macro</name>
+                <ranges>
+                   <range start="0" end="9">
+                      <name>Custom RGB</name>
+                   </range>
+                   <range start="10" end="19">
+                      <name>Black</name>
+                   </range>
+                   <range start="20" end="29">
+                      <name>Light Gray</name>
+                   </range>
+                   <range start="30" end="39">
+                      <name>Gray</name>
+                   </range>
+                   <range start="40" end="49">
+                      <name>Red</name>
+                   </range>
+                   <range start="50" end="59">
+                      <name>Blood Orange</name>
+                   </range>
+                   <range start="60" end="69">
+                      <name>Orange</name>
+                   </range>
+                   <range start="70" end="79">
+                      <name>Salmon</name>
+                   </range>
+                   <range start="80" end="89">
+                      <name>Yellow</name>
+                   </range>
+                   <range start="90" end="99">
+                      <name>Lime</name>
+                   </range>
+                   <range start="100" end="109">
+                      <name>Green</name>
+                   </range>
+                   <range start="110" end="119">
+                      <name>Teal</name>
+                   </range>
+                   <range start="120" end="129">
+                      <name>Cyan</name>
+                   </range>
+                   <range start="130" end="139">
+                      <name>Light Blue</name>
+                   </range>
+                   <range start="140" end="149">
+                      <name>Blue</name>
+                   </range>
+                   <range start="150" end="159">
+                      <name>Violet</name>
+                   </range>
+                   <range start="160" end="169">
+                      <name>Magenta</name>
+                   </range>
+                   <range start="170" end="179">
+                      <name>Hot Pink</name>
+                   </range>
+                   <range start="180" end="189">
+                      <name>White</name>
+                   </range>
+                   <range start="190" end="255">
+                      <name>Random Colors</name>
+                   </range>
+                </ranges>
+            </channel>
+            <channel index="2" type="red" color="true" blackout="true">
+                <name>Red</name>
+            </channel>
+            <channel index="3" type="green" color="true" blackout="true">
+                <name>Green</name>
+            </channel>
+            <channel index="5" type="blue" color="true" blackout="true">
+                <name>Blue</name>
+            </channel>
+            <channel index="6" type="dimmer" color="false" blackout="true" value="70">
+              <name>Dimmer</name>
+            </channel>
+            <channel index="7" type="control" color="false" blackout="false">
+              <name>Speed</name>
+              <ranges>
+                <range start="1" end="255">
+                  <name>Fast to Slow</name>
+                </range>
+              </ranges>
+            </channel>
+        </channels>
+    </fixture>
+</fixture_definitions>

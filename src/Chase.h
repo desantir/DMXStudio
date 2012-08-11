@@ -41,16 +41,16 @@ class Chase : public DObject
     friend class VenueWriter;
     friend class VenueReader;
 
-    ChaseNumber		m_chase_number;
     ULONG			m_delay_ms;						// Scene delay in milliseconds
     ULONG			m_fade_ms;						// Fade time - transition between scenes
     ChaseStepArray	m_chase_steps;
 
 public:
     Chase(void) : 
-        m_chase_number(0),
         m_delay_ms( DEFAULT_CHASE_DELAY ),
-        m_fade_ms( 0 ) {}
+        m_fade_ms( 0 ),
+        DObject()
+    {}
 
     Chase( UID uid, ChaseNumber chase_number, ULONG delay_ms, ULONG fade_ms, const char * name, const char *description );
     ~Chase(void);
@@ -60,10 +60,10 @@ public:
     }
 
     ChaseNumber getChaseNumber( ) const {
-        return m_chase_number;
+        return getNumber();
     }
     void setChaseNumber( ChaseNumber chase_number ) {
-        m_chase_number = chase_number;
+        setNumber( chase_number );
     }
 
     void setDelayMS( ULONG delay_ms ) {

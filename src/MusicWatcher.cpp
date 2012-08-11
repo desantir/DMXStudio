@@ -26,6 +26,7 @@ MA 02111-1307, USA.
 // ----------------------------------------------------------------------------
 //
 MusicWatcher::MusicWatcher( MusicPlayer* player, Venue* venue ) :
+    Threadable( "MusicWatcher" ),
     m_player( player ),
     m_venue( venue )
 {

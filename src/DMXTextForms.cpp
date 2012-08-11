@@ -102,11 +102,9 @@ FixtureSelectField::FixtureSelectField( LPCSTR field_label, Venue* venue, bool i
         
     if ( m_include_groups ) {
         m_fixture_groups = m_venue->getFixtureGroups();
-        UINT index = 1;
-
-        for ( FixtureGroupPtrArray:: iterator it=m_fixture_groups.begin(); it != m_fixture_groups.end(); it++, index++ ) {
+        for ( FixtureGroupPtrArray:: iterator it=m_fixture_groups.begin(); it != m_fixture_groups.end(); it++ ) {
             CString key;
-            key.Format( "G%u", index );
+            key.Format( "G%u", (*it)->getGroupNumber() );
             CString label;
             label.Format( "Group: %s", (*it)->getName() );
             addKeyValue( key, label );
@@ -120,9 +118,10 @@ void FixtureSelectField::getFixtures( FixturePtrArray& targets ) {
     targets.clear();
 
     if ( m_include_groups && toupper(m_current_value[0]) == 'G' ) {
-        UINT index = strtoul( &((LPCSTR)m_current_value)[1], NULL, 10 )-1;
+        GroupNumber group_number = (GroupNumber)strtoul( &((LPCSTR)m_current_value)[1], NULL, 10 );
+        FixtureGroup* group = m_venue->getFixtureGroupByNumber( group_number );
+        STUDIO_ASSERT( group, "Fixture group %u disappeared", group_number );
 
-        FixtureGroup* group = m_fixture_groups[index];
         UIDSet list = group->getFixtures();
         for ( UIDSet::iterator it=list.begin(); it != list.end(); it++ ) {
             Fixture* pf = m_venue->getFixture( *it );
@@ -301,6 +300,28 @@ bool UniqueChaseNumberField::setValue( LPCSTR value ) {
 
 // ----------------------------------------------------------------------------
 //
+UniqueGroupNumberField::UniqueGroupNumberField( LPCSTR label, Venue* venue ) :
+    IntegerField( label, venue->nextAvailableFixtureGroupNumber(), 1, MAX_OBJECT_NUMBER ),
+    m_venue( venue )
+{
+};
+
+// ----------------------------------------------------------------------------
+//
+bool UniqueGroupNumberField::setValue( LPCSTR value ) {
+    long result;
+
+    if ( !IntegerField::parse( value, result ) )
+        return false;
+
+    if ( m_venue->getFixtureGroupByNumber( (GroupNumber)result ) != NULL )
+        throw FieldException( "Group number %lu is already in use", result );
+
+    return IntegerField::setValue( value );
+}
+
+// ----------------------------------------------------------------------------
+//
 FixtureGroupSelectField::FixtureGroupSelectField( LPCSTR label, Venue* venue ) :
     NumberedListField( label ),
     m_venue( venue )
@@ -320,7 +341,8 @@ DmxAddressField::DmxAddressField( LPCSTR label, Venue* venue, Fixture* fixture )
     IntegerField( label, 1, 1, DMX_PACKET_SIZE ),
     m_venue( venue ),
     m_num_channels(1),
-    m_uid(0)
+    m_uid(0),
+    m_allow_address_overlap(false)
 {
     if ( fixture != NULL ) {
         m_uid = fixture->getUID();
@@ -340,11 +362,13 @@ bool DmxAddressField::setValue( LPCSTR value )
 
     channel_t end_address = (channel_t)result+m_num_channels-1;
 
-    UID current = m_venue->whoIsAddressRange( 1, (channel_t)result, end_address );
-    if ( current != 0 && current != m_uid )
-        throw FieldException( "DMX address %d already in use", result );
-    if ( end_address > DMX_PACKET_SIZE )
+    if ( !m_allow_address_overlap ) {
+        UID current = m_venue->whoIsAddressRange( 1, (channel_t)result, end_address );
+        if ( current != 0 && current != m_uid )
+            throw FieldException( "DMX address %d already in use", result );
+        if ( end_address > DMX_PACKET_SIZE )
         throw FieldException( "Channel range past end of addressable DMX addresses (%d > %d)", end_address, DMX_PACKET_SIZE );
+    }
 
     return IntegerField::setValue( value );
 }
@@ -459,7 +483,7 @@ FixtureSelect::FixtureSelect( LPCSTR field_label, Venue* venue, UIDArray& fixtur
     FixtureGroupPtrArray fixture_groups = m_venue->getFixtureGroups();
     UINT index = 1;
 
-    for ( FixtureGroupPtrArray:: iterator it=fixture_groups.begin(); it != fixture_groups.end(); it++ ) {
+    for ( FixtureGroupPtrArray::iterator it=fixture_groups.begin(); it != fixture_groups.end(); it++ ) {
         UIDSet list = (*it)->getFixtures();
         bool missing = false;
         for ( UIDSet::iterator it2=list.begin(); it2 != list.end(); it2++ ) {
@@ -504,11 +528,25 @@ bool FixtureSelect::setValue( LPCSTR value ) {
             break;
 
         if ( toupper(resToken[0]) == 'G' ) {
-            UINT index = strtoul( &((LPCSTR)resToken)[1], NULL, 10 )-1;
-            if ( index >= m_fixture_groups.size() )
-                throw FieldException( "Invalid group number G%d", index+1 );
+            GroupNumber group_number = (GroupNumber)strtoul( &((LPCSTR)resToken)[1], NULL, 10 );
+            FixtureGroup* group = m_venue->getFixtureGroupByNumber( group_number );
 
-            FixtureGroup* group = m_fixture_groups[index];
+            if ( !group )
+                throw FieldException( "Invalid group number G%u", group_number );
+
+            // Make sure this group is represented
+
+            bool found = false;
+            for ( FixtureGroupPtrArray::iterator it=m_fixture_groups.begin(); it != m_fixture_groups.end(); it++ ) {
+                if ( group->getUID() == (*it)->getUID() ) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if ( !found )
+                throw FieldException( "Invalid group number G%u", group_number );
+
             UIDSet list = group->getFixtures();
             for ( UIDSet::iterator it=list.begin(); it != list.end(); it++ )
                 uids.push_back( *it );

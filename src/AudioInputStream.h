@@ -185,7 +185,7 @@ class AudioInputStream : public Threadable
 
     unsigned					m_data_index;
 
-    CMutex						m_sink_mutex;
+    CCriticalSection			m_sink_mutex;
     AudioProcessorMap			m_sinks;
 
     FFT_Result *				m_fft_channels[2];

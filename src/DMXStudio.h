@@ -85,16 +85,16 @@ class MusicPlayer;
 
 class DMXStudio
 {
-    FILE*           m_hLog;
-    bool            m_debug;
-    CMutex          m_venue_mutex;
-    Venue*          m_venue;
-    CString         m_venue_filename;
-    UINT            m_http_port;
-    StrobeTime      m_whiteout_strobe_slow;
-    StrobeTime      m_whiteout_strobe_fast;
-    bool            m_enable_mobile;
-    MusicPlayer*    m_music_player;
+    FILE*               m_hLog;
+    bool                m_debug;
+    CCriticalSection    m_venue_mutex;
+    Venue*              m_venue;
+    CString             m_venue_filename;
+    UINT                m_http_port;
+    StrobeTime          m_whiteout_strobe_slow;
+    StrobeTime          m_whiteout_strobe_fast;
+    bool                m_enable_mobile;
+    MusicPlayer*        m_music_player;
 
 public:
     DMXStudio();

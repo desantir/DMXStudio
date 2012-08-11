@@ -177,6 +177,8 @@
             url: "/dmxstudio/query/venue/",
             cache: false,
             success: function (data) {
+                venue_content.style.display = "";
+
                 var json = eval('(' + data + ')');
 
                 var o = $("#animations_speed_id option[value='" + json['animation_speed'] + "']");
@@ -204,7 +206,55 @@
 
                 clearTimeout(timeout); // Stop events from going back to server
             },
-            error: onError
+            error: function () {
+                venue_content.style.display = "none";
+                alert( "Venue is not available" );
+            }
+        });
+    });
+
+    $("#scene").live("pageshow", function () {
+        $.ajax({
+            type: "GET",
+            url: "/dmxstudio/query/venue/",
+            cache: false,
+            success: function (data) {
+                scene_content.style.display = "";
+            },
+            error: function () {
+                scene_content.style.display = "none";
+                alert("Venue is not available");
+            }
+        });
+    });
+
+    $("#chase").live("pageshow", function () {
+        $.ajax({
+            type: "GET",
+            url: "/dmxstudio/query/venue/",
+            cache: false,
+            success: function (data) {
+                chase_content.style.display = "";
+            },
+            error: function () {
+                chase_content.style.display = "none";
+                alert("Venue is not available");
+            }
+        });
+    });
+
+    $("#fixture").live("pageshow", function () {
+        $.ajax({
+            type: "GET",
+            url: "/dmxstudio/query/venue/",
+            cache: false,
+            success: function (data) {
+                fixture_content.style.display = "";
+            },
+            error: function () {
+                fixture_content.style.display = "none";
+                alert("Venue is not available");
+            }
         });
     });
 
@@ -514,7 +564,7 @@
 
     <div data-role="page" id="venue">
         [$[page_header:venue]$]
-	    <div data-role="content">	
+	    <div data-role="content" id="venue_content">	
             <div data-role="fieldcontain">
                 <fieldset data-role="controlgroup" id="blackout" data-type="horizontal">
                    <legend>Blackout:</legend>
@@ -580,7 +630,7 @@
 
     <div data-role="page" id="scene">
         [$[page_header:scene]$]
-	    <div data-role="content">	
+	    <div data-role="content" id="scene_content">	
             <fieldset data-role="controlgroup" id="sceneChange">
                 [$[scene_buttons]$]
             </fieldset>
@@ -590,7 +640,7 @@
 
     <div data-role="page" id="chase">
         [$[page_header:chase]$]
-	    <div data-role="content">	
+	    <div data-role="content" id="chase_content">	
             <fieldset data-role="controlgroup" id="chaseChange">
                 [$[chase_buttons]$]
             </fieldset>
@@ -599,7 +649,7 @@
 
     <div data-role="page" id="fixture">
         [$[page_header:fixture]$]
-	    <div data-role="content">	
+	    <div data-role="content" id="fixture_content">	
             <div class="containing-element">
                 <select name="fixture_select" id="fixture_select_id" data-mini="true" data-theme="a" >
                    [$[fixture_select]$]
@@ -615,7 +665,7 @@
 
     <div data-role="page" id="sound">
         [$[page_header:sound]$]
-	    <div data-role="content">	
+	    <div data-role="content" id="sound_content">	
             <div data-role="fieldcontain">
                 <label for="volume_slider">Volume:</label>
                 <input type="range" id="volume_slider" name="volume_slider"

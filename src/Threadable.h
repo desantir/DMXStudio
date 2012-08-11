@@ -31,6 +31,7 @@ class Threadable
 {
     friend UINT __cdecl _run( LPVOID object );
 
+    CString     m_name;                                 // Thread name
     bool		m_running;								// Thread is running
     CWinThread* m_thread;								// The thread
 
@@ -38,7 +39,7 @@ class Threadable
     Threadable& operator=(Threadable& rhs) { return *this; }
 
 public:
-    Threadable(void);
+    Threadable( LPCSTR name="" );
     virtual ~Threadable(void);
 
     bool startThread();
@@ -50,5 +51,7 @@ public:
 
 protected:
     virtual UINT run() = 0;
-};
 
+private:
+    void setThreadName( void );
+};

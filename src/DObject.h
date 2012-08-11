@@ -33,12 +33,22 @@ MA 02111-1307, USA.
 
 class DObject
 {
+    friend class VenueWriter;
+    friend class VenueReader;
+
 protected:
     UID				m_uid;
-    ULONG			m_number;						// User selected friendly number (UNUSED)
+    ULONG			m_number;						// User selected friendly number
     CString		    m_name;
     CString		    m_description;
     bool            m_private;                      // Object visibility suggestion (optional)
+
+    virtual inline ULONG getNumber( void ) const {
+        return m_number;
+    }
+    virtual inline void setNumber( ULONG number ) {
+        m_number = number;
+    }
 
 public:
     DObject(void) :
@@ -47,9 +57,9 @@ public:
         m_private(false)
     {}
 
-    DObject( UID uid, const char* name, const char *description ) :
+    DObject( UID uid, ULONG number, const char* name, const char *description ) :
         m_uid(uid),
-        m_number(0)
+        m_number(number)
     {
         if ( name )
             m_name = name;
@@ -93,16 +103,5 @@ public:
     }
     virtual void setPrivate( bool is_private ) {
         m_private = is_private;
-    }
-
-
-private:
-    DWORD getNumber( ) const {                          // TODO - NOT USED
-        STUDIO_ASSERT( false, "NOT IMPLEMENTED" );
-        return m_number;
-    }
-    void setNumber( DWORD number ) {                    // TODO - NOT USED
-        STUDIO_ASSERT( false, "NOT IMPLEMENTED" );
-        m_number = number;
     }
 };

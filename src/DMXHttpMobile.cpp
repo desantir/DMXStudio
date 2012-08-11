@@ -116,6 +116,9 @@ DWORD DMXHttpMobile::processPostRequest( HttpWorkerThread* worker, BYTE* content
 //
 bool DMXHttpMobile::control_animation_speed( CString& response, LPCSTR path_fragment )
 {
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
     DWORD sample_rate_ms;
         
     if ( sscanf_s( path_fragment, "%lu", &sample_rate_ms ) != 1 )
@@ -130,6 +133,9 @@ bool DMXHttpMobile::control_animation_speed( CString& response, LPCSTR path_frag
 //
 bool DMXHttpMobile::query_venue( CString& response, LPCSTR path_fragment )
 {
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
     response.Format( "{ \"blackout\":%d, \"dimmer\":%u, \"whiteout\":%d, \"whiteout_strobe\":%u, \"animation_speed\": %lu }",
         studio.getVenue()->getUniverse()->isBlackout(), 
         studio.getVenue()->getMasterDimmer(),
@@ -376,6 +382,9 @@ bool DMXHttpMobile::control_mute_volume( CString& response, LPCSTR path_fragment
 //
 bool DMXHttpMobile::control_scene_show( CString& response, LPCSTR path_fragment )
 {
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
     UID scene_id;
 
     if ( sscanf_s( path_fragment, "%lu", &scene_id ) != 1 )
@@ -394,6 +403,9 @@ bool DMXHttpMobile::control_scene_show( CString& response, LPCSTR path_fragment 
 //
 bool DMXHttpMobile::control_chase_show( CString& response, LPCSTR path_fragment )
 {
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
     UID chase_id;
         
     if ( sscanf_s( path_fragment, "%lu", &chase_id ) != 1 )
@@ -416,6 +428,9 @@ bool DMXHttpMobile::control_chase_show( CString& response, LPCSTR path_fragment 
 //
 bool DMXHttpMobile::control_venue_blackout( CString& response, LPCSTR path_fragment )
 {
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
     unsigned blackout;
         
     if ( sscanf_s( path_fragment, "%u", &blackout ) != 1 )
@@ -430,6 +445,9 @@ bool DMXHttpMobile::control_venue_blackout( CString& response, LPCSTR path_fragm
 //
 bool DMXHttpMobile::control_venue_dimmer( CString& response, LPCSTR path_fragment )
 {
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
     int dimmer;
 
     if ( sscanf_s( path_fragment, "%d", &dimmer ) != 1 )
@@ -447,6 +465,9 @@ bool DMXHttpMobile::control_venue_dimmer( CString& response, LPCSTR path_fragmen
 //
 bool DMXHttpMobile::control_venue_whiteout( CString& response, LPCSTR path_fragment )
 {
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
     int whiteout;
 
     if ( sscanf_s( path_fragment, "%d", &whiteout ) != 1 )
@@ -464,6 +485,9 @@ bool DMXHttpMobile::control_venue_whiteout( CString& response, LPCSTR path_fragm
 //
 bool DMXHttpMobile::control_venue_strobe( CString& response, LPCSTR path_fragment )
 {
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
     UINT whiteout_strobe_ms;
 
     if ( sscanf_s( path_fragment, "%u", &whiteout_strobe_ms ) != 1 )
@@ -481,6 +505,9 @@ bool DMXHttpMobile::control_venue_strobe( CString& response, LPCSTR path_fragmen
 //
 bool DMXHttpMobile::control_fixture_capture( CString& response, LPCSTR path_fragment )
 {
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
     UID fixture_id;
         
     if ( sscanf_s( path_fragment, "%lu", &fixture_id ) != 1 )
@@ -498,6 +525,9 @@ bool DMXHttpMobile::control_fixture_capture( CString& response, LPCSTR path_frag
 //
 bool DMXHttpMobile::control_fixture_release( CString& response, LPCSTR path_fragment )
 {
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
     UID fixture_id;
         
     if ( sscanf_s( path_fragment, "%lu", &fixture_id ) != 1 )
@@ -519,6 +549,9 @@ bool DMXHttpMobile::control_fixture_release( CString& response, LPCSTR path_frag
 //
 bool DMXHttpMobile::control_fixture_channel( CString& response, LPCSTR path_fragment )
 {
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
     UID fixture_id;
     channel_t channel;
     unsigned channel_value;
@@ -564,6 +597,9 @@ bool DMXHttpMobile::substitute( LPCSTR marker, LPCSTR data, CString& marker_cont
         marker_content.Append( "	            </ul>\n" );
         marker_content.Append( "            </div><!-- /navbar -->\n" );
         marker_content.Append( "	    </div><!-- /header -->\n" );
+    }
+    else  if ( !studio.getVenue() || !studio.getVenue()->isRunning() ) {
+            marker_content = "";
     }
     else if ( !strcmp( marker, "fixture_slider_content" ) ) {
         marker_content = getFixtureDivContent();

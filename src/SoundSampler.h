@@ -76,7 +76,7 @@ class SoundSampler : public IAudioProcessor
 {
     AudioInputStream*		m_audio_stream;
     unsigned				m_channels;
-    CMutex					m_mutex;
+    CMutex              	m_mutex;
     SampleSet				m_samples;
     ULONG					m_sample_number;
     CEvent*					m_listener;

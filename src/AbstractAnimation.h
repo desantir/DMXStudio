@@ -39,11 +39,12 @@ protected:
 
 public:
     AbstractAnimation( ) :
+        DObject(),
         m_animation_task(NULL)
     {}
 
     AbstractAnimation( UID animation_uid, AnimationSignal signal ) :
-        DObject( animation_uid, NULL, NULL ),
+        DObject( animation_uid, 0, NULL, NULL ),
         m_signal( signal ),
         m_animation_task(NULL)
     {}

@@ -25,6 +25,7 @@ MA 02111-1307, USA.
 // ----------------------------------------------------------------------------
 //
 AnimationTask::AnimationTask( Venue* venue ) :
+    Threadable( "AnimationTask" ),
     m_venue( venue ),
     m_scene( NULL ),
     m_load_channels( false )

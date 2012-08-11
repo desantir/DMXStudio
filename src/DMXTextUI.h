@@ -98,6 +98,7 @@ private:
     void soundDebug(void);
     void soundBPM(void);
     void soundDetect(void);
+    void soundBeat(void);
     void soundDb();
     void whiteout(void);
     void whiteoutStrobe(void);
@@ -367,11 +368,27 @@ public:
     bool setValue( LPCSTR value );
 };
 
+class UniqueGroupNumberField : public IntegerField
+{
+    Venue*		m_venue;
+
+public:
+    UniqueGroupNumberField( LPCSTR label, Venue* venue );
+
+    GroupNumber getGroupNumber() const {
+        return (GroupNumber)getLongValue();
+    }
+
+    bool setValue( LPCSTR value );
+};
+
+
 class DmxAddressField : public IntegerField
 {
     Venue*				m_venue;
     channel_t			m_num_channels;
     UID					m_uid;
+    bool                m_allow_address_overlap;
 
 public:
     DmxAddressField( LPCSTR label, Venue* venue, Fixture* fixture=NULL );
@@ -380,6 +397,10 @@ public:
 
     void setNumChannels( channel_t num_channels ) {
         m_num_channels = num_channels;
+    }
+
+    void setAllowAddressOverlap( bool allow) {
+        m_allow_address_overlap = allow;
     }
 };
 
@@ -486,10 +507,8 @@ public:
         for ( FixtureMap::iterator it=m_fixtures.begin(); it != m_fixtures.end(); it++ )
             help_text.AppendFormat( "   %-4lu - %s\n", (*it).first, (*it).second );
 
-        for ( size_t index=0; index < m_fixture_groups.size(); index++ ) {
-            CString label;
-            label.Format( "Group: %s",  m_fixture_groups[index]->getName() );
-            help_text.AppendFormat( "   G%-3lu - %s\n", index+1, label );
+        for ( FixtureGroupPtrArray::iterator it=m_fixture_groups.begin(); it != m_fixture_groups.end(); it++ ) {
+            help_text.AppendFormat( "   G%-3lu - Group: %s\n",(*it)->getGroupNumber(), (*it)->getName() );
         }
     }
 
