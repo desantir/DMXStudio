@@ -1,5 +1,5 @@
 <!--DMX Studio Venue definition-->
-<venue version="0.2" next_uid="107" current_scene="104">
+<venue version="0.2" next_uid="112" current_scene="108">
     <name>Upstair&apos;s lab</name>
     <dmx_universes>
         <universe index="0">
@@ -59,11 +59,11 @@
         </fixture>
     </fixtures>
     <scenes>
-        <scene uid="20" scene_number="0" private="false">
+        <scene uid="20" scene_number="0">
             <name>Default Scene</name>
             <actors />
         </scene>
-        <scene uid="21" scene_number="1" private="false">
+        <scene uid="21" scene_number="1">
             <name>Green</name>
             <actors>
                 <actor fixure_uid="1">
@@ -112,7 +112,7 @@
                 </actor>
             </actors>
             <animations>
-                <animation uid="94" class="SceneStrobeAnimator" strobe_neg_color="0" strobe_pos_ms="200" strobe_neg_ms="50">
+                <animation uid="94" number="0" class="SceneStrobeAnimator" strobe_neg_color="0" strobe_pos_ms="200" strobe_neg_ms="50">
                     <signal sample_rate_ms="200" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="1" />
                     <pfuids>
                         <uid value="1" />
@@ -120,7 +120,7 @@
                 </animation>
             </animations>
         </scene>
-        <scene uid="22" scene_number="2" private="false">
+        <scene uid="22" scene_number="2">
             <name>Blue</name>
             <actors>
                 <actor fixure_uid="1">
@@ -169,7 +169,7 @@
                 </actor>
             </actors>
         </scene>
-        <scene uid="23" scene_number="3" private="false">
+        <scene uid="23" scene_number="3">
             <name>Red</name>
             <actors>
                 <actor fixure_uid="1">
@@ -211,7 +211,7 @@
                 </actor>
             </actors>
         </scene>
-        <scene uid="24" scene_number="4" private="false">
+        <scene uid="24" scene_number="4">
             <name>White</name>
             <actors>
                 <actor fixure_uid="1">
@@ -253,7 +253,7 @@
                 </actor>
             </actors>
         </scene>
-        <scene uid="25" scene_number="5" private="false">
+        <scene uid="25" scene_number="5">
             <name>Strobes</name>
             <actors>
                 <actor fixure_uid="1">
@@ -322,7 +322,7 @@
                 </actor>
             </actors>
         </scene>
-        <scene uid="28" scene_number="7" private="false">
+        <scene uid="28" scene_number="7">
             <name>Animations</name>
             <actors>
                 <actor fixure_uid="1">
@@ -364,7 +364,7 @@
                 </actor>
             </actors>
         </scene>
-        <scene uid="29" scene_number="8" private="false">
+        <scene uid="29" scene_number="8">
             <name>Average fade</name>
             <actors>
                 <actor fixure_uid="1">
@@ -413,7 +413,7 @@
                 </actor>
             </actors>
             <animations>
-                <animation uid="47" class="SoundLevel" fade="255">
+                <animation uid="47" number="0" class="SoundLevel" fade="255">
                     <signal sample_rate_ms="25" sample_decay_ms="0" input_type="3" scale_factor="0" max_threshold="0" apply_to="1" />
                     <pfuids>
                         <uid value="1" />
@@ -422,7 +422,7 @@
                 </animation>
             </animations>
         </scene>
-        <scene uid="31" scene_number="9" private="false">
+        <scene uid="31" scene_number="9">
             <name>Level fade</name>
             <actors>
                 <actor fixure_uid="1">
@@ -471,7 +471,7 @@
                 </actor>
             </actors>
             <animations>
-                <animation uid="48" class="SoundLevel" fade="3">
+                <animation uid="48" number="0" class="SoundLevel" fade="3">
                     <signal sample_rate_ms="150" sample_decay_ms="0" input_type="3" scale_factor="0" max_threshold="0" apply_to="1" />
                     <pfuids>
                         <uid value="1" />
@@ -481,7 +481,7 @@
                 </animation>
             </animations>
         </scene>
-        <scene uid="32" scene_number="10" private="false">
+        <scene uid="32" scene_number="10">
             <name>Animations</name>
             <actors>
                 <actor fixure_uid="1">
@@ -530,7 +530,7 @@
                 </actor>
             </actors>
         </scene>
-        <scene uid="33" scene_number="11" private="false">
+        <scene uid="33" scene_number="11">
             <name>Freq level</name>
             <actors>
                 <actor fixure_uid="1">
@@ -579,7 +579,7 @@
                 </actor>
             </actors>
             <animations>
-                <animation uid="49" class="SceneChannelAnimator">
+                <animation uid="49" number="0" class="SceneChannelAnimator">
                     <signal sample_rate_ms="25" sample_decay_ms="50" input_type="3" scale_factor="0" max_threshold="0" apply_to="1" />
                     <channel_animations>
                         <channel_animation actor_uid="1" channel="5" style="2" />
@@ -588,7 +588,7 @@
                 </animation>
             </animations>
         </scene>
-        <scene uid="42" scene_number="12" private="false">
+        <scene uid="42" scene_number="12">
             <name>Speed level</name>
             <actors>
                 <actor fixure_uid="1">
@@ -637,7 +637,7 @@
                 </actor>
             </actors>
         </scene>
-        <scene uid="50" scene_number="13" private="false">
+        <scene uid="50" scene_number="13">
             <name>Color Switcher</name>
             <actors>
                 <actor fixure_uid="1">
@@ -669,7 +669,7 @@
                 </actor>
             </actors>
             <animations>
-                <animation uid="87" class="SceneColorSwitcher" strobe_neg_color="0" strobe_pos_ms="200" strobe_neg_ms="75">
+                <animation uid="87" number="0" class="SceneColorSwitcher" strobe_neg_color="0" strobe_pos_ms="200" strobe_neg_ms="75">
                     <signal sample_rate_ms="2500" sample_decay_ms="0" input_type="2" scale_factor="1" max_threshold="100" apply_to="2" />
                     <pfuids>
                         <uid value="1" />
@@ -678,7 +678,7 @@
                 </animation>
             </animations>
         </scene>
-        <scene uid="53" scene_number="14" private="false">
+        <scene uid="53" scene_number="14">
             <name>Shapes</name>
             <actors>
                 <actor fixure_uid="7">
@@ -700,7 +700,7 @@
                 </actor>
             </actors>
         </scene>
-        <scene uid="55" scene_number="15" private="false">
+        <scene uid="55" scene_number="15">
             <name>Level fade scale factor</name>
             <actors>
                 <actor fixure_uid="1">
@@ -752,7 +752,7 @@
                 </actor>
             </actors>
             <animations>
-                <animation uid="60" class="SceneColorSwitcher" strobe_neg_color="0" strobe_pos_ms="200" strobe_neg_ms="50">
+                <animation uid="60" number="0" class="SceneColorSwitcher" strobe_neg_color="0" strobe_pos_ms="200" strobe_neg_ms="50">
                     <signal sample_rate_ms="1500" sample_decay_ms="0" input_type="2" scale_factor="1" max_threshold="90" apply_to="1" />
                     <pfuids>
                         <uid value="1" />
@@ -763,7 +763,7 @@
                 </animation>
             </animations>
         </scene>
-        <scene uid="61" scene_number="16" private="false">
+        <scene uid="61" scene_number="16">
             <name>Yellow</name>
             <actors>
                 <actor fixure_uid="1">
@@ -832,11 +832,11 @@
                 </actor>
             </actors>
         </scene>
-        <scene uid="63" scene_number="6" private="true">
+        <scene uid="63" scene_number="6">
             <name>test scene</name>
             <actors />
         </scene>
-        <scene uid="66" scene_number="17" private="false">
+        <scene uid="66" scene_number="17">
             <name>Moving yoke random tests</name>
             <actors>
                 <actor fixure_uid="1">
@@ -939,7 +939,7 @@
                 </actor>
             </actors>
             <animations>
-                <animation uid="70" class="SceneMovementAnimator">
+                <animation uid="70" number="0" class="SceneMovementAnimator">
                     <signal sample_rate_ms="500" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="2" />
                     <pfuids>
                         <uid value="5" />
@@ -950,7 +950,7 @@
                 </animation>
             </animations>
         </scene>
-        <scene uid="71" scene_number="18" private="false">
+        <scene uid="71" scene_number="18">
             <name>Moving yoke rotate test</name>
             <actors>
                 <actor fixure_uid="1">
@@ -1053,7 +1053,7 @@
                 </actor>
             </actors>
             <animations>
-                <animation uid="73" class="SceneMovementAnimator">
+                <animation uid="73" number="0" class="SceneMovementAnimator">
                     <signal sample_rate_ms="2500" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="2" />
                     <pfuids>
                         <uid value="5" />
@@ -1064,7 +1064,7 @@
                 </animation>
             </animations>
         </scene>
-        <scene uid="74" scene_number="19" private="false">
+        <scene uid="74" scene_number="19">
             <name>Moving yoke nod test</name>
             <actors>
                 <actor fixure_uid="1">
@@ -1167,7 +1167,7 @@
                 </actor>
             </actors>
             <animations>
-                <animation uid="77" class="SceneMovementAnimator">
+                <animation uid="77" number="0" class="SceneMovementAnimator">
                     <signal sample_rate_ms="1200" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="2" />
                     <pfuids>
                         <uid value="5" />
@@ -1178,7 +1178,7 @@
                 </animation>
             </animations>
         </scene>
-        <scene uid="79" scene_number="20" private="false">
+        <scene uid="79" scene_number="20">
             <name>Moving yoke fan test</name>
             <actors>
                 <actor fixure_uid="1">
@@ -1281,7 +1281,7 @@
                 </actor>
             </actors>
             <animations>
-                <animation uid="81" class="SceneMovementAnimator">
+                <animation uid="81" number="0" class="SceneMovementAnimator">
                     <signal sample_rate_ms="1200" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="2" />
                     <pfuids>
                         <uid value="5" />
@@ -1292,7 +1292,7 @@
                 </animation>
             </animations>
         </scene>
-        <scene uid="82" scene_number="21" private="false">
+        <scene uid="82" scene_number="21">
             <name>Moving yoke xcross test</name>
             <actors>
                 <actor fixure_uid="1">
@@ -1395,7 +1395,7 @@
                 </actor>
             </actors>
             <animations>
-                <animation uid="84" class="SceneMovementAnimator">
+                <animation uid="84" number="0" class="SceneMovementAnimator">
                     <signal sample_rate_ms="1500" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="2" />
                     <pfuids>
                         <uid value="5" />
@@ -1404,7 +1404,7 @@
                     </pfuids>
                     <movement type="5" tilt_start_angle="160" tilt_end_angle="80" pan_start_angle="320" pan_end_angle="400" pan_increment="1" speed="240" home_wait_periods="1" dest_wait_periods="2" group_size="1" positions="5" alternate_groups="true" blackout_return="true" run_once="false" home_x="0.00" home_y="0.00" height="0.00" fixture_spacing="0.00" radius="0.00" />
                 </animation>
-                <animation uid="85" class="SceneColorSwitcher" strobe_neg_color="0" strobe_pos_ms="200" strobe_neg_ms="50">
+                <animation uid="85" number="0" class="SceneColorSwitcher" strobe_neg_color="0" strobe_pos_ms="200" strobe_neg_ms="50">
                     <signal sample_rate_ms="1200" sample_decay_ms="0" input_type="2" scale_factor="2" max_threshold="90" apply_to="2" />
                     <pfuids>
                         <uid value="1" />
@@ -1415,7 +1415,7 @@
                 </animation>
             </animations>
         </scene>
-        <scene uid="88" scene_number="22" private="false">
+        <scene uid="88" scene_number="22">
             <name>Moving yokes absolute coords</name>
             <actors>
                 <actor fixure_uid="1">
@@ -1518,7 +1518,7 @@
                 </actor>
             </actors>
             <animations>
-                <animation uid="92" class="SceneMovementAnimator">
+                <animation uid="92" number="0" class="SceneMovementAnimator">
                     <signal sample_rate_ms="1000" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="1" />
                     <pfuids>
                         <uid value="5" />
@@ -1535,7 +1535,7 @@
                 </animation>
             </animations>
         </scene>
-        <scene uid="97" scene_number="23" private="false">
+        <scene uid="97" scene_number="23">
             <name>Pix PAR</name>
             <actors>
                 <actor fixure_uid="96">
@@ -1553,7 +1553,7 @@
                 </actor>
             </actors>
         </scene>
-        <scene uid="98" scene_number="24" private="false">
+        <scene uid="98" scene_number="24">
             <name>Pulse Green</name>
             <actors>
                 <actor fixure_uid="1">
@@ -1645,7 +1645,7 @@
                 </actor>
             </actors>
             <animations>
-                <animation uid="99" class="ScenePatternDimmer" dimmer_pattern="1">
+                <animation uid="99" number="0" class="ScenePatternDimmer" dimmer_pattern="1">
                     <signal sample_rate_ms="500" sample_decay_ms="0" input_type="3" scale_factor="1" max_threshold="100" apply_to="2" />
                     <pfuids>
                         <uid value="9" />
@@ -1654,7 +1654,7 @@
                         <uid value="96" />
                     </pfuids>
                 </animation>
-                <animation uid="101" class="SceneMovementAnimator">
+                <animation uid="101" number="0" class="SceneMovementAnimator">
                     <signal sample_rate_ms="2000" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="1" />
                     <pfuids>
                         <uid value="6" />
@@ -1666,7 +1666,7 @@
                         </coordinate_list>
                     </movement>
                 </animation>
-                <animation uid="103" class="SceneMovementAnimator">
+                <animation uid="103" number="0" class="SceneMovementAnimator">
                     <signal sample_rate_ms="2000" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="1" />
                     <pfuids>
                         <uid value="5" />
@@ -1680,7 +1680,7 @@
                 </animation>
             </animations>
         </scene>
-        <scene uid="104" scene_number="25" private="false">
+        <scene uid="104" scene_number="25">
             <name>Moonflower test</name>
             <actors>
                 <actor fixure_uid="5">
@@ -1736,7 +1736,7 @@
                 </actor>
             </actors>
             <animations>
-                <animation uid="106" class="SceneMovementAnimator">
+                <animation uid="106" number="0" class="SceneMovementAnimator">
                     <signal sample_rate_ms="700" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="1" />
                     <pfuids>
                         <uid value="5" />
@@ -1747,9 +1747,127 @@
                 </animation>
             </animations>
         </scene>
+        <scene uid="108" scene_number="26">
+            <name>New scene</name>
+            <actors>
+                <actor fixure_uid="1">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="2">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="3">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="4">
+                    <channels>
+                        <channel number="0" value="0" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="0" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="255" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="5">
+                    <channels>
+                        <channel number="0" value="169" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="139" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="8" />
+                        <channel number="6" value="255" />
+                        <channel number="7" value="255" />
+                        <channel number="8" value="255" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="6">
+                    <channels>
+                        <channel number="0" value="169" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="139" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="8" />
+                        <channel number="6" value="255" />
+                        <channel number="7" value="255" />
+                        <channel number="8" value="255" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="0" />
+                    </channels>
+                </actor>
+                <actor fixure_uid="7">
+                    <channels>
+                        <channel number="0" value="169" />
+                        <channel number="1" value="0" />
+                        <channel number="2" value="139" />
+                        <channel number="3" value="0" />
+                        <channel number="4" value="0" />
+                        <channel number="5" value="8" />
+                        <channel number="6" value="255" />
+                        <channel number="7" value="255" />
+                        <channel number="8" value="255" />
+                        <channel number="9" value="0" />
+                        <channel number="10" value="0" />
+                        <channel number="11" value="0" />
+                        <channel number="12" value="0" />
+                    </channels>
+                </actor>
+            </actors>
+            <animations>
+                <animation uid="109" number="0" class="FixtureSequencer">
+                    <signal sample_rate_ms="200" sample_decay_ms="0" input_type="1" scale_factor="1" max_threshold="100" apply_to="1" />
+                    <pfuids>
+                        <uid value="1" />
+                        <uid value="2" />
+                        <uid value="3" />
+                        <uid value="4" />
+                        <uid value="5" />
+                        <uid value="6" />
+                        <uid value="7" />
+                    </pfuids>
+                </animation>
+                <animation uid="111" number="0" class="SceneChannelAnimator">
+                    <signal sample_rate_ms="50" sample_decay_ms="0" input_type="4" scale_factor="1" max_threshold="100" apply_to="1" input_low="10" input_high="120" />
+                    <channel_animations>
+                        <channel_animation actor_uid="5" channel="0" style="3" />
+                        <channel_animation actor_uid="6" channel="0" style="3" />
+                        <channel_animation actor_uid="7" channel="0" style="3" />
+                    </channel_animations>
+                </animation>
+            </animations>
+        </scene>
     </scenes>
     <fixture_groups>
-        <fixture_group uid="27">
+        <fixture_group uid="27" group_number="1">
             <name>PUCKS</name>
             <pfuids>
                 <uid value="1" />
@@ -1758,7 +1876,7 @@
                 <uid value="4" />
             </pfuids>
         </fixture_group>
-        <fixture_group uid="65">
+        <fixture_group uid="65" group_number="2">
             <name>Spots</name>
             <pfuids>
                 <uid value="5" />
@@ -1768,7 +1886,7 @@
         </fixture_group>
     </fixture_groups>
     <chases>
-        <chase uid="16" chase_number="1" delay_ms="4000" fade_ms="1000" private="false">
+        <chase uid="16" chase_number="1" delay_ms="4000" fade_ms="1000">
             <name>Cycle RGB</name>
             <description>Cycle RGB</description>
             <chase_steps>
@@ -1778,7 +1896,7 @@
                 <chase_step scene_uid="24" delay_ms="0" />
             </chase_steps>
         </chase>
-        <chase uid="17" chase_number="2" delay_ms="2000" fade_ms="0" private="false">
+        <chase uid="17" chase_number="2" delay_ms="2000" fade_ms="0">
             <name>White and Blue</name>
             <description>White and Blue</description>
             <chase_steps>
@@ -1786,7 +1904,7 @@
                 <chase_step scene_uid="22" delay_ms="0" />
             </chase_steps>
         </chase>
-        <chase uid="18" chase_number="3" delay_ms="300" fade_ms="300" private="false">
+        <chase uid="18" chase_number="3" delay_ms="300" fade_ms="300">
             <name>test</name>
             <description>test</description>
             <chase_steps>
@@ -1796,7 +1914,7 @@
                 <chase_step scene_uid="61" delay_ms="0" />
             </chase_steps>
         </chase>
-        <chase uid="19" chase_number="4" delay_ms="10000" fade_ms="0" private="false">
+        <chase uid="19" chase_number="4" delay_ms="10000" fade_ms="0">
             <name>Blink</name>
             <description>Blink</description>
             <chase_steps>
@@ -1805,7 +1923,7 @@
                 <chase_step scene_uid="79" delay_ms="0" />
             </chase_steps>
         </chase>
-        <chase uid="62" chase_number="6" delay_ms="2000" fade_ms="1000" private="false">
+        <chase uid="62" chase_number="6" delay_ms="2000" fade_ms="1000">
             <name>Primary colors</name>
             <description>Primary colors</description>
             <chase_steps>
@@ -1815,7 +1933,7 @@
                 <chase_step scene_uid="61" delay_ms="0" />
             </chase_steps>
         </chase>
-        <chase uid="95" chase_number="7" delay_ms="5000" fade_ms="0" private="false">
+        <chase uid="95" chase_number="7" delay_ms="5000" fade_ms="0">
             <name>New chase</name>
             <chase_steps>
                 <chase_step scene_uid="66" delay_ms="0" />
@@ -1823,7 +1941,7 @@
             </chase_steps>
         </chase>
     </chases>
-    <music_scenes enabled="true">
+    <music_scenes enabled="false">
         <music_mapping uid="16" type="2">
             <track_full_name>Maneater by The Retrosic</track_full_name>
         </music_mapping>
