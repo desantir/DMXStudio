@@ -136,6 +136,8 @@ void DMXTextUI::run()
     if ( studio.hasMusicPlayer() && !studio.getMusicPlayer()->isLoggedIn() )
         musicPlayerLogin( );
 
+    printf( "has player = %d, is logged = %d\n", studio.hasMusicPlayer() , studio.getMusicPlayer()->isLoggedIn() );
+
     while ( m_running ) {
         CString light_status( "LIGHT | " );
         CString music_status( "SOUND | " );
@@ -411,6 +413,8 @@ void DMXTextUI::loadVenue()
         LPCSTR venue_filename = filename_field.getValue();
         if ( !studio.loadVenue( venue_filename ) )
             m_text_io.printf( "Cannot open venue file '%s'\n", venue_filename );
+        else if ( studio.hasMusicPlayer() && !studio.getMusicPlayer()->isLoggedIn() )
+            musicPlayerLogin( );
     }
 }
 

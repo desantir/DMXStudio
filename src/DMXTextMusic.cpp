@@ -41,6 +41,8 @@ void DMXTextUI::musicPlayerLogin()
     form.add( username_field );
     form.add( password_field );
 
+    m_text_io.printf( "\n" );
+
     for ( ;; ) {
         if ( !form.play() )
             break;
@@ -48,7 +50,11 @@ void DMXTextUI::musicPlayerLogin()
         if ( studio.getMusicPlayer()->signon( username_field.getValue(), password_field.getValue() ) )
             break;
 
-        m_text_io.printf( "Unable to logon - try again" );          // TODO - NEED SPECIFIC ERROR
+        CString login_error = studio.getMusicPlayer()->getLastPlayerError();
+        if ( login_error.GetLength() != 0 )
+            m_text_io.printf( "ERROR: %s\n\n", login_error );
+
+        m_text_io.printf( "Unable to logon - try again\n" );
 
         password_field.setValue( "" );
     }

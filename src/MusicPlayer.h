@@ -34,7 +34,6 @@ typedef bool (__cdecl *Signon)( LPCSTR username, LPCSTR password );
 typedef bool (__cdecl *GetPlaylists)( UINT* num_lists, DWORD* playlist_ids, size_t playlist_ids_capacity );
 typedef bool (__cdecl *GetPlaylistName)( DWORD playlist_id, LPSTR buffer, size_t buffer_length );
 typedef bool (__cdecl *GetTracks)( DWORD playlist_id, UINT* num_tracks, DWORD* track_ids, size_t track_ids_capacity );
-typedef bool (__cdecl *GetTrackName)( DWORD track_id, LPSTR buffer, size_t buffer_length );
 typedef bool (__cdecl *PlayTrack)( DWORD track_id, bool queue );
 typedef bool (__cdecl *PlayAllTracks)( DWORD playlist_id, bool queue );
 typedef bool (__cdecl *ForwardTrack)( void );
@@ -45,8 +44,11 @@ typedef bool (__cdecl *GetPlayingTrack)( DWORD* track_id, DWORD* track_length, D
 typedef bool (__cdecl *IsTrackPaused)( void );
 typedef bool (__cdecl *IsLoggedIn)( void );
 typedef bool (__cdecl *GetQueuedTracks)( UINT* num_tracks, DWORD* track_ids, size_t track_ids_capacity );
+typedef bool (__cdecl *GetPlayedTracks)( UINT* num_tracks, DWORD* track_ids, size_t track_ids_capacity );
 typedef bool (__cdecl *GetLastPlayerError)( LPSTR buffer, size_t buffer_length );
 typedef bool (__cdecl *WaitOnTrackEvent)( DWORD wait_ms, DWORD* track_id, bool* paused );
+typedef bool (__cdecl *GetTrackInfo)( DWORD track_id,  LPSTR track_name, size_t track_name_size, LPSTR artist_name, size_t artist_name_size, 
+                                      LPSTR album_name, size_t album_name_size, DWORD* track_duration_ms, bool* starred );
 
 typedef std::vector<DWORD> PlayerItems;
 
@@ -66,7 +68,6 @@ class MusicPlayer
     GetPlaylists        m_GetPlaylists;
     GetPlaylistName     m_GetPlaylistName;
     GetTracks           m_GetTracks;
-    GetTrackName        m_GetTrackName;
     PlayTrack           m_PlayTrack;
     PlayAllTracks       m_PlayAllTracks;
     ForwardTrack        m_ForwardTrack;
@@ -75,8 +76,10 @@ class MusicPlayer
     PauseTrack          m_PauseTrack;
     GetPlayingTrack     m_GetPlayingTrack;
     IsTrackPaused       m_IsTrackPaused;
+    GetTrackInfo        m_GetTrackInfo;
     IsLoggedIn          m_IsLoggedIn;
     GetQueuedTracks     m_GetQueuedTracks;
+    GetPlayedTracks     m_GetPlayedTracks;
     GetLastPlayerError  m_GetLastPlayerError;
     WaitOnTrackEvent    m_WaitOnTrackEvent;
 
@@ -108,6 +111,7 @@ public:
     bool getPlaylists( PlayerItems& playlists );
     bool getTracks( DWORD playlist_id, PlayerItems& tracks );
     bool getQueuedTracks( PlayerItems& queued_tracks );
+    bool getPlayedTracks( PlayerItems& queued_tracks );
     CString getPlaylistName( DWORD playlist_id );
     CString getTrackFullName( DWORD track_id );
     bool playAllTracks( DWORD playlist_id, bool queue );
@@ -118,7 +122,9 @@ public:
     bool pauseTrack( bool pause );
     bool isLoggedIn( void );
     bool isTrackPaused( void );
+    bool getTrackInfo( DWORD track_id, DWORD* track_length, bool* track_starred=NULL );
     DWORD getPlayingTrack( DWORD* track_length=NULL, DWORD* time_remaining=NULL, UINT* queued_tracks=NULL );
     CString getLastPlayerError( void );
     bool waitOnTrackEvent( DWORD wait_ms, DWORD* track_id, bool* paused );
+    bool getTrackInfo( DWORD track_id, CString* track_name=NULL, CString* artist_name=NULL, CString* album_name=NULL, DWORD* track_duration_ms=NULL, bool* starred=NULL );
 };

@@ -14,7 +14,7 @@ TODO ------------------------------------------------------------------------ TO
 		M Beat detector scaling, better detection algorithm, logarithmic scaling
 		L Add channel mixing to audio stream class
 		L Support format conversion in audio output
-		H Much better sound animation affects
+		H Much better sound animation affects (currently they are not very exact and are hard to setup)
 
 	M Fixtures / Fixture Definitions
 		L Simple angle->value options (angle*xx) == DMX code

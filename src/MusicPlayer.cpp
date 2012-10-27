@@ -20,9 +20,14 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "DMXStudio.h"
 #include "MusicPlayer.h"
+
+#define VERIFY_LIBRARY_LOADED \
+    STUDIO_ASSERT( m_library, "Music player library not loaded" )
+
+#define VERIFY_PLAYER_LOGGED_IN \
+    STUDIO_ASSERT( m_logged_in, "User is not logged into the music controller" )
 
 // ----------------------------------------------------------------------------
 //
@@ -59,7 +64,6 @@ void MusicPlayer::initialize( )
     m_GetPlaylists = getAddress<GetPlaylists>( "GetPlaylists" );
     m_GetPlaylistName = getAddress<GetPlaylistName>( "GetPlaylistName" );
     m_GetTracks = getAddress<GetTracks>( "GetTracks" );
-    m_GetTrackName = getAddress<GetTrackName>( "GetTrackName" );
     m_PlayTrack = getAddress<PlayTrack>( "PlayTrack" );
     m_PlayAllTracks = getAddress<PlayAllTracks>( "PlayAllTracks" );
     m_ForwardTrack = getAddress<ForwardTrack>( "ForwardTrack" );
@@ -69,7 +73,9 @@ void MusicPlayer::initialize( )
     m_GetPlayingTrack = getAddress<GetPlayingTrack>( "GetPlayingTrack" );
     m_IsTrackPaused = getAddress<IsTrackPaused>( "IsTrackPaused" );
     m_IsLoggedIn = getAddress<IsLoggedIn>( "IsLoggedIn" );
+    m_GetTrackInfo = getAddress<GetTrackInfo>( "GetTrackInfo" );
     m_GetQueuedTracks = getAddress<GetQueuedTracks>( "GetQueuedTracks" );
+    m_GetPlayedTracks = getAddress<GetPlayedTracks>( "GetPlayedTracks" );
     m_GetLastPlayerError = getAddress<GetLastPlayerError>( "GetLastPlayerError" );
     m_WaitOnTrackEvent = getAddress<WaitOnTrackEvent>( "WaitOnTrackEvent" );
 
@@ -80,7 +86,7 @@ void MusicPlayer::initialize( )
 //
 CString MusicPlayer::getPlayerName( ) 
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
+    VERIFY_LIBRARY_LOADED;
 
     CString buffer;
     buffer.Empty();
@@ -93,7 +99,7 @@ CString MusicPlayer::getPlayerName( )
 //
 bool MusicPlayer::connect( )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
+    VERIFY_LIBRARY_LOADED;
     
     m_logged_in = (*m_Connect)( );
 
@@ -104,7 +110,7 @@ bool MusicPlayer::connect( )
 //
 bool MusicPlayer::disconnect( )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
+    VERIFY_LIBRARY_LOADED;
 
     bool result = (*m_Disconnect)( );
 
@@ -118,12 +124,12 @@ bool MusicPlayer::disconnect( )
 //
 bool MusicPlayer::signon( LPCSTR username, LPCSTR password )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
+    VERIFY_LIBRARY_LOADED;
 
     m_logged_in = (*m_Signon)( username, password );
 
     if ( m_logged_in )
-        m_username = m_username;
+        m_username = username;
 
     return m_logged_in;
 }
@@ -132,8 +138,8 @@ bool MusicPlayer::signon( LPCSTR username, LPCSTR password )
 //
 bool MusicPlayer::getPlaylists( PlayerItems& playlists )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
-    STUDIO_ASSERT( m_logged_in, "User is not logged into the music controller" );
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
 
     DWORD playlist_ids[500];
     UINT num_lists = 0;
@@ -149,8 +155,8 @@ bool MusicPlayer::getPlaylists( PlayerItems& playlists )
 //
 bool MusicPlayer::getTracks( DWORD playlist_id, PlayerItems& tracks )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
-    STUDIO_ASSERT( m_logged_in, "User is not logged into the music controller" );
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
 
     DWORD track_ids[2000];
     UINT num_tracks = 0;
@@ -166,8 +172,8 @@ bool MusicPlayer::getTracks( DWORD playlist_id, PlayerItems& tracks )
 //
 bool MusicPlayer::getQueuedTracks( PlayerItems& queued_tracks )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
-    STUDIO_ASSERT( m_logged_in, "User is not logged into the music controller" );
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
 
     DWORD track_ids[5000];
     UINT num_tracks = 0;
@@ -181,10 +187,27 @@ bool MusicPlayer::getQueuedTracks( PlayerItems& queued_tracks )
 
 // ----------------------------------------------------------------------------
 //
+bool MusicPlayer::getPlayedTracks( PlayerItems& played_tracks )
+{
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
+
+    DWORD track_ids[5000];
+    UINT num_tracks = 0;
+
+    played_tracks.clear();
+
+    bool results = (*m_GetPlayedTracks)( &num_tracks, track_ids, sizeof(track_ids) );
+    std::copy( track_ids, track_ids+num_tracks, std::inserter( played_tracks, played_tracks.begin() ) );
+    return results;
+}
+
+// ----------------------------------------------------------------------------
+//
 CString MusicPlayer::getPlaylistName( DWORD playlist_id )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
-    STUDIO_ASSERT( m_logged_in, "User is not logged into the music controller" );
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
 
     CString buffer;
     buffer.Empty();
@@ -197,22 +220,44 @@ CString MusicPlayer::getPlaylistName( DWORD playlist_id )
 //
 CString MusicPlayer::getTrackFullName( DWORD track_id )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
-    STUDIO_ASSERT( m_logged_in, "User is not logged into the music controller" );
-
+    CString title, artist;
     CString buffer;
-    buffer.Empty();
-    (*m_GetTrackName)( track_id, buffer.GetBufferSetLength( 512 ), 512 );
-    buffer.ReleaseBuffer();
+
+    if ( getTrackInfo( track_id, &title, &artist ) )
+        buffer.Format( "%s by %s", title, artist );
+
     return buffer;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool MusicPlayer::getTrackInfo( DWORD track_id, CString* track_name, CString* artist_name, CString* album_name, DWORD* track_duration_ms, bool* starred )
+{
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
+
+    LPSTR track_name_ptr = track_name ? track_name->GetBufferSetLength(256) : NULL;
+    LPSTR artist_name_ptr = artist_name ? artist_name->GetBufferSetLength(256) : NULL;
+    LPSTR album_name_ptr = album_name ? album_name->GetBufferSetLength(256) : NULL;
+
+    bool result = (*m_GetTrackInfo)( track_id, track_name_ptr, 256, artist_name_ptr, 256, album_name_ptr, 256, track_duration_ms, starred );
+
+    if ( track_name_ptr )
+        track_name->ReleaseBuffer();
+    if ( artist_name_ptr )
+        artist_name->ReleaseBuffer();
+    if ( album_name_ptr )
+        album_name->ReleaseBuffer();
+
+    return result;
 }
 
 // ----------------------------------------------------------------------------
 //
 bool MusicPlayer::playAllTracks( DWORD playlist_id, bool queue )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
-    STUDIO_ASSERT( m_logged_in, "User is not logged into the music controller" );
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
 
     return (*m_PlayAllTracks)( playlist_id, queue );
 }
@@ -221,8 +266,8 @@ bool MusicPlayer::playAllTracks( DWORD playlist_id, bool queue )
 //
 bool MusicPlayer::playTrack( DWORD track_id, bool queue )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
-    STUDIO_ASSERT( m_logged_in, "User is not logged into the music controller" );
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
 
     return (*m_PlayTrack)( track_id, queue );
 }
@@ -231,8 +276,8 @@ bool MusicPlayer::playTrack( DWORD track_id, bool queue )
 //
 bool MusicPlayer::forwardTrack( )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
-    STUDIO_ASSERT( m_logged_in, "User is not logged into the music controller" );
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
 
     return (*m_ForwardTrack)( );
 }
@@ -241,8 +286,8 @@ bool MusicPlayer::forwardTrack( )
 //
 bool MusicPlayer::backTrack( )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
-    STUDIO_ASSERT( m_logged_in, "User is not logged into the music controller" );
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
 
     return (*m_BackTrack)( );
 }
@@ -251,8 +296,8 @@ bool MusicPlayer::backTrack( )
 //
 bool MusicPlayer::stopTrack( )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
-    STUDIO_ASSERT( m_logged_in, "User is not logged into the music controller" );
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
 
     return (*m_StopTrack)( );
 }
@@ -261,8 +306,8 @@ bool MusicPlayer::stopTrack( )
 //
 bool MusicPlayer::pauseTrack( bool pause )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
-    STUDIO_ASSERT( m_logged_in, "User is not logged into the music controller" );
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
 
     return (*m_PauseTrack)( pause );
 }
@@ -271,7 +316,7 @@ bool MusicPlayer::pauseTrack( bool pause )
 //
 bool MusicPlayer::isLoggedIn( )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
+    VERIFY_LIBRARY_LOADED;
 
     m_logged_in = (*m_IsLoggedIn)( );
 
@@ -282,8 +327,8 @@ bool MusicPlayer::isLoggedIn( )
 //
 bool MusicPlayer::isTrackPaused( )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
-    STUDIO_ASSERT( m_logged_in, "User is not logged into the music controller" );
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
 
     return (*m_IsTrackPaused)( );
 }
@@ -292,8 +337,8 @@ bool MusicPlayer::isTrackPaused( )
 //
 DWORD MusicPlayer::getPlayingTrack( DWORD* track_length, DWORD* time_remaining, UINT* queued_tracks )
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
-    STUDIO_ASSERT( m_logged_in, "User is not logged into the music controller" );
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
 
     DWORD track_id = 0;
 
@@ -306,7 +351,7 @@ DWORD MusicPlayer::getPlayingTrack( DWORD* track_length, DWORD* time_remaining, 
 //
 CString MusicPlayer::getLastPlayerError( ) 
 {
-    STUDIO_ASSERT( m_library, "Music player library not loaded" );
+    VERIFY_LIBRARY_LOADED;
 
     CString buffer;
     buffer.Empty();
