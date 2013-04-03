@@ -121,6 +121,9 @@ public:
     ChaseStepArray getSteps() const {
         return m_chase_steps;
     }
+    void setSteps( ChaseStepArray& steps ) {
+        m_chase_steps = steps;
+    }
 };
 
 typedef std::map<UID, Chase> ChaseMap;

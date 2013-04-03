@@ -42,7 +42,7 @@ class Fixture : public DObject
 
     universe_t			m_universe;				// Ignored for now - only a single DMX universe
     channel_t			m_address;				// Base address
-    FUID				m_fuid;
+    FUID				m_fuid;                 // UID of the fixture type (not this fixture instance)
     CString             m_full_name;            // Full name of fixture (Manufacture Model Location)
 
     FixtureDefinition*	m_fixture_definition;	// We only need to get this once
@@ -74,7 +74,10 @@ public:
         return m_uid;
     }
 
-    FixtureNumber getFixtureNumber( ) const {
+    void setFixtureNumber( FixtureNumber number )  {
+        setNumber( number);
+    }
+    inline FixtureNumber getFixtureNumber( ) const {
         return getNumber();
     }
 
@@ -93,19 +96,22 @@ public:
 
     // Accessors to handle channel re-mapping
     inline channel_t getChannelAddress( channel_t channel ) {				// Return 1-based actual channel address
-        channel = ( m_channel_map.size() > 0 ) ? m_channel_map[channel] : channel;
-        return m_address+channel;
+        return m_address+mapChannel(channel);
     }
 
     inline Channel* getChannel( channel_t channel ) {
-        channel = ( m_channel_map.size() > 0 ) ? m_channel_map[channel] : channel;
-        return getFixtureDefinition()->getChannel( channel );
+        return getFixtureDefinition()->getChannel( mapChannel( channel ) );
+    }
+
+    inline channel_t mapChannel( channel_t channel ) const {
+        return ( m_channel_map.size() > 0 ) ? m_channel_map[channel] : channel;
     }
 
     // Helper function to avoid consumers needing two pointers
-    inline const char * getManufacturer( ) { return getFixtureDefinition()->getManufacturer(); }
-    inline const char * getModel( ) { return getFixtureDefinition()->getModel(); }
+    inline LPCSTR getManufacturer( ) { return getFixtureDefinition()->getManufacturer(); }
+    inline LPCSTR getModel( ) { return getFixtureDefinition()->getModel(); }
     inline FixtureType getType() { return getFixtureDefinition()->getType(); }
+    inline LPCSTR getTypeName() { return getFixtureDefinition()->getTypeName(); }
     inline bool canPan() { return getFixtureDefinition()->canPan(); }
     inline bool canTilt() { return getFixtureDefinition()->canTilt(); }
     inline bool canMove() { return canPan() || canTilt(); }
@@ -136,11 +142,11 @@ public:
         m_full_name.Empty();
     }
 
-protected:
-    FUID getFUID( ) const {
+    inline FUID getFUID( ) const {
         return m_fuid;
     }
 
+protected:
     FixtureDefinition * getFixtureDefinition( ) {
         if ( !m_fixture_definition ) {
             m_fixture_definition = FixtureDefinition::lookupFixture( m_fuid );

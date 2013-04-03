@@ -20,7 +20,6 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "DMXTextUI.h"
 #include "TextIO.h"
 #include "AudioVolumeController.h"
@@ -136,8 +135,6 @@ void DMXTextUI::run()
     if ( studio.hasMusicPlayer() && !studio.getMusicPlayer()->isLoggedIn() )
         musicPlayerLogin( );
 
-    printf( "has player = %d, is logged = %d\n", studio.hasMusicPlayer() , studio.getMusicPlayer()->isLoggedIn() );
-
     while ( m_running ) {
         CString light_status( "LIGHT | " );
         CString music_status( "SOUND | " );
@@ -166,8 +163,8 @@ void DMXTextUI::run()
             if ( workspace->getNumActors() > 0 ) {
                 light_status.AppendFormat( "Workspace Fixtures: " );
                 ActorPtrArray actors = workspace->getActors();
-                for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); it++ ) {
-                    Fixture* pf = getVenue()->getFixture( (*it)->getPFUID() );
+                for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
+                    Fixture* pf = getVenue()->getFixture( (*it)->getFUID() );
                     light_status.AppendFormat( "%u ", pf->getFixtureNumber() );
                 }
                 light_status.AppendFormat( "| " );
@@ -411,7 +408,7 @@ void DMXTextUI::loadVenue()
 
     if ( form.play() ) {
         LPCSTR venue_filename = filename_field.getValue();
-        if ( !studio.loadVenue( venue_filename ) )
+        if ( !studio.loadVenueFromFile( venue_filename ) )
             m_text_io.printf( "Cannot open venue file '%s'\n", venue_filename );
         else if ( studio.hasMusicPlayer() && !studio.getMusicPlayer()->isLoggedIn() )
             musicPlayerLogin( );
@@ -429,7 +426,7 @@ void DMXTextUI::writeVenue()
 
     if ( form.play() ) {
         LPCSTR venue_filename = filename_field.getValue();
-        studio.saveVenue( venue_filename );
+        studio.saveVenueToFile( venue_filename );
         m_text_io.printf( "Venue saved to '%s'\n", venue_filename );
     }
 }
@@ -453,6 +450,7 @@ void DMXTextUI::configVenue()
     AudioCaptureField audio_capture_field( getVenue()->getAudioCaptureDevice() );
     FloatField audio_scale_field( "Audio boost", getVenue()->getAudioBoost(), "%3.1f" );
     FloatField audio_floor_field( "Audio boost sample floor", getVenue()->getAudioBoostFloor(), "%5.3f" );
+    IntegerField audio_sample_size_field( "Audio sample size (multiple of 1024)", getVenue()->getAudioSampleSize(), 1024 );
 
     Form form( &m_text_io );
 
@@ -464,6 +462,7 @@ void DMXTextUI::configVenue()
     form.add( audio_capture_field );
     form.add( audio_scale_field );
     form.add( audio_floor_field );
+    form.add( audio_sample_size_field );
 
     if ( !form.play() || !form.isChanged() )
         return;
@@ -478,6 +477,7 @@ void DMXTextUI::configVenue()
     getVenue()->setAudioCaptureDevice( audio_capture_field.getValue() );
     getVenue()->setAudioBoost( audio_scale_field.getFloatValue() );
     getVenue()->setAudioBoostFloor( audio_floor_field.getFloatValue() );
+    getVenue()->setAudioSampleSize( audio_sample_size_field.getIntValue() );
 
     getVenue()->open();
 }
@@ -485,7 +485,7 @@ void DMXTextUI::configVenue()
 // ----------------------------------------------------------------------------
 //
 void DMXTextUI::help() {
-    for ( HandlerMap::iterator it=function_map.begin(); it != function_map.end(); it++ ) {
+    for ( HandlerMap::iterator it=function_map.begin(); it != function_map.end(); ++it ) {
         if ( getVenue()->isRunning() || !(*it).second.m_running )
             m_text_io.printf( "%-4s - %s\n", (LPCTSTR)(*it).first, (*it).second.m_desc );
     }
@@ -579,7 +579,7 @@ void DMXTextUI::soundBeat( )
     if ( !form.play() )
         return;
 
-    BeatDetector detector( 512 );
+    BeatDetector detector( 256 );
     detector.attach( getVenue()->getAudio() );
 
     CEvent beat_event;
@@ -652,7 +652,7 @@ void DMXTextUI::soundDb(void) {
                 CString label2;
 
                 for ( int i=0; i < channels_field.getIntValue(); i++ ) {
-                    for ( SampleSet::iterator it=samples.begin(); it != samples.end(); it++ ) {
+                    for ( SampleSet::iterator it=samples.begin(); it != samples.end(); ++it ) {
                         label1.AppendFormat( "%7d", (*it).getChannel() );
                         label2.AppendFormat( "%7.0f",(*it).getFrequency() );
                     }
@@ -662,7 +662,7 @@ void DMXTextUI::soundDb(void) {
             }
 
             m_text_io.printf( "%06lu dB:", sample_number );
-            for ( SampleSet::iterator it=samples.begin(); it != samples.end(); it++ ) {
+            for ( SampleSet::iterator it=samples.begin(); it != samples.end(); ++it ) {
                 m_text_io.printf( "% 7d", (*it).getDB() );
             }
 
@@ -944,8 +944,6 @@ void DMXTextUI::deleteChase(void) {
     if ( !form.play() )
         return;
 
-    if ( getVenue()->getRunningChase() == chase_field.getChaseUID() )
-        getVenue()->stopChase();
     getVenue()->deleteChase( chase_field.getChaseUID() );
 }
 
@@ -1105,7 +1103,7 @@ void DMXTextUI::describeFixture(void) {
     FixturePtrArray targets;
     fixture_field.getFixtures( targets );
 
-    for ( FixturePtrArray::iterator it = targets.begin(); it != targets.end(); it++ ) {
+    for ( FixturePtrArray::iterator it = targets.begin(); it != targets.end(); ++it ) {
         Fixture * pf = (*it);
         m_text_io.printf( "%2d: %s @ %d\n", pf->getFixtureNumber(), pf->getFullName(), pf->getAddress() );
 
@@ -1174,11 +1172,6 @@ void DMXTextUI::selectScene( ) {
 // ----------------------------------------------------------------------------
 //
 void DMXTextUI::deleteScene( ) {
-    if ( getVenue()->isChaseRunning() ) {
-        m_text_io.printf( "Stop all chases before deleting scene\n" );
-        return;
-    }
-
     SceneSelectField scene_field( "Scene to load", getVenue() );
 
     ConfirmForm form( &m_text_io );
@@ -1204,9 +1197,9 @@ void DMXTextUI::describeScene( ) {
 
         ActorPtrArray actors = scene->getActors();
 
-        for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); it++ ) {
+        for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
             SceneActor* actor = (*it);
-            Fixture* fixture = getVenue()->getFixture( actor->getPFUID() );
+            Fixture* fixture = getVenue()->getFixture( actor->getFUID() );
 
             m_text_io.printf( " %3d %s @ %u UID=%lu\n", fixture->getFixtureNumber(), fixture->getFullName(), 
                                                        fixture->getChannelAddress(0), fixture->getUID() );
@@ -1215,7 +1208,7 @@ void DMXTextUI::describeScene( ) {
                 m_text_io.printf( "      %2u - %s [%d]\n", 
                     channel+1,
                     fixture->getChannel( channel )->getName(),
-                    actor->getChannelValue( channel ) );
+                    actor->getChannelValue( fixture->mapChannel( channel ) ) );
             }
         }
 
@@ -1286,7 +1279,7 @@ void DMXTextUI::copyWorkspaceToScene()
         Scene* default_scene = getVenue()->getDefaultScene();
 
         UIDArray selected = fixtures_field.getUIDs();
-        for ( UIDArray::iterator it=selected.begin(); it != selected.end(); it++ ) {
+        for ( UIDArray::iterator it=selected.begin(); it != selected.end(); ++it ) {
             scene->addActor( *default_scene->getActor( (*it) ) );
             if ( remove_from_ws_field.isSet() )
                 default_scene->removeActor( (*it) );
@@ -1500,7 +1493,7 @@ void DMXTextUI::describeFixtureGroup( ) {
     m_text_io.printf( "\nFixture Group #%u: %s (ID=%lu)\n\n", group->getGroupNumber(), group->getName(), group->getUID() );
 
     UIDSet uids = group->getFixtures( );
-    for ( UIDSet::iterator it=uids.begin(); it != uids.end(); it++ ) {
+    for ( UIDSet::iterator it=uids.begin(); it != uids.end(); ++it ) {
         Fixture* pf = getVenue()->getFixture( (*it) );
 
         m_text_io.printf( "%s @ %d\n", pf->getFullName(), pf->getAddress() );
@@ -1643,7 +1636,7 @@ void DMXTextUI::createFixture(void)
 void DMXTextUI::createFixtureGroup( ) {
     FixturePtrArray fixtures = getVenue()->getFixtures();
     UIDArray fixture_uids;
-    for ( FixturePtrArray::iterator it=fixtures.begin(); it != fixtures.end(); it++ )
+    for ( FixturePtrArray::iterator it=fixtures.begin(); it != fixtures.end(); ++it )
         fixture_uids.push_back( (*it)->getUID() );
         
     UniqueGroupNumberField group_number_field( "Create group number", getVenue() );

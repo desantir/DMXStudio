@@ -20,9 +20,10 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "DMXHttpServer.h"
 #include "DMXHttpMobile.h"
+#include "DMXHttpFull.h"
+#include "DMXHttpRedirector.h"
 
 static const HTTPAPI_VERSION HttpApiVersion = HTTPAPI_VERSION_1;
 
@@ -31,7 +32,9 @@ static const HTTPAPI_VERSION HttpApiVersion = HTTPAPI_VERSION_1;
 DMXHttpServer::DMXHttpServer(void) :
     Threadable( "DMXHttpServer" )
 {
-    registerHandler( new DMXHttpMobile() );
+    registerHandler( new DMXHttpMobile() );             // Textbook example of need for DI
+    registerHandler( new DMXHttpFull() );
+    registerHandler( new DMXHttpRedirector() );
 
     // Some MIME code we recognize
     m_mime_map[ "jpg" ] = "image/jpeg";
@@ -53,7 +56,7 @@ DMXHttpServer::~DMXHttpServer(void)
 
     // Release all handlers
     for ( RequestHandlerPtrArray::iterator it=m_request_handlers.begin();
-        it != m_request_handlers.end(); it++ ) {
+        it != m_request_handlers.end(); ++it ) {
         delete (*it);
     }
 
@@ -87,7 +90,7 @@ void DMXHttpServer::createThreadPool( UINT thread_count, HANDLE hReqQueue )
 //
 void DMXHttpServer::freeWorkers()
 {
-    for ( ThreadArray::iterator it=m_worker_threads.begin(); it != m_worker_threads.end(); it++ ) {
+    for ( ThreadArray::iterator it=m_worker_threads.begin(); it != m_worker_threads.end(); ++it ) {
         (*it)->stop();
         delete (*it);
     }
@@ -102,13 +105,18 @@ IRequestHandler* DMXHttpServer::getHandler( LPCSTR prefix, UINT port )
     if ( path.ReverseFind( '/' ) != path.GetLength()-1 )    // Must end in '/' to match handler names
         path += "/";
 
+    IRequestHandler* func = NULL;
+    UINT len = 0;
+
     for ( RequestHandlerPtrArray::iterator it=m_request_handlers.begin();
-            it != m_request_handlers.end(); it++ ) {
-        if ( (*it)->getPort() == port && path.Find( (*it)->getPrefix() ) == 0 )
-            return (*it);
+            it != m_request_handlers.end(); ++it ) {
+        if ( (*it)->getPort() == port && path.Find( (*it)->getPrefix() ) == 0 && strlen((*it)->getPrefix()) > len ) {
+            func = (*it);
+            len = strlen((*it)->getPrefix());
+        }
     }
 
-    return NULL;
+    return func;
 }
 
 // ----------------------------------------------------------------------------
@@ -131,7 +139,7 @@ UINT DMXHttpServer::run()
             throw StudioException( "HttpCreateHttpHandle failed with %lun", retCode );
 
         for ( RequestHandlerPtrArray::iterator it=m_request_handlers.begin();
-                it != m_request_handlers.end(); it++ ) {
+                it != m_request_handlers.end(); ++it ) {
             listener_url.Format( "http://+:%d%s", (*it)->getPort(), (*it)->getPrefix() );
 
             retCode = HttpAddUrl( hReqQueue, CA2W(listener_url), NULL );
@@ -218,6 +226,18 @@ CString encodeHtmlString( LPCSTR string )
 
 // ----------------------------------------------------------------------------
 //
+CString encodeJsonString( LPCSTR string )
+{
+    CString result( string );
+    result.Replace( "\\", "\\\\" );
+    result.Replace( "\"", "\\\"" );
+    result.Replace( "\n", "\\n" );
+    result.Replace( "\r", "\\r" );
+    return result;
+}
+
+// ----------------------------------------------------------------------------
+//
 UINT HttpWorkerThread::run() 
 {
     HTTP_REQUEST_ID     requestId;
@@ -245,7 +265,7 @@ UINT HttpWorkerThread::run()
             ULONG result = HttpReceiveHttpRequest(
                         m_hReqQueue,                                // Req Queue
                         requestId,                                  // Req ID
-                        HTTP_RECEIVE_REQUEST_FLAG_COPY_BODY,        // Flags
+                        0,                                          // Flags
                         m_pRequest,                                 // HTTP request buffer
                         m_RequestBufferLength,                      // req buffer length
                         NULL,                                       // bytes received (NULL for overlapped)
@@ -317,6 +337,17 @@ UINT HttpWorkerThread::run()
     }
 
     return 0;
+}
+
+// ----------------------------------------------------------------------------
+//
+DWORD HttpWorkerThread::sendAttachment( LPBYTE contents, DWORD size, LPCSTR mime, LPCSTR attachment_name )
+{
+    CString content_disposition;
+    content_disposition.Format( "attachment; filename=%s", attachment_name );
+
+    DWORD result = sendResponse( 200, "OK", (LPBYTE)contents, size, true, "text/xml", (LPCSTR)content_disposition );
+    return result;
 }
 
 // ----------------------------------------------------------------------------
@@ -485,13 +516,15 @@ DWORD HttpWorkerThread::sendResponse(
     IN LPBYTE        pEntity,
     IN ULONG         entityLength,
     IN BOOL          bNoCache,
-    IN LPCSTR        mime
+    IN LPCSTR        mime,
+    IN LPCSTR        disposition
     )
 {
-    HTTP_RESPONSE   response;
-    HTTP_DATA_CHUNK dataChunk;
-    DWORD           result;
-    DWORD           bytesSent;
+    HTTP_RESPONSE           response;
+    HTTP_DATA_CHUNK         dataChunk;
+    DWORD                   result;
+    DWORD                   bytesSent;
+    HTTP_UNKNOWN_HEADER     unknown_header;
 
     // Initialize the HTTP response structure.
     INITIALIZE_HTTP_RESPONSE( &response, StatusCode, pReason );
@@ -505,6 +538,15 @@ DWORD HttpWorkerThread::sendResponse(
     }
     else {
         ADD_KNOWN_HEADER( response, HttpHeaderExpires, "Thu, 27 Dec 2012 16:00:00 GMT" );       // TODO - Compute this
+    }
+
+    if ( disposition != NULL ) {
+        unknown_header.pName = "Content-Disposition";
+        unknown_header.NameLength = strlen(unknown_header.pName);
+        unknown_header.pRawValue = disposition;
+        unknown_header.RawValueLength = strlen( unknown_header.pRawValue );
+        response.Headers.UnknownHeaderCount = 1;
+        response.Headers.pUnknownHeaders = &unknown_header;
     }
 
     DMXStudio::log( "WORKER %d: HTTP response %d '%s'", m_worker_id, response.StatusCode, response.pReason );
@@ -560,7 +602,7 @@ DWORD HttpWorkerThread::processGetRequest()
 DWORD HttpWorkerThread::processPostRequest()
 {
     LPBYTE          pEntityBuffer;
-    ULONG           EntityBufferLength = 2048;
+    ULONG           EntityBufferLength = 4096;
     ULONG           TotalBytesRead = 0;
     ULONG           BufferOffset = 0;
     DWORD           result;
@@ -568,9 +610,10 @@ DWORD HttpWorkerThread::processPostRequest()
     CString path( CW2A( m_pRequest->CookedUrl.pAbsPath ) );
     DMXStudio::log( "WORKER %d: HTTP POST request '%s'", m_worker_id, (LPCSTR)path );
 
-    pEntityBuffer = (LPBYTE)ALLOC_MEM( EntityBufferLength );
+    pEntityBuffer = (LPBYTE)ALLOC_MEM( EntityBufferLength+1 );  // +1 in case we read _exactly_ EntityBufferLength (need room for null)
     if (pEntityBuffer == NULL) 
         throw StudioException( "Unable to allocate memory for POST request buffer" );
+    *pEntityBuffer = '\0';
 
     try {
         if ( m_pRequest->Flags & HTTP_REQUEST_FLAG_MORE_ENTITY_BODY_EXISTS ) {
@@ -597,7 +640,7 @@ DWORD HttpWorkerThread::processPostRequest()
                             BufferOffset += BytesRead;
                             EntityBufferLength *= 2;
 
-                            pNewBuffer = (LPBYTE) REALLOC_MEM( pEntityBuffer, EntityBufferLength );
+                            pNewBuffer = (LPBYTE) REALLOC_MEM( pEntityBuffer, EntityBufferLength+1 );
                             if ( pNewBuffer == NULL ) 
                                 throw StudioException( "Unable to allocate memory for POST request buffer" );
 
@@ -607,6 +650,7 @@ DWORD HttpWorkerThread::processPostRequest()
                         break;
 
                     case ERROR_HANDLE_EOF:
+                       pEntityBuffer[TotalBytesRead] = '\0';    // Add a complementary null
                        done = true;
                        break;
 

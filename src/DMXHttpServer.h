@@ -20,15 +20,17 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
 #include "DMXStudio.h"
 #include "Threadable.h"
 
+#define DMX_URL_ROOT                        "/dmxstudio/"
+
 #include <http.h>
 
 extern CString encodeHtmlString( LPCSTR string );
+extern CString encodeJsonString( LPCSTR string );
 
 #define ALLOC_MEM(cb) HeapAlloc(GetProcessHeap(), 0, (cb))
 #define FREE_MEM(ptr) HeapFree(GetProcessHeap(), 0, (ptr))
@@ -134,9 +136,14 @@ public:
 
     DWORD sendFile( LPCSTR file_name, IRequestHandler* handler=NULL );
     DWORD sendRedirect( LPCSTR location );
+    DWORD sendAttachment( LPBYTE contents, DWORD size,  LPCSTR mime, LPCSTR attachment_name );
 
     PHTTP_REQUEST getRequest() const {
         return m_pRequest;
+    }
+
+    inline PCSTR getContentType() const {
+        return m_pRequest->Headers.KnownHeaders[ HttpHeaderContentType ].pRawValue;
     }
 
     DWORD error_404( void ) {
@@ -162,7 +169,8 @@ public:
         IN LPBYTE        pEntity,
         IN ULONG         entityLength,
         IN BOOL          bNoCache,
-        IN LPCSTR        mime );
+        IN LPCSTR        mime,
+        IN LPCSTR        disposition = NULL );
 
 protected:
     void resizeRequestBuffer( DWORD new_size );

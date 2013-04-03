@@ -68,8 +68,11 @@ void DefinitionWriter::visit( FixtureDefinition* fixture_definition )
 {
     TiXmlElement fixture( "fixture" );
 
+    CString type( fixture_definition->convertFixtureTypeToText( fixture_definition->m_type ) );
+    type.MakeLower();
+
     add_attribute( fixture, "fuid", fixture_definition->m_fuid );
-    add_attribute( fixture, "type", (LPCSTR)fixture_definition->convertFixtureTypeToText( fixture_definition->m_type ) );
+    add_attribute( fixture, "type", (LPCSTR)type );
     add_attribute( fixture, "channels", (int)fixture_definition->m_channels.size() );
 
     add_text_element( fixture, "manufacturer", fixture_definition->m_manufacturer );

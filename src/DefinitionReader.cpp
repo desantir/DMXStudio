@@ -93,7 +93,7 @@ void DefinitionReader::readFixtureDefinitions( LPCSTR directory )
         std::vector<FixtureDefinition *> fixture_definitions = 
             read_xml_list<FixtureDefinition>( doc.FirstChildElement( "fixture_definitions" ), "fixture" );
 
-        for ( std::vector<FixtureDefinition *>::iterator it=fixture_definitions.begin(); it != fixture_definitions.end(); it++ ) {
+        for ( std::vector<FixtureDefinition *>::iterator it=fixture_definitions.begin(); it != fixture_definitions.end(); ++it ) {
             FixtureDefinition*definition = (*it);
             definition->setSourceFile( file_name );
             FixtureDefinition::addFixtureDefinition( definition );
@@ -119,7 +119,7 @@ FixtureDefinition* DefinitionReader::read( TiXmlElement* self, FixtureDefinition
     std::vector<Channel *> channels = 
         read_xml_list<Channel>( self->FirstChildElement( "channels" ), "channel" );
 
-    for ( std::vector<Channel *>::iterator it=channels.begin(); it != channels.end(); it++ ) {
+    for ( std::vector<Channel *>::iterator it=channels.begin(); it != channels.end(); ++it ) {
         fixture->m_channels.push_back( *(*it) );
         delete (*it);
     }
@@ -165,7 +165,7 @@ Channel* DefinitionReader::read( TiXmlElement* self, Channel* channel )
         std::vector<ChannelValueRange *> ranges = 
             read_xml_list<ChannelValueRange>( self->FirstChildElement( "ranges" ), "range" );
 
-        for ( std::vector<ChannelValueRange *>::iterator it=ranges.begin(); it != ranges.end(); it++ ) {
+        for ( std::vector<ChannelValueRange *>::iterator it=ranges.begin(); it != ranges.end(); ++it ) {
             STUDIO_ASSERT( (*it)->getEnd() >= (*it)->getStart(), "Channel %s range %s invalid", channel->m_name, (*it)->getName() );
             STUDIO_ASSERT( channel->getRange( (*it)->getEnd() ) == NULL, "Channel %s range %s overlaps", channel->m_name, (*it)->getName() );
             STUDIO_ASSERT( channel->getRange( (*it)->getStart() ) == NULL, "Channel %s range %s overlaps", channel->m_name, (*it)->getName() );
@@ -177,7 +177,7 @@ Channel* DefinitionReader::read( TiXmlElement* self, Channel* channel )
         std::vector<ChannelAngle *> angles = 
             read_xml_list<ChannelAngle>( self->FirstChildElement( "angles" ), "angle" );
 
-        for ( std::vector<ChannelAngle *>::iterator it=angles.begin(); it != angles.end(); it++ ) {
+        for ( std::vector<ChannelAngle *>::iterator it=angles.begin(); it != angles.end(); ++it ) {
             channel->m_angles[ (*it)->getAngle() ] = *(*it);
             delete (*it);
         }

@@ -39,6 +39,7 @@ typedef enum fixture_type {
     FIXT_DIMMER = 8,
     FIXT_DOTS = 9,
     FIXT_H2O = 10,
+    FIXT_SCANNER = 11,
     FIXT_NUM_TYPES
 } FixtureType;
 
@@ -113,6 +114,10 @@ public:
         return m_type;
     }
 
+    LPCSTR getTypeName() const {
+        return convertFixtureTypeToText( m_type );
+    }
+
     bool canPan() const {
         return m_can_pan;
     }
@@ -141,7 +146,7 @@ public:
         
         ChannelArray::iterator it;
 
-        for ( it=m_channels.begin(); it != m_channels.end(); it++ ) {
+        for ( it=m_channels.begin(); it != m_channels.end(); ++it ) {
             Channel& ch = *it;
             printf ( "Channel %d: %s type=%d\n", ch.getOffset(), ch.getName(), ch.getType() );
         }
@@ -152,7 +157,7 @@ private:
     FUID generateFUID( void );
 
     static FixtureType convertTextToFixtureType( LPCSTR text_type );
-    static CString convertFixtureTypeToText( FixtureType type );
+    static LPCSTR convertFixtureTypeToText( FixtureType type );
     static void addFixtureDefinition( FixtureDefinition* fd );
 };
 

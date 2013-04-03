@@ -53,7 +53,7 @@ public:
     void visit_map( TiXmlElement& parent, T& list ) {
         push_parent( parent );
         for ( T::iterator it=list.begin();
-              it != list.end(); it++ )
+              it != list.end(); ++it )
             it->second.accept( this );
         pop_parent( );
     }
@@ -62,7 +62,7 @@ public:
     void visit_ptr_array( TiXmlElement &container, T& list ) {
         push_parent( container );
         for ( T::iterator it=list.begin();
-              it != list.end(); it++ )
+              it != list.end(); ++it )
             (*it)->accept( this );
         pop_parent( );
     }
@@ -71,7 +71,7 @@ public:
     void visit_array( TiXmlElement &container, T& list ) {
         push_parent( container );
         for ( T::iterator it=list.begin();
-              it != list.end(); it++ )
+              it != list.end(); ++it )
             (*it).accept( this );
         pop_parent( );
     }

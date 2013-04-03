@@ -20,12 +20,18 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "IniFile.h"
 
 // ----------------------------------------------------------------------------
 //
-IniFile::IniFile(void)
+IniFile::IniFile( LPCSTR filename ) :
+    m_ini_filename( filename ),
+    m_http_port( 80 ),
+    m_whiteout_strobe_slow( 300, 200 ),
+    m_whiteout_strobe_fast( 100, 50 ),
+    m_http_enabled( false ),
+    m_music_player_enabled( false ),
+    m_dmx_required( true )
 {
 }
 
@@ -37,72 +43,75 @@ IniFile::~IniFile(void)
 
 // ----------------------------------------------------------------------------
 //
-void IniFile::read( LPCSTR filename, DMXStudio* studio )
+bool IniFile::read( )
 {
     TiXmlDocument doc;
-    if ( !doc.LoadFile( filename ) ) {
-        DMXStudio::log( "Unable to load DMXStudio configuration file '%s' (%s)", filename, doc.ErrorDesc() );
-        return;
+    if ( !doc.LoadFile( m_ini_filename ) ) {
+        m_last_error = doc.ErrorDesc();
+        return false;
     }
 
     TiXmlElement* dmx_studio = doc.FirstChildElement( "dmx_studio" );
+    m_dmx_required = read_bool_attribute( dmx_studio, "dmx_required", true );
 
-    studio->setVenueFileName( read_text_element( dmx_studio, "venue_filename" ) );
+    m_venue_filename = read_text_element( dmx_studio, "venue_filename" );
+    m_venue_container = read_text_element( dmx_studio, "venue_container" );
 
-    TiXmlElement* mobile = dmx_studio->FirstChildElement( "mobile" );
-    if ( mobile ) {
-        studio->setHttpPort( read_unsigned_attribute( mobile, "http_port" ) );
-        studio->setEnableMobile( read_bool_attribute( mobile, "enable", true ) );
+    TiXmlElement* remote = dmx_studio->FirstChildElement( "remote" );
+    if ( remote ) {
+        m_http_port = read_unsigned_attribute( remote, "http_port" );
+        m_http_enabled = read_bool_attribute( remote, "enable", true );
     }
 
     TiXmlElement* whiteout_slow = dmx_studio->FirstChildElement( "whiteout_slow" );
     if ( whiteout_slow ) {
-        UINT on_ms = read_unsigned_attribute( whiteout_slow, "on_ms" );
-        UINT off_ms = read_unsigned_attribute( whiteout_slow, "of_ms" );
-        studio->setWhiteoutStrobeSlow( StrobeTime( on_ms, off_ms ) );
+        m_whiteout_strobe_slow.m_on_ms = read_unsigned_attribute( whiteout_slow, "on_ms" );
+        m_whiteout_strobe_slow.m_off_ms = read_unsigned_attribute( whiteout_slow, "of_ms" );
     }
 
     TiXmlElement* whiteout_fast = dmx_studio->FirstChildElement( "whiteout_fast" );
     if ( whiteout_slow ) {
-        UINT on_ms = read_unsigned_attribute( whiteout_fast, "on_ms" );
-        UINT off_ms = read_unsigned_attribute( whiteout_fast, "of_ms" );
-        studio->setWhiteoutStrobeFast( StrobeTime( on_ms, off_ms ) );
+        m_whiteout_strobe_fast.m_on_ms = read_unsigned_attribute( whiteout_fast, "on_ms" );
+        m_whiteout_strobe_fast.m_off_ms = read_unsigned_attribute( whiteout_fast, "of_ms" );
     }
 
     TiXmlElement* music_player = dmx_studio->FirstChildElement( "music_player" );
     if ( music_player ) {
-        studio->createMusicPlayer( read_text_element( music_player, "username" ),
-                                   read_text_element( music_player, "library" ) );
+        m_music_player_enabled = true;
+        m_music_player_ddl = read_text_element( music_player, "library" );
+        m_music_player_username = read_text_element( music_player, "username" );
     }
 
-    DMXStudio::log_status( "Settings loaded from '%s'", filename );
+    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-void IniFile::write( LPCSTR filename, DMXStudio* studio )
+void IniFile::write( )
 {
     TiXmlDocument doc;
 
     TiXmlElement dmx_studio( "dmx_studio" );
-    add_text_element( dmx_studio, "venue_filename", studio->getVenueFileName() );
+    add_attribute( dmx_studio, "dmx_required", m_dmx_required );
+    
+    add_text_element( dmx_studio, "venue_filename", m_venue_filename );
 
-    TiXmlElement mobile( "mobile" );
-    add_attribute( mobile, "enable", studio->getEnableMobile() );
-    add_attribute( mobile, "http_port", studio->getHttpPort() );
+    TiXmlElement mobile( "remote" );
+    add_attribute( mobile, "enable", m_http_enabled );
+    add_attribute( mobile, "http_port", m_http_port );
     dmx_studio.InsertEndChild( mobile );
 
     TiXmlElement whiteout_slow( "whiteout_slow" );
-    add_attribute( whiteout_slow, "on_ms", studio->getWhiteoutStrobeSlow().m_on_ms );
-    add_attribute( whiteout_slow, "of_ms", studio->getWhiteoutStrobeSlow().m_off_ms );
+    add_attribute( whiteout_slow, "on_ms", m_whiteout_strobe_slow.m_on_ms );
+    add_attribute( whiteout_slow, "of_ms", m_whiteout_strobe_slow.m_off_ms );
     dmx_studio.InsertEndChild( whiteout_slow );
 
     TiXmlElement whiteout_fast( "whiteout_fast" );
-    add_attribute( whiteout_fast, "on_ms", studio->getWhiteoutStrobeFast().m_on_ms );
-    add_attribute( whiteout_fast, "of_ms", studio->getWhiteoutStrobeFast().m_off_ms );
+    add_attribute( whiteout_fast, "on_ms", m_whiteout_strobe_fast.m_on_ms );
+    add_attribute( whiteout_fast, "of_ms", m_whiteout_strobe_fast.m_off_ms );
     dmx_studio.InsertEndChild( whiteout_fast );
 
     doc.InsertEndChild( dmx_studio );
 
-    doc.SaveFile( filename );
+    doc.SaveFile( m_ini_filename );
 }

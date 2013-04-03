@@ -32,7 +32,8 @@ public:
     VenueReader(void);
     ~VenueReader(void);
 
-    Venue* read( LPCSTR input_file );
+    Venue* readFromFile( LPCSTR input_file );
+    Venue* readFromString( LPCSTR xml_data );
 
     Venue* read( TiXmlElement* self, Venue* venue );
     Scene* read( TiXmlElement* self, Scene* scene );

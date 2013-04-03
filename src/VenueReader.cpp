@@ -45,11 +45,22 @@ VenueReader::~VenueReader(void)
 
 // ----------------------------------------------------------------------------
 //
-Venue* VenueReader::read( LPCSTR input_file )
+Venue* VenueReader::readFromFile( LPCSTR input_file )
 {
     TiXmlDocument doc;
     if ( !doc.LoadFile( input_file ) )
         throw StudioException( "Error reading venue '%s' (%s)", input_file, doc.ErrorDesc() );
+
+    return read( doc.FirstChildElement(), (Venue *)NULL );
+}
+
+// ----------------------------------------------------------------------------
+//
+Venue* VenueReader::readFromString( LPCSTR xml_data )
+{
+    TiXmlDocument doc;
+    if ( !doc.Parse( xml_data ) )
+        throw StudioException( "Error parsing venue '%s' (%s)", xml_data, doc.ErrorDesc() );
 
     return read( doc.FirstChildElement(), (Venue *)NULL );
 }
@@ -89,13 +100,14 @@ Venue * VenueReader::read( TiXmlElement* self, Venue* venue ) {
         venue->m_audio_capture_device = read_text_element( audio, "capture_device" );
         venue->m_audio_boost = (float)read_double_attribute( audio, "scale" );
         venue->m_audio_boost_floor = (float)read_double_attribute( audio, "floor" );
+        venue->m_audio_sample_size = (UINT)read_unsigned_attribute( audio, "sample_size", 1024 );
     }
 
     // Add all fixtures
     std::vector<Fixture *> fixtures = 
         read_xml_list<Fixture>( self->FirstChildElement( "fixtures" ), "fixture" );
 
-    for ( std::vector<Fixture *>::iterator it=fixtures.begin(); it != fixtures.end(); it++ ) {
+    for ( std::vector<Fixture *>::iterator it=fixtures.begin(); it != fixtures.end(); ++it ) {
         venue->addFixture( *(*it) );
         delete (*it);
     }
@@ -104,7 +116,7 @@ Venue * VenueReader::read( TiXmlElement* self, Venue* venue ) {
     std::vector<Scene *> scenes = 
         read_xml_list<Scene>( self->FirstChildElement( "scenes" ), "scene" );
 
-    for ( std::vector<Scene *>::iterator it=scenes.begin(); it != scenes.end(); it++ ) {
+    for ( std::vector<Scene *>::iterator it=scenes.begin(); it != scenes.end(); ++it ) {
         venue->addScene( *(*it) );
         delete (*it);
     }
@@ -113,7 +125,7 @@ Venue * VenueReader::read( TiXmlElement* self, Venue* venue ) {
     std::vector<FixtureGroup *> fixture_groups = 
         read_xml_list<FixtureGroup>( self->FirstChildElement( "fixture_groups" ), "fixture_group" );
 
-    for ( std::vector<FixtureGroup *>::iterator it=fixture_groups.begin(); it != fixture_groups.end(); it++ ) {
+    for ( std::vector<FixtureGroup *>::iterator it=fixture_groups.begin(); it != fixture_groups.end(); ++it ) {
         venue->addFixtureGroup( *(*it) );
         delete (*it);
     }
@@ -122,7 +134,7 @@ Venue * VenueReader::read( TiXmlElement* self, Venue* venue ) {
     std::vector<Chase *> chases = 
         read_xml_list<Chase>( self->FirstChildElement( "chases" ), "chase" );
 
-    for ( std::vector<Chase *>::iterator it=chases.begin(); it != chases.end(); it++ ) {
+    for ( std::vector<Chase *>::iterator it=chases.begin(); it != chases.end(); ++it ) {
         venue->addChase( *(*it) );
         delete (*it);
     }
@@ -134,7 +146,7 @@ Venue * VenueReader::read( TiXmlElement* self, Venue* venue ) {
         std::vector<MusicSceneSelector *> music_scenes = 
             read_xml_list<MusicSceneSelector>( self->FirstChildElement( "music_scenes" ), "music_mapping" );
 
-        for ( std::vector<MusicSceneSelector *>::iterator it=music_scenes.begin(); it != music_scenes.end(); it++ ) {
+        for ( std::vector<MusicSceneSelector *>::iterator it=music_scenes.begin(); it != music_scenes.end(); ++it ) {
             venue->addMusicMapping( *(*it) );
             delete (*it);
         }
@@ -165,7 +177,7 @@ Scene* VenueReader::read( TiXmlElement* self, Scene* scene )
     std::vector<SceneActor *> actors = 
         read_xml_list<SceneActor>( self->FirstChildElement( "actors" ), "actor" );
 
-    for ( std::vector<SceneActor *>::iterator it=actors.begin(); it != actors.end(); it++ ) {
+    for ( std::vector<SceneActor *>::iterator it=actors.begin(); it != actors.end(); ++it ) {
         scene->addActor( *(*it) );
         delete (*it);
     }
@@ -219,7 +231,7 @@ Chase* VenueReader::read( TiXmlElement* self, Chase* chase )
     std::vector<ChaseStep *> actors = 
         read_xml_list<ChaseStep>( self->FirstChildElement( "chase_steps" ), "chase_step" );
 
-    for ( std::vector<ChaseStep *>::iterator it=actors.begin(); it != actors.end(); it++ ) {
+    for ( std::vector<ChaseStep *>::iterator it=actors.begin(); it != actors.end(); ++it ) {
         chase->m_chase_steps.push_back( *(*it) );
         delete (*it);
     }
@@ -504,9 +516,9 @@ SceneColorSwitcher* VenueReader::read( TiXmlElement* self, SceneColorSwitcher* a
 
     TiXmlElement * colors_element = self->FirstChildElement( "custom_colors" );
     if ( colors_element ) {
-        TiXmlElement* element = colors_element->FirstChildElement( "color_index" );
+        TiXmlElement* element = colors_element->FirstChildElement( "color" );
         while ( element ) {
-            animation->m_custom_colors.push_back( read_unsigned_attribute( element, "value" ) );
+            animation->m_custom_colors.push_back( read_dword_attribute( element, "rgb" ) );
             element = element->NextSiblingElement();
         }
     }
@@ -535,7 +547,7 @@ SceneChannelAnimator* VenueReader::read( TiXmlElement* self, SceneChannelAnimato
         read_xml_list<ChannelAnimation>( self->FirstChildElement( "channel_animations" ), "channel_animation" );
 
     for ( std::vector<ChannelAnimation *>::iterator it=channel_animation.begin(); 
-          it != channel_animation.end(); it++ ) {
+          it != channel_animation.end(); ++it ) {
         animation->m_channel_animations.push_back( *(*it) );
         delete (*it);
     }

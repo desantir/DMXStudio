@@ -53,7 +53,7 @@ Scene& Scene::operator=( Scene& rhs ) {
 //
 void Scene::copy_animations( Scene& rhs ) {
     for ( AnimationPtrArray::iterator it=rhs.m_animations.begin();
-          it != rhs.m_animations.end(); it++ ) {
+          it != rhs.m_animations.end(); ++it ) {
         m_animations.push_back( (*it)->clone() );
     }
 }
@@ -68,7 +68,7 @@ Scene::~Scene(void)
 // ----------------------------------------------------------------------------
 //
 void Scene::addActor( SceneActor& actor ) {
-    m_actors[ actor.getPFUID() ] = actor;
+    m_actors[ actor.getFUID() ] = actor;
 }
 
 // ----------------------------------------------------------------------------
@@ -81,7 +81,7 @@ bool Scene::removeActor( UID uid ) {
     m_actors.erase( it );
 
     // Remove actor from all animations
-    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
+    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
         (*it)->removeActor( uid );
 
     return true;
@@ -102,7 +102,7 @@ ActorPtrArray Scene::getActors( ) {
     ActorPtrArray list;
     ActorMap::iterator it;
 
-    for ( it=m_actors.begin(); it != m_actors.end(); it++ )
+    for ( it=m_actors.begin(); it != m_actors.end(); ++it )
         list.push_back( &it->second );
 
     return list;
@@ -114,7 +114,7 @@ UIDArray Scene::getActorUIDs( ) {
     UIDArray list;
     ActorMap::iterator it;
 
-    for ( it=m_actors.begin(); it != m_actors.end(); it++ )
+    for ( it=m_actors.begin(); it != m_actors.end(); ++it )
         list.push_back( it->first );
 
     return list;
@@ -129,7 +129,7 @@ void Scene::addAnimation( AbstractAnimation* animation ) {
 // ----------------------------------------------------------------------------
 // Animation destructor will be called
 void Scene::clearAnimations( ) {
-    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
+    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
         delete (*it);
     m_animations.clear();
 }
@@ -144,7 +144,7 @@ AbstractAnimation* Scene::getAnimation( size_t animation_num ) {
 // ----------------------------------------------------------------------------
 // Animation destructor will be called
 void Scene::removeAnimation( UID animation_uid ) {
-    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
+    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
         if ( (*it)->getUID() == animation_uid ) {
             AbstractAnimation* animation = (*it);
             m_animations.erase( it );

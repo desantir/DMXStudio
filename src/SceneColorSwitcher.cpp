@@ -110,12 +110,12 @@ CString SceneColorSwitcher::getSynopsis(void) {
 
     if ( m_custom_colors.size() ) {
         synopsis.AppendFormat( "Custom Colors( " );
-        for ( ColorProgression::iterator it=m_custom_colors.begin(); it != m_custom_colors.end(); it++ )
+        for ( ColorProgression::iterator it=m_custom_colors.begin(); it != m_custom_colors.end(); ++it )
             synopsis.AppendFormat( "%s ", color_names[*it] );
-        synopsis.AppendFormat( ") " );
+        synopsis.AppendFormat( ")\n" );
     }
     
-    synopsis.AppendFormat( "Strobe( -color=%s +ms=%u -ms=%u ) %s", color_names[m_strobe_neg_color],
+    synopsis.AppendFormat( "Strobe( -color=%s +ms=%u -ms=%u )\n%s", color_names[m_strobe_neg_color],
         m_strobe_pos_ms, m_strobe_neg_ms, 
         AbstractAnimation::getSynopsis() );
 
@@ -144,7 +144,7 @@ void SceneColorSwitcher::initAnimation( AnimationTask* task, DWORD time_ms, BYTE
     UIDArray actors = populateActors( m_animation_task->getScene() );
 
     // For each fixture, find red, green, blue, white channels
-    for ( UIDArray::iterator it=actors.begin(); it != actors.end(); it++ ) {
+    for ( UIDArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
         Fixture* pf = m_animation_task->getFixture( (*it) );
         STUDIO_ASSERT( pf != NULL, "Missing fixture UID=%lu", (*it) );
         SceneActor* actor = task->getScene()->getActor(pf->getUID());
@@ -197,17 +197,25 @@ bool SceneColorSwitcher::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
     if ( tick ) {
         unsigned level = m_signal_processor->getLevel();
         int roll = rand() % 100;
+        BYTE rgbwa[COLOR_CHANNELS];
 
         // Get next color
         if ( m_custom_colors.size() ) {
-            m_color_index = m_custom_colors[m_custom_index];
-            m_custom_index = (m_custom_index+1) % m_custom_colors.size() ;
+            rgbwa[0] = (m_custom_colors[m_custom_index] >> 16) & 0xFF;
+            rgbwa[1] = (m_custom_colors[m_custom_index] >> 8) & 0xFF;
+            rgbwa[2] = m_custom_colors[m_custom_index] & 0xFF;
+            rgbwa[3] = 0;
+            rgbwa[4] = 0;
+
+            m_custom_index = (m_custom_index+1) % m_custom_colors.size();
         }
-        else
+        else {
             m_color_index = ((m_color_index) % (NUM_COLORS-1)) + 1;
+            memcpy( rgbwa, (LPBYTE)color_table_rgb[m_color_index], COLOR_CHANNELS );
+        }
 
         if ( m_color_effect == COLOR_EFFECT_STROBE && m_strobe_periods > 0 ) {
-            m_strobe.setColor( color_table_rgb[m_color_index] );
+            m_strobe.setColor( rgbwa );
             m_strobe_periods--;
         }
         else {
@@ -226,22 +234,22 @@ bool SceneColorSwitcher::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
             }
 
             if ( m_color_effect == COLOR_EFFECT_STROBE ) {
-                m_strobe.setColor( color_table_rgb[m_color_index] );
+                m_strobe.setColor( rgbwa );
                 m_strobe.start( time_ms, m_strobe_pos_ms * (110-level) / 100, m_strobe_neg_ms );
                 m_strobe_periods = rand() % 5;  // Keep strobe going for a bit to get full effect
             }
             else if ( m_color_effect == COLOR_EFFECT_CHANGE ) {
-                for ( SwitcherFixtureArray::iterator it=m_fixtures.begin(); it != m_fixtures.end(); it++ ) {
-                    loadColorChannels( dmx_packet, (*it), color_table_rgb[m_color_index] );
+                for ( SwitcherFixtureArray::iterator it=m_fixtures.begin(); it != m_fixtures.end(); ++it ) {
+                    loadColorChannels( dmx_packet, (*it), rgbwa );
                     changed = true;
                 }
             }
             else if ( m_color_effect == COLOR_EFFECT_BLEND ) {
                 WORD time = (WORD)(m_signal_processor->getNextSampleMS()-time_ms)/2;
 
-                for ( SwitcherFixtureArray::iterator it=m_fixtures.begin(); it != m_fixtures.end(); it++ ) {
+                for ( SwitcherFixtureArray::iterator it=m_fixtures.begin(); it != m_fixtures.end(); ++it ) {
                     SwitcherFixture& sfixture = (*it);
-                    sfixture.m_fader.setTargets( color_table_rgb[m_color_index] );
+                    sfixture.m_fader.setTargets( rgbwa );
                     sfixture.m_fader.start( time_ms, time );
                 }
             }
@@ -251,7 +259,7 @@ bool SceneColorSwitcher::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
     switch ( m_color_effect ) {
         case COLOR_EFFECT_STROBE:
             if ( m_strobe.strobe( time_ms ) ) {
-                for ( SwitcherFixtureArray::iterator it=m_fixtures.begin(); it != m_fixtures.end(); it++ ) {
+                for ( SwitcherFixtureArray::iterator it=m_fixtures.begin(); it != m_fixtures.end(); ++it ) {
                     SwitcherFixture& sfixture = (*it);
                     loadColorChannels( dmx_packet, sfixture, m_strobe.rgbwa() );
                 }
@@ -262,7 +270,7 @@ bool SceneColorSwitcher::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
             break;
 
         case COLOR_EFFECT_BLEND:
-            for ( SwitcherFixtureArray::iterator it=m_fixtures.begin(); it != m_fixtures.end(); it++ ) {
+            for ( SwitcherFixtureArray::iterator it=m_fixtures.begin(); it != m_fixtures.end(); ++it ) {
                 SwitcherFixture& sfixture = (*it);
                 
                 if ( sfixture.m_fader.fade( time_ms ) ) {

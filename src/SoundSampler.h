@@ -91,6 +91,10 @@ public:
     void attach( AudioInputStream* stream );
     void detach();
 
+    inline bool isAttached() const {
+        return m_audio_stream != NULL;
+    }
+
     HRESULT ProcessFFT( WORD channels, FFT_Result* fft_result[] );  
     HRESULT ProcessAmplitudes( WORD channels, size_t sample_size, float* sample_data[] ) { return 0; }
 

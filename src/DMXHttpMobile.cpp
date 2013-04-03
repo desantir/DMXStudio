@@ -20,10 +20,36 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "DMXHttpMobile.h"
 
 #include "Venue.h"
+
+// CAUTION: THESE PREFIXES SHOULD ALL BE UNIQUE
+
+#define DMX_URL_CONTROL_SCENE_SHOW          DMX_URL_ROOT_MOBILE "control/scene/show/"
+#define DMX_URL_CONTROL_CHASE_SHOW          DMX_URL_ROOT_MOBILE "control/chase/show/"
+#define DMX_URL_CONTROL_VENUE_BLACKOUT      DMX_URL_ROOT_MOBILE "control/venue/blackout/"
+#define DMX_URL_CONTROL_VENUE_DIMMER        DMX_URL_ROOT_MOBILE "control/venue/dimmer/"
+#define DMX_URL_CONTROL_VENUE_STROBE        DMX_URL_ROOT_MOBILE "control/venue/strobe/"
+#define DMX_URL_CONTROL_VENUE_WHITEOUT      DMX_URL_ROOT_MOBILE "control/venue/whiteout/"
+#define DMX_URL_CONTROL_FIXTURE_CAPTURE     DMX_URL_ROOT_MOBILE "control/fixture/select/"
+#define DMX_URL_CONTROL_FIXTURE_RELEASE     DMX_URL_ROOT_MOBILE "control/fixture/release/"
+#define DMX_URL_CONTROL_FIXTURE_CHANNEL     DMX_URL_ROOT_MOBILE "control/fixture/channel/"
+#define DMX_URL_CONTROL_ANIMATION_SPEED     DMX_URL_ROOT_MOBILE "control/venue/animation_speed/"
+#define DMX_URL_QUERY_VENUE_STATUS          DMX_URL_ROOT_MOBILE "query/venue/status/"
+
+#define DMX_URL_CONTROL_MASTER_VOLUME       DMX_URL_ROOT_MOBILE "control/venue/master_volume/"
+#define DMX_URL_QUERY_SOUND                 DMX_URL_ROOT_MOBILE "query/sound/"
+#define DMX_URL_CONTROL_MUTE_VOLUME         DMX_URL_ROOT_MOBILE "control/venue/mute_volume/"
+#define DMX_URL_CONTROL_MUSIC_TRACK_BACK    DMX_URL_ROOT_MOBILE "control/music/track/back/"
+#define DMX_URL_CONTROL_MUSIC_TRACK_FORWARD DMX_URL_ROOT_MOBILE "control/music/track/forward/"
+#define DMX_URL_CONTROL_MUSIC_TRACK_STOP    DMX_URL_ROOT_MOBILE "control/music/track/stop/"
+#define DMX_URL_CONTROL_MUSIC_TRACK_PAUSE   DMX_URL_ROOT_MOBILE "control/music/track/pause/"
+#define DMX_URL_CONTROL_MUSIC_TRACK_PLAY    DMX_URL_ROOT_MOBILE "control/music/track/play/"
+#define DMX_URL_QUERY_MUSIC_PLAYLISTS       DMX_URL_ROOT_MOBILE "query/music/playlists/"
+#define DMX_URL_QUERY_MUSIC_PLAYLIST_TRACKS DMX_URL_ROOT_MOBILE "query/music/playlist/tracks/"
+#define DMX_URL_CONTROL_MUSIC_PLAY_TRACK    DMX_URL_ROOT_MOBILE "control/music/play/track/"
+#define DMX_URL_CONTROL_MUSIC_PLAY_PLAYLIST DMX_URL_ROOT_MOBILE "control/music/play/playlist/"
 
 // ----------------------------------------------------------------------------
 //
@@ -32,14 +58,14 @@ DMXHttpMobile::DMXHttpMobile(void)
     m_rest_handlers[ DMX_URL_CONTROL_SCENE_SHOW ] = &DMXHttpMobile::control_scene_show;
     m_rest_handlers[ DMX_URL_CONTROL_CHASE_SHOW ] = &DMXHttpMobile::control_chase_show;
     m_rest_handlers[ DMX_URL_CONTROL_VENUE_BLACKOUT ] = &DMXHttpMobile::control_venue_blackout;
-    m_rest_handlers[ DMX_URL_CONTROL_VENUE_DIMMER ] = &DMXHttpMobile::control_venue_dimmer;
+    m_rest_handlers[ DMX_URL_CONTROL_VENUE_DIMMER ] = &DMXHttpMobile::control_venue_masterdimmer;
     m_rest_handlers[ DMX_URL_CONTROL_VENUE_WHITEOUT ] = &DMXHttpMobile::control_venue_whiteout;
     m_rest_handlers[ DMX_URL_CONTROL_FIXTURE_CAPTURE ] = &DMXHttpMobile::control_fixture_capture;
     m_rest_handlers[ DMX_URL_CONTROL_FIXTURE_RELEASE ] = &DMXHttpMobile::control_fixture_release;
     m_rest_handlers[ DMX_URL_CONTROL_FIXTURE_CHANNEL ] = &DMXHttpMobile::control_fixture_channel;
     m_rest_handlers[ DMX_URL_CONTROL_VENUE_STROBE ] = &DMXHttpMobile::control_venue_strobe;
     m_rest_handlers[ DMX_URL_CONTROL_ANIMATION_SPEED ] = &DMXHttpMobile::control_animation_speed;
-    m_rest_handlers[ DMX_URL_QUERY_VENUE ] = &DMXHttpMobile::query_venue;
+    m_rest_handlers[ DMX_URL_QUERY_VENUE_STATUS ] = &DMXHttpMobile::query_venue_status;
     m_rest_handlers[ DMX_URL_CONTROL_MASTER_VOLUME ] = &DMXHttpMobile::control_master_volume;
     m_rest_handlers[ DMX_URL_QUERY_SOUND ] = &DMXHttpMobile::query_sound;
     m_rest_handlers[ DMX_URL_CONTROL_MUTE_VOLUME ] = &DMXHttpMobile::control_mute_volume;
@@ -73,16 +99,14 @@ DWORD DMXHttpMobile::processGetRequest( HttpWorkerThread* worker )
     if ( prefix.GetLength() > 0 && prefix[prefix.GetLength()-1] != '/' )
         prefix += "/";
 
-    if ( prefix == DMX_URL_ROOT ) {                        // Redirect to mobile index page
-        CString redirect;
-        redirect.Format( "%smobile/mobile.htm", DMX_URL_ROOT );
-        return worker->sendRedirect( (LPCSTR)redirect );
+    if ( prefix == DMX_URL_ROOT_MOBILE ) {                  // Redirect to mobile index page
+        return worker->sendRedirect( DMX_URL_MOBILE_HOME );
     }
 
     // Invoke the approriate handler
     RestHandlerFunc func = NULL;
     UINT len = 0;
-    for ( RestHandlerMap::iterator it=m_rest_handlers.begin(); it != m_rest_handlers.end(); it++ ) {
+    for ( RestHandlerMap::iterator it=m_rest_handlers.begin(); it != m_rest_handlers.end(); ++it ) {
         if ( prefix.Find( it->first, 0 ) == 0 && strlen(it->first) > len ) {
             func = it->second;
             len = strlen(it->first);
@@ -114,14 +138,14 @@ DWORD DMXHttpMobile::processPostRequest( HttpWorkerThread* worker, BYTE* content
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpMobile::control_animation_speed( CString& response, LPCSTR path_fragment )
+bool DMXHttpMobile::control_animation_speed( CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
     DWORD sample_rate_ms;
         
-    if ( sscanf_s( path_fragment, "%lu", &sample_rate_ms ) != 1 )
+    if ( sscanf_s( data, "%lu", &sample_rate_ms ) != 1 )
         return false;
 
     studio.getVenue()->setAnimationSampleRate( sample_rate_ms );
@@ -131,24 +155,7 @@ bool DMXHttpMobile::control_animation_speed( CString& response, LPCSTR path_frag
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpMobile::query_venue( CString& response, LPCSTR path_fragment )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    response.Format( "{ \"blackout\":%d, \"dimmer\":%u, \"whiteout\":%d, \"whiteout_strobe\":%u, \"animation_speed\": %lu }",
-        studio.getVenue()->getUniverse()->isBlackout(), 
-        studio.getVenue()->getMasterDimmer(),
-        studio.getVenue()->getWhiteout(),
-        studio.getVenue()->getWhiteoutStrobeMS(),
-        studio.getVenue()->getAnimationSampleRate( ) );
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool DMXHttpMobile::query_sound( CString& response, LPCSTR path_fragment )
+bool DMXHttpMobile::query_sound( CString& response, LPCSTR data )
 {
     CString music_player_json;
 
@@ -182,7 +189,7 @@ bool DMXHttpMobile::query_sound( CString& response, LPCSTR path_fragment )
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpMobile::control_music_play_track( CString& response, LPCSTR path_fragment )
+bool DMXHttpMobile::control_music_play_track( CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -190,7 +197,7 @@ bool DMXHttpMobile::control_music_play_track( CString& response, LPCSTR path_fra
     UINT        playlist_number, track_number;
     unsigned    queue;
 
-    if ( sscanf_s( path_fragment, "%lu/%lu/%u", &playlist_number, &track_number, &queue ) != 3 )
+    if ( sscanf_s( data, "%lu/%lu/%u", &playlist_number, &track_number, &queue ) != 3 )
         return false;
 
     PlayerItems playlists;
@@ -212,7 +219,7 @@ bool DMXHttpMobile::control_music_play_track( CString& response, LPCSTR path_fra
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpMobile::control_music_play_playlist( CString& response, LPCSTR path_fragment )
+bool DMXHttpMobile::control_music_play_playlist( CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -220,7 +227,7 @@ bool DMXHttpMobile::control_music_play_playlist( CString& response, LPCSTR path_
     UINT       playlist_number;
     unsigned    queue;
 
-    if ( sscanf_s( path_fragment, "%lu/%u", &playlist_number, &queue ) != 2 )
+    if ( sscanf_s( data, "%lu/%u", &playlist_number, &queue ) != 2 )
         return false;
 
     PlayerItems playlists;
@@ -235,7 +242,7 @@ bool DMXHttpMobile::control_music_play_playlist( CString& response, LPCSTR path_
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpMobile::query_music_playlists( CString& response, LPCSTR path_fragment )
+bool DMXHttpMobile::query_music_playlists( CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -259,14 +266,14 @@ bool DMXHttpMobile::query_music_playlists( CString& response, LPCSTR path_fragme
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpMobile::query_music_playlist_tracks( CString& response, LPCSTR path_fragment )
+bool DMXHttpMobile::query_music_playlist_tracks( CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
 
     UINT playlist_number;
 
-    if ( sscanf_s( path_fragment, "%u", &playlist_number ) != 1 )
+    if ( sscanf_s( data, "%u", &playlist_number ) != 1 )
         return false;
 
     PlayerItems playlists;
@@ -296,7 +303,7 @@ bool DMXHttpMobile::query_music_playlist_tracks( CString& response, LPCSTR path_
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpMobile::control_music_track_back( CString& response, LPCSTR path_fragment )
+bool DMXHttpMobile::control_music_track_back( CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -307,7 +314,7 @@ bool DMXHttpMobile::control_music_track_back( CString& response, LPCSTR path_fra
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpMobile::control_music_track_forward( CString& response, LPCSTR path_fragment )
+bool DMXHttpMobile::control_music_track_forward( CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -318,7 +325,7 @@ bool DMXHttpMobile::control_music_track_forward( CString& response, LPCSTR path_
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpMobile::control_music_track_stop( CString& response, LPCSTR path_fragment )
+bool DMXHttpMobile::control_music_track_stop( CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -329,7 +336,7 @@ bool DMXHttpMobile::control_music_track_stop( CString& response, LPCSTR path_fra
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpMobile::control_music_track_pause( CString& response, LPCSTR path_fragment )
+bool DMXHttpMobile::control_music_track_pause( CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -340,7 +347,7 @@ bool DMXHttpMobile::control_music_track_pause( CString& response, LPCSTR path_fr
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpMobile::control_music_track_play( CString& response, LPCSTR path_fragment )
+bool DMXHttpMobile::control_music_track_play( CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -351,219 +358,20 @@ bool DMXHttpMobile::control_music_track_play( CString& response, LPCSTR path_fra
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpMobile::control_master_volume( CString& response, LPCSTR path_fragment )
-{
-    UINT master_volume;
-        
-    if ( sscanf_s( path_fragment, "%u", &master_volume ) != 1 )
-        return false;
-
-    studio.getVenue()->setMasterVolume( master_volume );
-
-    return true;
-}
-
-
-// ----------------------------------------------------------------------------
-//
-bool DMXHttpMobile::control_mute_volume( CString& response, LPCSTR path_fragment )
-{
-    UINT mute_volume;
-        
-    if ( sscanf_s( path_fragment, "%u", &mute_volume ) != 1 )
-        return false;
-
-    studio.getVenue()->setMasterVolumeMute( mute_volume ? true : false );
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool DMXHttpMobile::control_scene_show( CString& response, LPCSTR path_fragment )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    UID scene_id;
-
-    if ( sscanf_s( path_fragment, "%lu", &scene_id ) != 1 )
-        return false;
-
-    Scene* scene = studio.getVenue()->getScene( scene_id );
-    if ( !scene )
-        return false;
-
-    studio.getVenue()->selectScene( scene_id );
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool DMXHttpMobile::control_chase_show( CString& response, LPCSTR path_fragment )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    UID chase_id;
-        
-    if ( sscanf_s( path_fragment, "%lu", &chase_id ) != 1 )
-        return false;
-
-    if ( chase_id > 0 ) {
-        Chase* chase = studio.getVenue()->getChase( chase_id );
-        if ( !chase )
-            return false;
-
-        studio.getVenue()->startChase( chase_id );
-    }
-    else
-        studio.getVenue()->stopChase();
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool DMXHttpMobile::control_venue_blackout( CString& response, LPCSTR path_fragment )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    unsigned blackout;
-        
-    if ( sscanf_s( path_fragment, "%u", &blackout ) != 1 )
-        return false;
-
-    studio.getVenue()->getUniverse()->setBlackout( blackout ? true : false );
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool DMXHttpMobile::control_venue_dimmer( CString& response, LPCSTR path_fragment )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    int dimmer;
-
-    if ( sscanf_s( path_fragment, "%d", &dimmer ) != 1 )
-        return false;
-    if ( dimmer < 0 || dimmer > 100 )
-        return false;
-
-    studio.getVenue()->setMasterDimmer( dimmer );
-    studio.getVenue()->loadScene();
-
-    return true;
-}  
-
-// ----------------------------------------------------------------------------
-//
-bool DMXHttpMobile::control_venue_whiteout( CString& response, LPCSTR path_fragment )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    int whiteout;
-
-    if ( sscanf_s( path_fragment, "%d", &whiteout ) != 1 )
-        return false;
-    if ( whiteout < 0 || whiteout > 4)
-        return false;
-
-    studio.getVenue()->setWhiteout( (WhiteoutMode)whiteout );
-    studio.getVenue()->loadScene();
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool DMXHttpMobile::control_venue_strobe( CString& response, LPCSTR path_fragment )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    UINT whiteout_strobe_ms;
-
-    if ( sscanf_s( path_fragment, "%u", &whiteout_strobe_ms ) != 1 )
-        return false;
-    if ( whiteout_strobe_ms < 25 || whiteout_strobe_ms > 10000)
-        return false;
-
-    studio.getVenue()->setWhiteoutStrobeMS( whiteout_strobe_ms );
-    studio.getVenue()->loadScene();
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool DMXHttpMobile::control_fixture_capture( CString& response, LPCSTR path_fragment )
+bool DMXHttpMobile::control_fixture_capture( CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
     UID fixture_id;
         
-    if ( sscanf_s( path_fragment, "%lu", &fixture_id ) != 1 )
+    if ( sscanf_s( data, "%lu", &fixture_id ) != 1 )
         return false;
 
     if ( fixture_id > 0 )
         studio.getVenue()->captureActor( fixture_id );
 
     response = getFixtureDivContent();
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool DMXHttpMobile::control_fixture_release( CString& response, LPCSTR path_fragment )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    UID fixture_id;
-        
-    if ( sscanf_s( path_fragment, "%lu", &fixture_id ) != 1 )
-        return false;
-
-    if ( fixture_id != 0 )
-        studio.getVenue()->releaseActor( fixture_id );
-    else
-        studio.getVenue()->clearAllCapturedActors();
-
-    studio.getVenue()->loadScene();
-
-    response = getFixtureDivContent();
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool DMXHttpMobile::control_fixture_channel( CString& response, LPCSTR path_fragment )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    UID fixture_id;
-    channel_t channel;
-    unsigned channel_value;
-
-    if ( sscanf_s( path_fragment, "%lu/%u/%u", &fixture_id, &channel, &channel_value ) != 3 )
-        return false;
-
-    Fixture* pf = studio.getVenue()->getFixture( fixture_id );
-    if ( !pf )
-        return false;
-
-    studio.getVenue()->setChannelValue( pf, channel, channel_value );
 
     return true;
 }
@@ -608,9 +416,9 @@ bool DMXHttpMobile::substitute( LPCSTR marker, LPCSTR data, CString& marker_cont
         FixturePtrArray fixtures = studio.getVenue()->getFixtures();
         SceneActor* actor = studio.getVenue()->getCapturedActor();
 
-        for ( FixturePtrArray::iterator it=fixtures.begin(); it != fixtures.end(); it++ ) {
+        for ( FixturePtrArray::iterator it=fixtures.begin(); it != fixtures.end(); ++it ) {
             Fixture* fixture = (*it);
-            LPCSTR selected = (actor != NULL && actor->getPFUID() == fixture->getUID()) ? "selected" : "";
+            LPCSTR selected = (actor != NULL && actor->getFUID() == fixture->getUID()) ? "selected" : "";
 
             marker_content.AppendFormat( "<option value=\"%lu\" %s>%s</option>\n", fixture->getUID(), selected,
                 encodeHtmlString( fixture->getFullName() ) );
@@ -618,7 +426,7 @@ bool DMXHttpMobile::substitute( LPCSTR marker, LPCSTR data, CString& marker_cont
     }
     else if ( !strcmp( marker, "scene_buttons" ) ) {
         ScenePtrArray scenes = studio.getVenue()->getScenes();
-        for ( ScenePtrArray::iterator it=scenes.begin(); it != scenes.end(); it++ ) {
+        for ( ScenePtrArray::iterator it=scenes.begin(); it != scenes.end(); ++it ) {
             Scene* scene = (*it);
             CString active;
 
@@ -642,7 +450,7 @@ bool DMXHttpMobile::substitute( LPCSTR marker, LPCSTR data, CString& marker_cont
 
         ChasePtrArray chases = studio.getVenue()->getChases();
 
-        for ( ChasePtrArray::iterator it=chases.begin(); it != chases.end(); it++ ) {
+        for ( ChasePtrArray::iterator it=chases.begin(); it != chases.end(); ++it ) {
             Chase* chase = (*it);
             CString active;
 
@@ -675,7 +483,7 @@ CString DMXHttpMobile::getFixtureDivContent()
     if ( actor != NULL ) {
         marker_content.AppendFormat( "<hr />\n" );
 
-        Fixture* fixture = studio.getVenue()->getFixture( actor->getPFUID() );
+        Fixture* fixture = studio.getVenue()->getFixture( actor->getFUID() );
 
         marker_content.AppendFormat( "<div>\n" );
 
@@ -703,7 +511,7 @@ CString DMXHttpMobile::getFixtureDivContent()
         marker_content.AppendFormat( "<hr />\n" );
     }
 
-    for ( UIDArray::iterator it=actors.begin(); it != actors.end(); it++ ) {
+    for ( UIDArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
         Fixture* fixture = studio.getVenue()->getFixture( (*it) );
 
         marker_content.AppendFormat( "<a data-icon=\"delete\" data-role=\"button\" data-theme=\"a\" data-mini=\"true\" onclick=\"release_fixture(%lu); return false;\">Release %s</a>\n",

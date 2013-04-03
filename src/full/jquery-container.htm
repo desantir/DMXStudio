@@ -1,0 +1,85 @@
+<!DOCTYPE html> 
+
+<!-- (C) 2013 Robert DeSantis -->
+
+<HTML>
+<HEAD>
+<META NAME="GENERATOR" Content="Microsoft Visual Studio">
+<TITLE>jQuery Container test</TITLE>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"> 
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <link rel="stylesheet" href="css/dark-hive/jquery-ui-1.9.2.custom.css" />
+    <script src="js/jquery-1.8.3.js"></script>
+    <script src="js/jquery-ui-1.9.2.custom.js"></script>
+    <script src="jquery.container.js"></script>
+
+    <script>
+        $(function () {
+            $("#c1").expandableContainer({
+                item_template: '<div class="container_input" style="height:26px; width:40px; border: 1px solid #808080; border-radius: 6pt 6pt;" value="foo"></div>'
+            });
+        });
+
+        $(function () {
+            $("#c2").expandableContainer({
+                vertical: true,
+                controls: "left"
+            });
+        });
+
+        $(function () {
+            $("#c3").expandableContainer({
+                vertical: true,
+                controls: "right"
+            });
+        });
+
+        function add_item( target ) {
+            target.expandableContainer( "items", [ "<div><input value='99' class='container_input' size=5 /></div>" ] );
+        }
+
+    </script>
+</HEAD>
+
+<body style="background-color:white;">
+
+    <div style="border: 1px solid black;margin: 40px 10px 10px 10px; padding:10px;">
+        Horizontal container:<br /><br />
+        <div id="c1"></div>
+        <div style="clear:both;"></div>
+
+        <div style="margin-top: 10px;" >
+            <button onclick='alert( $("#c1").expandableContainer( "values" ) )'>Show values</button>
+            <button onclick='alert( $("#c1").expandableContainer( "items" ).length )'>Show # of values</button>
+            <button onclick='add_item( $("#c1"));'>Add edit field</button>
+            <button onclick='$("#c1").expandableContainer( "set_values", [1,2,3,4,5,6]);'>Add 6 components</button>
+        </div>
+    </div>
+
+    <div style="border: 1px solid black; clear: both;  float:left; margin: 10px 10px 10px 10px; padding:10px;">
+        Vertical container, controls left:<br /><br />
+        <div id="c2"></div>
+
+        <div style="clear:both;margin-top: 40px;" >
+            <button onclick='alert( $("#c2").expandableContainer( "values" ) )'>Show values</button>
+            <button onclick='alert( $("#c2").expandableContainer( "items" ).length )'>Show # of values</button>
+            <button onclick='add_item( $("#c2"));'>Add edit field</button>
+            <button onclick='$("#c2").expandableContainer( "set_values", [1,2,3,4,5,6]);'>Add 6 components</button>
+        </div>
+    </div>
+
+    <div style="border: 1px solid black; float: left; margin: 10px 10px 10px 10px; padding:10px;">
+        Vertical container, controls right:<br /><br />
+        <div id="c3"></div>
+
+        <div style="clear:both;margin-top: 40px;" >
+            <button onclick='alert( $("#c3").expandableContainer( "values" ) )'>Show values</button>
+            <button onclick='alert( $("#c3").expandableContainer( "items" ).length )'>Show # of values</button>
+            <button onclick='add_item( $("#c3"));'>Add edit field</button>
+            <button onclick='$("#c3").expandableContainer( "set_values", [1,2,3,4,5,6]);'>Add 6 components</button>
+        </div>
+    </div>
+</BODY>
+</HTML>

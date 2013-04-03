@@ -20,7 +20,6 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
 #include "DMXStudio.h"
@@ -65,12 +64,12 @@ public:
 	}
 
 	inline void insertValue( double e ) {
-		memcpy( &m_E[1], &m_E[0], (m_size-1)*sizeof(double) );
+		memmove( &m_E[1], &m_E[0], (m_size-1)*sizeof(double) );
 		m_E[0] = e;
 	}
 
 	inline void insertSpec( double e ) {
-		memcpy( &m_S[1], &m_S[0], (m_size-1)*sizeof(double) );
+		memmove( &m_S[1], &m_S[0], (m_size-1)*sizeof(double) );
 		m_S[0] = e;
 	}
 

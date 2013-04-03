@@ -100,6 +100,11 @@ UINT ChaseTask::run(void) {
 
     try {
         while ( isRunning() ) {
+            if ( m_venue->getWhiteout() != WHITEOUT_OFF ) {
+                Sleep( 10 );
+                continue;
+            }
+
             switch ( m_chase_state ) {
                 case CHASE_AUTO_INIT:
                     m_step_number = m_next_step = 0;

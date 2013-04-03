@@ -117,7 +117,7 @@ int SoundSampler::getLevel( unsigned freq_low, unsigned freq_high )
     ULONG total = 0;
     int count = 0;
 
-    for ( SampleSet::iterator it=m_samples.begin(); it != m_samples.end(); it++ ) {
+    for ( SampleSet::iterator it=m_samples.begin(); it != m_samples.end(); ++it ) {
         SampleEntry& entry = (*it);
         if ( entry.getBin() >= bin_start && entry.getBin() <= bin_end ) {
             total += entry.getPower();			// entry.getPower();
@@ -154,7 +154,7 @@ HRESULT SoundSampler::ProcessFFT( WORD channels, FFT_Result* fft_result[] )
 void SoundSampler::processChannelFFT( AudioChannel channel, FFT_Result* fft_data )
 {
     // Determine frequency and dB
-    for ( SampleSet::iterator it=m_samples.begin(); it != m_samples.end(); it++ ) {
+    for ( SampleSet::iterator it=m_samples.begin(); it != m_samples.end(); ++it ) {
         SampleEntry& entry = (*it);
 
         if ( entry.getChannel() == channel ) {

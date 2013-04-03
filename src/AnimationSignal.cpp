@@ -126,7 +126,7 @@ AnimationSignalProcessor::AnimationSignalProcessor(
 
     // Start event generators
     if ( m_signal_def.getInputType() == CAI_FREQ_BEAT ) {
-        BeatDetector* m_detector = new BeatDetector( 32 );
+        m_detector = new BeatDetector( 64 );
         m_detector->attach( task->getAudio() );
         m_detector->addFrequencyEvent( &this->m_trigger, m_signal_def.getInputLow(), m_signal_def.getInputHigh() );
     }
@@ -142,6 +142,7 @@ AnimationSignalProcessor::~AnimationSignalProcessor( )
 {
     if ( m_detector ) {
         m_detector->removeFrequencyEvent( &this->m_trigger );
+        delete m_detector;
         m_detector = NULL;
     }
 

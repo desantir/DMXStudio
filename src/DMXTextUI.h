@@ -504,10 +504,10 @@ public:
     }
 
     void helpText( CString& help_text) {
-        for ( FixtureMap::iterator it=m_fixtures.begin(); it != m_fixtures.end(); it++ )
+        for ( FixtureMap::iterator it=m_fixtures.begin(); it != m_fixtures.end(); ++it )
             help_text.AppendFormat( "   %-4lu - %s\n", (*it).first, (*it).second );
 
-        for ( FixtureGroupPtrArray::iterator it=m_fixture_groups.begin(); it != m_fixture_groups.end(); it++ ) {
+        for ( FixtureGroupPtrArray::iterator it=m_fixture_groups.begin(); it != m_fixture_groups.end(); ++it ) {
             help_text.AppendFormat( "   G%-3lu - Group: %s\n",(*it)->getGroupNumber(), (*it)->getName() );
         }
     }
@@ -658,7 +658,7 @@ public:
         m_model = model;
         m_personalities = FixtureDefinition::getModelPersonalities( m_manufacturer, m_model );
 
-        for ( FixturePersonalityToFUID::iterator it=m_personalities.begin(); it != m_personalities.end(); it++ ) {
+        for ( FixturePersonalityToFUID::iterator it=m_personalities.begin(); it != m_personalities.end(); ++it ) {
             CString label;
             label.Format( "CHANNELS", it->first );
             addKeyValue( it->first, label );

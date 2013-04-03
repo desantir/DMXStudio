@@ -50,9 +50,13 @@ int main( int argc, char* argv[] ) {
     m_http_port( 80 ),
     m_whiteout_strobe_slow( 300, 200 ),
     m_whiteout_strobe_fast( 100, 50 ),
-    m_enable_mobile( true ),
-    m_music_player( NULL )
+    m_enable_http( true ),
+    m_music_player( NULL ),
+    m_dmx_required( true )
 {
+    CString container;
+    container.Format( "%s\\DMXStudio\\", getUserDocumentDirectory() );
+    m_venue_container = container;
 }
 
 // ----------------------------------------------------------------------------
@@ -72,7 +76,7 @@ void DMXStudio::runStudio()
     try {
         openStudioLogFile();
 
-        log_status( "DMX Studio v0.0.11" );
+        log_status( "DMX Studio v0.0.22" );
 
         readIniFile();
 
@@ -87,7 +91,7 @@ void DMXStudio::runStudio()
 
         // Start the request server
         DMXHttpServer server;
-        if ( m_enable_mobile )
+        if ( m_enable_http )
             server.start();
 
         // Connect to the music player if available
@@ -97,14 +101,16 @@ void DMXStudio::runStudio()
         }
 
         // Load the default venue
-        if ( !DMXStudio::loadVenue( getDefaultVenueFilename() ) )
+        if ( !DMXStudio::loadVenueFromFile( getDefaultVenueFilename() ) ) {
+			log_status( "Cannot open default venue '%s'", getDefaultVenueFilename() );
             m_venue = new Venue();
+        }
 
         // Start the console UI
         DMXTextUI ui;
         ui.run();
 
-        if ( m_enable_mobile )
+        if ( m_enable_http )
             server.stop();
     }
     catch ( StudioException& ex ) {
@@ -137,11 +143,14 @@ void DMXStudio::createMusicPlayer( LPCSTR username, LPCSTR player_dll_path )
 
 // ----------------------------------------------------------------------------
 //
-bool DMXStudio::loadVenue( LPCSTR venue_filename )
+bool DMXStudio::loadVenueFromFile( LPCSTR venue_filename )
 {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    Venue* new_venue = DMXStudio::readVenue( venue_filename );
+    CString full_filename;
+    full_filename.Format( "%s\\%s", m_venue_container, venue_filename );
+
+    Venue* new_venue = DMXStudio::readVenueFromFile( full_filename );
     if ( !new_venue )
         return false;
 
@@ -158,13 +167,53 @@ bool DMXStudio::loadVenue( LPCSTR venue_filename )
 
 // ----------------------------------------------------------------------------
 //
-bool DMXStudio::saveVenue( LPCSTR venue_filename )
+bool DMXStudio::loadVenueFromString( LPCSTR venue_xml )
 {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    writeVenue( venue_filename );
+    Venue* new_venue = DMXStudio::readVenueFromString( venue_xml );
+    if ( !new_venue )
+        return false;
+
+    if ( m_venue )
+        delete m_venue;
+
+    m_venue = new_venue;
+    m_venue_filename = "";
+
+    m_venue->open( );
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool DMXStudio::saveVenueToFile( LPCSTR venue_filename )
+{
+    CSingleLock lock( &m_venue_mutex, TRUE );
+
+    CString full_filename;
+    full_filename.Format( "%s\\%s", m_venue_container, venue_filename );
+    writeVenueToFile( full_filename );
 
     m_venue_filename = venue_filename;
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool DMXStudio::newVenue( )
+{
+    CSingleLock lock( &m_venue_mutex, TRUE );
+
+    if ( m_venue )
+        delete m_venue;
+
+    m_venue =  new Venue();
+    m_venue_filename = "new_venue";
+
+    m_venue->open( );
 
     return true;
 }
@@ -182,14 +231,12 @@ CString getUserDocumentDirectory()
 
 // ----------------------------------------------------------------------------
 //
-CString DMXStudio::getDefaultVenueFilename( )
+LPCSTR DMXStudio::getDefaultVenueFilename( )
 {
     if ( m_venue_filename.GetLength() )
         return m_venue_filename;
     
-    CString filename;
-    filename.Format( "%s\\DMXStudio\\DefaultVenue.xml", getUserDocumentDirectory() );
-    return filename;
+    return "DefaultVenue.xml";
 }
 
 // ----------------------------------------------------------------------------
@@ -216,7 +263,7 @@ void DMXStudio::closeStudioLogFile( )
 
 // ----------------------------------------------------------------------------
 //
-Venue* DMXStudio::readVenue( LPCSTR input_file )
+Venue* DMXStudio::readVenueFromFile( LPCSTR input_file )
 {
     if ( GetFileAttributes( input_file ) == INVALID_FILE_ATTRIBUTES )
         return NULL;
@@ -225,12 +272,23 @@ Venue* DMXStudio::readVenue( LPCSTR input_file )
 
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    return reader.read( input_file );
+    return reader.readFromFile( input_file );
 }
 
 // ----------------------------------------------------------------------------
 //
-void DMXStudio::writeVenue( LPCSTR output_file )
+Venue* DMXStudio::readVenueFromString( LPCSTR venue_xml )
+{
+    VenueReader reader;
+
+    CSingleLock lock( &m_venue_mutex, TRUE );
+
+    return reader.readFromString(  venue_xml );
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXStudio::writeVenueToFile( LPCSTR output_file )
 {
     // Create the path if it does not exist
     CString path( output_file ); 
@@ -247,7 +305,17 @@ void DMXStudio::writeVenue( LPCSTR output_file )
     CSingleLock lock( &m_venue_mutex, TRUE );
 
     VenueWriter writer;
-    writer.write( m_venue, output_file );
+    writer.writeToFile( m_venue, output_file );
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXStudio::writeVenueToString( CString& output_string )
+{
+    CSingleLock lock( &m_venue_mutex, TRUE );
+
+    VenueWriter writer;
+    writer.writeToString( m_venue, output_string );
 }
 
 // ----------------------------------------------------------------------------
@@ -359,8 +427,31 @@ void DMXStudio::readIniFile()
     CString filename;
     filename.Format( "%s\\DMXStudio\\DMXStudio.ini", getUserDocumentDirectory() );
 
-    IniFile iniFile;
-    iniFile.read( filename, this );
+    IniFile iniFile( filename );
+
+    if ( iniFile.read() ) {
+        setVenueFileName( iniFile.getVenueFilename() );
+        if ( strlen( iniFile.getVenueContainer() ) > 0 )
+            setVenueContainer( iniFile.getVenueContainer() );
+
+        setDMXRequired( iniFile.isDMXRequired() );
+
+        if ( iniFile.isHttpEnabled() ) {
+            m_http_port = iniFile.getHttpPort();
+            m_enable_http = true;
+        }
+
+        setWhiteoutStrobeSlow( iniFile.getWhiteoutStrobeSlow() );
+        setWhiteoutStrobeFast( iniFile.getWhiteoutStrobeFast() );
+
+        if ( iniFile.isMusicPlayerEnabled() ) {
+            createMusicPlayer( iniFile.getMusicUsername(), iniFile.getMusicPlayer() );
+        }
+
+        DMXStudio::log_status( "Settings loaded from '%s'", filename );
+    }
+    else
+        DMXStudio::log( "Unable to load DMXStudio configuration file '%s' (%s)", filename,  iniFile.getLastError() );
 }
 
 // ----------------------------------------------------------------------------
@@ -370,6 +461,13 @@ void DMXStudio::writeIniFile( )
     CString filename;
     filename.Format( "%s\\DMXStudio\\DMXStudio.ini", getUserDocumentDirectory() );
 
-    IniFile iniFile;
-    iniFile.write( filename, this );
+    IniFile iniFile( filename );
+
+    iniFile.setVenueFilename( getVenueFileName() );
+    iniFile.setHttpEnabled( getEnableHttp() );
+    iniFile.setHttpPort( getHttpPort() );
+    iniFile.setWhiteoutStrobeSlow( m_whiteout_strobe_slow );
+    iniFile.setWhiteoutStrobeFast( m_whiteout_strobe_fast );
+
+    iniFile.write( );
 }

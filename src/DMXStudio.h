@@ -20,7 +20,6 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once 
 
 #include "stdafx.h"
@@ -72,7 +71,7 @@ template <class T, class R>
 R maxKeyValue( T& map ) {
     R maxValue = 0;
 
-    for ( T::iterator it=map.begin(); it != map.end(); it++ ) {
+    for ( T::iterator it=map.begin(); it != map.end(); ++it ) {
         if ( it->first > maxValue )
             maxValue = it->first;
     }
@@ -89,12 +88,14 @@ class DMXStudio
     bool                m_debug;
     CCriticalSection    m_venue_mutex;
     Venue*              m_venue;
-    CString             m_venue_filename;
+    CString             m_venue_container;                      // Location on server where all venue files are kept
+    CString             m_venue_filename;                       // Venue filename relative to venue_container
     UINT                m_http_port;
     StrobeTime          m_whiteout_strobe_slow;
     StrobeTime          m_whiteout_strobe_fast;
-    bool                m_enable_mobile;
+    bool                m_enable_http;
     MusicPlayer*        m_music_player;
+    bool                m_dmx_required;
 
 public:
     DMXStudio();
@@ -116,6 +117,13 @@ public:
         return m_music_player;
     }
 
+    bool isDMXRequired() const {
+        return m_dmx_required;
+    }
+    void setDMXRequired( bool required ) {
+        m_dmx_required = required;
+    }
+
     LPCSTR getVenueFileName() const {
         return m_venue_filename;
     }
@@ -123,11 +131,15 @@ public:
         m_venue_filename = filename;
     }
 
-    bool getEnableMobile() const {
-        return m_enable_mobile;
+    LPCSTR getVenueContainer() const {
+        return m_venue_container;
     }
-    void setEnableMobile( bool m_enable_mobile ) {
-        m_enable_mobile = m_enable_mobile;
+    void setVenueContainer( LPCSTR container ) {
+        m_venue_container = container;
+    }
+
+    bool getEnableHttp() const {
+        return m_enable_http;
     }
 
     StrobeTime getWhiteoutStrobeSlow() const {
@@ -165,14 +177,19 @@ public:
     static void log( const char *fmt, ... );
     static void log_status( const char *fmt, ... );
 
-    Venue* readVenue( const char *input_file );
-    void writeVenue( const char *output_file );
+    void writeVenueToString( CString& output_string );
 
-    bool loadVenue( LPCSTR venue_filename );
-    bool saveVenue( LPCSTR venue_filename );
+    bool loadVenueFromFile( LPCSTR venue_filename );
+    bool saveVenueToFile( LPCSTR venue_filename );
+    bool loadVenueFromString( LPCSTR venue_xml );
+    bool newVenue( );
 
 private:
-    CString getDefaultVenueFilename( void );
+    Venue* readVenueFromFile( const char *input_file );
+    void writeVenueToFile( const char *output_file );
+    Venue* readVenueFromString( LPCSTR venue_xml );
+
+    LPCSTR getDefaultVenueFilename( void );
 
     void openStudioLogFile( void);
     void closeStudioLogFile( void );

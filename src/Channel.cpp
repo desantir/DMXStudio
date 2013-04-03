@@ -105,7 +105,7 @@ void Channel::generateAngleTable(void) {
     int value_low = 0;
     int value_high = 0;
 
-    for ( ChannelAngleMap::iterator it=m_angles.begin(); it != m_angles.end(); it++ ) {
+    for ( ChannelAngleMap::iterator it=m_angles.begin(); it != m_angles.end(); ++it ) {
         if ( angle_low == -1 || it->first < angle_low ) {
             angle_low = it->first;
             value_low = it->second.getValue();
@@ -147,7 +147,7 @@ void Channel::generateAngleTable(void) {
 
         // Find next highest angle in the angle map
 
-        for ( ChannelAngleMap::iterator it=m_angles.begin(); it != m_angles.end(); it++ ) {
+        for ( ChannelAngleMap::iterator it=m_angles.begin(); it != m_angles.end(); ++it ) {
             if ( it->first > angle_low && (angle_high == -1 || it->first < angle_high) ) {
                 angle_high = it->first;
                 value_high = it->second.getValue();

@@ -1,5 +1,36 @@
 TODO ------------------------------------------------------------------------ TODO
 
+Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
+
+   M Web Full UI - stage 2
+		H 3 Track support (list, queue, play, artwork)
+		H 2 Track navigation (pause, stop, forward, back, view played and queued)
+		M 3 Playlist support (list, queue, play)
+		M 1 Log into music player
+
+   M Web Full UI - stage 3
+		H 3 Positional "map" of fixtures to allow easy selection
+		H 4 Music search
+		H 5 Workspace channel management (delete fixture changes, re-arrange channels, hidden channels, compact channels, save channel sets)
+		H 5 Animation macros (must be easier to create animations from the UI)
+
+		M 3 Music mapping (Music Scene Select, Map music to scene or chase, Remove music mapping, Show music mappings)
+
+		L 1 Improved error responses (e.g. "<item> not found")
+		L 1 Control fixture from scene describe should preserve channel values
+		L 1 UI Preferences (update frequency etc, collapsed sections)
+		L 1 Indicate which fixtures are used by a scene (maybe view channels as well)
+		L 1 Fixture icon images rather than text (preference)
+		L 1 Animated running GIFs for chases
+		L 2 Cleanup CSS styles - put in css file
+		L 1 Handle disconnected server state (disable UI)
+		L 1 Animation Speed
+		L 2 All rest edit services are POST
+		L 3 Finish refactoring of mobile (re-using all REST services)
+		L 2 Authentication & session control
+		L 2 Chase beat (follows music) and tap (follows user)
+		L 3 Track pan/tilt with mouse
+
 	L Scene Animations:
 		L Movement animation travel time
 		L Programs should control travel time rather than fixed signal input
@@ -11,16 +42,15 @@ TODO ------------------------------------------------------------------------ TO
 		L Loadable, scripted, self contained animations with specific properties (versus the current rat's nest)
 
 	L Sound processing
-		M Beat detector scaling, better detection algorithm, logarithmic scaling
+		M Beat detector scaling, improved detection algorithm, logarithmic scaling
 		L Add channel mixing to audio stream class
 		L Support format conversion in audio output
-		H Much better sound animation affects (currently they are not very exact and are hard to setup)
+		H Improved sound animation affects (currently they are not very exact and are hard to setup)
 
 	M Fixtures / Fixture Definitions
 		L Simple angle->value options (angle*xx) == DMX code
 		L Multiple universes (increase DMX packet size, zero-based universe ID is simply the high byte)
 		L Movement speed abstraction
-		L Add fixture icon images
 		L Dimmer curve (LEDs can fall off fast at the end)
 		L Editable fixture defaults
 		L Minimum dimmer setting
@@ -42,13 +72,6 @@ TODO ------------------------------------------------------------------------ TO
 		L Midi controller support ( tablet support )
 		L Fixture duty cycle support?
 		L Video support
-
-	H Full User Interface
-		H Full access GUI (definition, control, etc)
-		H HTTP server / REST protocol (what about taps and audio display?)
-		L Auto color set RGBAW channels from palette, HSV? UI issue?
-		L Game engine such as http://www.panda3d.org/ for lighting simulation?
-		  MS XNA? http://msdn.microsoft.com/en-us/library/ff827897.aspx
 	
  	M Test Targets
 		Verify channel remapping works across UI, ACTORS, and ANIMATIONS 

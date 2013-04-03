@@ -34,7 +34,8 @@ public:
     VenueWriter(  );
     ~VenueWriter(void);
 
-    void write( Venue* venue, LPCSTR output_file );
+    void writeToFile( Venue* venue, LPCSTR output_file );
+    void writeToString( Venue* venue, CString& xml_output );
 
     void visit( Venue* venue );
     void visit( Fixture* fixture );
@@ -66,7 +67,7 @@ public:
     void visit_map( TiXmlElement& parent, T& list ) {
         push_parent( parent );
         for ( T::iterator it=list.begin();
-              it != list.end(); it++ )
+              it != list.end(); ++it )
             it->second.accept( this );
         pop_parent( );
     }
@@ -75,7 +76,7 @@ public:
     void visit_ptr_array( TiXmlElement &container, T& list ) {
         push_parent( container );
         for ( T::iterator it=list.begin();
-              it != list.end(); it++ )
+              it != list.end(); ++it )
             (*it)->accept( this );
         pop_parent( );
     }
@@ -84,7 +85,7 @@ public:
     void visit_array( TiXmlElement &container, T& list ) {
         push_parent( container );
         for ( T::iterator it=list.begin();
-              it != list.end(); it++ )
+              it != list.end(); ++it )
             (*it).accept( this );
         pop_parent( );
     }

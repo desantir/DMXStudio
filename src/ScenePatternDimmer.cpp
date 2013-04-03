@@ -64,7 +64,7 @@ CString ScenePatternDimmer::getSynopsis(void) {
         case DP_ALL:			pattern_name = "All";			break;
     }
 
-    synopsis.Format( "Pattern( %s ) %s", pattern_name,
+    synopsis.Format( "Pattern( %s )\n%s", pattern_name,
         AbstractAnimation::getSynopsis() );
 
     return synopsis;
@@ -95,7 +95,7 @@ void ScenePatternDimmer::initAnimation( AnimationTask* task, DWORD time_ms, BYTE
     std::vector<DimmerValue> dimmer_values_array;
 
     // Determine which channels will be participating
-    for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); it++ ) {
+    for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); ++it ) {
         Fixture* pf = m_animation_task->getFixture( (*it) );
         STUDIO_ASSERT( pf != NULL, "Missing fixture UID=%lu", (*it) );
 

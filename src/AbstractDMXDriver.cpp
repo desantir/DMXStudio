@@ -173,6 +173,9 @@ DMX_STATUS AbstractDMXDriver::read_all( BYTE *dmx_512 ) {
 }
 
 DMX_STATUS AbstractDMXDriver::latch() {
+    if( !isRunning() )                              // If not running, assume we are in "disconnected" mode
+        return DMX_OK;
+
     m_latch = true;
 
     m_wake.SetEvent();

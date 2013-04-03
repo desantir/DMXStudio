@@ -153,3 +153,5 @@ private:
     static CString convertChannelTypeToText( ChannelType type );
 };
 
+typedef std::vector<Channel*> ChannelPtrArray;
+

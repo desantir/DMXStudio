@@ -135,6 +135,8 @@ private:
     SceneChannelAnimator& operator=(SceneChannelAnimator& rhs);
     SceneChannelAnimator( SceneChannelAnimator& other );
 
+    void setupActors();
+
 public:
     static const char* className;
 
@@ -159,7 +161,7 @@ public:
     const char* getName() { return "Channel Animator"; }
     const char* getClassName() { return SceneChannelAnimator::className; }
 
-   void accept( IVisitor* visitor) {
+    void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
 

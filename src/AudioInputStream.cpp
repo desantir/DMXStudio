@@ -55,7 +55,7 @@ AudioInputStream* AudioInputStream::createAudioStream( LPCSTR capture_device, un
         bool isDefault = ( strlen(capture_device) == 0 || StrCmpI( capture_device, "default" ) == 0 );
 
         for ( AudioCaptureDeviceArray::iterator it=audioCaptureDevices.begin();
-                it != audioCaptureDevices.end(); it++ ) {
+                it != audioCaptureDevices.end(); ++it ) {
 
             if ( (isDefault && (*it).m_isDefault) ||
                  (!isDefault && _stricmp( capture_device, (*it).m_friendly_name ) == 0) ) {
@@ -210,7 +210,7 @@ HRESULT AudioInputStream::closeAudioStream()
 LPCSTR AudioInputStream::getEndpointDeviceName( LPCWSTR endpoint_id )
 {
     for ( AudioCaptureDeviceArray::iterator it=audioCaptureDevices.begin();
-            it != audioCaptureDevices.end(); it++ ) {
+            it != audioCaptureDevices.end(); ++it ) {
         if ( wcscmp( endpoint_id, (*it).m_id ) == 0 )
             return (*it).m_friendly_name;
     }
@@ -224,8 +224,8 @@ UINT AudioInputStream::run(void)
 {
     LPCSTR audio_capture_device = getEndpointDeviceName( m_endpoint_id );
 
-    DMXStudio::log_status( "Audio input stream started [%s, %d channel(s) @ %dHz, format %X]", 
-        audio_capture_device, m_format.Format.nChannels, m_format.Format.nSamplesPerSec, m_format.Format.wFormatTag );
+    DMXStudio::log_status( "Audio input stream started [%s, %d channel(s) @ %dHz, format %X, sample size %d]", 
+        audio_capture_device, m_format.Format.nChannels, m_format.Format.nSamplesPerSec, m_format.Format.wFormatTag, m_sample_size );
 
     try {
         while ( isRunning() )
@@ -395,7 +395,7 @@ HRESULT AudioInputStream::CopyData( BYTE *pData, UINT32 numFramesAvailable )
             bool left_processed = false;
             bool right_processed = false;
 
-            for ( AudioProcessorMap::iterator it=m_sinks.begin(); it != m_sinks.end(); it++ ) {
+            for ( AudioProcessorMap::iterator it=m_sinks.begin(); it != m_sinks.end(); ++it ) {
                 IAudioProcessor* sink = it->first;
                 ProcessorFormat& format = it->second;
 
@@ -450,12 +450,15 @@ void AudioInputStream::scaleSample( unsigned m_sample_size, float* sampleSet )
             bool neg = sampleSet[bin] < 0;
             float value = ( neg ) ? -sampleSet[bin] : sampleSet[bin];
 
-            if ( value < m_audio_sample_min )          // Establish a floor for audio signal
+            if ( value < m_audio_sample_min ) {        // Establish a floor for audio signal
                 value = 0.0f;
-
-            value = value * m_scale_factor;
-            if ( value > .999f )
-                value = .999f;
+                neg = false;
+            }
+            else {
+                value = value * m_scale_factor;
+                if ( value > .999f )
+                    value = .999f;
+            }
 
             sampleSet[bin] = ( neg ) ? -value : value;
         }

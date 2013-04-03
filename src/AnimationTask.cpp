@@ -56,7 +56,7 @@ UINT AnimationTask::run(void) {
             bool changed = m_load_channels;
             m_load_channels = false;
 
-            for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
+            for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
                 changed |= (*it)->sliceAnimation( time_ms, m_dmx_packet );
 
             if ( m_venue->getWhiteout() == WHITEOUT_STROBE_SLOW ||
@@ -129,7 +129,7 @@ void AnimationTask::stageScene( Scene* scene )
     // Initialize animations
     DWORD time_ms = GetCurrentTime();
 
-    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
+    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
         (*it)->initAnimation( this, time_ms, m_dmx_packet );
 
     m_load_channels = true;             // Make sure we load channels at least once

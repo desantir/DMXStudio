@@ -58,6 +58,10 @@ public:
     ActorPtrArray getActors( void );
     UIDArray getActorUIDs( void );
 
+    inline bool hasActor( UID uid ) {
+        return getActor( uid ) != NULL;
+    }
+
     size_t getNumActors( void ) const {
         return m_actors.size();
     }
@@ -88,7 +92,7 @@ public:
     void clearAnimations( );
 
     AbstractAnimation* getAnimation( UID animation_uid ) {
-        for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); it++ )
+        for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
             if ( (*it)->getUID() == animation_uid )
                 return (*it);
         return NULL;

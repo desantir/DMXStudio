@@ -73,19 +73,20 @@ void SceneSoundLevel::initAnimation( AnimationTask* task, DWORD time_ms, BYTE* d
     m_channel_animations.clear();
 
     UIDArray actors = populateActors( m_animation_task->getScene() );
-    ChannelValueArray value_array;
+    ChannelValueArray unused_value_array;
 
     // Determine which channel will be participating
-    for ( UIDArray::iterator it=actors.begin(); it != actors.end(); it++ ) {
+    for ( UIDArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
         Fixture* pf = m_animation_task->getFixture( (*it) );
         STUDIO_ASSERT( pf != NULL, "Missing fixture UID=%lu", (*it) );
 
         for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
             Channel* cp = pf->getChannel( channel );
 
-            if ( ((m_fade_what & FADE_COLORS) && cp->isColor()) ) {
+            if ( ((m_fade_what & FADE_COLORS) && cp->isColor()) ||
+                 ((m_fade_what & FADE_DIMMERS) && cp->isDimmer()) ) {
                 m_channel_animations.push_back( 
-                    ChannelAnimation(  pf->getUID(), channel, CAM_SCALE, value_array ) );
+                    ChannelAnimation(  pf->getUID(), channel, CAM_SCALE, unused_value_array ) );
             }
         }
     }

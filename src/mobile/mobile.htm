@@ -1,6 +1,26 @@
 <!DOCTYPE html> 
 
-<!-- Copyright (C) 2011,2012 Robert DeSantis -->
+<!--
+Copyright (C) 2011,2012 Robert DeSantis
+hopluvr at gmail dot com
+
+This file is part of DMX Studio.
+ 
+DMX Studio is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
+ 
+DMX Studio is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+License for more details.
+ 
+You should have received a copy of the GNU General Public License
+along with DMX Studio; see the file _COPYING.txt.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+MA 02111-1307, USA.
+-->
 
 <html> 
 
@@ -23,6 +43,7 @@
     var tracks_queued = 0;
     var server_track_sync_ms = 0;
     var timeout = null;
+    var music_player = null;
 
     function onError(data) {
         alert( "Unable to complete server operation." );
@@ -53,7 +74,7 @@
         $("#blackout").change(function () {
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/control/venue/blackout/" + $('input[name=select_blackout]:checked').val(),
+                url: "/dmxstudio/mobile/control/venue/blackout/" + $('input[name=select_blackout]:checked').val(),
                 cache: false,
                 error: onError
             });
@@ -64,7 +85,7 @@
         $("#dimmer").click(function () {
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/control/venue/dimmer/" + slider_dimmer_id.value,
+                url: "/dmxstudio/mobile/control/venue/dimmer/" + slider_dimmer_id.value,
                 cache: false,
                 error: onError
             });
@@ -75,7 +96,7 @@
         $("#whiteoutChange").change(function () {
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/control/venue/whiteout/" + $('input[name=select_whiteout]:checked').val(),
+                url: "/dmxstudio/mobile/control/venue/whiteout/" + $('input[name=select_whiteout]:checked').val(),
                 cache: false,
                 error: onError
             });
@@ -86,7 +107,7 @@
         $("#sceneChange").change(function () {
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/control/scene/show/" + $('input[name=select_scene]:checked').val(),
+                url: "/dmxstudio/mobile/control/scene/show/" + $('input[name=select_scene]:checked').val(),
                 cache: false,
                 error: onError
             });
@@ -97,7 +118,7 @@
         $("#chaseChange").change(function () {
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/control/chase/show/" + $('input[name=chase_scene]:checked').val(),
+                url: "/dmxstudio/mobile/control/chase/show/" + $('input[name=chase_scene]:checked').val(),
                 cache: false,
                 error: onError
             });
@@ -108,7 +129,7 @@
         $("#control_fixture").click(function () {
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/control/fixture/select/" + fixture_select_id.value,
+                url: "/dmxstudio/mobile/control/fixture/select/" + fixture_select_id.value,
                 cache: false,
                 success: function (data) {
                     $('#fixtureSliders').html(data).trigger('create');
@@ -121,7 +142,7 @@
     function release_fixture(fixture_id) {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/control/fixture/release/" + fixture_id,
+            url: "/dmxstudio/mobile/control/fixture/release/" + fixture_id,
             cache: false,
             success: function (data) {
                 $('#fixtureSliders').html(data).trigger('create');
@@ -142,7 +163,7 @@
     function change_fixture_channel(fixture_id, channel, channel_value) {
         clearTimeout(timeout);
 
-        document.timer_url = "/dmxstudio/control/fixture/channel/" + fixture_id + "/" + channel + "/" + channel_value;
+        document.timer_url = "/dmxstudio/mobile/control/fixture/channel/" + fixture_id + "/" + channel + "/" + channel_value;
 
         timeout = setTimeout('timeout_send_ajax_request()', SLIDER_TIMEOUT);
     }
@@ -150,7 +171,7 @@
     function change_dimmer(dimmer_value) {
         clearTimeout(timeout);
 
-        document.timer_url = "/dmxstudio/control/venue/dimmer/" + dimmer_value
+        document.timer_url = "/dmxstudio/mobile/control/venue/dimmer/" + dimmer_value
 
         timeout = setTimeout('timeout_send_ajax_request()', SLIDER_TIMEOUT);
     }
@@ -158,7 +179,7 @@
     function change_strobe(strobe_value) {
         clearTimeout(timeout);
 
-        document.timer_url = "/dmxstudio/control/venue/strobe/" + strobe_value
+        document.timer_url = "/dmxstudio/mobile/control/venue/strobe/" + strobe_value
 
         timeout = setTimeout('timeout_send_ajax_request()', SLIDER_TIMEOUT);
     }
@@ -166,7 +187,7 @@
     function change_animation_speed( speed ) {
         clearTimeout(timeout);
 
-        document.timer_url = "/dmxstudio/control/venue/animation_speed/" + speed
+        document.timer_url = "/dmxstudio/mobile/control/venue/animation_speed/" + speed
 
         timeout = setTimeout('timeout_send_ajax_request()', SLIDER_TIMEOUT);
     }
@@ -174,7 +195,7 @@
     $("#venue").live("pageshow", function () {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/query/venue/",
+            url: "/dmxstudio/mobile/query/venue/status/",
             cache: false,
             success: function (data) {
                 venue_content.style.display = "";
@@ -216,7 +237,7 @@
     $("#scene").live("pageshow", function () {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/query/venue/",
+            url: "/dmxstudio/mobile/query/venue/status/",
             cache: false,
             success: function (data) {
                 scene_content.style.display = "";
@@ -231,7 +252,7 @@
     $("#chase").live("pageshow", function () {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/query/venue/",
+            url: "/dmxstudio/mobile/query/venue/status/",
             cache: false,
             success: function (data) {
                 chase_content.style.display = "";
@@ -246,7 +267,7 @@
     $("#fixture").live("pageshow", function () {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/query/venue/",
+            url: "/dmxstudio/mobile/query/venue/status/",
             cache: false,
             success: function (data) {
                 fixture_content.style.display = "";
@@ -261,7 +282,7 @@
     function change_volume(volume_value) {
         clearTimeout(timeout);
         
-        document.timer_url = "/dmxstudio/control/venue/master_volume/" + volume_value
+        document.timer_url = "/dmxstudio/mobile/control/venue/master_volume/" + volume_value
 
         timeout = setTimeout('timeout_send_ajax_request()', 50);
     }
@@ -270,7 +291,7 @@
         $("#volume_mute").change(function () {
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/control/venue/mute_volume/" + $('input[name=select_volume_mute]:checked').val(),
+                url: "/dmxstudio/mobile/control/venue/mute_volume/" + $('input[name=select_volume_mute]:checked').val(),
                 cache: false,
                 error: onError
             });
@@ -283,7 +304,7 @@
 
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/control/music/track/back",
+                url: "/dmxstudio/mobile/control/music/track/back",
                 cache: false,
                 error: onError
             });
@@ -300,7 +321,7 @@
 
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/control/music/track/forward",
+                url: "/dmxstudio/mobile/control/music/track/forward",
                 cache: false,
                 error: onError
             });
@@ -317,7 +338,7 @@
 
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/control/music/track/pause",
+                url: "/dmxstudio/mobile/control/music/track/pause",
                 cache: false,
                 error: onError
             });
@@ -339,7 +360,7 @@
 
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/control/music/track/play",
+                url: "/dmxstudio/mobile/control/music/track/play",
                 cache: false,
                 error: onError
             });
@@ -353,10 +374,13 @@
     $("#sound").live("pageshow", function (event, ui) {
         updateMusicPlayer();
 
+        if (music_player == null)
+            return;
+
         // Get playlists
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/query/music/playlists/",
+            url: "/dmxstudio/mobile/query/music/playlists/",
             cache: false,
             success: function (data) {
                 var json = jQuery.parseJSON(data);
@@ -387,7 +411,7 @@
             // Get tracks
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/query/music/playlist/tracks/" + playlist_id,
+                url: "/dmxstudio/mobile/query/music/playlist/tracks/" + playlist_id,
                 cache: false,
                 success: function (data) {
                     var json = jQuery.parseJSON(data);
@@ -421,10 +445,10 @@
             var queue = parseInt($('input[name=track_play_mode]:checked').val());
 
             if (track_id == -1) {                       // Play all tracks
-                url_str = "/dmxstudio/control/music/play/playlist/" + playlist_id + "/" + queue;
+                url_str = "/dmxstudio/mobile/control/music/play/playlist/" + playlist_id + "/" + queue;
             }
             else {                                      // Play single track
-                url_str = "/dmxstudio/control/music/play/track/" + playlist_id + "/" + track_id + "/" + queue;
+                url_str = "/dmxstudio/mobile/control/music/play/track/" + playlist_id + "/" + track_id + "/" + queue;
             }
 
             $.ajax({
@@ -468,7 +492,7 @@
 
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/query/sound/",
+            url: "/dmxstudio/mobile/query/sound/",
             cache: false,
             success: function (data) {
                 var json = jQuery.parseJSON(data);
@@ -548,7 +572,7 @@
     function change_volume_mute(mute) {
         clearTimeout(timeout);
 
-        document.timer_url = "/dmxstudio/control/venue/mute_volume/" + (mute ? 1 : 0);
+        document.timer_url = "/dmxstudio/mobile/control/venue/mute_volume/" + (mute ? 1 : 0);
 
         timeout = setTimeout('timeout_send_ajax_request()', 100);
     }

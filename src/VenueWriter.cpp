@@ -45,7 +45,7 @@ VenueWriter::~VenueWriter(void)
 
 // ----------------------------------------------------------------------------
 //
-void VenueWriter::write( Venue* venue, LPCSTR output_file )
+void VenueWriter::writeToFile( Venue* venue, LPCSTR output_file )
 {
     TiXmlDocument doc;
     doc.InsertEndChild( TiXmlComment( "DMX Studio Venue definition" ) );
@@ -58,6 +58,22 @@ void VenueWriter::write( Venue* venue, LPCSTR output_file )
 
     if ( !doc.SaveFile( output_file ) )
         throw StudioException( "Error writing to '%s'\n", output_file );
+}
+
+// ----------------------------------------------------------------------------
+//
+void VenueWriter::writeToString( Venue* venue, CString& xml_output )
+{
+    TiXmlDocument doc;
+    doc.InsertEndChild( TiXmlComment( "DMX Studio Venue definition" ) );
+    
+    push_parent( (TiXmlElement&)doc );
+    venue->accept( this );
+    pop_parent();
+
+    TiXmlPrinter printer;
+    doc.Accept( &printer );
+    xml_output = printer.CStr();
 }
 
 // ----------------------------------------------------------------------------
@@ -101,6 +117,7 @@ void VenueWriter::visit( Venue* venue ) {
     TiXmlElement audio( "audio" );
     add_attribute( audio, "scale", venue->m_audio_boost );
     add_attribute( audio, "floor", venue->m_audio_boost_floor );
+    add_attribute( audio, "sample_size", venue->m_audio_sample_size );
     add_text_element( audio, "capture_device",venue-> m_audio_capture_device );
     venueElement.InsertEndChild( audio );
 
@@ -331,9 +348,9 @@ void VenueWriter::visit( SceneColorSwitcher* animation )
         TiXmlElement colors_element( "custom_colors" );
 
         for ( ColorProgression::iterator it=animation->m_custom_colors.begin(); 
-              it !=animation-> m_custom_colors.end(); it++ ) {
-            TiXmlElement color_index_element( "color_index" );
-            add_attribute( color_index_element, "value", *it );
+              it !=animation-> m_custom_colors.end(); ++it ) {
+            TiXmlElement color_index_element( "color" );
+            add_attribute( color_index_element, "rgb", *it );
             colors_element.InsertEndChild( color_index_element );
         }
 

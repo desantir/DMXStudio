@@ -83,9 +83,9 @@ class Venue : public DObject
     CString			        m_audio_capture_device;				// Audio capture device name
     float                   m_audio_boost;                      // Scales incoming audio signal
     float                   m_audio_boost_floor;                // Minimum signal sample value (used when scaling)
+    UINT                    m_audio_sample_size;                // Audio sample size (1024 defaut)
     StrobeTime              m_whiteout_strobe_slow;
     StrobeTime              m_whiteout_strobe_fast;
-
     WhiteoutMode            m_whiteout;                         // Whiteout color channels
     ColorStrobe             m_whiteout_strobe;                  // Whiteout strobe control
     UINT                    m_whiteout_strobe_ms;               // Manual strobe time MS
@@ -130,10 +130,17 @@ public:
     void deleteMusicMapping( LPCSTR track_full_name );
     void deleteMusicMappings( MusicSelectorType type, UID uid  );
 
-    UINT getMasterVolume(void) const {
+    inline UINT getAudioSampleSize() const {
+        return m_audio_sample_size;
+    }
+    inline void setAudioSampleSize( UINT audio_sample_size) {
+        m_audio_sample_size = audio_sample_size;
+    }
+
+    inline UINT getMasterVolume(void) const {
         return ( m_volume ) ? m_volume->getMasterVolume() : 0;
     }
-    void setMasterVolume( UINT volume ) {
+    inline void setMasterVolume( UINT volume ) {
         if ( m_volume )
             m_volume->setMasterVolume( volume );
     }
@@ -141,7 +148,7 @@ public:
     bool isMasterVolumeMute(void) const {
         return ( m_volume ) ? m_volume->isMute() : false;
     }
-    void setMasterVolumeMute( bool mute ) {
+    inline void setMasterVolumeMute( bool mute ) {
         if ( m_volume )
             m_volume->setMute( mute );
     }
@@ -208,7 +215,7 @@ public:
     }
 
     AudioInputStream* getAudio() {
-        STUDIO_ASSERT( m_sound_detector != NULL, "No audio stream" );
+        STUDIO_ASSERT( m_audio != NULL, "No audio stream" );
         return m_audio;
     }
 
@@ -262,10 +269,12 @@ public:
 
     void setAutoBlackout( DWORD black_out ) {
         m_auto_backout_ms = black_out;
-        getSoundDetector()->setMuteMS( black_out );
-        if ( black_out == 0 )
-            setLightBlackout( false );
-        loadScene();
+        if ( isRunning() ) {
+            getSoundDetector()->setMuteMS( black_out );
+            if ( black_out == 0 )
+                setLightBlackout( false );
+            loadScene();
+        }
     }
     DWORD getAutoBlackout( ) const {
         return m_auto_backout_ms;
@@ -277,31 +286,33 @@ public:
     Fixture *getFixtureByNumber( FixtureNumber fixture_number );
     FixtureNumber nextAvailableFixtureNumber( void );
     void addFixture( Fixture& pfixture );
-    void deleteFixture( UID pfuid );
+    bool deleteFixture( UID pfuid );
+    BYTE getChannelValue( Fixture* pfixture, channel_t channel );
 
     // Default Scene methods
-    void copyDefaultFixturesToScene( UID scene_id );
-    void copySceneFixtureToDefault( UID scene_id, UID fixture_id );
+    void copyDefaultFixturesToScene( UID scene_uid );
+    void copySceneFixtureToDefault( UID scene_uid, UID fixture_uid );
+    void moveDefaultFixtureToScene( UID scene_uid, UID actor_uid );
 
     SceneActor* captureActor( UID fixture_id );
     SceneActor* getCapturedActor();
     void releaseActor( UID fixture_id );
     void clearAllCapturedActors( );
 
-    BYTE getChannelValue( Fixture* pfixture, channel_t channel );
-    void setChannelValue( Fixture* pfixture, channel_t channel, BYTE value );
+    void captureAndSetChannelValue( Fixture* pfixture, channel_t channel, BYTE value );
 
     // Scene methods
     Scene *getScene( UID scene_uid );
     ScenePtrArray getScenes();
     void selectScene( UID scene_uid );
-    void deleteScene( UID scene_uid );
+    bool deleteScene( UID scene_uid );
     void updateCurrentScene( );
     void addScene( Scene& scene );
     void loadScene();
     void clearAnimations();
     Scene *getSceneByNumber( SceneNumber scene_number );
     SceneNumber nextAvailableSceneNumber( void );
+    void deleteAllScenes();
 
     UID getCurrentSceneUID() const {
         return m_current_scene;
@@ -327,18 +338,21 @@ public:
     void addFixtureGroup( FixtureGroup& group );
     FixtureGroupPtrArray getFixtureGroups( );
     FixtureGroup* getFixtureGroup( UID group_id );
-    void deleteFixtureGroup( UID group_id );
+    bool deleteFixtureGroup( UID group_id );
     GroupNumber nextAvailableFixtureGroupNumber( void );
     FixtureGroup* getFixtureGroupByNumber( GroupNumber group_number );
+    bool isGroupCaptured( FixtureGroup* group );
+    void deleteAllFixtureGroups();
 
     // Scene chase methods
     Chase *getChase( UID chase_uid );
     void addChase( Chase& chase );
     ChasePtrArray getChases( );
     Chase* getChaseByNumber( ChaseNumber chase_number );
-    void deleteChase( UID chase_id );
+    bool deleteChase( UID chase_id );
     bool copyChaseSteps( UID source_chase_id, UID target_chase_id );
     ChaseNumber nextAvailableChaseNumber( void );
+    void deleteAllChases();
 
     inline size_t getNumChases() const {
         return m_chases.size();

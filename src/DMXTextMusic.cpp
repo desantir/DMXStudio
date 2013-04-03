@@ -76,7 +76,7 @@ public:
 
         int key = 1;
 
-        for ( PlayerItems::iterator it=m_playlists.begin(); it != m_playlists.end(); it++ ) {
+        for ( PlayerItems::iterator it=m_playlists.begin(); it != m_playlists.end(); ++it ) {
             CString name = studio.getMusicPlayer()->getPlaylistName( (*it) );
             addKeyValue( key++, name );
         }
@@ -109,7 +109,7 @@ public:
 
         int key = 1;
 
-        for ( PlayerItems::iterator it=m_tracks.begin(); it != m_tracks.end(); it++ ) {
+        for ( PlayerItems::iterator it=m_tracks.begin(); it != m_tracks.end(); ++it ) {
             CString track_name = studio.getMusicPlayer()->getTrackFullName( (*it) );
             addKeyValue( key++, track_name );
         }
@@ -138,7 +138,7 @@ void DMXTextUI::listPlaylists()
     PlayerItems playlists;
     studio.getMusicPlayer()->getPlaylists( playlists );
 
-    for ( PlayerItems::iterator it=playlists.begin(); it != playlists.end(); it++ )
+    for ( PlayerItems::iterator it=playlists.begin(); it != playlists.end(); ++it )
         m_text_io.printf( "   %s\n", studio.getMusicPlayer()->getPlaylistName( (*it) ) );
 }
 
@@ -158,7 +158,7 @@ void DMXTextUI::listTracks()
 
         studio.getMusicPlayer()->getTracks( playlist_field.getPlaylist(), tracks );
 
-        for ( PlayerItems::iterator it=tracks.begin(); it != tracks.end(); it++ ) {
+        for ( PlayerItems::iterator it=tracks.begin(); it != tracks.end(); ++it ) {
             CString track_name = studio.getMusicPlayer()->getTrackFullName( (*it) );
             m_text_io.printf( "%s\n", track_name );
         }
@@ -246,7 +246,7 @@ void DMXTextUI::showQueuedTracks()
     PlayerItems queued_tracks;
     studio.getMusicPlayer()->getQueuedTracks( queued_tracks );
 
-    for ( PlayerItems::iterator it=queued_tracks.begin(); it != queued_tracks.end(); it++ )
+    for ( PlayerItems::iterator it=queued_tracks.begin(); it != queued_tracks.end(); ++it )
         m_text_io.printf( "   %s\n", studio.getMusicPlayer()->getTrackFullName( (*it) ) );
 }
 
@@ -434,7 +434,7 @@ void DMXTextUI::musicMapShow()
 {
     MusicSceneSelectMap& mm = getVenue()->music_scene_select_map();
 
-    for ( MusicSceneSelectMap::iterator it=mm.begin(); it != mm.end(); it++ ) {
+    for ( MusicSceneSelectMap::iterator it=mm.begin(); it != mm.end(); ++it ) {
         CString target( "UNKNOWN" );
 
         if ( it->second.m_selection_type == MST_SCENE ) {

@@ -26,15 +26,16 @@ MA 02111-1307, USA.
 #include "AudioInputStream.h"
 #include "FreqBin.h"
 
+#define BEAT_DETECTOR_MASK_SIZE     (256/(sizeof(DWORD)*8))
+
 struct BeatEvent {
     CEvent*			m_beatEvent;			// Beat event trigger
-    DWORD			m_mask[2];
+    DWORD			m_mask[BEAT_DETECTOR_MASK_SIZE];
 
     BeatEvent( CEvent* eventHandler, DWORD mask[] ) :
                 m_beatEvent( eventHandler ) {
 
-        m_mask[0] = mask[0];
-        m_mask[1] = mask[1];
+        memcpy( m_mask, mask, sizeof(m_mask) );
     }
 };
 
@@ -60,11 +61,20 @@ public:
     BeatDetector( unsigned frequency_bins=1, unsigned sensitivity=30 );
     ~BeatDetector(void);
 
-    void attach( AudioInputStream* stream );
+    void attach( AudioInputStream* stream ) {
+        attach( stream, m_frequency_bins );
+    }
+
+    void attach( AudioInputStream* stream, unsigned frequency_bins );
     void detach();
+
+    inline bool isAttached() const {
+        return m_audio_stream != NULL;
+    }
 
     void addFrequencyEvent( CEvent* beatEvent, unsigned freq_low, unsigned freq_high );
     void removeFrequencyEvent( CEvent* eventHandler );
+    void removeAllFrequencyEvents( );
 
     void addFrequencyEvent( CEvent* beatEvent ) {
         addFrequencyEvent( beatEvent, 0, 22000 );

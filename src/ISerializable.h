@@ -87,7 +87,7 @@ public:
     static void add_pfuids_element( TiXmlElement& element, T &uids  ) {
         TiXmlElement pfuids( "pfuids" );
 
-        for ( T::iterator it=uids.begin(); it != uids.end(); it++ ) {
+        for ( T::iterator it=uids.begin(); it != uids.end(); ++it ) {
             TiXmlElement uidElement( "uid" );
             add_attribute( uidElement, "value", (*it) );
             pfuids.InsertEndChild( uidElement );
@@ -204,21 +204,21 @@ public:
     template <class T>
     static void write_map( TiXmlElement &container, T& list ) {
         for ( T::iterator it=list.begin();
-              it != list.end(); it++ )
+              it != list.end(); ++it )
             it->second.writeXML( container );
     }
 
     template <class T>
     static void write_ptr_array( TiXmlElement &container, T& list ) {
         for ( T::iterator it=list.begin();
-              it != list.end(); it++ )
+              it != list.end(); ++it )
             (*it)->writeXML( container );
     }
 
     template <class T>
     static void write_array( TiXmlElement &container, T& list ) {
         for ( T::iterator it=list.begin();
-              it != list.end(); it++ )
+              it != list.end(); ++it )
             (*it).writeXML( container );
     }
 #endif

@@ -36,9 +36,9 @@ MA 02111-1307, USA.
 CString AbstractAnimation::getSynopsis(void) {
     CString synopsis;
 
-    synopsis.Format( "UIDs( " );
-    for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); it++ )
-        synopsis.AppendFormat( "%lu ", (*it) );
+    synopsis.Format( "Fixtures( " );
+    for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); ++it )
+        synopsis.AppendFormat( "%lu ", studio.getVenue()->getFixture( (*it) )->getNumber() );
     synopsis += ")";
 
     return synopsis;
@@ -54,8 +54,8 @@ UIDArray AbstractAnimation::populateActors( Scene* scene ) {
     }
     else {
         ActorPtrArray actors = scene->getActors();
-        for ( ActorPtrArray::iterator it=actors.begin(); it !=actors.end(); it++ )
-            resolved_actors.push_back( (*it)->getPFUID() );
+        for ( ActorPtrArray::iterator it=actors.begin(); it !=actors.end(); ++it )
+            resolved_actors.push_back( (*it)->getFUID() );
     }
 
     return resolved_actors;

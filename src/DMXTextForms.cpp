@@ -29,7 +29,7 @@ AudioCaptureField::AudioCaptureField( LPCSTR default_value, bool must_match ) :
     SelectionField( "Audio capture device", default_value, must_match )
 {
     for ( AudioCaptureDeviceArray::iterator it=AudioInputStream::audioCaptureDevices.begin();
-            it != AudioInputStream::audioCaptureDevices.end(); it++ ) {
+            it != AudioInputStream::audioCaptureDevices.end(); ++it ) {
         m_selections.push_back( (*it).m_friendly_name );
     }
 }
@@ -44,7 +44,7 @@ ChaseSelectField::ChaseSelectField( LPCSTR label, Venue* venue, ChaseNumber defa
         default_chase = venue->getChase( venue->getRunningChase() )->getChaseNumber();
 
     ChasePtrArray list = m_venue->getChases();
-    for ( ChasePtrArray::iterator it=list.begin(); it != list.end(); it++ )
+    for ( ChasePtrArray::iterator it=list.begin(); it != list.end(); ++it )
         addKeyValue( (*it)->getChaseNumber(), (*it)->getName() );
 
     if ( default_chase == 0 && list.size() > 0 )
@@ -68,7 +68,7 @@ SceneSelectField::SceneSelectField( LPCSTR label, Venue* venue, SceneNumber defa
     if ( !m_include_default && default_scene == DEFAULT_SCENE_NUMBER )
         default_scene = 0;
 
-    for ( ScenePtrArray::iterator it=scenes.begin(); it != scenes.end(); it++ ) {
+    for ( ScenePtrArray::iterator it=scenes.begin(); it != scenes.end(); ++it ) {
         Scene* scene = (*it);
         if ( m_include_default || scene->getSceneNumber() != DEFAULT_SCENE_NUMBER ) {
             addKeyValue( scene->getSceneNumber(), scene->getName() );
@@ -88,7 +88,7 @@ FixtureSelectField::FixtureSelectField( LPCSTR field_label, Venue* venue, bool i
     m_include_groups( include_groups )
 {
     FixturePtrArray fixtures = m_venue->getFixtures();
-    for ( FixturePtrArray::iterator it=fixtures.begin() ; it != fixtures.end(); it++ ) {
+    for ( FixturePtrArray::iterator it=fixtures.begin() ; it != fixtures.end(); ++it ) {
         Fixture* pf = (*it);
         CString key;
         key.Format( "%lu", pf->getFixtureNumber() );
@@ -102,7 +102,7 @@ FixtureSelectField::FixtureSelectField( LPCSTR field_label, Venue* venue, bool i
         
     if ( m_include_groups ) {
         m_fixture_groups = m_venue->getFixtureGroups();
-        for ( FixtureGroupPtrArray:: iterator it=m_fixture_groups.begin(); it != m_fixture_groups.end(); it++ ) {
+        for ( FixtureGroupPtrArray:: iterator it=m_fixture_groups.begin(); it != m_fixture_groups.end(); ++it ) {
             CString key;
             key.Format( "G%u", (*it)->getGroupNumber() );
             CString label;
@@ -123,7 +123,7 @@ void FixtureSelectField::getFixtures( FixturePtrArray& targets ) {
         STUDIO_ASSERT( group, "Fixture group %u disappeared", group_number );
 
         UIDSet list = group->getFixtures();
-        for ( UIDSet::iterator it=list.begin(); it != list.end(); it++ ) {
+        for ( UIDSet::iterator it=list.begin(); it != list.end(); ++it ) {
             Fixture* pf = m_venue->getFixture( *it );
             targets.push_back( pf );
         }
@@ -146,7 +146,7 @@ ChannelControllerField::ChannelControllerField( Venue* venue, FixturePtrArray* f
 {
     BYTE value = 0;
 
-    for ( FixturePtrArray::iterator it=m_fixtures->begin(); it != m_fixtures->end(); it++ ) {
+    for ( FixturePtrArray::iterator it=m_fixtures->begin(); it != m_fixtures->end(); ++it ) {
         Fixture* pf = (*it);
 
         if ( pf->getNumChannels() > m_channel )
@@ -172,10 +172,10 @@ bool ChannelControllerField::setValue( LPCSTR value ) {
 // Set channel value on all fixtures
 //
 void ChannelControllerField::setFixtureValues( BYTE chnl_value ) {
-    for ( FixturePtrArray::iterator it=m_fixtures->begin(); it != m_fixtures->end(); it++ ) {
+    for ( FixturePtrArray::iterator it=m_fixtures->begin(); it != m_fixtures->end(); ++it ) {
         Fixture * pf = (*it);
         if ( pf->getNumChannels() > m_channel )
-            m_venue->setChannelValue( pf, m_channel, chnl_value );
+            m_venue->captureAndSetChannelValue( pf, m_channel, chnl_value );
     }
 }
 
@@ -187,7 +187,7 @@ LPCSTR ChannelControllerField::getLabel() {
     CString range;
 
     // Figure out which channel text to show
-    for ( FixturePtrArray::iterator it=m_fixtures->begin(); it != m_fixtures->end(); it++ ) {
+    for ( FixturePtrArray::iterator it=m_fixtures->begin(); it != m_fixtures->end(); ++it ) {
         Fixture * pf = (*it);
 
         if ( pf->getNumChannels() > m_channel ) {
@@ -220,7 +220,7 @@ LPCSTR ChannelControllerField::getLabel() {
 // ----------------------------------------------------------------------------
 //
 void ChannelControllerField::getLabelValue( CString& labelValue ) {
-    for ( FixturePtrArray::iterator it=m_fixtures->begin(); it != m_fixtures->end(); it++ ) {
+    for ( FixturePtrArray::iterator it=m_fixtures->begin(); it != m_fixtures->end(); ++it ) {
         Fixture * pf = (*it);
         if ( pf->getNumChannels() > m_channel ) {
             Channel* ch = pf->getChannel(m_channel);
@@ -407,7 +407,7 @@ bool SceneFixtureSelectField::selectScene( UID scene_uid, UID default_fixture )
     FixtureNumber default_fixture_number = 0;
 
     for ( unsigned index=0; index < actors.size(); index++ ) {
-        Fixture* pf = m_venue->getFixture( actors[index]->getPFUID() );
+        Fixture* pf = m_venue->getFixture( actors[index]->getFUID() );
 
         CString label;
         label.Format( "%s @ %d", pf->getFullName(), pf->getAddress() );
@@ -421,7 +421,7 @@ bool SceneFixtureSelectField::selectScene( UID scene_uid, UID default_fixture )
     if ( default_fixture_number != 0 )
         setDefaultListValue( default_fixture_number );
     else if ( actors.size() > 0 )
-        setDefaultListValue( actors[0]->getPFUID() );
+        setDefaultListValue( actors[0]->getFUID() );
 
     return true;
 }
@@ -469,7 +469,7 @@ FixtureSelect::FixtureSelect( LPCSTR field_label, Venue* venue, UIDArray& fixtur
     std::set<UID> uids;
     CString default_value;
 
-    for ( UIDArray::iterator it=fixture_uids.begin(); it != fixture_uids.end(); it++ ) {
+    for ( UIDArray::iterator it=fixture_uids.begin(); it != fixture_uids.end(); ++it ) {
         Fixture* pf = m_venue->getFixture((*it) );
         CString label;
         label.Format( "%s @ %d", pf->getFullName(), pf->getAddress() );
@@ -483,7 +483,7 @@ FixtureSelect::FixtureSelect( LPCSTR field_label, Venue* venue, UIDArray& fixtur
     FixtureGroupPtrArray fixture_groups = m_venue->getFixtureGroups();
     UINT index = 1;
 
-    for ( FixtureGroupPtrArray::iterator it=fixture_groups.begin(); it != fixture_groups.end(); it++ ) {
+    for ( FixtureGroupPtrArray::iterator it=fixture_groups.begin(); it != fixture_groups.end(); ++it ) {
         UIDSet list = (*it)->getFixtures();
         bool missing = false;
         for ( UIDSet::iterator it2=list.begin(); it2 != list.end(); it2++ ) {
@@ -500,7 +500,7 @@ FixtureSelect::FixtureSelect( LPCSTR field_label, Venue* venue, UIDArray& fixtur
 
     CString values;
 
-    for ( UIDArray::iterator it=m_selected_uids.begin(); it != m_selected_uids.end(); it++ ) {
+    for ( UIDArray::iterator it=m_selected_uids.begin(); it != m_selected_uids.end(); ++it ) {
         if ( uids.find( (*it) ) != uids.end() ) {
             if ( values.GetLength() != 0 )
                 values += ",";
@@ -537,7 +537,7 @@ bool FixtureSelect::setValue( LPCSTR value ) {
             // Make sure this group is represented
 
             bool found = false;
-            for ( FixtureGroupPtrArray::iterator it=m_fixture_groups.begin(); it != m_fixture_groups.end(); it++ ) {
+            for ( FixtureGroupPtrArray::iterator it=m_fixture_groups.begin(); it != m_fixture_groups.end(); ++it ) {
                 if ( group->getUID() == (*it)->getUID() ) {
                     found = true;
                     break;
@@ -548,7 +548,7 @@ bool FixtureSelect::setValue( LPCSTR value ) {
                 throw FieldException( "Invalid group number G%u", group_number );
 
             UIDSet list = group->getFixtures();
-            for ( UIDSet::iterator it=list.begin(); it != list.end(); it++ )
+            for ( UIDSet::iterator it=list.begin(); it != list.end(); ++it )
                 uids.push_back( *it );
         }
         else {	
@@ -591,7 +591,7 @@ ChannelValueListField::ChannelValueListField( LPCSTR label, ChannelValueArray ch
 
     CString values;
 
-    for ( ChannelValueArray::iterator it=m_channel_values.begin(); it != m_channel_values.end(); it++ ) {
+    for ( ChannelValueArray::iterator it=m_channel_values.begin(); it != m_channel_values.end(); ++it ) {
         if ( values.GetLength() != 0 )
             values += ",";
         values.AppendFormat( "%d", (*it) );
@@ -635,7 +635,7 @@ CoordinatesField::CoordinatesField( LPCSTR label, CoordinateArray coordinates ) 
 {
     CString values;
 
-    for ( CoordinateArray::iterator it=m_coordinates.begin(); it != m_coordinates.end(); it++ ) {
+    for ( CoordinateArray::iterator it=m_coordinates.begin(); it != m_coordinates.end(); ++it ) {
         if ( values.GetLength() != 0 )
             values += ";";
         values.AppendFormat( "%u,%u", (*it).m_pan, (*it).m_tilt );

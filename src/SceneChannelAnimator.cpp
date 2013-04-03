@@ -73,6 +73,7 @@ SceneChannelAnimator::SceneChannelAnimator( UID animation_uid,
     m_signal_processor( NULL ),
     m_run_once( false )
 {
+    setupActors();
 }
 
 // ----------------------------------------------------------------------------
@@ -83,6 +84,20 @@ SceneChannelAnimator::SceneChannelAnimator( UID animation_uid,
     m_signal_processor( NULL ),
     m_run_once( false )
 {
+    setupActors();
+}
+
+// ----------------------------------------------------------------------------
+//
+void SceneChannelAnimator::setupActors() {
+    // This is for "cosmetics" in UIs to list the fixtures referenceed by this animation (SHOULD NOT AFFECT SUBCLASSES)
+    if ( m_actors.size() == 0 ) {
+        for ( ChannelAnimationArray::iterator it=m_channel_animations.begin();
+              it != m_channel_animations.end(); ++it ) {
+            if ( std::find( m_actors.begin(), m_actors.end(), (*it).getActor() ) == m_actors.end() )
+                m_actors.push_back( (*it).getActor() );
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -100,7 +115,7 @@ CString SceneChannelAnimator::getSynopsis(void) {
     synopsis.Format( "Channels( " );
 
     for ( ChannelAnimationArray::iterator it=m_channel_animations.begin(); 
-            it != m_channel_animations.end(); it++ )
+            it != m_channel_animations.end(); ++it )
         synopsis.AppendFormat( "\n%s", (*it).getSynopsis() );
 
     synopsis += ")";
@@ -146,7 +161,7 @@ void SceneChannelAnimator::initAnimation( AnimationTask* task, DWORD time_ms, BY
 
     // Setup channel states
     for ( ChannelAnimationArray::iterator it=m_channel_animations.begin();
-          it != m_channel_animations.end(); it++ ) {
+          it != m_channel_animations.end(); ++it ) {
 
         Fixture* pf = m_animation_task->getFixture( (*it).getActor() );
         STUDIO_ASSERT( pf != NULL, "Invalid actor UID in animation" );
@@ -191,7 +206,7 @@ bool SceneChannelAnimator::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
     memset( m_decay_channel, 0, sizeof(m_decay_channel) );
 
     for ( ChannelStateArray::iterator it=m_channel_state.begin();
-          it != m_channel_state.end(); it++ ) {
+          it != m_channel_state.end(); ++it ) {
 
         ChannelState& state = (*it);
         BYTE value = 0;
@@ -268,7 +283,7 @@ CString ChannelAnimation::getSynopsis(void) {
 
     if ( m_value_list.size() > 0 ) {
         for ( ChannelValueArray::iterator it=m_value_list.begin(); 
-                it != m_value_list.end(); it++ ) {
+                it != m_value_list.end(); ++it ) {
             if ( it != m_value_list.begin() )
                 synopsis.Append( "," );
             synopsis.AppendFormat( "%u", (unsigned)(*it) );

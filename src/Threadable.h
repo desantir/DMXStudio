@@ -45,7 +45,7 @@ public:
     bool startThread();
     bool stopThread();
 
-    inline bool isRunning() { 
+    inline bool isRunning() const { 
         return m_running;
     }
 

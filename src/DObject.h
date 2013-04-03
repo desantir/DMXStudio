@@ -37,15 +37,12 @@ class DObject
     friend class VenueReader;
 
 protected:
-    UID				m_uid;
+    UID				m_uid;                          // The UID is guarenteed to be unique _across_ all objects
     ULONG			m_number;						// User selected friendly number
     CString		    m_name;
     CString		    m_description;
     bool            m_private;                      // Object visibility suggestion (optional)
 
-    virtual inline ULONG getNumber( void ) const {
-        return m_number;
-    }
     virtual inline void setNumber( ULONG number ) {
         m_number = number;
     }
@@ -82,6 +79,10 @@ public:
     }
     virtual void setUID( UID uid ) {
         m_uid = uid;
+    }
+
+    virtual inline ULONG getNumber( void ) const {
+        return m_number;
     }
 
     virtual const char *getName() const {

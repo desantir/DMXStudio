@@ -31,15 +31,15 @@ class SceneActor
     friend class VenueWriter;
     friend class VenueReader;
 
-    UID				m_pfuid;									// Physical fixture UID
-    size_t			m_channels;
+    UID			m_pfuid;									// Physical fixture UID
+    size_t      m_channels;
 
     // m_channel_values always contains unmapped fixture channel values. For
     // example, if a fixture maps channel 3 to channel 0, the value for physical
     // channel 3 will be stored in m_channel_values[0].  The value will be 
     // remapped from channel 0 to 3 when added to the DMX packet.
 
-    BYTE			m_channel_values[DMX_PACKET_SIZE];			// Not worth a container for this
+    BYTE		m_channel_values[DMX_PACKET_SIZE];			// Not worth a container for this
 
 public:
     SceneActor(void) :
@@ -57,18 +57,23 @@ public:
         visitor->visit(this);
     }
 
-    UID getPFUID() const {
+    inline UID getFUID() const {
         return m_pfuid;
     }
 
-    BYTE getChannelValue( channel_t channel ) {
+    inline BYTE getChannelValue( channel_t channel ) const {
         STUDIO_ASSERT( channel < m_channels, "Channel out of range" );
         return m_channel_values[ channel ];
     }
 
-    void setChannelValue( channel_t channel, BYTE value ) {
+    inline void setChannelValue( channel_t channel, BYTE value ) {
         STUDIO_ASSERT( channel < m_channels, "Channel out of range" );
         m_channel_values[ channel ] = value;
+    }
+
+    inline size_t getChannelValues( BYTE * destination ) const {
+        memcpy( destination, m_channel_values, m_channels );
+        return m_channels;
     }
 };
 

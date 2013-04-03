@@ -20,7 +20,6 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "DMXStudio.h"
 #include "FixtureDefinition.h"
 #include "DefinitionReader.h"
@@ -50,6 +49,7 @@ static int populateFixtureTypes() {
     fixtureTypeToNameMap[FIXT_DIMMER] = "Dimmer";
     fixtureTypeToNameMap[FIXT_DOTS] = "Dots";
     fixtureTypeToNameMap[FIXT_H2O] = "H2O";
+    fixtureTypeToNameMap[FIXT_SCANNER] = "Scanner";
 
     return 0;
 }
@@ -82,7 +82,7 @@ void FixtureDefinition::chooseCapabilities()
     // Set fixture capabilities (we do this once since definitions are immutable)
     bool red=false, blue=false, green=false, white=false, dimmer=false;
 
-    for ( ChannelArray::iterator it=m_channels.begin(); it != m_channels.end(); it++ ) {
+    for ( ChannelArray::iterator it=m_channels.begin(); it != m_channels.end(); ++it ) {
         Channel& channel = *it;
 
         if ( channel.isDimmer() )
@@ -105,6 +105,7 @@ void FixtureDefinition::chooseCapabilities()
             m_can_whiteout = (dimmer == true);
             break;
 
+        case FIXT_SCANNER:
         case FIXT_PAR:
         case FIXT_SPOT:
         case FIXT_WASH:
@@ -149,13 +150,11 @@ FixtureType FixtureDefinition::convertTextToFixtureType( LPCSTR text_type )
 
 // ----------------------------------------------------------------------------
 //
-CString FixtureDefinition::convertFixtureTypeToText( FixtureType type )
+LPCSTR FixtureDefinition::convertFixtureTypeToText( FixtureType type )
 {
     FixtureTypeToNameMap::iterator it=fixtureTypeToNameMap.find( type );
     STUDIO_ASSERT( it != fixtureTypeToNameMap.end(), "Unknown fixture type %d", type );
-    CString result = it->second;
-    result.MakeLower();
-    return result; 
+    return it->second;
 }
 
 // ----------------------------------------------------------------------------
@@ -209,7 +208,7 @@ LPCSTRArray FixtureDefinition::getUniqueManufacturers()
     FixtureDefinitionHierarchy::iterator it = FixtureDefinition::FixtureDefinitionHierarchy.begin();
 
     LPCSTRArray manufactures;
-    for ( ; it != FixtureDefinition::FixtureDefinitionHierarchy.end(); it++ )
+    for ( ; it != FixtureDefinition::FixtureDefinitionHierarchy.end(); ++it )
         manufactures.push_back( it->first );
     return manufactures;
 }

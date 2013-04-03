@@ -83,6 +83,10 @@ public:
     DWORD getAnimationSampleRate();
     void setAnimationSampleSampleRate( DWORD sample_rate_ms );
 
+    inline void updateChannels() {
+        m_load_channels = true;
+    }
+
 protected:
     UINT run(void);
 };

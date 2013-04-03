@@ -1,0 +1,1166 @@
+<!DOCTYPE html> 
+
+<!--
+Copyright (C) 2011,2013 Robert DeSantis
+hopluvr at gmail dot com
+
+This file is part of DMX Studio.
+ 
+DMX Studio is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
+ 
+DMX Studio is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+License for more details.
+ 
+You should have received a copy of the GNU General Public License
+along with DMX Studio; see the file _COPYING.txt.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+MA 02111-1307, USA.
+-->
+
+<html> 
+
+<head> 
+    <title>DMXStudio</title> 
+    <meta name="viewport" content="width=device-width, initial-scale=1"> 
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <link rel="stylesheet" href="css/dark-hive/jquery-ui-1.9.2.custom.css" />
+    <script src="js/jquery-1.8.3.js"></script>
+    <script src="js/jquery-ui-1.9.2.custom.js"></script>
+    <script src="flot/jquery.flot.js"></script>
+    <script src="flot/jquery.flot.fillbetween.js"></script>
+    <link rel="stylesheet" href="jquery.multiselect.css" />
+    <script src="jquery.multiselect.js"></script>
+    <link rel="stylesheet" media="screen" type="text/css" href="colorpicker/css/colorpicker.css" />
+    <script type="text/javascript" src="colorpicker/js/colorpicker.js"></script>
+    <script src="jquery.container.js"></script>
+
+    <script src="slider-panel.js"></script>
+    <script src="tile-scroll-panel.js"></script>
+    <script src="full.js"></script>
+    <script src="fixture.js"></script>
+    <script src="chase.js"></script>
+    <script src="scene.js"></script>
+    <script src="animation.js"></script>
+    <script src="beatviz.js"></script>
+    <script src="freqviz.js"></script>
+
+    <style>
+        .scroll-pane { overflow: auto; width: 99%; /* float:left; Causes _odd_ issues with layout */ }
+        .scroll-content { clear:both; width: 100%; float: left; }
+        .scroll-content-item { width: 92px; height: 92px; float: left; margin: 8px 2px 10px 2px; font-family: sans-serif; text-align: left; }
+        .scroll-content-header { margin: 1px 1px 2px 2px; border-bottom: 1px solid white; font-size: 16pt; font-weight: normal; }        
+        .scroll-content-interior { margin: 1px 2px 1px 2px; font-size: 8pt; font-weight:normal; padding: 0px; overflow: hidden; height: 60px; }
+                
+        .scroll-bar-wrap { clear: left; padding: 0 4px 0 2px; margin: 0 -1px -1px -1px; }
+        .scroll-bar-wrap .ui-slider { background: none; border:0;  margin: 0 auto;  }
+        .scroll-bar-wrap .ui-handle-helper-parent { position: relative; width: 100%; height: 100%; margin: 0 auto; }
+        .scroll-bar-wrap .ui-slider-handle { }
+        .scroll-bar-wrap .ui-slider-handle .ui-icon { margin: -8px auto 0; position: relative; top: 50%; }
+
+        .section_title_container { height: 16px; }
+        .section_title { font-weight: bold; color:#808080; font-style:italic; font-size: 10pt; float:left; }
+        .section_button { float:right; margin: 2px 8px 0px 0px; font-family: sans-serif; font-size:6pt; 
+                          color: #808080; padding:1px; cursor: pointer; -moz-user-select: none;-webkit-user-select: none; }
+        .section_button_color { border: 1px solid #808080; color: #808080; }
+        .section_button_color:hover { border: 1px solid white; color: white;  }
+
+        .fieldset_title { font-weight: bold; color:#808080; }
+
+        .animation_fieldset { font-family: sans-serif; font-weight: normal; color:white; }
+        .animation_description { font-family: sans-serif; font-size: 12pt; color:  #0972a5; margin-bottom: 8px;}
+         
+        .ui-spinner-input { color: white; }
+        
+        .active_scroll_item {  border: 1px solid #0972a5;  background: #444444 url(css/dark-hive/images/ui-bg_loop_25_000000_21x21.png); }
+        .icon_container { float:right; border: 0px; margin: 0px; }
+        
+        .ui-icon-white { width: 16px; height: 16px; background-image: url(css/dark-hive/images/ui-icons_ffffff_256x240.png); }
+        .ui-icon-active { width: 16px; height: 16px; background-image: url(css/dark-hive/images/ui-icons_222222_256x240.png); }
+        .ui-icon-widget-content { width: 16px; height: 16px; background-image: url(css/dark-hive/images/ui-icons_cccccc_256x240.png); }   
+        .ui-icon-red { width: 16px; height: 16px; background-image: url(css/dark-hive/images/ui-icons_a83300_256x240.png); }        
+        .ui-icon-green { width: 16px; height: 16px; background-image: url(css/dark-hive/images/ui-icons_4b8e0b_256x240.png); }        
+           
+        .lg-icon-grey { width: 32px; height: 32px; background-image: url(large-icons.png);}
+        .lg-icon-white { width: 32px; height: 32px; background-image: url(large-icons-white.png); }
+        .lg-icon-disabled { width: 32px; height: 32px; background-image: url(large-icons-disabled.png); }
+        .lg-icon-blue { width: 32px; height: 32px; background-image: url(large-icons-blue.png); }
+
+        .lg-icon-sparkle { background-position: 0px 0px; }
+        .lg-icon-gear { background-position: -32px 0px; }
+        .lg-icon-chart { background-position: -64px 0px;}    
+        .lg-icon-pencil { background-position: -96px 0px;}         
+        .lg-icon-folder { background-position: -128px 0px; }
+        .lg-icon-antenna { background-position: -192px 0px; }
+        .lg-icon-plus { background-position: -256px 0px; }
+        .lg-icon-speaker { background-position: -320px 0px; }
+        .lg-icon-tag { background-position: -384px 0px; }
+        .lg-icon-mic { background-position: -512px 0px; }
+        .lg-icon-track-back { background-position: -544px 0px; }
+        .lg-icon-track-forward { background-position: -576px 0px; }
+        .lg-icon-track-stop { background-position: -608px 0px; }
+        .lg-icon-track-pause { background-position: -640px 0px; }
+        .lg-icon-track-play { background-position: -672px 0px; }
+        .lg-icon-trash { background-position: -704px 0px; }
+
+        .menu_icon { margin: 2px 4px 0px 4px; cursor:pointer;} 
+         
+        .slider_container { float:left; width: 42px; margin: 10px 0px 10px 4px; }
+
+        .slider_header { height: 18px; width: 100%; color: #808080; font-family: sans-serif; overflow:hidden; font-size: 10pt; 
+                         text-align:center; white-space:nowrap; border-bottom: 1px solid #808080; } 
+        .slider_footer { height: 18px; width: 100%; color: #808080; font-family: sans-serif; overflow: hidden; font-size: 10pt; 
+                         text-align:center; white-space:nowrap; margin-left: 3px;} 
+           
+        .slider_slider { height:180px; margin:15px 8px 15px 4px; width: 14px; float:right; }
+        
+        .slider_sidecar { position: absolute; top: -15px; left: 0px; width: 300px; height: 12px; background: rgba(0,0,0,0);
+                           color: white; font-family: sans-serif; font-size: 8pt; overflow: no-display;
+                           z-index: 100; }        
+    
+        .slider_side_text { display:block; font-size: 10pt; width:8px; white-space:nowrap; font-family: sans-serif; overflow: visible; 
+                               position:relative; top: 185px; left: -3px; color: #808080;
+                               transform:rotate(-90deg); -moz-transform:rotate(-90deg);-o-transform:rotate(-90deg); 
+                               -webkit-transform:rotate(-90deg); -ms-transform:rotate(-90deg); -webkit-transform-origin: 0 0; 
+                               -moz-transform-origin: 0 0; -ms-transform-origin: 0 0; -o-transform-origin: 0 0; float: left; }    
+
+        .animation_button { width:610px; height: 70px; text-align:left; margin-bottom: 6px; padding: 6px; font-family: sans-serif; }
+        .animation_button_title { clear:both; float:left; color:white; font-size:14pt; }
+        .animation_button_fixtures { float:right; color:white; font-size:10pt; }    
+        .animation_button_signal { clear:both; float:left; color:#2e7db2; font-size:10pt; }
+
+        .describe_number { float:left; font-family:sans-serif; font-weight:normal; font-size: 80pt; margin: 0px 4px 4px 0px; }
+        .describe_title { color: #2e7db2; width:150px; text-align:right; float:left;  clear:both; margin-right: 6px; }
+        .describe_data { color:white; text-align:left; float:left; }
+        .describe_fixture_range { color:#2e7db2; clear:both; float:left;margin:6px 6px 6px 30px; display: none; font-size:8pt;}         
+        .describe_fixture_channels { margin:0px; overflow-y:auto; overflow-x:hidden; height:280px; font-size: smaller; }
+        .describe_chase_step { color:#2e7db2; } 
+        .describe_scene_channels { color:#2e7db2; clear:both; float:left; margin:6px 6px 0px 30px; font-size:8pt;}             
+        .describe_scene_dmx { color:#2e7db2; font-size:8pt; margin-left:4px; } 
+         
+        .dialog_note_text { color:#2e7db2; font-size:8pt; margin-left:4px; } 
+                  
+        .dmx_tile {  float:left; border: white solid 1px;height:15px;width:38px; padding: 1px;
+                    font-size: 8pt; font-family: sans-serif; text-align:center;}
+        .dmx_tile_unused { }
+        .dmx_tile_used { background-color: #993300; }
+        .dmx_tile_locked { cursor:no-drop;}
+        .dmx_tile_unlocked { cursor:pointer; }
+        .dmx_tile_unlocked:hover {  background-color: #2e7db2; }
+
+        .sortable_fixtures { list-style-type: none; margin: 0; padding: 0; width: 100%; }
+        .sortable_fixture { margin: 0 4px 5px 0px; padding: 5px; font-family: sans-serif; font-weight: bold; font-size: 10pt; 
+                            height:16px; width: 30px; border-radius: 6pt 6pt; float: left; text-align: center;}
+
+        .delete_item { cursor: pointer; }
+        .edit_item { cursor: pointer; }
+        .play_item { cursor: pointer; }
+        .describe_item { cursor: pointer; }        
+        .new_item { cursor: pointer; }
+
+        .collapsable_section { }
+        .collapsable_icon { cursor:pointer; float: left; }
+        .collapsable_content { }
+        .scroll_or_grid_icon { cursor:pointer; float: right; }
+
+        .track_slider_icon { float:right; cursor:pointer; }
+
+    </style>
+
+    <script>
+        $(function () {
+            initializeUI(); // Get it started
+        });
+    </script>
+</head> 
+
+<body style="background-color:black;">
+
+<div class="ui-state-default ui-corner-all collapsable_section" style="padding: 4px; margin-top: 0px; width: 99%; background-position: 0 24px;">
+    <div class="section_title_container">
+        <span class="section_title">VENUE</span>
+        <span class="collapsable_icon"></span>
+        <span id="system_status_icon" class="ui-icon-red ui-icon-bullet" title="status:" style="float:right;"></span>
+        <span id="system_blackout_icon" class="ui-icon-red ui-icon-lightbulb" title="auto blackout" style="float:right; display: none; margin-right: 5px;"></span>
+    </div>
+    <div class="collapsable_content" style="margin-top: 8px; margin-bottom: 10px; height: 80px;">
+        <div style="width: 240px; margin: 4px 30px 4px 10px; float:left; display:inline;">
+            <p class="ui-state-default ui-corner-all" style="padding: 4px; margin: 0px;" >Master Dimmer <span id="master_dimmer_value"></span></p>
+            <div id="master_dimmer" style="width: 220px; margin: 14px 4px 8px 4px; "></div>
+        </div>
+        <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
+            <p class="ui-state-default ui-corner-all" style="padding: 4px; margin: 0px; width:100%;" >Blackout</p>
+            <fieldset data-role="controlgroup" id="blackout_buttons" data-type="horizontal" style="border: 0px; margin: 2px 0px 0px 0px; padding: 0px;">
+                <legend></legend>
+                <div>
+                    <input type="radio" id="blackout_0" name="blackout" value="0" checked="checked" /><label for="blackout_0">Off</label>
+                    <input type="radio" id="blackout_1" name="blackout" value="1" /><label for="blackout_1">On</label>
+                </div>
+            </fieldset>
+        </div>
+        <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
+            <p class="ui-state-default ui-corner-all" style="padding: 4px; margin: 0px;" >Whiteout</p>
+            <fieldset data-role="controlgroup" id="whiteout_buttons" data-type="horizontal" style="border: 0px; margin: 2px 0px 0px 0px; padding: 0px;">
+                <legend></legend>
+                <div>
+                    <input type="radio" id="whiteout_0" name="whiteout" value="0" checked="checked" /><label for="whiteout_0">Off</label>
+                    <input type="radio" id="whiteout_1" name="whiteout" value="1" /><label for="whiteout_1">Slow</label>
+                    <input type="radio" id="whiteout_2" name="whiteout" value="2" /><label for="whiteout_2">Fast</label>
+                    <input type="radio" id="whiteout_4" name="whiteout" value="4" /><label for="whiteout_4">On</label>
+                    <input type="radio" id="whiteout_3" name="whiteout" value="3" /><label for="whiteout_3">Custom:</label>&nbsp;&nbsp;&nbsp;
+                    <select id="whiteout_custom_value" style="width:80px;"></select>
+                </div>
+            </fieldset>
+        </div>
+        <div style="float:left; display:inline;">
+            <span id="debugoutput" style="color:black;height:20px;"></span>
+        </div>
+        <div style="float:right; display:inline;">
+            <div id="save_load_venue" class="lg-icon-grey lg-icon-folder menu_icon" title="load / save venue" style="float:right;width:32px;"></div>
+            <div id="configure_venue" class="lg-icon-grey lg-icon-gear menu_icon" title="venue configuration" style="float:right;"></div>
+            <div id="toggle_edit_mode" class="lg-icon-grey lg-icon-pencil menu_icon" title="edit" style="float:right;"></div>
+        </div>
+    </div>
+</div>
+
+<div id="music_pane" class="ui-state-default ui-corner-all collapsable_section" style="padding: 4px; margin-top: 2px; width: 99%; background-position: 0 24px;">
+    <div class="section_title_container">
+        <span class="section_title">SOUND</span>
+        <span class="collapsable_icon"></span>
+    </div>
+    <div class="collapsable_content" style="margin-top: 8px; margin-bottom: 10px; height: 65px; ">
+        <div style="width: 230px; margin: 8px 4px 4px 8px;  float:left; display:inline;">
+            <p class="ui-state-default ui-corner-all" style="padding: 4px; margin: 0px;" >
+                <span id="volume_mute" class="ui-icon ui-icon-volume-on" style="float: left; margin: -1px 5px 0 0;" title="mute"></span>
+                Master Volume <span id="master_volume_value"></span>
+            </p>
+            <div id="master_volume" style="width: 220px; margin: 10px 8px 8px 8px;"></div>
+        </div>
+        <div style="width: 240px; margin: 18px 4px 4px 30px; float:left; display:inline;">
+            <!-- p class="ui-state-default ui-corner-all" style="padding: 4px; margin: 0px;" >UNDER CONSTRUCTION</!-->
+            <div id="track_back" class="lg-icon-disabled lg-icon-track-back menu_icon" title="track back" style="float:left; margin-right: 14px;"></div>
+            <div id="track_stop" class="lg-icon-disabled lg-icon-track-stop menu_icon" title="track stop" style="float:left; margin-right: 14px;"></div>
+            <div id="track_play" class="lg-icon-disabled lg-icon-track-play menu_icon" title="track play" style="float:left; margin-right: 14px;"></div>
+            <div id="track_pause" class="lg-icon-disabled lg-icon-track-pause menu_icon" title="track pause" style="float:left; margin-right: 14px;"></div>
+            <div id="track_forward" class="lg-icon-disabled lg-icon-track-forward menu_icon" title="track forward" style="float:left;"></div>
+        </div>
+        <div style="float:right; display:inline;">
+            <div id="show_frequency_visualizer" class="lg-icon-grey lg-icon-chart menu_icon" title="frequency visualizer"></div>
+        </div>
+        <div style="float:right; display:inline;">
+            <div id="show_beat_visualizer" class="lg-icon-grey lg-icon-speaker menu_icon" title="beat visualizer"></div>
+        </div>
+    </div>
+</div>
+
+<div id="scene_tiles_pane" class="scroll-pane ui-state-default ui-corner-all collapsable_section" style="padding: 4px; margin-top: 2px; background-position: 0 24px;">
+    <div class="section_title_container">
+        <span class="section_title">SCENES</span>
+        <span class="collapsable_icon"></span>
+        <span class="scroll_or_grid_icon" style="margin-right: 5px;"></span>
+        <span class="ui-icon ui-icon-plusthick new_item" title="new scene" style="float:right; display: none; margin-right: 5px;" onclick="createScene(event);"></span>
+    </div>
+    <div class="collapsable_content">
+        <div class="scroll-content"></div>    
+        <div class="scroll-bar-wrap ui-widget-content ui-corner-bottom">
+            <div id="scene_tiles_scrollbar" class="scroll-bar"></div>
+        </div>
+    </div>
+</div>
+
+<div id="chase_tiles_pane" class="scroll-pane ui-state-default ui-corner-all collapsable_section" style="padding: 4px; margin-top: 2px; background-position: 0 24px;">
+    <div class="section_title_container">
+        <span class="section_title">CHASES</span>
+        <span class="collapsable_icon"></span>
+        <span class="scroll_or_grid_icon" style="margin-right: 5px;"></span>
+        <span class="ui-icon ui-icon-plusthick new_item" title="new chase" style="float:right; display: none; margin-right: 5px;" onclick="createChase(event);"></span>
+    </div>
+    <div class="collapsable_content">
+        <div class="scroll-content"></div>    
+        <div class="scroll-bar-wrap ui-widget-content ui-corner-bottom">
+            <div id="chase_tiles_scrollbar" class="scroll-bar"></div>
+        </div>
+    </div>
+</div>
+
+<div id="fixture_tiles_pane" class="scroll-pane ui-state-default ui-corner-all collapsable_section" style="padding: 4px; margin-top: 2px; background-position: 0 24px;">
+    <div class="section_title_container">
+        <span class="section_title" >GROUPS & FIXTURES</span>
+        <span class="collapsable_icon"></span>
+        <span class="scroll_or_grid_icon"></span>
+        <span class="ui-icon ui-icon-plusthick new_item" title="new fixture" style="float:right; display: none; margin-right: 5px; " onclick="createFixture(event);"></span>
+        <span class="ui-icon ui-icon-plusthick new_item" title="new fixture group" style="float:right; display: none; margin: 0px 5px 0px 0px; border: 1px solid #808080" onclick="createFixtureGroup(event);"></span>
+        <span id="copy_fixtures_button" class="ui-icon ui-icon-clipboard new_item" title="copy fixtures to scene" style="float:right; display: none; margin-right: 5px; "onclick="copyFixtures(event);"></span>
+        <span id="clear_fixtures_button"class="ui-icon ui-icon-minus play_item" title="clear all fixtures" style="float:right; margin-right: 5px;" onclick="clearFixtures(event);" ></span>
+    </div>
+    <div class="collapsable_content">
+        <div class="scroll-content"></div>    
+        <div class="scroll-bar-wrap ui-widget-content ui-corner-bottom">
+            <div id="fixture_tiles_scrollbar" class="scroll-bar"></div>
+        </div>
+    </div>
+</div>
+
+<div id="slider_pane" class="scroll-pane ui-state-default ui-corner-all collapsable_section" style="padding: 4px; margin-top: 2px; width: 99%; background: #444444 url();">
+    <div class="section_title_container">
+        <span class="section_title" >CHANNELS</span>
+        <span class="collapsable_icon"></span>
+        <span class="scroll_or_grid_icon"></span>
+        <span class="track_slider_icon" style="margin-right: 5px;"></span>
+        <span id="channel_panel_colorpicker" class="ui-icon ui-icon-lightbulb" title="show color palette" style="float:right; cursor:pointer; margin-right: 5px;"></span>
+        <span id="channel_panel_groupcolors" class="ui-icon ui-icon-pin-s" title="group colors" style="float:right; cursor:pointer; margin-right: 5px;" onclick="groupFixtureSliderColors(event);"></span>
+
+    </div>
+    <div class="collapsable_content">
+        <div class="scroll-content"></div>
+        <div class="scroll-bar-wrap ui-widget-content ui-corner-bottom">
+            <div id="slider_pane_scrollbar" class="scroll-bar"></div>
+        </div>
+    </div>
+</div>
+
+<div id="slider_template" style="display:none;">
+    <div class="slider_container">
+        <div class="slider_header"></div>
+        <div style="height:200px; width:40px;">
+            <div class="slider_side_text"></div>
+            <div class="slider_slider"></div>
+        </div>
+        <div class="slider_footer"></div>
+    </div>
+</div>
+
+<div id="frequency_visualizer_dialog" title="Frequency Visualizer" style="display:none;">
+    <div style="color:#444444; font-family: sans-serif; font-size: 60pt; display:inline; position:absolute; top:100px; left:175px; z-index:-1; font-weight:normal;">LEFT</div>
+    <div style="color:#444444; font-family: sans-serif; font-size: 60pt; display:inline; position:absolute; top:100px; left:625px; z-index:-1; font-weight:normal;">RIGHT</div>
+    <div id="frequency_visualizer_chart" style="width:1000px;height:300px; margin: 10px 0px 20px 10px;"></div>
+    <div id="frequency_sample_rate" style="clear: both; float:left; width: 150px;"></div>
+    <div id="frequency_sample_value" style="float:left; margin-left:15px; color:#808080; width: 50px; font-family:sans-serif; font-size: 8pt; margin-top: 2px;"></div>
+    <div id="frequency_sample_number" style="float:right; color:#808080; font-family: sans-serif; font-size: 8pt;"></div>
+</div>
+
+<div id="beat_visualizer_dialog" title="Beat Visualizer" style="display:none;">
+    <div id="beat_visualizer_data"></div>
+</div>
+
+<div id="describe_fixture_dialog" style="display:none;">
+    <div id="describe_fixture_number" class="describe_number"></div>
+    <div style="float:left; margin-top: 4px;" >
+        <div class="describe_title">manufacturer:</div>
+        <div class="describe_data" id="describe_fixture_manufacturer"></div>
+        <div class="describe_title">model:</div>
+        <div class="describe_data" id="describe_fixture_model"></div>
+        <div class="describe_title">type:</div>
+        <div class="describe_data" id="describe_fixture_type"></div>
+        <div class="describe_title">location:</div>
+        <div class="describe_data" id="describe_fixture_name"></div>
+        <div class="describe_title">dmx:</div>
+        <div class="describe_data" id="describe_fixture_address"></div>
+        <div class="describe_title">&nbsp;</div>
+        <div class="describe_data" id="describe_fixture_description"></div>
+    </div>
+    <hr style="clear: both; margin-top: 10px;"/>
+    <div id="describe_fixture_channel_info" class="describe_fixture_channels"></div>
+</div>
+
+<div id="describe_fixture_groups_dialog" style="display:none;">
+    <div id="describe_fixturegroup_number" class="describe_number"></div>
+    <div style="float:left; margin-top: 4px;" >
+        <div class="describe_title">name:</div>
+        <div class="describe_data" id="describe_fixturegroup_name"></div>
+        <div class="describe_title">&nbsp;</div>
+        <div class="describe_data" id="describe_fixturegroup_description"></div>
+    </div>
+    <hr style="clear: both; margin-top: 10px;"/>
+    <div id="describe_fixture_group_info" class="describe_data"></div>
+</div>
+
+<div id="describe_chase_dialog" style="display:none;">
+    <div id="describe_chase_number" class="describe_number"></div>
+    <div style="float:left; margin-top: 4px;" >
+        <div class="describe_title">name:</div>
+        <div class="describe_data" id="describe_chase_name"></div>
+        <div class="describe_title">delay:</div>
+        <div class="describe_data" id="describe_chase_delay"></div>
+        <div class="describe_title">fade:</div>
+        <div class="describe_data" id="describe_chase_fade"></div>
+        <div class="describe_title">&nbsp;</div>
+        <div class="describe_data" id="describe_chase_description"></div>
+    </div>
+    <hr style="clear: both; margin-top: 10px;"/>
+    <div id="describe_chase_info" class="describe_fixture_channels"></div>
+</div>
+
+<div id="delete_item_dialog" style="display:none;" title="Delete Venue Item">
+    <div>
+        <div class="lg-icon-grey lg-icon-trash" style="float:left; margin: 0px 10px 4px 0px""></div>Delete <span id="delete_item_name"></span>
+    </div>
+</div>
+
+<div id="describe_scene_dialog" style="display:none;margin-bottom: 14px;">
+    <div id="describe_scene_number" class="describe_number"></div>
+    <div style="float:left; margin-top: 4px;" >
+        <div class="describe_title">name:</div>
+        <div class="describe_data" id="describe_scene_name"></div>
+        <div class="describe_title">fixtures:</div>
+        <div class="describe_data" id="describe_scene_fixture_count"></div>
+        <div class="describe_title">animations:</div>
+        <div class="describe_data" id="describe_scene_animation_count"></div>
+        <div class="describe_title">&nbsp;</div>
+        <div class="describe_data" id="describe_scene_description"></div>
+    </div>
+    <hr style="clear: both; margin-top: 10px;"/>
+    <div id="describe_scene_fixtures" class="describe_data"></div>
+    <div id="describe_scene_animations" class="describe_data"></div>
+</div>
+
+<div id="copy_workspace_fixtures_dialog" style="display:none;" title="Copy Active Fixtures To Scene">
+    <form> 
+        <label for="copy_fixture_fixtures" style="display:block; margin: 8px 0px 4px 0px;">fixture(s)</label>
+        <select id="copy_fixture_fixtures" style="display:block;" multiple="multiple" ></select>
+
+        <label for="copy_fixture_scene" style="display:block; margin: 12px 0px 4px 0px;">scene</label>
+        <select id="copy_fixture_scene" style="display:block;" ></select>
+
+        <input type="checkbox" id="copy_fixture_remove" checked="checked" value="remove" style="display:block;margin-top: 12px; float:left;"/>
+        <label for="copy_fixture_remove" style="float:left; margin: 10px 0px 0px 2px;">release fixtures after copy</label>
+    </form>
+</div>
+
+<div id="configure_venue_dialog" style="display:none;" title="Configure Venue">
+    <form style="height:314px;"> 
+        <div id="cvd_accordion" >
+            <h3>General</h3>
+            <div>
+                <label for="cvd_name" style="margin: 8px 0px 4px 0px;">name</label>
+                <input id="cvd_name" style="display:block;width: 400px;" />
+
+                <label for="cvd_description" style="display:block; margin: 8px 0px 4px 0px;">description</label>
+                <input id="cvd_description" style="display:block; width: 400px;" />
+
+                <label for="cvd_auto_blackout" style="display:block; margin: 8px 0px 4px 0px;">auto blackout</label>
+                <input id="cvd_auto_blackout" style="display:block; width:80px;" title="blackout on no audio for specified MS (0=off)"/>&nbsp;ms
+            </div>
+
+            <h3>DMX</h3>
+            <div>
+                <div style="float:left;">
+                    <label for="cvd_dmx_port" style="display:block; margin-bottom:8px;">port</label>
+                    <select id="cvd_dmx_port" style="display:block;"></select>
+                </div>
+
+                <div style="float:left; clear: both; margin:46px 20px 0px 0px;">
+                    <span >packet:</span>
+                </div>
+
+                <div style="float:left; margin:20px 18px 0px 0px;">
+                    <label for="cvd_dmx_packet_delay_ms" style="display:block;">delay</label>
+                    <input id="cvd_dmx_packet_delay_ms" style="display:block; width:80px;" title="delay between packets"/>&nbsp;ms
+                </div>
+
+                <div style="float:left; margin:20px 10px 0px 0px;">
+                    <label for="cvd_dmx_minimum_delay_ms" style="display:block;">minimum</label>
+                    <input id="cvd_dmx_minimum_delay_ms" style="display:block; width:80px;" title="minimum delay between packets"/>&nbsp;ms
+                </div>
+            </div>
+
+            <h3>AUDIO</h3>
+            <div>
+                <label for="cvd_audio_capture_device" style="display:block; margin-bottom:8px;">capture device</label>
+                <select id="cvd_audio_capture_device" style="display:block;"></select>
+
+                <div style="float:left; margin-right:10px;">
+                    <label for="cvd_audio_boost" style="display:block; margin: 12px 0px 4px 0px;">boost</label>
+                    <input id="cvd_audio_boost" style="display:block; width:80px;" title="scales audio signal"/>
+                </div>
+                <div style="float:left; margin-right:10px;">
+                    <label for="cvd_audio_boost_floor" style="display:block; margin: 12px 0px 4px 0px;">boost floor</label>
+                    <input id="cvd_audio_boost_floor" style="display:block; width:80px;" title="audio below this is discarded as noise"/>
+                </div>
+                <div style="clear:both; float:left; margin-right:10px;">
+                    <label for="cvd_audio_sample_size" style="display:block; margin: 12px 0px 8px 0px;">sample size</label>
+                    <select id="cvd_audio_sample_size" style="display:block;" title="higher sample rate increase accuracy"></select>
+                </div>
+            </div>
+        </div>
+        <span class="dialog_note_text">venue will be restarted on update</span>
+    </form>
+</div>
+
+<div id="new_scene_dialog" style="display:none;">
+    <form style="height:420px;"> 
+        <div id="nsd_accordion">
+            <h3>General</h3>
+            <div>
+
+                <label for="nsd_fixtures" style="display:block; margin: 0px 0px 4px 0px;">fixtures</label>
+                <select id="nsd_fixtures" style="display:block;" multiple="multiple" ></select>
+
+                <label for="nsd_number" style="display:block; margin: 8px 0px 4px 0px;">number</label>
+                <input id="nsd_number" style="display:block; width:80px;"/>
+
+                <label for="nsd_name" style="display:block; margin: 8px 0px 4px 0px;">name</label>
+                <input id="nsd_name" style="display:block;width: 400px;" />
+
+                <label for="nsd_description" style="display:block; margin: 8px 0px 4px 0px;">description</label>
+                <input id="nsd_description" style="display:block; width: 400px;" />
+
+                <input type="checkbox" id="nsd_private_scene" checked="checked" value="remove" style="clear:both; margin-top: 12px; float:left;"/>
+                <label for="nsd_private_scene" style="float:left; margin: 10px 0px 0px 2px;">hide from mobile UI</label>
+            </div>
+
+            <h3>Animations</h3>
+            <div>
+                <div id="nsd_animations">
+                </div>
+
+                <div id="nsd_new_animation_button" class="ui-state-default ui-corner-all" 
+                    style="padding: 4px; clear: both; float:left; width: 99%; cursor: pointer;" >
+                    <div style="float:left; padding:3px; margin-top:4px;"><span class="ui-icon ui-icon-circle-plus" ></span></div>
+                    <span style="float:left; margin:2px 10px 0px 6px;">add animation</span>
+                    <select id="nsd_new_animation_type" style="float:left;"><option>random</option></select>
+                    <div id="nsd_new_animation_description" style="clear:both; float:left;  margin: 4px 0px 0px 4px;" class="animation_description"></div>
+                </div>
+
+            </div>
+        </div>
+    </form>
+</div>
+
+<div id="nsd_animation_template" style="display:none;">
+    <div id="nsd_animation_NNN">
+        <button id="nsd_animation_NNN_edit" class="animation_button" onclick="scene_edit_animation(event, NNN); return false;">
+        </button>
+        <div style="float:right; margin: 30px 0px 0px 20px;">
+            <span id="nsd_animation_NNN_remove" class="ui-icon ui-icon-circle-minus" title="remove animation" style="float:left;cursor: pointer;" onclick="scene_remove_animation(event,NNN); return false;"></span>
+        </div>
+    </div>
+</div>
+
+<div id="new_fixture_group_dialog" style="display:none;">
+    <form style="height:314px;"> 
+        <label for="nfgd_number" style="display:block; margin: 8px 0px 4px 0px;">number</label>
+        <input id="nfgd_number" style="display:block; width:80px;"/>
+
+        <label for="nfgd_name" style="display:block; margin: 8px 0px 4px 0px;">name</label>
+        <input id="nfgd_name" style="display:block;width: 400px;" />
+
+        <label for="nfgd_description" style="display:block; margin: 8px 0px 4px 0px;">description</label>
+        <input id="nfgd_description" style="display:block; width: 400px;" />
+
+        <label for="nfgd_fixtures" style="display:block; margin: 12px 0px 8px 0px;">fixtures</label>
+        <select id="nfgd_fixtures" style="display:block;" multiple="multiple"></select>
+    </form>
+</div>
+
+<div id="new_chase_dialog" style="display:none;" title="Configure Venue">
+    <form style="height:420px;"> 
+        <div id="ncd_accordion">
+            <h3>General</h3>
+            <div>
+                <label for="ncd_number" style="display:block; margin: 8px 0px 4px 0px;">number</label>
+                <input id="ncd_number" style="display:block; width:80px;"/>
+
+                <label for="ncd_name" style="display:block; margin: 8px 0px 4px 0px;">name</label>
+                <input id="ncd_name" style="display:block;width: 400px;" />
+
+                <label for="ncd_description" style="display:block; margin: 8px 0px 4px 0px;">description</label>
+                <input id="ncd_description" style="display:block; width: 400px;" />
+
+                <div style="float:left; margin:10px 18px 4px 0px;">
+                    <label for="ncd_delay_ms" style="display:block;">delay</label>
+                    <input id="ncd_delay_ms" style="display:block; width:80px;" title="default scene length"/>&nbsp;ms
+                </div>
+
+                <div style="float:left; margin:10px 10px 0px 20px;">
+                    <label for="ncd_fade_ms" style="display:block;">fade</label>
+                    <input id="ncd_fade_ms" style="display:block; width:80px;" title="inter-scene fade"/>&nbsp;ms
+                </div>
+
+                <input type="checkbox" id="ncd_private_scene" checked="checked" value="remove" style="clear:both; margin-top: 12px; float:left;"/>
+                <label for="ncd_private_scene" style="float:left; margin: 10px 0px 0px 2px;">hide from mobile UI</label>
+            </div>
+
+            <h3>Scenes</h3>
+            <div id="ncd_steps">
+            </div>
+        </div>
+    </form>
+</div>
+
+<div id="ncd_step_template" style="display:none;">
+    <div id="ncd_step_NNN">
+        <div style="clear:both; float:left; margin: 2px 0px 4px 0px;">
+            <label for="ncd_step_NNN_scene" style="display:block;">Step NNN</label>
+            <select id="ncd_step_NNN_scene" style="display:block;" ></select>
+        </div>
+        <div style="float:right; margin: 30px 0px 0px 20px;">
+            <span id="ncd_step_NNN_remove" class="ui-icon ui-icon-circle-minus" title="remove step" style="float:left;cursor: pointer;" onclick="chase_remove_step(event,NNN); return false;"></span>
+            <span class="ui-icon ui-icon-circle-plus" title="insert step below" style="float:left; cursor: pointer; margin-right:4px;" onclick="chase_insert_step(event,NNN); return false;"></span>
+        </div>
+        <div style="float:right; margin: 0px 0px 4px 0px;">
+            <label for="ncd_step_NNN_delay_ms" style="display:block;">delay</label>
+            <input id="ncd_step_NNN_delay_ms" style="display:block; width:70px;" title="default scene length"/>&nbsp;ms
+        </div>
+    </div>
+</div>
+
+<iframe id="load_save_dialog_downloadFrame" name="load_save_dialog_downloadFrame" style="display:none;"></iframe>
+<iframe id="load_save_dialog_uploadFrame" name="load_save_dialog_uploadFrame" style="display:none;"></iframe>
+
+<div id="load_save_dialog" style="display:none;" title="Load & Save Venue">
+    <form style="height:230px;" id="lsd_form" action="/dmxstudio/full/venue/upload/" method="post" target="load_save_dialog_uploadFrame" enctype="multipart/form-data"> 
+        <div id="lsd_accordion">
+            <h3>Server Venue Files</h3>
+            <div>
+                <span>Load and save venue files located on the DMXStudio server file system.</span>
+                <hr />
+                <label for="lsd_file_name" style="display:block; margin: 8px 0px 4px 0px;">venue filename</label>
+                <input id="lsd_file_name" style="display:block; width:500px;"/>
+            </div>
+
+            <h3>Local Venue Files</h3>
+            <div>
+                <span>Load and save venue files located on the local file system.</span>
+                <hr />
+                <label for="lsd_upload_file" style="display:block; margin: 8px 0px 4px 0px;">venue filename to load</label>
+                <input type="file" id="lsd_upload_file" name="lsd_upload_file" size="45"/>
+            </div>
+
+            <h3>New Venue</h3>
+            <div>
+                <span>Start a new venue or clear specific venue objects.</span>
+                <hr />
+                <input type="radio" id="lsd_new_venue_4" name="lsd_new_venue" value="new" checked="checked" />
+                <label for="lsd_new_venue_4">new venue</label><br />
+                <input type="radio" id="lsd_new_venue_0" name="lsd_new_venue" value="scenes" />
+                <label for="lsd_new_venue_0">clear scenes and chases</label><br />
+                <input type="radio" id="lsd_new_venue_1" name="lsd_new_venue" value="chases" />
+                <label for="lsd_new_venue_1">clear chases</label><br />
+                <input type="radio" id="lsd_new_venue_2" name="lsd_new_venue" value="groups" />
+                <label for="lsd_new_venue_2">clear fixture groups</label><br />
+            </div>
+        </div>
+    </form>
+</div>
+
+<div id="wait_dialog" style="display:none;border: solid #2e7db2 1px;"> 
+    <div id="loading-div" class="ui-corner-all" >
+      <img style="height:30px; margin:40px auto;display:block" " src="loading.gif" alt="Wait"/> 
+      <div style="font-weight:normal; color:#808080;text-align:center;" id="wd_reason"></div>
+     </div>
+</div>
+
+<div id="new_fixture_dialog" style="display:none;">
+    <form style="height:430px;"> 
+            <label for="nfd_number" style="display:block; margin: 8px 0px 4px 0px;">number</label>
+            <input id="nfd_number" style="display:block; width:80px;"/>
+
+            <label for="nfd_name" style="display:block; margin: 10px 0px 4px 0px;">location</label>
+            <input id="nfd_name" style="display:block;width: 400px;" />
+
+            <label for="nfd_description" style="display:block; margin: 10px 0px 4px 0px;">description</label>
+            <input id="nfd_description" style="display:block; width: 400px;" />
+
+            <label for="nfd_manufacturer" style="display:block; margin: 20px 0px 4px 0px;"">manufacturer</label>
+            <select id="nfd_manufacturer" style="display:block;" ></select>
+
+            <div style="margin-left: 30px;">
+                <label for="nfd_model" style="display:block; margin: 10px 0px 4px 0px;">model</label>
+                <select id="nfd_model" style="display:block;" ></select>
+            </div>
+
+            <div style="margin-left: 60px;">
+                <label for="nfd_personality" style="display:block; margin: 10px 0px 4px 0px;">personality</label>
+                <select id="nfd_personality" style="display:block;" ></select>
+            </div>
+
+            <div style="float:left; margin-top:20px;">
+                <label for="nfd_dmx_address" style="clear: both; display:block; margin: 0px 0px 4px 0px;">DMX address</label>
+                <input id="nfd_dmx_address" style="display:block; width: 80px;" />
+            </div>
+            <div style="float:left; margin-top:25px;">
+                <span id="nfd_choose_dmx" class="ui-icon ui-icon-calculator" style="float: left; margin: -1px 5px 0 0; cursor:pointer;" 
+                    title="choose dmx address"></span>
+            </div>
+            <div style="float:left; margin: 45px 0px 0px 20px; ">
+                <input type="checkbox" id="nfd_allow_overlap" checked="checked" value="remove" style="display:block;float:left;margin-top:2px; "/>
+                <label for="nfd_allow_overlap" style="float:left;">allow overlapping addresses</label>
+            </div>
+    </form>
+</div>
+
+<div id="choose_dmx_address_dialog" style="display:none;"> 
+    <fieldset data-role="controlgroup" id="cda_show_buttons" data-type="horizontal" 
+            style=" font-size: 8pt; border: 0px; margin: 0px 0px 8px 0px;">
+        <legend></legend>
+        <div>
+            <input type="radio" id="cda_0" name="cda_show" value="0" checked="checked" /><label for="cda_0">DMX addresses</label>
+            <input type="radio" id="cda_1" name="cda_show" value="1" /><label for="cda_1">Fixture Numbers</label>
+        </div>
+    </fieldset>
+
+    <div id="cda_addresses"">
+    </div>
+</div>
+
+
+<div id="animation_signal_template" style="display: none;">
+    <div style="margin-top: 10px;">
+        <fieldset style="padding:8px;">
+            <legend class="animation_fieldset">animation input signal</legend>
+            <div class="animation_description">The input signal drives the animation effect. The signal can be a fixed timer or may be based on sound sampling at specified intervals.</div>
+
+            <div id="NNN_signal_type_div" style="clear:both; float:left;">
+                <label for="NNN_signal_type" style="display:block;">signal</label>
+                <select id="NNN_signal_type" style="display:block;"></select>
+            </div>
+
+            <div id="NNN_apply_to_div" style="float:left; margin-left: 20px;">
+                <label for="NNN_apply_to" style="display:block;">apply to</label>
+                <select id="NNN_apply_to" style="display:block;">
+                </select>
+            </div>
+
+            <div style="clear:both; float: left; margin-top: 10px;">
+                <label for="NNN_sample_rate_ms" style="display:block; "margin-top: 6px;">sample rate</label>
+                <input id="NNN_sample_rate_ms" style="display:block; width:80px;" title="how often to sample this signal or fire the timer"/>&nbsp;ms
+            </div>
+
+            <div id="NNN_sample_decay_ms_div" style="float: left; margin-top: 10px; margin-left: 10px;">
+                <label for="NNN_sample_decay_ms" style="display:block;">decay rate</label>
+                <input id="NNN_sample_decay_ms" style="display:block; width:80px;" title="how long the sample persists"/>&nbsp;ms
+            </div>
+
+            <div style="clear:both; float: left;"></div>
+
+            <div id="NNN_frequency_div" style="float:left; margin: 10px 6px 0px 0px; border: 1px solid #808080; padding: 4px;border-radius: 6pt 6pt;">
+                frequency range
+                <div>
+                    <input id="NNN_input_low" style="display:block; width:80px;" title=""/>
+                    to
+                    <input id="NNN_input_high" style="display:block; width:80px;" title=""/>
+                </div>
+            </div>
+
+            <div id="NNN_random_div" style="float:left; margin: 10px 6px 0px 0px; border: 1px solid #808080; padding: 4px;border-radius: 6pt 6pt;">
+                random value range
+                <div> 
+                    <input id="NNN_random_low" style="display:block; width:50px;" title=""/>
+                    to
+                    <input id="NNN_random_high" style="display:block; width:50px;" title=""/>
+                </div>
+            </div>
+
+            <div id="NNN_level_div" style="float:left; margin: 10px 6px 0px 0px; border: 1px solid #808080; padding: 4px;border-radius: 6pt 6pt;">
+                signal level
+                <div>
+                    curve
+                    <input id="NNN_scale_factor" style="display:block; width:50px;" title=""/>
+                    max
+                    <input id="NNN_max_threshold" style="display:block; width:50px;" title=""/>
+                </div>
+            </div>
+        </fieldset>
+    </div>
+</div>
+
+<div id="edit_FixtureSequencer_dialog" style="display:none;">
+    <form style="height:300px;">
+        <fieldset style="padding:8px; margin-top:10px;">
+            <legend class="animation_fieldset"></legend>
+                <div id="essd_description" class="animation_description"></div>
+
+                <label for="essd_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
+                <select id="essd_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
+
+                <div style="display:block; margin: 10px 0px 4px 0px;">fixture order</div>
+                <div id="essd_fixture_order" style="display:block; margin-bottom:10px; width:500px;"></div>
+        </fieldset>
+
+        <div id="essd_signal"></div>
+    </form>
+</div>
+
+<div id="edit_SoundLevel_dialog" style="display:none;">
+    <form style="height:300px;">
+        <fieldset style="padding:8px; margin-top:10px;">
+            <legend class="animation_fieldset"></legend>
+            <div id="essl_description" class="animation_description"></div>
+
+            <label for="essl_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
+            <select id="essl_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
+
+            <label for="essl_fade_what" style="display:block; margin: 8px 0px 4px 0px;">fade what</label>
+            <select id="essl_fade_what" style="display:block;"></select>
+        </fieldset>
+
+        <div id="essl_signal"></div>
+    </form>
+</div>
+
+<div id="edit_ScenePatternDimmer_dialog" style="display:none;">
+    <form style="height:300px;">
+        <fieldset style="padding:8px; margin-top:10px;">
+            <legend class="animation_fieldset"></legend>
+            <div id="espd_description" class="animation_description"></div>
+        
+            <label for="espd_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
+            <select id="espd_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
+
+            <div style="display:block; margin: 10px 0px 4px 0px;">fixture order</div>
+            <div id="espd_fixture_order" style="display:block; margin-bottom:10px; width:500px;"></div>
+
+            <label for="espd_pattern" style="clear:both; display:block; margin: 10px 0px 4px 0px;">pattern</label>
+            <select id="espd_pattern" style="display:block;"></select>
+        </fieldset>
+
+        <div id="espd_signal"></div>
+    </form>
+</div>
+
+<div id="edit_SceneStrobeAnimator_dialog" style="display:none;">
+    <form style="height:300px;">
+        <fieldset style="padding:8px; margin-top:10px;">
+            <legend class="animation_fieldset"></legend>
+            <div id="essa_description" class="animation_description"></div>
+        
+            <div style="clear:both; float:left;">
+                <label for="essa_fixtures" style="display:block; margin: 10px 0px 10px 0px;">scene fixture(s)</label>
+                <select id="essa_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
+            </div>
+            <div style="clear:both; float:left; margin-right: 20px;">
+                <label for="essa_strobe_pos_ms" style="display:block;">strobe on</label>
+                <input id="essa_strobe_pos_ms" style="display:block; width:70px;"/>&nbsp;ms
+            </div>
+            <div style="float:left; margin-right: 20px;">
+                <label for="essa_strobe_neg_ms" style="display:block;">strobe off</label>
+                <input id="essa_strobe_neg_ms" style="display:block; width:70px;"/>&nbsp;ms
+            </div>
+            <div style="float:left;">
+                <div>negative color</div>
+                <div id="essa_colorpicker" style="height:30px; width:60px; border: 1px solid #808080; border-radius: 6pt 6pt;"></div>
+            </div>
+        </fieldset>
+
+        <div id="essa_signal" style="clear:both;" ></div>
+    </form>
+</div>
+
+<div id="edit_SceneColorSwitcher_dialog" style="display:none;">
+    <form style="height:300px;">
+        <fieldset style="padding:8px; margin-top:10px;">
+            <legend class="animation_fieldset"></legend>
+            <div id="escs_description" class="animation_description"></div>
+        
+            <div style="clear:both; float:left;">
+                <label for="escs_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
+                <select id="escs_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
+            </div>
+            <div style="clear:both;float:left; margin-right: 20px; margin-top: 10px;">
+                <label for="escs_strobe_pos_ms" style="display:block;">strobe on</label>
+                <input id="escs_strobe_pos_ms" style="display:block; width:70px;"/>&nbsp;ms
+            </div>
+            <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                <label for="escs_strobe_neg_ms" style="display:block;">strobe off</label>
+                <input id="escs_strobe_neg_ms" style="display:block; width:70px;" />&nbsp;ms
+            </div>
+            <div style="float:left; margin-top: 10px;">
+                <div>negative color</div>
+                <div id="escs_colorpicker" style="height:30px; width:60px; border: 1px solid #808080; border-radius: 6pt 6pt;"></div>
+            </div>
+            <div style="clear:both;float:left; margin-top: 10px;">
+                <div style ="float: left;margin-right:6px;">custom color progression</div>
+                <div style ="float: left;"id="escs_color_progression"></div>
+            </div>
+        </fieldset>
+        <div id="escs_signal" style="clear:both;" ></div>
+    </form>
+</div>
+
+<div id="edit_SceneMovementAnimator_dialog" style="display:none;">
+    <form style="height:300px;">
+        <fieldset style="padding:8px; margin-top:10px;">
+            <legend class="animation_fieldset"></legend>
+            <div id="esma_description" class="animation_description"></div>
+        
+            <div>
+                <label for="esma_fixtures" style="margin: 10px 0px 4px 0px;">scene fixture(s)</label>
+                <select id="esma_fixtures" style="margin-bottom:10px;" multiple="multiple" ></select>
+            </div>
+
+            <div id="esma_fixture_order_container">
+                <div style="display:block; margin: 10px 0px 4px 0px;">fixture order</div>
+                <div id="esma_fixture_order" style="display:block; margin-bottom:10px; width:500px;"></div>
+            </div>
+
+            <div style="clear:both; float:left; margin-right: 20px; margin-top: 10px;">
+                <label for="esma_speed" style="display:block;">speed</label>
+                <input id="esma_speed" style="display:block; width:60px;" />
+            </div>
+
+            <div id="esma_home_wait_periods_container" style="float:left; margin-right: 20px; margin-top: 10px;">
+                <label for="esma_home_wait_periods" style="display:block;">home wait</label>
+                <input id="esma_home_wait_periods" style="display:block; width:60px;" />
+            </div>
+
+            <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                <label for="esma_dest_wait_periods" style="display:block;">target wait</label>
+                <input id="esma_dest_wait_periods" style="display:block; width:60px;" />
+            </div>
+
+            <div id="esma_group_size_container" style="float:left; margin-right: 20px; margin-top: 10px;">
+                <label for="esma_group_size" style="display:block;">group size</label>
+                <input id="esma_group_size" style="display:block; width:60px;margin-bottom: 4px;" />
+            </div>
+
+            <div style="float:left; margin-left: 20px; margin-top: 10px; height:30px;">
+                <input id="esma_run_once" type="checkbox" />
+                <label for="esma_run_once">run once</label>
+                <div id="esma_blackout_return_container">
+                    <input id="esma_blackout_return" type="checkbox" />
+                    <label for="esma_blackout_return" >return blackout </label>
+                </div>
+                <div id="esma_alternate_groups_container">
+                    <input id="esma_alternate_groups" type="checkbox"/>
+                    <label for="esma_alternate_groups">alernate groups</label>
+                </div>
+            </div>
+
+            <div id="esma_SceneMovementAnimator1" style="margin-top: 10px; clear:both; float:left; width:100%;">
+                <fieldset  style="padding:8px;">
+                    <legend class="animation_fieldset">random movement</legend>
+
+                    <table style="float:left; margin-right: 20px; margin-top: 4px;">
+                        <tr>
+                            <td style="width:50px;"></td>
+                            <td>start&deg;</td>
+                            <td>end&deg;</td>
+                        </tr>
+                        <tr>
+                            <td>pan</td>
+                            <td><input id="esma1_pan_start_angle" style="display:block; width:60px;" /></td>
+                            <td><input id="esma1_pan_end_angle" style="display:block; width:60px;" /></td>
+                        </tr>
+                        <tr>
+                            <td>tilt</td>
+                            <td><input id="esma1_tilt_start_angle" style="display:block; width:60px;" /></td>
+                            <td><input id="esma1_tilt_end_angle" style="display:block; width:60px;" /></td>
+                        </tr>
+                    </table>
+
+                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                        <label for="esma1_positions" style="display:block;">positions to generate</label>
+                        <input id="esma1_positions" style="display:block; width:60px;" />
+                    </div>
+                </fieldset>
+            </div>
+
+            <div id="esma_SceneMovementAnimator2" style="margin-top: 10px; clear:both; float:left;width:100%;">
+                <fieldset  style="padding:8px;">
+                    <legend class="animation_fieldset">fan movement</legend>
+
+                   <table style="float:left; margin-right: 20px; margin-top: 4px;">
+                        <tr>
+                            <td style="width:50px;"></td>
+                            <td>start&deg;</td>
+                            <td>end&deg;</td>
+                            <td>increment&deg;</td>
+                        </tr>
+                        <tr>
+                            <td>pan</td>
+                            <td><input id="esma2_pan_start_angle" style="display:block; width:60px;" /></td>
+                            <td><input id="esma2_pan_end_angle" style="display:block; width:60px;" /></td>
+                            <td><input id="esma2_pan_increment" style="display:block; width:60px;" /></td>
+                        </tr>
+                        <tr>
+                            <td>tilt</td>
+                            <td><input id="esma2_tilt_start_angle" style="display:block; width:60px;" /></td>
+                            <td><input id="esma2_tilt_end_angle" style="display:block; width:60px;" /></td>
+                        </tr>
+                    </table>
+                </fieldset>
+            </div>
+
+            <div id="esma_SceneMovementAnimator3" style="margin-top: 10px; clear:both; float:left;width:100%;">
+                <fieldset  style="padding:8px;">
+                    <legend class="animation_fieldset">rotate movement</legend>
+
+                     <table style="float:left; margin-right: 20px; margin-top: 4px;">
+                        <tr>
+                            <td style="width:50px;"></td>
+                            <td>start&deg;</td>
+                            <td>end&deg;</td>
+                        </tr>
+                        <tr>
+                            <td>pan</td>
+                            <td><input id="esma3_pan_start_angle" style="display:block; width:60px;" /></td>
+                            <td><input id="esma3_pan_end_angle" style="display:block; width:60px;" /></td>
+                        </tr>
+                        <tr>
+                            <td>tilt</td>
+                            <td><input id="esma3_tilt_start_angle" style="display:block; width:60px;" /></td>
+                            <td><input id="esma3_tilt_end_angle" style="display:block; width:60px;" /></td>
+                        </tr>
+                    </table>
+                </fieldset>
+            </div>
+
+            <div id="esma_SceneMovementAnimator4" style="margin-top: 10px; clear:both; float:left;width:100%;">
+                <fieldset  style="padding:8px;">
+                    <legend class="animation_fieldset">up/down movement</legend>
+
+                     <table style="float:left; margin-right: 20px; margin-top: 4px;">
+                        <tr>
+                            <td style="width:50px;"></td>
+                            <td>start&deg;</td>
+                            <td>end&deg;</td>
+                            <td>increment&deg;</td>
+                        </tr>
+                        <tr>
+                            <td>pan</td>
+                            <td><input id="esma4_pan_start_angle" style="display:block; width:60px;" /></td>
+                            <td><input id="esma4_pan_end_angle" style="display:block; width:60px;" /></td>
+                            <td><input id="esma4_pan_increment" style="display:block; width:60px;" /></td>
+                        </tr>
+                        <tr>
+                            <td>tilt</td>
+                            <td><input id="esma4_tilt_start_angle" style="display:block; width:60px;" /></td>
+                            <td><input id="esma4_tilt_end_angle" style="display:block; width:60px;" /></td>
+                            <td></td>
+                        </tr>
+                    </table>
+                </fieldset>
+            </div>
+
+            <div id="esma_SceneMovementAnimator5" style="margin-top: 10px; clear:both; float:left;width:100%;">
+                <fieldset  style="padding:8px;">
+                    <legend class="animation_fieldset">Beam cross movement</legend>
+
+                     <table style="float:left; margin-right: 20px; margin-top: 4px;">
+                        <tr>
+                            <td style="width:50px;"></td>
+                            <td>start&deg;</td>
+                            <td>end&deg;</td>
+                        </tr>
+                        <tr>
+                            <td>pan</td>
+                            <td><input id="esma5_pan_start_angle" style="display:block; width:60px;" /></td>
+                            <td><input id="esma5_pan_end_angle" style="display:block; width:60px;" /></td>
+                        </tr>
+                        <tr>
+                            <td>tilt</td>
+                            <td><input id="esma5_tilt_start_angle" style="display:block; width:60px;" /></td>
+                            <td><input id="esma5_tilt_end_angle" style="display:block; width:60px;" /></td>
+                        </tr>
+                    </table>
+                </fieldset>
+            </div>
+
+            <div id="esma_SceneMovementAnimator6" style="margin-top: 10px; clear:both; float:left;width:100%;">
+                <fieldset  style="padding:8px;">
+                    <legend class="animation_fieldset">programmed movement</legend>
+                    coordinates
+                    <div id="esma6_coordinates" style="margin-top: 6px;"></div>
+                </fieldset>
+            </div>
+
+            <div id="esma_SceneMovementAnimator7" style="margin-top: 10px; clear:both; float:left;width:100%;">
+                <fieldset  style="padding:8px;">
+                    <legend class="animation_fieldset">moonflower movement</legend>
+
+                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                        <label for="esma7_height" style="display:block;">height</label>
+                        <input id="esma7_height" style="display:block; width:60px;" />&nbsp;ft
+                    </div>
+
+                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                        <label for="esma7_fixture_spacing" style="display:block;">spacing</label>
+                        <input id="esma7_fixture_spacing" style="display:block; width:60px;" />&nbsp;ft
+                    </div>
+
+                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                        <label for="esma7_home_x" style="display:block;">center X</label>
+                        <input id="esma7_home_x" style="display:block; width:60px;" />&nbsp;ft
+                    </div>
+
+                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                        <label for="esma7_home_y" style="display:block;">center Y</label>
+                        <input id="esma7_home_y" style="display:block; width:60px;" />&nbsp;ft
+                    </div>
+
+                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                        <label for="esma7_radius" style="display:block;">radius</label>
+                        <input id="esma7_radius" style="display:block; width:60px;" />&nbsp;ft
+                    </div>
+
+                  <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                        <label for="esma7_pan_increment" style="display:block;">rotation increment&deg;</label>
+                        <input id="esma7_pan_increment"style="display:block; width:60px;" />
+                    </div>
+
+                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                        <label for="esma7_positions" style="display:block;">rotation positions</label>
+                        <input id="esma7_positions" style="display:block; width:60px;" />
+                    </div>
+
+                </fieldset>
+            </div>
+
+            <div id="esma_signal" style="clear:both; float:left;" ></div>
+
+        </fieldset>
+    </form>
+</div>
+
+<div id="edit_SceneChannelAnimator_dialog" style="display:none;">
+    <form style="height:300px;">
+        <fieldset style="padding:8px; margin-top:10px;">
+            <legend class="animation_fieldset"></legend>
+            <div id="esca_description" class="animation_description"></div>
+
+            <div style="margin: 10px 0px 4px 0px;">channel animations</div>
+            <div id="esca_animations" style="margin-top: 6px;"></div>        
+
+        </fieldset>
+        <div id="esca_signal" style="clear:both;" ></div>
+    </form>
+</div>
+
+<div id="esca_channel_template" style="display:none;">
+    <div style="padding:10px; width:600px; background-color: black; border: 1px solid #808080; border-radius: 6pt 6pt;"">
+        <div style="margin-bottom:10px;">
+            <select class="esca_fixture"></select>
+        </div>
+
+        <div style="margin-bottom:10px;">
+            <select class="esca_channel"></select>
+        </div>
+
+        <div style="margin-bottom:10px; margin-right: 10px; float:left;">
+            <select class="esca_style">
+                <option value="1" selected>Value List</option>
+                <option value="2">Value Range</option>
+                <option value="3">Scale Scene Value</option>
+            </select>
+        </div>
+
+        <div class="esca_channel_list_container" style="float:left;">
+            <div class="esca_channel_list"></div>
+        </div>
+
+        <div class="esca_channel_range_container" style="float:left;">
+            <input class="esca_channel_range_start" style="width:50px;" /> - <input class="esca_channel_range_end" style="width:50px;" />
+        </div>
+    </div>
+</div>
+
+</body>
+
+</html>
+

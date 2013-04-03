@@ -227,7 +227,7 @@ public:
 
     void appendAnimations( ChannelAnimationArray& animations ) {
         UIDArray fixtures = m_fixtures_select.getUIDs();
-        for ( UIDArray::iterator it=fixtures.begin(); it != fixtures.end(); it++ ) {
+        for ( UIDArray::iterator it=fixtures.begin(); it != fixtures.end(); ++it ) {
             ChannelAnimation animation( 0, 0, CAM_SCALE, ChannelValueArray() );
             updateAnimation( animation );
             animation.setActor( (*it) );
@@ -394,39 +394,43 @@ protected:
         m_height_field.setHidden( true );
         m_fixture_spacing_field.setHidden( true );
         m_radius_field.setHidden( true );
+        m_tilt_end_field.setHidden( true );
+        m_pan_start_field.setHidden( true );
+        m_pan_end_field.setHidden( true );
+        m_pan_inc_field.setHidden( true );
+        m_dest_wait_field.setHidden( false );
+        m_run_once_field.setHidden( false );
+        m_movement_speed_field.setHidden( false );
 
         switch ( (MovementAnimationType)m_movement_field.getListValue() ) {
             case MOVEMENT_COORDINATES:
                 m_coordinates_field.setHidden( false );
                 m_beam_return_field.setHidden( false );
-                m_tilt_start_field.setHidden( true );
-                m_tilt_end_field.setHidden( true );
-                m_pan_start_field.setHidden( true );
-                m_pan_end_field.setHidden( true );
-                m_pan_inc_field.setHidden( true );
                 break;
 
             case MOVEMENT_RANDOM:
-                m_dest_wait_field.setHidden( false );
+
                 m_positions_field.setHidden( false );
                 m_group_size_field.setHidden( false );
+                m_tilt_end_field.setHidden( false );
+                m_pan_start_field.setHidden( false );
+                m_pan_end_field.setHidden( false );
+                m_pan_inc_field.setHidden( false );
                 break;
 
             case MOVEMENT_FAN:
                 m_home_wait_field.setHidden( false );
-                m_dest_wait_field.setHidden( false );
                 m_beam_return_field.setHidden( false );
+                m_tilt_end_field.setHidden( false );
+                m_pan_start_field.setHidden( false );
+                m_pan_end_field.setHidden( false );
+                m_pan_inc_field.setHidden( false );
                 break;
 
             case MOVEMENT_MOONFLOWER:
                 m_pan_inc_field.setHidden( false );
                 m_positions_field.setHidden( false );
                 m_home_wait_field.setHidden( false );
-                m_dest_wait_field.setHidden( false );
-                m_tilt_start_field.setHidden( true );
-                m_tilt_end_field.setHidden( true );
-                m_pan_start_field.setHidden( true );
-                m_pan_end_field.setHidden( true );
                 m_home_x_field.setHidden( false );
                 m_home_y_field.setHidden( false );
                 m_height_field.setHidden( false );
@@ -439,10 +443,13 @@ protected:
             case MOVEMENT_ROTATE:
             case MOVEMENT_XCROSS:
                 m_home_wait_field.setHidden( false );
-                m_dest_wait_field.setHidden( false );
                 m_beam_return_field.setHidden( false );
                 m_group_size_field.setHidden( false );
                 m_alternate_groups_field.setHidden( false );
+                m_tilt_end_field.setHidden( false );
+                m_pan_start_field.setHidden( false );
+                m_pan_end_field.setHidden( false );
+                m_pan_inc_field.setHidden( false );
                 break;
         }
      }
@@ -642,16 +649,16 @@ bool DMXTextUI::animColorSwitcherEditor( Scene* scene, UID anim_uid )
     else
         anim = reinterpret_cast<SceneColorSwitcher*>( scene->getAnimation( anim_uid ) );
 
-    MultiNumberedListField color_progression_field( "Custom color progression (comma separated)" );
+    //MultiNumberedListField color_progression_field( "Custom color progression (comma separated)" );
     NumberedListField strobe_neg_color_field( "Negative strobe color" );
 
-    for ( ColorNames::iterator it=SceneColorSwitcher::color_names.begin(); it != SceneColorSwitcher::color_names.end(); it++ ) {
+    for ( ColorNames::iterator it=SceneColorSwitcher::color_names.begin(); it != SceneColorSwitcher::color_names.end(); ++it ) {
         strobe_neg_color_field.addKeyValue( it->first, it->second );
-        color_progression_field.addKeyValue( it->first, it->second );
+        //color_progression_field.addKeyValue( it->first, it->second );
     }
 
     strobe_neg_color_field.setDefaultListValue( anim->getStrobeNegColor() );
-    color_progression_field.setDefaultListValue( anim->getCustomColors() );
+    //color_progression_field.setDefaultListValue( anim->getCustomColors() );
 
     IntegerField strobe_pos_ms_field( "Strobe on (ms)", anim->getStrobePosMS(),0, 32000 );
     IntegerField strobe_neg_ms_field( "Strobe off (ms)", anim->getStrobeNegMS(),0, 32000 );
@@ -659,7 +666,7 @@ bool DMXTextUI::animColorSwitcherEditor( Scene* scene, UID anim_uid )
                                 getVenue(), scene->getActorUIDs(), anim->getActors() );
 
     SignalForm form( &m_text_io, anim->signal() );
-    form.add( color_progression_field );
+    //form.add( color_progression_field );
     form.add( strobe_neg_color_field );
     form.add( strobe_pos_ms_field );
     form.add( strobe_neg_ms_field );
@@ -667,7 +674,7 @@ bool DMXTextUI::animColorSwitcherEditor( Scene* scene, UID anim_uid )
     if ( !form.play() )
         return false;
 
-    anim->setCustomColors( color_progression_field.getIntSelections() );
+    //anim->setCustomColors( color_progression_field.getIntSelections() );
     anim->setStrobeNegColor( (UINT)strobe_neg_color_field.getListValue() );
     anim->setStrobePosMS( strobe_pos_ms_field.getLongValue() );
     anim->setStrobeNegMS( strobe_neg_ms_field.getLongValue() );
@@ -695,7 +702,7 @@ bool DMXTextUI::animStrobeEditor( Scene* scene, UID anim_uid )
 
     NumberedListField strobe_neg_color_field( "Negative strobe color" );
 
-    for ( ColorNames::iterator it=SceneColorSwitcher::color_names.begin(); it != SceneColorSwitcher::color_names.end(); it++ ) {
+    for ( ColorNames::iterator it=SceneColorSwitcher::color_names.begin(); it != SceneColorSwitcher::color_names.end(); ++it ) {
         strobe_neg_color_field.addKeyValue( it->first, it->second );
     }
 

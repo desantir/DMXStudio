@@ -98,7 +98,7 @@ void SceneMovementAnimator::initAnimation( AnimationTask* task, DWORD time_ms, B
     FixturePtrArray participants;
 
     // Determine which channels will be participating
-    for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); it++ ) {
+    for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); ++it ) {
         Fixture* pf = m_animation_task->getFixture( (*it) );
         STUDIO_ASSERT( pf != NULL, "Missing fixture UID=%lu", (*it) );
         if ( pf->canMove() )
@@ -560,7 +560,7 @@ ChannelValueArray SceneMovementAnimator::anglesToValues( Channel* channel, Angle
 {
     ChannelValueArray values;
 
-    for ( AngleList::iterator it=angles.begin(); it != angles.end(); it++ )
+    for ( AngleList::iterator it=angles.begin(); it != angles.end(); ++it )
         values.push_back( channel->convertAngleToValue( (*it) ) );
 
     STUDIO_ASSERT( values.size() > 0, "Invalid angles array size" );

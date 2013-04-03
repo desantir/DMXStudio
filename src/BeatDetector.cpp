@@ -45,10 +45,11 @@ BeatDetector::~BeatDetector(void)
 
 // ----------------------------------------------------------------------------
 //
-void BeatDetector::attach( AudioInputStream* audio ) {
+void BeatDetector::attach( AudioInputStream* audio, unsigned frequency_bins ) {
     detach();
 
     m_audio_stream = audio;
+    m_frequency_bins = frequency_bins;
 
     if ( audio ) {
         m_sample_size = m_audio_stream->getSampleSize();
@@ -56,6 +57,7 @@ void BeatDetector::attach( AudioInputStream* audio ) {
 
         STUDIO_ASSERT( m_frequency_bins <= m_sample_size/2, "Too many frequency bins" );		 // THROW ERROR
         STUDIO_ASSERT( m_frequency_bins > 0, "Too few frequency bins" );
+        STUDIO_ASSERT( m_frequency_bins <= BEAT_DETECTOR_MASK_SIZE*32, "Too many beat detector frequency bins - %d requested", m_frequency_bins );
 
         for ( unsigned i=0; i < m_frequency_bins; i++ )
             m_bins.push_back( FreqBin( m_samples_per_second / m_sample_size, m_sensitivity_ms ) );
@@ -64,7 +66,7 @@ void BeatDetector::attach( AudioInputStream* audio ) {
         m_Es = new double[ m_sample_size ];	
 
         // Reset all beat frequency bins
-        for ( FreqBinArray::iterator it=m_bins.begin(); it != m_bins.end(); it++ )
+        for ( FreqBinArray::iterator it=m_bins.begin(); it != m_bins.end(); ++it )
             (*it).reset();
 
         m_audio_stream->addAudioProcessor( this, ProcessorFormat( 2, m_frequency_bins > 1 ) );
@@ -96,16 +98,22 @@ void BeatDetector::addFrequencyEvent( CEvent* eventHandler, unsigned freq_low, u
     unsigned bin_start = ((freq_low * m_sample_size) / m_samples_per_second) / samples_per_bin;
     unsigned bin_end =  ((freq_high * m_sample_size) / m_samples_per_second) / samples_per_bin;
 
-    DWORD mask[2] = { 0, 0 };
+    DWORD mask[BEAT_DETECTOR_MASK_SIZE];
+    memset( mask, 0, sizeof(mask) );
 
     for ( unsigned bin=bin_start; bin <= bin_end && bin < m_frequency_bins; bin++ ) {
-        if ( bin >= 32 )
-            mask[1] |= (1L<<(bin-32));
-        else
-            mask[0] |= (1L<<bin);
+        mask[bin/32] |= (1L << (bin%32));
     }
 
-    output( "Beat detect bins: %d to %d mask=%04x%04x\n\n", bin_start, bin_end, mask[1],mask[0] );
+    printf( "Beat detect %u-%uHz bins: %u to %u mask=", freq_low, freq_high, bin_start, bin_end );
+    for ( int i=BEAT_DETECTOR_MASK_SIZE; i-- > 0; ) {
+        printf( "%08x", mask[i] );
+        if ( i > 0 )
+            printf( ":" );
+    }
+    printf( "\n" );
+
+    // output( "Beat detect %u-%uHz bins: %u to %u mask=%08x-%08x\n", freq_low, freq_high, bin_start, bin_end, mask[1],mask[0] );
 
     m_event_handlers.push_back( BeatEvent( eventHandler, mask ) );
 }
@@ -120,6 +128,13 @@ void BeatDetector::removeFrequencyEvent( CEvent* eventHandler )
             it = m_event_handlers.erase( it );
         else
             it++;
+}
+
+// ----------------------------------------------------------------------------
+//
+void BeatDetector::removeAllFrequencyEvents( )
+{
+    m_event_handlers.clear();
 }
 
 // ----------------------------------------------------------------------------
@@ -153,13 +168,13 @@ HRESULT BeatDetector::ProcessAmplitudes( WORD channels, size_t sample_size, floa
     DWORD time_ms = GetCurrentTime();
 
     bool beat = fb.beat( diff2 > 0 && e > 2, time_ms );
-    //bool beat = fb.beat( e > (C * _E_), time_ms ); 
+    // bool beat = fb.beat( e > (C * _E_), time_ms ); 
 
     if ( beat ) {
-        output( "*   \r" );
+        //output( "*   \r" );
 
         for ( BeatEventArray::iterator it=m_event_handlers.begin(); 
-              it != m_event_handlers.end(); it++ )
+              it != m_event_handlers.end(); ++it )
             (*it).m_beatEvent->SetEvent();
     }
 
@@ -197,9 +212,11 @@ HRESULT BeatDetector::ProcessFFT( WORD channels, FFT_Result* fft_result[] )
 
         m_Es[i] = (m_Es[i] * m_frequency_bins) / m_sample_size;
     }
+    
+    DWORD mask[BEAT_DETECTOR_MASK_SIZE];
+    memset( mask, 0, sizeof(mask) );
 
-    DWORD mask[2] = { 0, 0 };
-    double C = 1.4F;
+    double C = 1.3F;        // Was 1.4F - 1.2F seems much better
     DWORD time_ms = GetCurrentTime();
 
     for ( unsigned k=0; k < m_frequency_bins; k++ ) {
@@ -210,29 +227,20 @@ HRESULT BeatDetector::ProcessFFT( WORD channels, FFT_Result* fft_result[] )
         bool beat = fb.beat( m_Es[k] > (C * _E_), time_ms );
 
         if ( beat ) {
-            output( "%02d ", k );
-
-            if ( k >= 32 )
-                mask[1] |= (1L<<(k-32));
-            else
-                mask[0] |= (1L<<k);
-        }
-        else {
-            output( "-- " );
+            mask[k/32] |= (1L << (k%32));
         }
 
         fb.insertValue( m_Es[k] );
     }
 
-    for ( BeatEventArray::iterator it=m_event_handlers.begin(); 
-            it != m_event_handlers.end(); it++ ) {
-        if ( (*it).m_mask[0] & mask[0] || (*it).m_mask[1] & mask[1] ) {
-            (*it).m_beatEvent->SetEvent();
-            output( " *" );
+    for ( BeatEventArray::iterator it=m_event_handlers.begin(); it != m_event_handlers.end(); ++it ) {
+        for ( int i=0; i < BEAT_DETECTOR_MASK_SIZE; i++ ) {
+            if ( (*it).m_mask[i] & mask[i] ) {
+                (*it).m_beatEvent->SetEvent();
+                break;
+            }
         }
     }
-
-    output( "    \r" );
 
     return 0;
 }

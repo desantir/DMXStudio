@@ -55,7 +55,7 @@ AbstractAnimation* SceneStrobeAnimator::clone() {
 CString SceneStrobeAnimator::getSynopsis(void) {
     CString synopsis;
 
-    synopsis.AppendFormat( "Strobe( -color=%s +ms=%u -ms=%u ) %s", color_names[m_strobe_neg_color],
+    synopsis.AppendFormat( "Strobe( -color=%s +ms=%u -ms=%u )\n%s", color_names[m_strobe_neg_color],
         m_strobe_pos_ms, m_strobe_neg_ms, 
         AbstractAnimation::getSynopsis() );
 
@@ -75,7 +75,7 @@ void SceneStrobeAnimator::initAnimation( AnimationTask* task, DWORD time_ms, BYT
 bool SceneStrobeAnimator::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
 {
     if ( m_strobe.strobe( time_ms ) ) {
-        for ( SwitcherFixtureArray::iterator it=m_fixtures.begin(); it != m_fixtures.end(); it++ ) {
+        for ( SwitcherFixtureArray::iterator it=m_fixtures.begin(); it != m_fixtures.end(); ++it ) {
             SwitcherFixture& sfixture = (*it);
             loadColorChannels( dmx_packet, sfixture, m_strobe.isOn() ? m_strobe.rgbwa() : sfixture.m_channel_values );
         }

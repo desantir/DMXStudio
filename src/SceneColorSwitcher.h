@@ -53,7 +53,7 @@ struct SwitcherFixture
 };
 
 typedef std::vector< SwitcherFixture > SwitcherFixtureArray;
-typedef std::vector<UINT> ColorProgression;
+typedef std::vector<ULONG> ColorProgression;
 
 class SceneColorSwitcher : public AbstractAnimation
 {

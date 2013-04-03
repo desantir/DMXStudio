@@ -78,7 +78,6 @@ public:
     DMX_STATUS write_all( BYTE *dmx_512 );
     DMX_STATUS latch();
     DMX_STATUS read( channel_t channel, bool pending, BYTE& channel_value );
-    BYTE read( channel_t channel, bool pending=false );
     DMX_STATUS read_all( BYTE *dmx_512 );
 
     void setBlackout( bool blackout ) {

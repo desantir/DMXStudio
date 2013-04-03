@@ -192,7 +192,7 @@ public:
 
     virtual void clear() {
         if ( m_auto_delete ) {
-            for ( FormFields::iterator it=m_fields.begin(); it != m_fields.end(); it++ ) {
+            for ( FormFields::iterator it=m_fields.begin(); it != m_fields.end(); ++it ) {
                 delete (*it);
             }
         }
@@ -321,7 +321,7 @@ public:
         if ( m_must_match ) {
             bool match = false;
 
-            for ( SelectionList::iterator it=m_selections.begin(); it != m_selections.end(); it++ ) {
+            for ( SelectionList::iterator it=m_selections.begin(); it != m_selections.end(); ++it ) {
                 if ( _stricmp( (*it), m_current_value ) == 0 ) {
                     match = true;
                     break;
@@ -367,7 +367,7 @@ public:
 
     void helpText( CString& help_text) {
         help_text = "";
-        for ( SelectionList::iterator it=m_selections.begin(); it != m_selections.end(); it++ )
+        for ( SelectionList::iterator it=m_selections.begin(); it != m_selections.end(); ++it )
             help_text.AppendFormat( "%s\n", (LPCSTR)(*it) );
     }
 };
@@ -640,14 +640,14 @@ public:
 
     void helpText( CString& help_text) {
         UINT maxlen = 0;
-        for ( KeyListMap::iterator it=m_selections.begin(); it != m_selections.end(); it++ )
+        for ( KeyListMap::iterator it=m_selections.begin(); it != m_selections.end(); ++it )
             maxlen = std::max<UINT>( (*it).first.GetLength(), maxlen );
 
         CString format;
         format.Format( "   %%%ds - %%s\n", maxlen );
 
         help_text = "";
-        for ( KeyListMap::iterator it=m_selections.begin(); it != m_selections.end(); it++ )
+        for ( KeyListMap::iterator it=m_selections.begin(); it != m_selections.end(); ++it )
             help_text.AppendFormat( (LPCSTR)format, (*it).first, (*it).second );
     }
 };
@@ -666,7 +666,13 @@ public:
     void setDefaultListValue( DWORD selection ) {
         CString current_selection;
         current_selection.Format( "%lu", selection );
-        setValue( current_selection );
+
+        try {
+            setValue( current_selection );
+        }
+        catch ( ... ) {
+            setValue( m_selections.begin()->first );
+        }
     }
 
     void addKeyValue( DWORD key, LPCSTR value ) {
@@ -713,7 +719,7 @@ public:
     void setDefaultListValue( std::vector<CString> selected ) {
         CString value;
 
-        for ( std::vector<CString>::iterator it=selected.begin(); it != selected.end(); it++ ) {
+        for ( std::vector<CString>::iterator it=selected.begin(); it != selected.end(); ++it ) {
             if ( value.GetLength() > 0 )
                 value.Append( "," );
             value.AppendFormat( "%s", (LPCSTR)(*it) );
@@ -768,7 +774,7 @@ public:
     void setDefaultListValue( std::vector<UINT> selected ) {
         std::vector<CString> selections;
 
-        for ( std::vector<UINT>::iterator it=selected.begin(); it != selected.end(); it++ ) {
+        for ( std::vector<UINT>::iterator it=selected.begin(); it != selected.end(); ++it ) {
             CString value;
             value.Format( "%d", (*it) );
             selections.push_back( value );
@@ -787,7 +793,7 @@ public:
         std::vector<CString> selections = getSelections( );
         std::vector<UINT> int_selections;
 
-        for ( std::vector<CString>::iterator it=selections.begin(); it != selections.end(); it++ )
+        for ( std::vector<CString>::iterator it=selections.begin(); it != selections.end(); ++it )
             int_selections.push_back( (UINT)atol( *it ) );
 
         return int_selections;
