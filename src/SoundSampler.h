@@ -98,6 +98,10 @@ public:
     HRESULT ProcessFFT( WORD channels, FFT_Result* fft_result[] );  
     HRESULT ProcessAmplitudes( WORD channels, size_t sample_size, float* sample_data[] ) { return 0; }
 
+    void Unlink( AudioInputStream* audio ) {
+        detach();
+    }
+
     bool setFrequencySamples( unsigned channels, const unsigned* frequencies );
 
     SampleSet getSampleSet( ULONG &sample_number );

@@ -38,11 +38,9 @@ MA 02111-1307, USA.
 #define DMX_URL_CONTROL_SCENE_SHOW              DMX_URL_ROOT_FULL "control/scene/show/" 
 #define DMX_URL_CONTROL_CHASE_SHOW              DMX_URL_ROOT_FULL "control/chase/show/" 
 
-#define DMX_URL_CONTROL_FIXTURE_CAPTURE         DMX_URL_ROOT_FULL "control/fixture/capture/"
-#define DMX_URL_CONTROL_FIXTURE_RELEASE         DMX_URL_ROOT_FULL "control/fixture/release/"
-#define DMX_URL_CONTROL_FIXTUREGROUP_CAPTURE    DMX_URL_ROOT_FULL "control/fixturegroup/capture/"
-#define DMX_URL_CONTROL_FIXTUREGROUP_RELEASE    DMX_URL_ROOT_FULL "control/fixturegroup/release/"
 #define DMX_URL_CONTROL_FIXTURE_CHANNELS        DMX_URL_ROOT_FULL "control/fixture/channels/"
+#define DMX_URL_CONTROL_FIXTURE                 DMX_URL_ROOT_FULL "control/fixture/"
+#define DMX_URL_CONTROL_FIXTURE_GROUP           DMX_URL_ROOT_FULL "control/fixture/group/"
 
 #define DMX_URL_CONTROL_VENUE_VOLUME_MASTER     DMX_URL_ROOT_FULL "control/venue/volume/master/"
 #define DMX_URL_CONTROL_VENUE_VOLUME_MUTE       DMX_URL_ROOT_FULL "control/venue/volume/mute/"
@@ -98,10 +96,6 @@ DMXHttpFull::DMXHttpFull(void) :
     m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_STROBE ] = &DMXHttpFull::control_venue_strobe;
     m_rest_get_handlers[ DMX_URL_CONTROL_SCENE_SHOW ] = &DMXHttpFull::control_scene_show;
     m_rest_get_handlers[ DMX_URL_CONTROL_CHASE_SHOW ] = &DMXHttpFull::control_chase_show;
-    m_rest_get_handlers[ DMX_URL_CONTROL_FIXTURE_CAPTURE ] = &DMXHttpFull::control_fixture_capture;
-    m_rest_get_handlers[ DMX_URL_CONTROL_FIXTURE_RELEASE ] = &DMXHttpFull::control_fixture_release;
-    m_rest_get_handlers[ DMX_URL_CONTROL_FIXTUREGROUP_CAPTURE ] = &DMXHttpFull::control_fixturegroup_capture;
-    m_rest_get_handlers[ DMX_URL_CONTROL_FIXTUREGROUP_RELEASE ] = &DMXHttpFull::control_fixturegroup_release;
 
     m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_VOLUME_MASTER ] = &DMXHttpFull::control_master_volume;
     m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_VOLUME_MUTE ] = &DMXHttpFull::control_mute_volume;   
@@ -118,6 +112,8 @@ DMXHttpFull::DMXHttpFull(void) :
 
     // POST request handlers
     m_rest_post_handlers[ DMX_URL_CONTROL_FIXTURE_CHANNELS ] = &DMXHttpFull::control_fixture_channels;
+    m_rest_post_handlers[ DMX_URL_CONTROL_FIXTURE ] = &DMXHttpFull::control_fixture;
+    m_rest_post_handlers[ DMX_URL_CONTROL_FIXTURE_GROUP ] = &DMXHttpFull::control_fixture_group;
 
     m_rest_post_handlers[ DMX_URL_EDIT_SCENE_COPY_FIXTURES ] = &DMXHttpFull::edit_scene_copy_fixtures;
     m_rest_post_handlers[ DMX_URL_EDIT_VENUE_UPDATE ] = &DMXHttpFull::edit_venue_update;

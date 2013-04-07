@@ -57,16 +57,13 @@ public:
         return it != m_values.end();
     }
 
+    bool is_null( LPCSTR key ) {
+        return findPair( key )->second == "null";
+    }
+
     template <class T>
     T get( LPCSTR key ) {
-        NAME_VALUE_PAIR::iterator it = m_values.find( key );
-        if ( it == m_values.end() ) {
-            CString error;
-            error.Format( "Requested JSON tag '%s' is not available", key );
-            throw std::exception( (LPCSTR)error );
-        }
-
-        LPCSTR value = (LPCSTR)it->second;
+        LPCSTR value = (LPCSTR)findPair( key )->second;
 
         T converted_value;
 
@@ -94,14 +91,7 @@ public:
 
     template <class T>
     T getHex( LPCSTR key ) {
-        NAME_VALUE_PAIR::iterator it = m_values.find( key );
-        if ( it == m_values.end() ) {
-            CString error;
-            error.Format( "Requested JSON tag '%s' is not available", key );
-            throw std::exception( (LPCSTR)error );
-        }
-
-        LPCSTR value = (LPCSTR)it->second;
+        LPCSTR value = (LPCSTR)findPair( key )->second;
 
         T converted_value;
 
@@ -115,7 +105,17 @@ public:
             printf( "%s = %s\n", it->first, it->second );
     }
     
-private:    
+private:
+    NAME_VALUE_PAIR::iterator findPair( LPCSTR key ) {
+        NAME_VALUE_PAIR::iterator it = m_values.find( key );
+        if ( it == m_values.end() ) {
+            CString error;
+            error.Format( "Requested JSON tag '%s' is not available", key );
+            throw std::exception( (LPCSTR)error );
+        }
+        return it;
+    }
+    
     std::vector<CString> tokenize( LPCSTR value, LPCSTR break_chars=",",  bool store_breaks=false );
     CString&  SimpleJsonParser::strip_quotes( CString& value );
 
@@ -133,23 +133,43 @@ private:
     }
 
     void convert( LPCSTR value, unsigned long& result ) {
-        sscanf_s( value, "%lu", &result );
+        if ( sscanf_s( value, "%lu", &result ) != 1 ) {
+            CString error;
+            error.Format( "Value '%s' is not an unsigned long", value );
+            throw std::exception( (LPCSTR)error );
+        }
     }
 
     void convert( LPCSTR value, unsigned& result ) {
-        sscanf_s( value, "%u", &result );
+        if ( sscanf_s( value, "%u", &result ) != 1 ) {
+            CString error;
+            error.Format( "Value '%s' is not an unsigned", value );
+            throw std::exception( (LPCSTR)error );
+        }
     }
 
     void convert( LPCSTR value, long& result ) {
-        result = atol( value );
+        if ( sscanf_s( value, "%ld", &result ) != 1 ) {
+            CString error;
+            error.Format( "Value '%s' is not a long", value );
+            throw std::exception( (LPCSTR)error );
+        }
     }
 
     void convert( LPCSTR value, int& result ) {
-        result = atoi( value );
+        if ( sscanf_s( value, "%d", &result ) != 1 ) {
+            CString error;
+            error.Format( "Value '%s' is not an int", value );
+            throw std::exception( (LPCSTR)error );
+        }
     }
 
     void convert( LPCSTR value, WORD& result ) {
-        result = atoi( value );
+        if ( sscanf_s( value, "%hu", &result ) != 1 ) {
+            CString error;
+            error.Format( "Value '%s' is not a WORD", value );
+            throw std::exception( (LPCSTR)error );
+        }
     }
 
     void convert( LPCSTR value, BYTE& result ) {
@@ -161,11 +181,19 @@ private:
     }
 
     void convert( LPCSTR value, float& result ) {
-        result = (float)atof( value );
+        if ( sscanf_s( value, "%f", &result ) != 1 ) {
+            CString error;
+            error.Format( "Value '%s' is not a float", value );
+            throw std::exception( (LPCSTR)error );
+        }
     }
 
     void convert( LPCSTR value, double& result ) {
-        result = atof( value );
+        if ( sscanf_s( value, "%lf", &result ) != 1 ) {
+            CString error;
+            error.Format( "Value '%s' is not a double", value );
+            throw std::exception( (LPCSTR)error );
+        }
     }
 
     template <class T>

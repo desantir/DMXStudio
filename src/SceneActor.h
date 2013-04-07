@@ -61,6 +61,10 @@ public:
         return m_pfuid;
     }
 
+    inline size_t getNumChannels() const {
+        return m_channels;
+    }
+
     inline BYTE getChannelValue( channel_t channel ) const {
         STUDIO_ASSERT( channel < m_channels, "Channel out of range" );
         return m_channel_values[ channel ];

@@ -703,15 +703,14 @@ bool Venue::isGroupCaptured( FixtureGroup* group ) {
         for ( channel_t ch=0; ch < fixture->getNumChannels(); ch++ ) {
             channel_t address = fixture->getChannelAddress(ch);
             BYTE value;
-            
-            m_universe->read( ch, false, value );
+            m_universe->read( address, false, value );
 
             if ( !first ) {
-                if ( dmx_channels[ address] != value )
+                if ( dmx_channels[ ch ] != value )
                     return false; // Value is different, fixtures separate
             }
             else
-                dmx_channels[ address] = value;
+                dmx_channels[ ch ] = value;
         }
     }
 
@@ -812,10 +811,7 @@ SceneActor* Venue::getCapturedActor() {
 SceneActor * Venue::getDefaultActor( UID fixture_id ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    // If we already have a default actor for this fixture, use it
-    SceneActor * actor = getDefaultScene()->getActor( fixture_id );
-
-    return actor;
+    return getDefaultScene()->getActor( fixture_id );
 }
 
 // ----------------------------------------------------------------------------
@@ -935,7 +931,7 @@ void Venue::captureAndSetChannelValue( Fixture* pf, channel_t channel, BYTE valu
     SceneActor * actor = captureActor( pf->getUID() );
     actor->setChannelValue( channel, value );
 
-    value = adjustChannelValue( pf, channel, value );;
+    value = adjustChannelValue( pf, channel, value );
 
     getUniverse()->write( pf->getChannelAddress( channel ), value, true );
 }
@@ -947,8 +943,7 @@ void Venue::writePacket( const BYTE* dmx_packet ) {
     memcpy( packet, dmx_packet, DMX_PACKET_SIZE );
 
     // Overwrite any manually controlled fixtures
-    if ( !isDefaultScene() )
-        loadSceneChannels( packet, getDefaultScene() );
+    loadSceneChannels( packet, getDefaultScene() );
 
     // Handle whiteout effect (all venue fixtures)
     if ( getWhiteout() != WHITEOUT_OFF )               
@@ -969,9 +964,15 @@ BYTE Venue::getChannelValue( Fixture* pfixture, channel_t channel ) {
     STUDIO_ASSERT( channel < pfixture->getNumChannels(), 
         "Channel %d out of range for fixture %ld", channel, pfixture->getUID() );
 
-   SceneActor * actor =  getScene()->getActor( pfixture->getUID() );
+    SceneActor * actor = getDefaultActor( pfixture->getUID() );
     if ( actor )
         return actor->getChannelValue( channel );
+
+    if ( !isDefaultScene() ) {
+        actor =  getScene()->getActor( pfixture->getUID() );
+        if ( actor )
+            return actor->getChannelValue( channel );
+    }
 
     return pfixture->getChannel( channel )->getDefaultValue();
 }

@@ -11,13 +11,12 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
    M Web Full UI - stage 3
 		H 3 Positional "map" of fixtures to allow easy selection
 		H 4 Music search
-		H 5 Workspace channel management (delete fixture changes, re-arrange channels, hidden channels, compact channels, save channel sets)
+		H 5 Workspace channel management (delete fixture changes, re-arrange channels, hidden channels, save channel sets)
 		H 5 Animation macros (must be easier to create animations from the UI)
 
 		M 3 Music mapping (Music Scene Select, Map music to scene or chase, Remove music mapping, Show music mappings)
 
 		L 1 Improved error responses (e.g. "<item> not found")
-		L 1 Control fixture from scene describe should preserve channel values
 		L 1 UI Preferences (update frequency etc, collapsed sections)
 		L 1 Indicate which fixtures are used by a scene (maybe view channels as well)
 		L 1 Fixture icon images rather than text (preference)

@@ -150,6 +150,7 @@ function Slider(panel, number, slider_frame) {
         slider.slider("value", value);
         slider.attr("title", this.getRangeDescription(value));
         slider.slider("option", "disabled", false);
+        slider.slider("option", "animate", true);
     }
 
     // method release
@@ -166,6 +167,7 @@ function Slider(panel, number, slider_frame) {
         this.getFooter().text("");
 
         var slider = this.getSlider();
+        slider.slider("option", "animate", false);    // Must turn this off before loading
         slider.slider("value", 0);
         slider.attr("title", "");
         slider.slider("option", "disabled", true);
@@ -173,7 +175,7 @@ function Slider(panel, number, slider_frame) {
 
     // Constructor
     var slider = this.getSlider()
-    slider.empty().slider({ value: 0, range: "min", min: 0, max: 255, animate: true, orientation: "vertical" });
+    slider.empty().slider({ value: 0, range: "min", min: 0, max: 255, animate: false, orientation: "vertical" });
     slider.slider("option", "disabled", true);
 
     slider.get(0).setAttribute("slider_number", this.number);
@@ -246,7 +248,6 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
         }
 
         // Add more sliders
-
         if (consecutive_free != 0)                // Unused sliders at the end
             needed_sliders -= consecutive_free;
         else                                      // Need to create them all
@@ -268,13 +269,13 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
 
         var channel_start = this.getFreeChannelStart(num_channels);
         if (channel_start == -1) {
-            alert("Error: Not enough free sliders for " + num_channels + " channels");
+            messageBox("Error: Not enough free sliders for " + num_channels + " channels");
             return;
         }
 
         for (var i = 0; i < num_channels; i++ ) {
-            this.sliders[i + channel_start].allocate(owner, channel_data[i].number, callback, channel_data[i].label,
-                channel_data[i].title, channel_data[i].value, channel_data[i].ranges,
+            this.sliders[i + channel_start].allocate(owner, channel_data[i].channel, callback, channel_data[i].label,
+                channel_data[i].name, channel_data[i].value, channel_data[i].ranges,
                 channel_data[i].type, channel_data[i].color, owner_name);
         }
     }

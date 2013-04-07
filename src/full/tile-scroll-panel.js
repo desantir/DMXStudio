@@ -50,13 +50,6 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
             }
         }
 
-        // TODO - reflow at least the scrollbar
-        //var content_div = $("#" + this.panel_id).find(".scroll-content");
-        //if (content_div == null) {
-        //    alert("Assert: Cannot find #" + this.panel_id + " .scroll-content");
-        //    return;
-        //}
-
         this.adjustScrollbar();
 
         return true;
@@ -83,7 +76,7 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
 
         var content_div = $("#" + this.panel_id).find(".scroll-content");
         if (content_div == null) {
-            alert("Assert: Cannot find #" + this.panel_id + " .scroll-content");
+            messageBox("Assert: Cannot find #" + this.panel_id + " .scroll-content");
             return;
         }
 
@@ -141,7 +134,7 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
     this.empty = function () {
         var content_div = $("#" + this.panel_id).find(".scroll-content");
         if (content_div == null) {
-            alert("Assert: Cannot find #" + this.panel_id + " .scroll-content");
+            messageBox("Assert: Cannot find #" + this.panel_id + " .scroll-content");
             return;
         }
 

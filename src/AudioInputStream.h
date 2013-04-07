@@ -147,6 +147,7 @@ class IAudioProcessor {
 public:
     virtual HRESULT ProcessFFT( WORD channels, FFT_Result* fft_result[] ) = 0;
     virtual HRESULT ProcessAmplitudes( WORD channels, size_t sample_size, float* sample_data[] ) = 0;
+    virtual void Unlink( AudioInputStream* audio ) = 0;
 };
 
 struct ProcessorFormat

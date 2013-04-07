@@ -52,6 +52,8 @@ Scene& Scene::operator=( Scene& rhs ) {
 // ----------------------------------------------------------------------------
 //
 void Scene::copy_animations( Scene& rhs ) {
+    CSingleLock lock( &m_scene_mutex, TRUE );
+
     for ( AnimationPtrArray::iterator it=rhs.m_animations.begin();
           it != rhs.m_animations.end(); ++it ) {
         m_animations.push_back( (*it)->clone() );
@@ -68,12 +70,16 @@ Scene::~Scene(void)
 // ----------------------------------------------------------------------------
 //
 void Scene::addActor( SceneActor& actor ) {
+    CSingleLock lock( &m_scene_mutex, TRUE );
+
     m_actors[ actor.getFUID() ] = actor;
 }
 
 // ----------------------------------------------------------------------------
 //
 bool Scene::removeActor( UID uid ) {
+    CSingleLock lock( &m_scene_mutex, TRUE );
+
     ActorMap::iterator it = m_actors.find( uid );
     if ( it == m_actors.end() )
         return false;
@@ -90,6 +96,8 @@ bool Scene::removeActor( UID uid ) {
 // ----------------------------------------------------------------------------
 //
 SceneActor* Scene::getActor( UID uid ) {
+    CSingleLock lock( &m_scene_mutex, TRUE );
+
     ActorMap::iterator it = m_actors.find( uid );
     if ( it != m_actors.end() )
         return &it->second;
@@ -99,6 +107,8 @@ SceneActor* Scene::getActor( UID uid ) {
 // ----------------------------------------------------------------------------
 //
 ActorPtrArray Scene::getActors( ) {
+    CSingleLock lock( &m_scene_mutex, TRUE );
+
     ActorPtrArray list;
     ActorMap::iterator it;
 
@@ -111,6 +121,8 @@ ActorPtrArray Scene::getActors( ) {
 // ----------------------------------------------------------------------------
 //
 UIDArray Scene::getActorUIDs( ) {
+    CSingleLock lock( &m_scene_mutex, TRUE );
+
     UIDArray list;
     ActorMap::iterator it;
 
@@ -123,12 +135,16 @@ UIDArray Scene::getActorUIDs( ) {
 // ----------------------------------------------------------------------------
 // Transfers animation life-cycle responsibilty to the scene
 void Scene::addAnimation( AbstractAnimation* animation ) {
+    CSingleLock lock( &m_scene_mutex, TRUE );
+
     m_animations.push_back( animation );
 }
 
 // ----------------------------------------------------------------------------
 // Animation destructor will be called
 void Scene::clearAnimations( ) {
+    CSingleLock lock( &m_scene_mutex, TRUE );
+
     for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
         delete (*it);
     m_animations.clear();
@@ -137,6 +153,8 @@ void Scene::clearAnimations( ) {
 // ----------------------------------------------------------------------------
 // 
 AbstractAnimation* Scene::getAnimation( size_t animation_num ) {
+    CSingleLock lock( &m_scene_mutex, TRUE );
+
     STUDIO_ASSERT( animation_num < m_animations.size(), "Requested invalid animation" );
     return m_animations[ animation_num ];
 }
@@ -144,6 +162,8 @@ AbstractAnimation* Scene::getAnimation( size_t animation_num ) {
 // ----------------------------------------------------------------------------
 // Animation destructor will be called
 void Scene::removeAnimation( UID animation_uid ) {
+    CSingleLock lock( &m_scene_mutex, TRUE );
+
     for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
         if ( (*it)->getUID() == animation_uid ) {
             AbstractAnimation* animation = (*it);
@@ -156,6 +176,8 @@ void Scene::removeAnimation( UID animation_uid ) {
 // ----------------------------------------------------------------------------
 // Transfers animation life-cycle responsibilty to the scene
 void Scene::insertAnimation( unsigned animation_num, AbstractAnimation* animation ) {
+    CSingleLock lock( &m_scene_mutex, TRUE );
+
     STUDIO_ASSERT( animation_num <= m_animations.size(), "Animation insert step out of range" );
     m_animations.insert( m_animations.begin()+animation_num, animation );
 }

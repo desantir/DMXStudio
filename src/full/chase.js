@@ -120,6 +120,9 @@ function getUnusedChaseNumber() {
 //
 function updateChases() {
     chase_tile_panel.empty();
+    chases = []
+    chases.length = 0;
+    active_chase_id = 0;
 
     $.ajax({
         type: "GET",
@@ -128,8 +131,7 @@ function updateChases() {
         success: function (data) {
             var json = jQuery.parseJSON(data);
             chase_data = json['chases'];
-            chases.length = 0;
-            active_chase_id = 0;
+
             $.map(chase_data, function (chase, index) {
                 chase_tile_panel.addTile(chase.id, chase.number, escapeForHTML(chase.name), true);
                 chases.push( new Chase(chase) );
@@ -208,13 +210,13 @@ function openNewChaseDialog(dialog_title, data) {
     var send_update = function (make_copy) {
         var steps = reload_steps_data();
         if (steps.length == 0) {
-            alert("No scene steps have been selected");
+            messageBox("No scene steps have been selected");
             return;
         }
 
         for (var s = 0; s < steps.length; s++) {
             if (steps[s].id == 0) {
-                alert("Step " + (s + 1) + " does not have a selected scene");
+                messageBox("Step " + (s + 1) + " does not have a selected scene");
                 return;
             }
         }
@@ -231,7 +233,7 @@ function openNewChaseDialog(dialog_title, data) {
         };
 
         if ((make_copy || json.number != data.number) && getChaseByNumber(json.number) != null) {
-            alert("Chase number " + json.number + " is already in use");
+            messageBox("Chase number " + json.number + " is already in use");
             return;
         }
 
@@ -410,7 +412,7 @@ function describeChase(event, chase_id) {
 
     var chase = getChaseById(chase_id);
     if (chase == null) {
-        alert("No definition for chase " + chase_id + " in client");
+        messageBox("No definition for chase " + chase_id + " in client");
         return;
     }
 

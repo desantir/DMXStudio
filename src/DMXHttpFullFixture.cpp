@@ -48,7 +48,7 @@ static void append_channel_json( CString& response, ChannelPtrArray& channels, B
         if ( ch != 0 )
             response.Append( "," );
 
-        response.AppendFormat( "{ \"number\":%u, \"title\":\"%s\", \"type\":%u, \"type_name\":\"%s\", \"value\":%u",
+        response.AppendFormat( "{ \"channel\":%u, \"name\":\"%s\", \"type\":%u, \"type_name\":\"%s\", \"value\":%u",
                                 ch, encodeJsonString(channel->getName()), channel->getType(), Channel::getTypeName(channel->getType()), 
                                 channel_values ? channel_values[ch] : 0 );
 
@@ -203,100 +203,6 @@ bool DMXHttpFull::query_fixtures( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::control_fixture_capture( CString& response, LPCSTR data )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    UID fixture_id;
-        
-    if ( sscanf_s( data, "%lu", &fixture_id ) != 1 )
-        return false;
-
-    Fixture* pf = studio.getVenue()->getFixture( fixture_id );
-    if ( !pf )
-        return false;
-
-    studio.getVenue()->captureActor( fixture_id );
-
-    response.Format( "[" );
-    for ( channel_t ch=0; ch < pf->getNumChannels(); ch++ ) {
-        if ( ch > 0 )
-            response.Append( "," );
-        response.AppendFormat( "%u", studio.getVenue()->getChannelValue( pf, ch ) );
-    }
-    response.AppendFormat( "]" );
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool DMXHttpFull::control_fixturegroup_capture( CString& response, LPCSTR data )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    UID fixture_group_id;
-        
-    if ( sscanf_s( data, "%lu", &fixture_group_id ) != 1 )
-        return false;
-
-    FixtureGroup* group = studio.getVenue()->getFixtureGroup( fixture_group_id );
-    if ( !group )
-        return false;
-
-    UIDSet uidset = group->getFixtures( );
-    unsigned num_channels = 0;
-
-    response.Format( "[" );
-
-    for ( UIDSet::iterator it=uidset.begin(); it != uidset.end(); ++it ) {
-        studio.getVenue()->captureActor( (*it) );
-
-        Fixture* pf = studio.getVenue()->getFixture( (*it) );
-        if ( pf->getNumChannels() > num_channels ) {
-            for ( UINT ch=num_channels; ch < pf->getNumChannels(); ch++ ) {
-                if ( ch > 0 )
-                    response.Append( "," );
-                response.AppendFormat( "%u", studio.getVenue()->getChannelValue( pf, ch ) );
-            }
-
-            num_channels = pf->getNumChannels();
-        }
-    }
-    response.AppendFormat( "]" );
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool DMXHttpFull::control_fixturegroup_release( CString& response, LPCSTR data )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    UID fixture_group_id;
-        
-    if ( sscanf_s( data, "%lu", &fixture_group_id ) != 1 )
-        return false;
-
-    FixtureGroup* group = studio.getVenue()->getFixtureGroup( fixture_group_id );
-    if ( !group )
-        return false;
-
-    UIDSet uidset = group->getFixtures( );
-    for ( UIDSet::iterator it=uidset.begin(); it != uidset.end(); ++it )
-        studio.getVenue()->releaseActor( (*it) );
-
-   studio.getVenue()->loadScene();
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
 bool DMXHttpFull::delete_fixture( CString& response, LPCSTR data ) {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -441,6 +347,119 @@ bool DMXHttpFull::edit_fixture( CString& response, LPCSTR data, EditMode mode )
             fixture->setAddress( dmx_address );
             break;
         }
+    }
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool DMXHttpFull::control_fixture( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+{
+    SimpleJsonParser parser;
+    UID fixture_id;
+    bool is_capture;
+    std::vector<BYTE> channel_values;
+
+    try {
+        parser.parse( data );
+
+        fixture_id = parser.get<ULONG>( "id" );
+        is_capture = parser.get<bool>( "is_capture" );
+
+        if ( parser.has_key( "channel_values" ) )
+            channel_values = parser.get<std::vector<BYTE>>( "channel_values" );
+    }
+    catch ( std::exception& e ) {
+        DMXStudio::log( StudioException( "JSON parser error (%s) data (%s)", e.what(), data ) );
+        return false;
+    }
+
+    if ( is_capture ) {
+        SceneActor* actor = studio.getVenue()->captureActor( fixture_id );
+        if ( !actor )
+            return false;
+
+        // Pre-set channel values
+        if ( channel_values.size() == actor->getNumChannels() ) {
+            for ( channel_t channel=0; channel < channel_values.size(); channel++ )
+                actor->setChannelValue( channel, channel_values[channel] );
+        }
+
+        // Return current channel values
+        response.Format( "[" );
+        for ( channel_t ch=0; ch < actor->getNumChannels(); ch++ ) {
+            if ( ch > 0 )
+                response.Append( "," );
+            response.AppendFormat( "%u", actor->getChannelValue( ch ) );
+        }
+        response.AppendFormat( "]" );
+    }
+    else {
+        if ( fixture_id != 0 )
+            studio.getVenue()->releaseActor( fixture_id );
+        else
+            studio.getVenue()->clearAllCapturedActors();
+
+        // If releasing, reload the current scene
+        studio.getVenue()->loadScene();
+    }
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool DMXHttpFull::control_fixture_group( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+{
+    SimpleJsonParser parser;
+    UID group_id;
+    bool is_capture;
+
+    try {
+        parser.parse( data );
+
+        group_id = parser.get<ULONG>( "id" );
+        is_capture = parser.get<bool>( "is_capture" );
+    }
+    catch ( std::exception& e ) {
+        DMXStudio::log( StudioException( "JSON parser error (%s) data (%s)", e.what(), data ) );
+        return false;
+    }
+
+    FixtureGroup* group = studio.getVenue()->getFixtureGroup( group_id );
+    if ( !group )
+        return false;
+
+    UIDSet uidset = group->getFixtures( );
+
+    if ( is_capture ) {
+        unsigned num_channels = 0;
+
+        // Return current channel values 
+        response.Format( "[" );
+        for ( UIDSet::iterator it=uidset.begin(); it != uidset.end(); ++it ) {
+            studio.getVenue()->captureActor( (*it) );
+
+            Fixture* pf = studio.getVenue()->getFixture( (*it) );
+            if ( pf->getNumChannels() > num_channels ) {
+                for ( UINT ch=num_channels; ch < pf->getNumChannels(); ch++ ) {
+                    if ( ch > 0 )
+                        response.Append( "," );
+                    response.AppendFormat( "%u", studio.getVenue()->getChannelValue( pf, ch ) );
+                }
+
+                num_channels = pf->getNumChannels();
+            }
+        }
+        response.AppendFormat( "]" );
+    }
+    else {
+        for ( UIDSet::iterator it=uidset.begin(); it != uidset.end(); ++it )
+            studio.getVenue()->releaseActor( (*it) );
+
+        // If releasing, reload the current scene
+        studio.getVenue()->loadScene();
     }
 
     return true;

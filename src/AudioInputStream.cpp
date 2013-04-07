@@ -113,6 +113,10 @@ AudioInputStream::~AudioInputStream(void)
 {
     closeAudioStream();
 
+    // Unlink all attached audio processors
+    while ( m_sinks.size() > 0 )
+       m_sinks.begin()->first->Unlink( this );
+
     delete m_sample_left;
     delete m_sample_right;
 

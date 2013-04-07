@@ -134,13 +134,13 @@ MA 02111-1307, USA.
         .animation_button_fixtures { float:right; color:white; font-size:10pt; }    
         .animation_button_signal { clear:both; float:left; color:#2e7db2; font-size:10pt; }
 
-        .describe_number { float:left; font-family:sans-serif; font-weight:normal; font-size: 80pt; margin: 0px 4px 4px 0px; }
+        .describe_number { float:left; font-family:sans-serif; font-weight:normal; font-size: 60pt; margin: 0px 4px 2px 0px; }
         .describe_title { color: #2e7db2; width:150px; text-align:right; float:left;  clear:both; margin-right: 6px; }
         .describe_data { color:white; text-align:left; float:left; }
         .describe_fixture_range { color:#2e7db2; clear:both; float:left;margin:6px 6px 6px 30px; display: none; font-size:8pt;}         
         .describe_fixture_channels { margin:0px; overflow-y:auto; overflow-x:hidden; height:280px; font-size: smaller; }
         .describe_chase_step { color:#2e7db2; } 
-        .describe_scene_channels { color:#2e7db2; clear:both; float:left; margin:6px 6px 0px 30px; font-size:8pt;}             
+        .describe_scene_channels { color:#2e7db2; clear:both; float:left; margin:3px 0px 8px 30px; font-size:8pt;}             
         .describe_scene_dmx { color:#2e7db2; font-size:8pt; margin-left:4px; } 
          
         .dialog_note_text { color:#2e7db2; font-size:8pt; margin-left:4px; } 
@@ -292,7 +292,7 @@ MA 02111-1307, USA.
     <div class="section_title_container">
         <span class="section_title" >GROUPS & FIXTURES</span>
         <span class="collapsable_icon"></span>
-        <span class="scroll_or_grid_icon"></span>
+        <span class="scroll_or_grid_icon"  style="margin-right: 5px;"></span>
         <span class="ui-icon ui-icon-plusthick new_item" title="new fixture" style="float:right; display: none; margin-right: 5px; " onclick="createFixture(event);"></span>
         <span class="ui-icon ui-icon-plusthick new_item" title="new fixture group" style="float:right; display: none; margin: 0px 5px 0px 0px; border: 1px solid #808080" onclick="createFixtureGroup(event);"></span>
         <span id="copy_fixtures_button" class="ui-icon ui-icon-clipboard new_item" title="copy fixtures to scene" style="float:right; display: none; margin-right: 5px; "onclick="copyFixtures(event);"></span>
@@ -310,11 +310,11 @@ MA 02111-1307, USA.
     <div class="section_title_container">
         <span class="section_title" >CHANNELS</span>
         <span class="collapsable_icon"></span>
-        <span class="scroll_or_grid_icon"></span>
+        <span class="scroll_or_grid_icon"  style="margin-right: 5px;"></span>
         <span class="track_slider_icon" style="margin-right: 5px;"></span>
         <span id="channel_panel_colorpicker" class="ui-icon ui-icon-lightbulb" title="show color palette" style="float:right; cursor:pointer; margin-right: 5px;"></span>
-        <span id="channel_panel_groupcolors" class="ui-icon ui-icon-pin-s" title="group colors" style="float:right; cursor:pointer; margin-right: 5px;" onclick="groupFixtureSliderColors(event);"></span>
-
+        <span id="channel_panel_groupcolors" class="ui-icon ui-icon-pin-s" title="group color channels" style="float:right; cursor:pointer; margin-right: 5px;" onclick="groupFixtureSliderColors(event);"></span>
+        <span id="channel_panel_rearrange" class="ui-icon ui-icon-grip-solid-vertical" title="arrange channels" style="float:right; cursor:pointer; margin-right: 5px;" onclick="arrangeSliders(event);"></span>
     </div>
     <div class="collapsable_content">
         <div class="scroll-content"></div>
@@ -364,8 +364,12 @@ MA 02111-1307, USA.
         <div class="describe_title">&nbsp;</div>
         <div class="describe_data" id="describe_fixture_description"></div>
     </div>
-    <hr style="clear: both; margin-top: 10px;"/>
+    <hr style="clear: both;"/>
     <div id="describe_fixture_channel_info" class="describe_fixture_channels"></div>
+</div>
+
+<div id="message_box_dialog" style="display:none;">
+    <p id="mbd_contents"></p>
 </div>
 
 <div id="describe_fixture_groups_dialog" style="display:none;">
@@ -376,7 +380,7 @@ MA 02111-1307, USA.
         <div class="describe_title">&nbsp;</div>
         <div class="describe_data" id="describe_fixturegroup_description"></div>
     </div>
-    <hr style="clear: both; margin-top: 10px;"/>
+    <hr style="clear: both;"/>
     <div id="describe_fixture_group_info" class="describe_data"></div>
 </div>
 
@@ -392,7 +396,7 @@ MA 02111-1307, USA.
         <div class="describe_title">&nbsp;</div>
         <div class="describe_data" id="describe_chase_description"></div>
     </div>
-    <hr style="clear: both; margin-top: 10px;"/>
+    <hr style="clear: both; margin-top: 6px;"/>
     <div id="describe_chase_info" class="describe_fixture_channels"></div>
 </div>
 
@@ -414,9 +418,9 @@ MA 02111-1307, USA.
         <div class="describe_title">&nbsp;</div>
         <div class="describe_data" id="describe_scene_description"></div>
     </div>
-    <hr style="clear: both; margin-top: 10px;"/>
+    <hr style="clear: both;"/>
     <div id="describe_scene_fixtures" class="describe_data"></div>
-    <div id="describe_scene_animations" class="describe_data"></div>
+    <div id="describe_scene_animations" class="describe_data" style="width:100%;"></div>
 </div>
 
 <div id="copy_workspace_fixtures_dialog" style="display:none;" title="Copy Active Fixtures To Scene">

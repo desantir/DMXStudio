@@ -34,6 +34,8 @@ class Scene : public DObject
     friend class VenueWriter;
     friend class VenueReader;
 
+    CCriticalSection    m_scene_mutex;					// Protect scene objects
+
     ActorMap			m_actors;						// "Actors" in this scene
 
     AnimationPtrArray	m_animations;

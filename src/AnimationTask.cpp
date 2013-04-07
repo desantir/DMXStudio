@@ -114,7 +114,7 @@ void AnimationTask::stageScene( Scene* scene )
     // Stage new scene animations
     m_scene = scene;
 
-    memset( m_dmx_packet, 0, DMX_PACKET_SIZE );
+    memset( m_dmx_packet, 0, sizeof(m_dmx_packet) );
 
     m_venue->setHomePositions( m_dmx_packet );
 

@@ -89,6 +89,14 @@ function Scene(scene_data)
     this.getActors = function () {
         return this.actors;
     }
+
+    // method getActor( actor_id )
+    this.getActor = function (actor_id) {
+        for (var i = 0; i < this.actors.length; i++)
+            if (this.actors[i].id == actor_id)
+                return this.actors[i];
+        return null;
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -124,6 +132,8 @@ function getUnusedSceneNumber() {
 //
 function updateScenes() {
     scene_tile_panel.empty();
+    scenes = [];
+    active_scene_id = 0;
 
     $.ajax({
         type: "GET",
@@ -132,8 +142,6 @@ function updateScenes() {
         success: function (data) {
             //alert(data);
             var json = jQuery.parseJSON(data);
-            scenes.length = 0;
-            active_scene_id = 0;
 
             $.map(json, function (scene, index) {
                 var title = escapeForHTML(scene.name);
@@ -239,7 +247,7 @@ function openNewSceneDialog(dialog_title, data) {
         };
 
         if ( (make_copy || json.number != data.number) && getSceneByNumber(json.number) != null ) {
-            alert("Scene number " + json.number + " is already in use");
+            messageBox("Scene number " + json.number + " is already in use");
             return;
         }
 
@@ -443,7 +451,7 @@ function describeScene(event, scene_id) {
 
     var scene = getSceneById(scene_id);
     if (scene == null) {
-        alert("No definition for scene " + scene_id + " in client");
+        messageBox("No definition for scene " + scene_id + " in client");
         return;
     }
 
@@ -466,30 +474,73 @@ function describeScene(event, scene_id) {
     var info = "";
     var clazz = fixture_tile_panel.actions[0].tile_class;
 
-    for (var i=0; i < scene.getActors().length; i++) {
-        var actor = scene.getActors()[i];
-        var fixture = getFixtureById(actor.id);
+    function makeFixtureTitleLine(fixture, channel_data) {
+        var html = "<div style=\"clear:both; float: left; font-size: 10pt; cursor: pointer;\" ";
 
-        info += "<div style=\"clear:both; float: left;\" >";
-        info += "<div class=\"" + clazz + "\" style=\"float:left; margin-right: 4px; cursor: pointer;\" onclick=\"controlFixture( event, " + fixture.getId() + ");\" title=\"toggle control fixture\"></div>";
-        info += "Fixture " + fixture.getNumber() + ": " + escapeForHTML(fixture.getFullName());
-        info += "<span class=\"describe_scene_dmx\">DMX " + actor.address + "</span>";
-        info += "</div>";
+        if (channel_data != null)
+            html += "onclick=\"controlFixture2( event, " + fixture.getId() + "," + JSON.stringify(channel_data) + ");\" title=\"control fixture\" >";
+        else
+            html += "onclick=\"controlFixture( event, " + fixture.getId() + ");\" title=\"control fixture\" >";
 
-        if (actor.channels.length) {
-            info += "<div class=\"describe_scene_channels\">"
-            for (var j = 0; j < actor.channels.length; j++) {
-                var channel = actor.channels[j];
+        html += "Fixture " + (fixture.isGroup() ? "Group G" : "") + fixture.getNumber() + ": " + escapeForHTML(fixture.getFullName());
 
-                info += "<div>";
-                info += "Channel " + (channel.channel + 1) + ": " + escapeForHTML(channel.name) + " = " + channel.value;
+        if (!fixture.isGroup())
+            html += "<span class=\"describe_scene_dmx\">DMX " + fixture.getDMXAddress() + "</span>";
+        html += "</div>";
 
-                if (channel.range_name.length > 0)
-                    info += " (" + escapeForHTML(channel.range_name) + ")";
+        return html;
+    }
 
-                info += " </div>";
+    function makeChannelInfoLine(channels) {
+        if (!channels.length)
+            return "";
+
+        var html = "<div class=\"describe_scene_channels\">";
+
+        for (var j = 0; j < channels.length; j++) {
+            var channel = channels[j];
+
+            html += "<div>";
+            html += "Channel " + (channel.channel + 1) + ": " + escapeForHTML(channel.name) + " = " + channel.value;
+
+            if (channel.range_name != null && channel.range_name.length > 0) {
+                html += " (" + escapeForHTML(channel.range_name) + ")";
             }
-            info += " </div>";
+            else if (channel.ranges != null) {
+                for (var k = 0; k < channel.ranges.length; k++) {
+                    var range = channel.ranges[k];
+                    if (channel.value >= range.start && channel.value <= range.end) {
+                        html += " (" + escapeForHTML(range.name) + ")";
+                        break;
+                    }
+                }
+            }
+            html += " </div>";
+        }
+        html += " </div>";
+
+        return html;
+    }
+
+    if (!scene.isDefault()) {
+        for (var i = 0; i < scene.getActors().length; i++) {
+            var actor = scene.getActors()[i];
+            var fixture = getFixtureById(actor.id);
+
+            var channel_data = [];
+            for (var j = 0; j < actor.channels.length; j++)
+                channel_data.push(actor.channels[j].value);
+
+            info += makeFixtureTitleLine(fixture, channel_data);
+            info += makeChannelInfoLine(actor.channels);
+        }
+    }
+    else {
+        var fixtures = getActiveFixtures();
+        for (var i = 0; i < fixtures.length; i++) {
+            var fixture = fixtures[i];
+            info += makeFixtureTitleLine(fixture,false);
+            info += makeChannelInfoLine(fixture.getChannels());
         }
     }
 
@@ -517,7 +568,7 @@ function describeScene(event, scene_id) {
             else
                 fixtures = "NONE";
 
-            info += "<div style=\"clear:both; float: left;\" >";
+            info += "<div style=\"clear:both; float: left; font-size: 10pt;\" >";
             info += "Animation: " + animation.name;
             info += "</div>";
 

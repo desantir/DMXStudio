@@ -170,6 +170,29 @@ function initializeUI() {
     setInterval(updateUI, 500);
 }
 
+function messageBox(message) {
+    $("#message_box_dialog").dialog({
+        title: "DMXStudio",
+        autoOpen: true,
+        modal: true,
+        resizable: false,
+        closeOnEscape: true,
+        hide: {
+            effect: "explode",
+            duration: 500
+        },
+        buttons: {
+            "OK": function () {
+                $(this).dialog("close");
+            }
+        }
+    });
+
+    $("#mbd_contents").text(message);
+
+    $("#message_box_dialog").dialog("open");
+}
+
 // ----------------------------------------------------------------------------
 //
 // No need to keep looking these up on every update and it seems expensive
@@ -506,6 +529,9 @@ function loadSaveVenue( event ) {
                 id: "new_venue_button",
                 text:"New Venue",
                 click: function () {
+                    $("#load_save_dialog").dialog("close");
+                    var ice_dialog = put_user_on_ice("Working ... Please wait");
+
                     if ($("#lsd_accordion").accordion('option', 'active') == 2) {
                         var json = {
                             reset_what: $('input[name=lsd_new_venue]:checked').val()
@@ -518,10 +544,13 @@ function loadSaveVenue( event ) {
                             contentType: 'application/json',
                             cache: false,
                             success: function () {
-                                $("#load_save_dialog").dialog("close");
+                                ice_dialog.dialog("close");
                                 window.location.reload(true);
                             },
-                            error: onAjaxError
+                            error: function () {
+                                ice_dialog.dialog("close");
+                                onAjaxError();
+                            }
                         });
                     }
                 }
@@ -530,6 +559,9 @@ function loadSaveVenue( event ) {
                 id: "save_venue_button",
                 text: "Save Venue",
                 click: function () {
+                    $("#load_save_dialog").dialog("close");
+                    var ice_dialog = put_user_on_ice("Working ... Please wait");
+
                     if ($("#lsd_accordion").accordion('option', 'active') == 0) {
                         var json = { venue_filename: $("#lsd_file_name").val() };
 
@@ -540,15 +572,17 @@ function loadSaveVenue( event ) {
                             contentType: 'application/json',
                             cache: false,
                             success: function () {
-                                $("#load_save_dialog").dialog("close");
-                                alert("Venue file saved");
+                                ice_dialog.dialog("close");
+                                messageBox("Server venue file saved");
                             },
-                            error: alert("Cannot save server venue file")
+                            error: function () {
+                                ice_dialog.dialog("close");
+                                messageBox("Cannot save server venue file!");
+                            }
                         });
                     }
                     else {
                         document.getElementById("load_save_dialog_downloadFrame").src = "/dmxstudio/full/venue/download/";
-                        $("#load_save_dialog").dialog("close");
                     }
                 }
             },
@@ -558,6 +592,8 @@ function loadSaveVenue( event ) {
                 click: function () {
                     if ($("#lsd_accordion").accordion('option', 'active') == 0) {
                         var json = { venue_filename: $("#lsd_file_name").val() };
+                        $("#load_save_dialog").dialog("close");
+                        var ice_dialog = put_user_on_ice("Working ... Please wait");
 
                         $.ajax({
                             type: "POST",
@@ -566,11 +602,11 @@ function loadSaveVenue( event ) {
                             contentType: 'application/json',
                             cache: false,
                             success: function () {
-                                $("#load_save_dialog").dialog("close");
                                 window.location.reload( true );
                             },
                             error: function () {
-                                alert("Cannot load server venue file '" + json.venue_filename + "'");
+                                ice_dialog.dialog("close");
+                                messageBox("Cannot load server venue file '" + json.venue_filename + "'");
                             }
                         });
                     }
@@ -624,7 +660,7 @@ function loadSaveVenue( event ) {
 function put_user_on_ice(reason) {
     $("#wd_reason").text(reason);
 
-    $("#wait_dialog").dialog({
+    var ice_dialog = $("#wait_dialog").dialog({
         autoOpen: true,
         width: 300,
         height: 220,
@@ -633,6 +669,8 @@ function put_user_on_ice(reason) {
         closeOnEscape: false,
         open: function() { $(this).dialog("widget").find(".ui-dialog-titlebar").hide(); }
     });
+
+    return ice_dialog;
 }
 
 // ----------------------------------------------------------------------------
@@ -666,7 +704,7 @@ function deleteVenueItem( item, callback ) {
 // ----------------------------------------------------------------------------
 //
 function onAjaxError( jqXHR, textError, errorThrown ) {
-    alert("Unable to complete server operation [" + textError + " (" + errorThrown + ") ]");
+    messageBox("Unable to complete server operation [" + textError + " (" + errorThrown + ") ]");
 }
 
 // ----------------------------------------------------------------------------

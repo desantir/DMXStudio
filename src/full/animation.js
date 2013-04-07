@@ -373,7 +373,7 @@ function updateSignal(prefix, signal_target) {
         case 4:             // Frequency Beat
         case 5:             // Frequency Level
             if (signal.input_low > signal.input_high) {
-                alert("Low frequency must by less than high frequency");
+                messageBox("Low frequency must by less than high frequency");
                 return false;
             }
             break;
@@ -383,7 +383,7 @@ function updateSignal(prefix, signal_target) {
             signal["input_high"] = parseInt($("#" + prefix + "_random_high").val());
 
             if (signal.input_low > signal.input_high) {
-                alert("Random from value must by less than random to value");
+                messageBox("Random from value must by less than random to value");
                 return false;
             }
             break;

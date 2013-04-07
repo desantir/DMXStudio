@@ -116,10 +116,6 @@ private:
     bool query_venue_describe( CString& response, LPCSTR data );
     bool query_fixture_definitions( CString& response, LPCSTR data );
 
-    bool control_fixture_capture( CString& response, LPCSTR data );
-    bool control_fixturegroup_capture( CString& response, LPCSTR data );
-    bool control_fixturegroup_release( CString& response, LPCSTR data );
-
     bool control_soundsampler_start( CString& response, LPCSTR data );
     bool control_soundsampler_stop( CString& response, LPCSTR data );
     bool query_soundsampler( CString& response, LPCSTR data );
@@ -136,6 +132,8 @@ private:
     // POST handlers
 
     bool control_fixture_channels( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool control_fixture( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool control_fixture_group( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
 
     bool edit_scene_copy_fixtures( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
     bool edit_venue_update( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );

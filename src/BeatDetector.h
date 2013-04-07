@@ -85,6 +85,10 @@ public:
     HRESULT ProcessFFT( WORD channels, FFT_Result* fft_result[] ); 
     HRESULT ProcessAmplitudes( WORD channels, size_t sample_size, float* sample_data[] );
 
+    void Unlink( AudioInputStream* audio ) {
+        detach();
+    }
+
 private:
     double* m_B;
     double* m_Es;

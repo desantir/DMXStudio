@@ -27,10 +27,10 @@ var dmx_addresses = null;
 var group_colors = false;
 
 var slider_color_channels = [
-    { "number": 1, "label": "red", "title": "Red", "value": 0, "ranges": null, "type": 1, "color": "rgb(255,0,0)" },
-    { "number": 2, "label": "green", "title": "Green", "value": 0, "ranges": null, "type": 2, "color": "rgb(0,255,0)" },
-    { "number": 3, "label": "blue", "title": "Blue", "value": 0, "ranges": null, "type": 3, "color": "rgb(0,0,255)" },
-    { "number": 5, "label": "white", "title": "White", "value": 0, "ranges": null, "type": 5, "color": "rgb(255,255,255)" }
+    { "channel": 1, "label": "red", "title": "Red", "value": 0, "ranges": null, "type": 1, "color": "rgb(255,0,0)" },
+    { "channel": 2, "label": "green", "title": "Green", "value": 0, "ranges": null, "type": 2, "color": "rgb(0,255,0)" },
+    { "channel": 3, "label": "blue", "title": "Blue", "value": 0, "ranges": null, "type": 3, "color": "rgb(0,0,255)" },
+    { "channel": 5, "label": "white", "title": "White", "value": 0, "ranges": null, "type": 5, "color": "rgb(255,255,255)" }
 ];
 
 // ----------------------------------------------------------------------------
@@ -184,10 +184,12 @@ function getActiveFixtures() {
 //
 function updateFixtures() {
     fixture_tile_panel.empty();
+    fixtures = []
+
     $("#copy_fixtures_button").removeClass("ui-icon-white").addClass("ui-icon");
     $("#clear_fixtures_button").removeClass("ui-icon-white").addClass("ui-icon");
 
-    slider_panel.releaseAllChannels();        // TEMP - for now so sliders and selected are not out of sync
+    slider_panel.releaseAllChannels();
 
     if (group_colors)
         slider_panel.allocateChannels(-1, "Colors", slider_color_channels, fixture_slider_colors_callback);
@@ -198,7 +200,7 @@ function updateFixtures() {
         cache: false,
         success: function (data) {
             var json = jQuery.parseJSON(data);
-            fixtures.length = 0;
+
             $.map(json, function (fixture, index) {
                 fixtures.push(new Fixture(fixture));
 
@@ -223,67 +225,52 @@ function updateFixtures() {
 // ----------------------------------------------------------------------------
 //
 function controlFixture(event, fixture_id) {
-    stopEventPropagation(event);
-
-    var fixture_active = fixture_tile_panel.isActive(fixture_id);
-
-    if (!fixture_active) {
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/full/control/fixture/capture/" + fixture_id,
-            cache: false,
-            success: function (data) {
-                var channel_data = jQuery.parseJSON(data);
-                loadFixtureChannels(fixture_id, channel_data);
-            },
-            error: onAjaxError
-        });
-    }
-    else {
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/full/control/fixture/release/" + fixture_id,
-            cache: false,
-            success: function () {
-                slider_panel.releaseChannels(fixture_id);
-                markActiveFixture(fixture_id, false);
-            },
-            error: onAjaxError
-        });
-    }
+    controlFixture2(event, fixture_id, null);
 }
 
 // ----------------------------------------------------------------------------
 //
 function controlFixtureGroup(event, fixture_group_id) {
+    controlFixture2(event, fixture_group_id, null);
+}
+
+// ----------------------------------------------------------------------------
+//
+function controlFixture2(event, fixture_id, preload_channel_values) {
     stopEventPropagation(event);
 
-    var fixture_active = fixture_tile_panel.isActive(fixture_group_id);
+    var fixture = getFixtureById(fixture_id);
+    if (fixture == null)
+        return;
 
-    if (!fixture_active) {
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/full/control/fixturegroup/capture/" + fixture_group_id,
-            cache: false,
-            success: function (data) {
+    var json = {
+        "id": fixture_id,
+        "is_capture": !fixture.isActive()
+    };
+    
+    if (!fixture.isGroup() && preload_channel_values != null)
+        json.channel_values = preload_channel_values;
+
+    var what = fixture.isGroup() ? "fixturegroup" : "fixture";
+
+    $.ajax({
+        type: "POST",
+        url: "/dmxstudio/full/control/" + what + "/",
+        data: JSON.stringify(json),
+        contentType: 'application/json',
+        cache: false,
+        success: function (data) {
+            if ( !fixture.isActive() ) {        // Make active (captured)
                 var channel_data = jQuery.parseJSON(data);
-                loadFixtureChannels(fixture_group_id, channel_data);
-            },
-            error: onAjaxError
-        });
-    }
-    else {
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/full/control/fixturegroup/release/" + fixture_group_id,
-            cache: false,
-            success: function () {
-                slider_panel.releaseChannels(fixture_group_id);
-                markActiveFixture(fixture_group_id, false);
-            },
-            error: onAjaxError
-        });
-    }
+                loadFixtureChannels(fixture_id, channel_data);
+            }
+            else {                              // Release
+                slider_panel.releaseChannels(fixture_id);
+                markActiveFixture(fixture_id, false);
+            }
+        },
+        error: onAjaxError
+    });
 }
 
 // ----------------------------------------------------------------------------
@@ -309,11 +296,11 @@ function loadFixtureChannels( fixture_id, updated_channel_data ) {
                     if (fixture.isGroup()) {
                         var fixture_ids = fixture.getFixtureIds();
                         for (var k = 0; k < fixture_ids.length; k++) {
-                            json.push({ "fixture_id": fixture_ids[k], "channel": i, "value": slider_color_channels[j].value });
+                            json.push({ "fixture_id": fixture_ids[k], "channel": channel.channel, "value": slider_color_channels[j].value });
                         }
                     }
                     else {
-                        json.push({ "fixture_id": fixture.getId(), "channel": i, "value": slider_color_channels[j].value });
+                        json.push({ "fixture_id": fixture.getId(), "channel": channel.channel, "value": slider_color_channels[j].value });
                     }
 
                     skip = true;
@@ -349,6 +336,30 @@ function loadFixtureChannels( fixture_id, updated_channel_data ) {
             error: onAjaxError
         });
     }
+}
+
+// ----------------------------------------------------------------------------
+//
+function clearFixtures(event) {
+    stopEventPropagation(event);
+
+    var json = { "id": 0, "is_capture": false };
+
+    $.ajax({
+        type: "POST",
+        url: "/dmxstudio/full/control/fixture/",
+        data: JSON.stringify(json),
+        contentType: 'application/json',
+        cache: false,
+        success: function ( ) {
+            var active_fixtures = getActiveFixtures();
+            for (var i = 0; i < active_fixtures.length; i++) {
+                slider_panel.releaseChannels(active_fixtures[i].getId());
+                markActiveFixture(active_fixtures[i].getId(), false);
+            }
+        },
+        error: onAjaxError
+    });
 }
 
 // ----------------------------------------------------------------------------
@@ -412,23 +423,21 @@ function fixture_slider_colors_callback(unused, channel_type, value) {
     }
 
     // Re-populate all fixtures
-    var active_fixtures = getActiveFixtures();
-    for (var i=0; i < active_fixtures.length; i++) {
-        var fixture = active_fixtures[i];
-        for (var j=0; j < fixture.channels.length; j++) {
+    $.map(getActiveFixtures(), function (fixture) {
+        for (var j = 0; j < fixture.channels.length; j++) {
             if (fixture.channels[j].type == channel_type) {
                 if (fixture.isGroup()) {
                     var fixture_ids = fixture.getFixtureIds();
-                    for (var k=0; k < fixture_ids.length; k++) {
-                        json.push({ "fixture_id": fixture_ids[k], "channel": j, "value": value });
+                    for (var k = 0; k < fixture_ids.length; k++) {
+                        json.push({ "fixture_id": fixture_ids[k], "channel": fixture.channels[j].channel, "value": value });
                     }
                 }
                 else {
-                    json.push({ "fixture_id": fixture.getId(), "channel": j, "value": value });
+                    json.push({ "fixture_id": fixture.getId(), "channel": fixture.channels[j].channel, "value": value });
                 }
             }
         }
-    }
+    });
 
     if (json.length == 0)
         return;
@@ -461,9 +470,14 @@ function updateFixtureChannelValues( channel_info ) {
 // ----------------------------------------------------------------------------
 //
 function groupFixtureSliderColors(event) {
-    stopEventPropagation(event);
-
     group_colors = !group_colors;
+    arrangeSliders(event);
+}
+
+// ----------------------------------------------------------------------------
+//
+function arrangeSliders(event) {
+    stopEventPropagation(event);
 
     slider_panel.releaseAllChannels();
 
@@ -476,11 +490,9 @@ function groupFixtureSliderColors(event) {
         $("#channel_panel_groupcolors").removeClass('ui-icon-white').addClass('ui-icon');
     }
 
-    // Re-populate all fixtures
-    var active_fixtures = getActiveFixtures();
-    for (var i = 0; i < active_fixtures.length; i++) {
-        loadFixtureChannels(active_fixtures[i].getId(), null);
-    }
+    $.map(getActiveFixtures(), function (fixture) {
+        loadFixtureChannels(fixture.getId(), null);
+    });
 }
 
 // ----------------------------------------------------------------------------
@@ -586,13 +598,13 @@ function createNewFixtureDialog(dialog_title, data) {
         };
 
         if (json.fuid == null) {
-            alert("You must select a fixture");
+            messageBox("You must select a fixture");
             return;
         }
 
         // Make sure this is the same fixture number or unused
         if (json.number != data.number && getFixtureByNumber(json.number) != null) {
-            alert("Fixture number " + json.number + " is already in use");
+            messageBox("Fixture number " + json.number + " is already in use");
             return;
         }
 
@@ -602,7 +614,7 @@ function createNewFixtureDialog(dialog_title, data) {
             
             for (var i = json.dmx_address - 1; i < json.dmx_address - 1 + info.num_channels; i++) {
                 if (dmx_addresses[i] != 0 && dmx_addresses[i] != json.number) {
-                    alert("DMX address overlaps existing fixture at address " + (i + 1));
+                    messageBox("DMX address overlaps existing fixture at address " + (i + 1));
                     return;
                 }
             }
@@ -892,9 +904,9 @@ function describeFixture(event, fixture_id) {
     var channels = fixture.getChannels();
 
     for (var i = 0; i < channels.length; i++) {
-        var type_name = channels[i].title.indexOf(channels[i].type_name) != -1 ? "" : (" (" + escapeForHTML(channels[i].type_name) + ")");
+        var type_name = channels[i].name.indexOf(channels[i].type_name) != -1 ? "" : (" (" + escapeForHTML(channels[i].type_name) + ")");
 
-        info += "<div style=\"clear:both; float: left;\" >CH " + (i+1) + " " + channels[i].title + type_name + "</div>";
+        info += "<div style=\"clear:both; float: left;\" >CH " + (channels[i].channel + 1) + " " + channels[i].name + type_name + "</div>";
         if (channels[i].ranges.length > 0) {
             info += "<div class=\"ui-icon-info ui-icon-white\" style=\"float:left; margin-left:10px; margin-top:2px;\"";
             info += " onclick=\"describe_fixture_show_range( event, " + i + ");\"></div>";
@@ -979,12 +991,12 @@ function openNewFixtureGroupDialog(dialog_title, data) {
         };
 
         if (json.number != data.number && getFixtureGroupByNumber(json.number) != null) {
-            alert("Fixture group number " + json.number + " is already in use");
+            messageBox("Fixture group number " + json.number + " is already in use");
             return;
         }
 
         if (fixtures.length == 0) {
-            alert("No fixtures are selected");
+            messageBox("No fixtures are selected");
             return;
         }
 
@@ -1070,25 +1082,6 @@ function deleteFixtureGroup(event, fixture_group_id) {
             success: updateFixtures,
             error: onAjaxError
         });
-    });
-}
-
-// ----------------------------------------------------------------------------
-//
-function clearFixtures(event) {
-    stopEventPropagation(event);
-
-    $.ajax({
-        type: "GET",
-        url: "/dmxstudio/full/control/fixture/release/0",
-        cache: false,
-        success: function () {
-            slider_panel.releaseAllChannels();
-            fixture_tile_panel.iterate(function (id) {
-                markActiveFixture(id, false);
-            });
-        },
-        error: onAjaxError
     });
 }
 
