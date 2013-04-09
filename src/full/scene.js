@@ -21,6 +21,7 @@ MA 02111-1307, USA.
 */
 
 var scenes = new Array();
+var active_scene_id = 0;
 
 // ----------------------------------------------------------------------------
 // class Scene
@@ -90,6 +91,14 @@ function Scene(scene_data)
         return this.actors;
     }
 
+    // method getActorIds
+    this.getActorIds = function () {
+        var actor_ids = [];
+        for (var i = 0; i < this.actors.length; i++)
+            actor_ids.push(this.actors[i].id);
+        return actor_ids;
+    }
+
     // method getActor( actor_id )
     this.getActor = function (actor_id) {
         for (var i = 0; i < this.actors.length; i++)
@@ -133,6 +142,8 @@ function getUnusedSceneNumber() {
 function updateScenes() {
     scene_tile_panel.empty();
     scenes = [];
+
+    highlightSceneFixtures(active_scene_id, false);
     active_scene_id = 0;
 
     $.ajax({
@@ -596,11 +607,24 @@ function markActiveScene(new_scene_id) {
 
     if (active_scene_id != 0) {
         scene_tile_panel.selectTile(active_scene_id, false);
-        active_scene_id = null;
+        highlightSceneFixtures(active_scene_id, false);
+        active_scene_id = 0;
     }
 
     if (new_scene_id != 0) {
         scene_tile_panel.selectTile(new_scene_id, true);
+        highlightSceneFixtures(new_scene_id, true);
         active_scene_id = new_scene_id;
     }
+}
+
+// ----------------------------------------------------------------------------
+//
+function highlightSceneFixtures(scene_id, highlight) {
+    if (scene_id == 0)
+        return;
+
+    var scene = getSceneById(scene_id);
+    if (scene && !scene.isDefault())
+        highlightFixtures(scene.getActorIds(), highlight);
 }

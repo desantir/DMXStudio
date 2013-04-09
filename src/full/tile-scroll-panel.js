@@ -130,6 +130,18 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
         return this.getTile(id).hasClass("active_scroll_item");
     }
 
+    // method highlightTile
+    this.highlightTile = function (id, highlight) {
+        var tile = this.getTile(id);
+        if (tile == null)
+            return;
+
+        if (!highlight)
+            tile.removeClass("highlight-scroll-item");
+        else
+            tile.addClass("highlight-scroll-item");
+    }
+
     // method empty
     this.empty = function () {
         var content_div = $("#" + this.panel_id).find(".scroll-content");

@@ -39,7 +39,6 @@ var beat_frequencies = [
     { start_freq: 16000, end_freq: 16000, beat: false }
 ];
 
-var vizUpdaterInterval = null;
 var beat_objects = [];
 
 // ----------------------------------------------------------------------------
@@ -65,7 +64,6 @@ function showBeatVisualizer() {
 
     if ($("#beat_visualizer_dialog").dialog("isOpen")) {
         $("#beat_visualizer_dialog").dialog("close");
-        clearInterval(vizUpdaterInterval);
         return;
     }
 
@@ -102,19 +100,17 @@ function showBeatVisualizer() {
         error: onAjaxError
     });
 
-    vizUpdaterInterval = setInterval(updateBeatsUI, 25);
+    setTimeout(updateBeatsUI, 20);
 }
 
 var BEAT_ANIMATION = [
-    { radius: 10, color: "rgb(0,0,255)" },
-    { radius: 20, color: "rgb(0,0,80)" },
-    { radius: 30, color: "rgb(0,0,180)" },
+    { radius: 10, color: "rgb(0,0,80)" },
+    { radius: 20, color: "rgb(0,0,180)" },
+    { radius: 30, color: "rgb(0,0,200)" },
     { radius: 40, color: "rgb(0,0,255)" },
     { radius: 50, color: "rgb(0,0,255)" },
-    { radius: 30, color: "rgb(0,0,180)" }
+    { radius: 30, color: "rgb(0,0,80)" }
 ];
-
-// var beat_decay_ms = 200;
 
 // ----------------------------------------------------------------------------
 //
@@ -147,6 +143,9 @@ function updateBeatsUI() {
             }
         }
     }
+
+    if ( $("#beat_visualizer_dialog").dialog("isOpen") )
+        setTimeout(updateBeatsUI, 25);
 }
 
 // ----------------------------------------------------------------------------

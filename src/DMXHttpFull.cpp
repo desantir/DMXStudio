@@ -40,7 +40,7 @@ MA 02111-1307, USA.
 
 #define DMX_URL_CONTROL_FIXTURE_CHANNELS        DMX_URL_ROOT_FULL "control/fixture/channels/"
 #define DMX_URL_CONTROL_FIXTURE                 DMX_URL_ROOT_FULL "control/fixture/"
-#define DMX_URL_CONTROL_FIXTURE_GROUP           DMX_URL_ROOT_FULL "control/fixture/group/"
+#define DMX_URL_CONTROL_FIXTUREGROUP            DMX_URL_ROOT_FULL "control/fixturegroup/"
 
 #define DMX_URL_CONTROL_VENUE_VOLUME_MASTER     DMX_URL_ROOT_FULL "control/venue/volume/master/"
 #define DMX_URL_CONTROL_VENUE_VOLUME_MUTE       DMX_URL_ROOT_FULL "control/venue/volume/mute/"
@@ -113,7 +113,7 @@ DMXHttpFull::DMXHttpFull(void) :
     // POST request handlers
     m_rest_post_handlers[ DMX_URL_CONTROL_FIXTURE_CHANNELS ] = &DMXHttpFull::control_fixture_channels;
     m_rest_post_handlers[ DMX_URL_CONTROL_FIXTURE ] = &DMXHttpFull::control_fixture;
-    m_rest_post_handlers[ DMX_URL_CONTROL_FIXTURE_GROUP ] = &DMXHttpFull::control_fixture_group;
+    m_rest_post_handlers[ DMX_URL_CONTROL_FIXTUREGROUP ] = &DMXHttpFull::control_fixture_group;
 
     m_rest_post_handlers[ DMX_URL_EDIT_SCENE_COPY_FIXTURES ] = &DMXHttpFull::edit_scene_copy_fixtures;
     m_rest_post_handlers[ DMX_URL_EDIT_VENUE_UPDATE ] = &DMXHttpFull::edit_venue_update;

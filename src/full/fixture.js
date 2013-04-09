@@ -216,10 +216,19 @@ function updateFixtures() {
                     loadFixtureChannels(fixture.id, null);
             });
 
+            highlightSceneFixtures(active_scene_id, true);
+
             setEditMode(edit_mode);     // Refresh editing icons on new tiles
         },
         error: onAjaxError
     });
+}
+
+// ----------------------------------------------------------------------------
+//
+function highlightFixtures(fixtureIds, highlight) {
+    for (var i = 0; i < fixtureIds.length; i++)
+        fixture_tile_panel.highlightTile(fixtureIds[i], highlight);
 }
 
 // ----------------------------------------------------------------------------

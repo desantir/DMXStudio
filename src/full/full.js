@@ -174,6 +174,8 @@ function messageBox(message) {
     $("#message_box_dialog").dialog({
         title: "DMXStudio",
         autoOpen: true,
+        width: 540,
+        height: 260,
         modal: true,
         resizable: false,
         closeOnEscape: true,
