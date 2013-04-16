@@ -15,7 +15,7 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 
    L Web UI
 		L 5 Alternative to dialogs
-		L 5 Alternative to edit mode icon clutter
+		L 5 Alternative to edit/delete mode icon clutter
 		L 1 Improved error responses (e.g. "<item> not found")
 		L 1 UI Preferences (update frequency etc, collapsed sections)
 		L 1 Fixture icon images rather than text (preference)

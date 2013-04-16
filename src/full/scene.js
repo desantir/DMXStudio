@@ -139,12 +139,21 @@ function getUnusedSceneNumber() {
 
 // ----------------------------------------------------------------------------
 //
-function updateScenes() {
-    scene_tile_panel.empty();
-    scenes = [];
+function getDefaultSceneId() {
+    for (var i=0; i < scenes.length; i++)
+        if (scenes[i].isDefault())
+            return scenes[i].getId();
+    return 0;
+}
 
+// ----------------------------------------------------------------------------
+//
+function updateScenes() {
     highlightSceneFixtures(active_scene_id, false);
     active_scene_id = 0;
+
+    scene_tile_panel.empty();
+    scenes = [];
 
     $.ajax({
         type: "GET",
@@ -174,7 +183,7 @@ function playScene(event, scene_id) {
     stopEventPropagation(event);
 
     if (scene_id == active_scene_id)
-        scene_id = 0;
+        scene_id = getDefaultSceneId();
 
     $.ajax({
         type: "GET",
@@ -256,6 +265,9 @@ function openNewSceneDialog(dialog_title, data) {
             actors: $("#nsd_fixtures").val(),
             animations: $("#nsd_animations").data("animations")
         };
+
+        if (json.actors == null)
+            json.actors = [];
 
         if ( (make_copy || json.number != data.number) && getSceneByNumber(json.number) != null ) {
             messageBox("Scene number " + json.number + " is already in use");

@@ -1345,7 +1345,7 @@ function new_channel_animation(item, channel_animation) {
             for (var i = 0; i < channels.length; i++) {
                 esca_channel.append($('<option>', {
                     value: i,
-                    text: "Channel " + (i+1) + ": " + channels[i].title,
+                    text: "Channel " + (i+1) + ": " + channels[i].name,
                     selected: i == selected
                 }));
             }
@@ -1363,6 +1363,7 @@ function new_channel_animation(item, channel_animation) {
 
     update_channels( esca_fixture.val(), channel_animation.channel );
 
+    esca_style.find('option[value=' + channel_animation.style + ']').attr('selected', 'selected');
     esca_style.multiselect({ minWidth: 200, multiple: false, selectedList: 1, header: false, height: "auto" });
 
     var update_style = function ( style ) {
@@ -1374,8 +1375,6 @@ function new_channel_animation(item, channel_animation) {
         else if (style == 2)
             esca_channel_range_container.show();
     }
-
-    esca_style.find('option[value=' + channel_animation.style + ']').attr('selected', 'selected');
 
     esca_style.bind("multiselectclick", function (event, ui) {
         stopEventPropagation(event);

@@ -40,6 +40,26 @@
             target.expandableContainer( "items", [ "<div><input value='99' class='container_input' size=5 /></div>" ] );
         }
 
+        $(function () {
+            $("#esca_animations").expandableContainer({
+                item_template: esca_channel_template.innerHTML,
+                vertical: true,
+                controls: "right",
+                new_item_callback: new_channel_animation
+            });
+        });
+
+        function new_channel_animation(item, channel_animation) {
+            var esca_channel_list = item.find(".esca_channel_list");
+
+            esca_channel_list.expandableContainer({
+                item_template: "<div><input class='container_input' type='text' style='width:55px;'><div>",
+                new_item_callback: function (item, value) {
+                    var input = item.find(".container_input");
+                    input.spinner({ min: 0, max: 255 }).val((value == null) ? 0 : value);
+                }
+            });
+        }
     </script>
 </HEAD>
 
@@ -81,5 +101,16 @@
             <button onclick='$("#c3").expandableContainer( "set_values", [1,2,3,4,5,6]);'>Add 6 components</button>
         </div>
     </div>
+
+    <div id="esca_animations" style="margin-top: 6px; clear: both; float: left; margin: 10px 10px 10px 10px; padding:10px; border: 1px solid black; "></div>
+
+    <div id="esca_channel_template" style="display:none;">
+        <div style="padding:10px; width:600px; background-color: black; border: 1px solid #808080; border-radius: 6pt 6pt;"">
+            <div class="esca_channel_list_container" style="float:left;">
+                <div class="esca_channel_list"></div>
+            </div>
+        </div>
+    </div>
+
 </BODY>
 </HTML>

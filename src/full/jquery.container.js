@@ -47,6 +47,7 @@ var ui_expandableContainer_id = 0;
 
         _init: function () {
             this.options.container_class_name = "container_item_" + ++ui_expandableContainer_id;
+            this.options.add_item_class_name = this.options.container_class_name + "_add_item";
             this.container.empty();
             this._checkEmpty();
         },
@@ -57,9 +58,10 @@ var ui_expandableContainer_id = 0;
 
         _add2: function (after, widget, value) {
             // Remove the itolated add item icon
-            var item_adder = this.container.find(".container_add_item");
-            if (item_adder != null)
+            var item_adder = this.container.find("." + this.options.add_item_class_name);
+            if (item_adder != null) {
                 item_adder.remove();
+            }
 
             var style = (this.options.vertical) ? "clear:both; float:left; margin-bottom: 4px;" : "float:left; margin-right: 2px;";
 
@@ -130,13 +132,12 @@ var ui_expandableContainer_id = 0;
 
         _checkEmpty: function () {
             if (this.container.children().length == 0) {
-                var add = $(this.options.empty_template);
-                add.addClass("container_add_item");
+                var add = $( this.options.empty_template );
+                add.addClass(this.options.add_item_class_name);
                 add.css({ 'margin-right': '4px', 'margin-top': '4px' });
                 add.appendTo(this.container);
 
                 var self = this;
-
                 add.bind("click", function (event) {
                     self._add(null);
                     return false;

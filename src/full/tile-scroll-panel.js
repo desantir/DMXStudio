@@ -36,11 +36,11 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
 
     // method deleteTile
     this.deleteTile = function ( id ) {
-        var icon = this.getTile(id);
-        if (icon == null)
+        var tile = this.getTile(id);
+        if (tile == null)
             return false;
 
-        icon.remove();
+        tile.remove();
 
         // Remove tile ID
         for (var i = 0; i < this.tiles.length; i++) {
@@ -127,7 +127,10 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
 
     // method isActive
     this.isActive = function (id) {
-        return this.getTile(id).hasClass("active_scroll_item");
+        var tile = this.getTile(id);
+        if (tile == null)
+            return false;
+        return tile.hasClass("active_scroll_item");
     }
 
     // method highlightTile
