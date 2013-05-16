@@ -182,6 +182,10 @@ function Slider(panel, number, slider_frame) {
     slider.get(0).slider_object = this;
     this.getFooter().html("");
 
+    // Stylize bottom area
+    var slider_range = slider_frame.find(".ui-slider-range");
+    slider_range.css('background', 'url() rgb( 18, 18, 84 ) 0px 0px');
+
     // Add sidecar for range information
     var ui_handle = slider.find('.ui-slider-handle');
     ui_handle.append('<div class="slider_sidecar" style="display:none;"></div>');
@@ -381,6 +385,20 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
         content_div.append(slider_frame);
         this.sliders[this.num_sliders] = new Slider(this, this.num_sliders, slider_frame);
         return this.num_sliders++;
+    }
+
+    // trimUnused
+    this.trimUnused = function () {
+        while (this.num_sliders > this.default_num_sliders ) {
+            var slider = this.sliders[this.num_sliders - 1];
+            
+            if (slider.getOwner() != 0)
+                break;
+
+            slider.getSliderFrame().remove();
+            this.sliders.length = this.sliders.length - 1;
+            this.num_sliders -= 1;
+        }
     }
 
     // Constructor

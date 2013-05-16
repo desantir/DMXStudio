@@ -340,7 +340,7 @@ function openNewSceneDialog(dialog_title, data) {
     $("#nsd_copy_captured_fixtures").attr('checked', data.copy_captured_fixtures);
     $("#nsd_private_scene").attr('checked', data.private_scene);
 
-    $("#nsd_animations").data("animations", jQuery.extend(true, [], data.animations));
+    $("#nsd_animations").data("animations", jQuery.extend(true, [], data.animations));  // Generate a deep copy
     $("#nsd_animations").data("scene", data.id);
 
     $("#nsd_fixtures").empty();
@@ -358,6 +358,11 @@ function openNewSceneDialog(dialog_title, data) {
     }
 
     $("#nsd_fixtures").multiselect({ minWidth: 500, multiple: true, noneSelectedText: 'select fixtures' });
+
+    // After fixtures are changed, remove any animation actors sthat have been removed
+    $("#nsd_fixtures").on("multiselectclose", function (event, ui) {
+        verifyAnimationActors();
+    });
 
     populate_animations();
 
@@ -390,6 +395,38 @@ function openNewSceneDialog(dialog_title, data) {
     $("#nsd_new_animation_description").text(Animations[0].description);
 
     $("#new_scene_dialog").dialog("open");
+}
+
+// ----------------------------------------------------------------------------
+//
+function verifyAnimationActors() {
+    var fixtures = $("#nsd_fixtures").val();
+    if (fixtures == null)
+        fixtures = [];
+
+    var animations = $("#nsd_animations").data("animations");
+    var changed = false;
+
+    function containsFixture( value ) {
+        for (var k=0; k < fixtures.length; k++)     // Don't use "in" as actor ID type can be either number or string
+            if (fixtures[k] == value)
+                return true;
+       return false;
+    }
+
+    for (var i = 0; i < animations.length; i++) {
+        for (var j = 0; j < animations[i].actors.length;) {
+            if (!containsFixture(animations[i].actors[j])) {
+                animations[i].actors.splice(j, 1);
+                changed = true;
+            }
+            else
+                j++;
+        }
+    }
+
+    if ( changed )
+        populate_animations();
 }
 
 // ----------------------------------------------------------------------------

@@ -261,8 +261,7 @@ bool DMXHttpFull::edit_fixturegroup( CString& response, LPCSTR data, EditMode mo
         fixture_ids = parser.get<std::vector<ULONG>>( "fixture_ids" );
     }
     catch ( std::exception& e ) {
-        DMXStudio::log( StudioException( "JSON parser error (%s) data (%s)", e.what(), data ) );
-        return false;
+        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
     // Make sure number is unique
@@ -321,8 +320,7 @@ bool DMXHttpFull::edit_fixture( CString& response, LPCSTR data, EditMode mode )
         dmx_address = parser.get<ULONG>( "dmx_address" );
     }
     catch ( std::exception& e ) {
-        DMXStudio::log( StudioException( "JSON parser error (%s) data (%s)", e.what(), data ) );
-        return false;
+        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
     // Make sure number is unique
@@ -371,8 +369,7 @@ bool DMXHttpFull::control_fixture( CString& response, LPCSTR data, DWORD size, L
             channel_values = parser.get<std::vector<BYTE>>( "channel_values" );
     }
     catch ( std::exception& e ) {
-        DMXStudio::log( StudioException( "JSON parser error (%s) data (%s)", e.what(), data ) );
-        return false;
+        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
     if ( is_capture ) {
@@ -423,8 +420,7 @@ bool DMXHttpFull::control_fixture_group( CString& response, LPCSTR data, DWORD s
         is_capture = parser.get<bool>( "is_capture" );
     }
     catch ( std::exception& e ) {
-        DMXStudio::log( StudioException( "JSON parser error (%s) data (%s)", e.what(), data ) );
-        return false;
+        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
     FixtureGroup* group = studio.getVenue()->getFixtureGroup( group_id );
@@ -500,8 +496,7 @@ bool DMXHttpFull::control_fixture_channels( CString& response, LPCSTR data, DWOR
         }
     }
     catch ( std::exception& e ) {
-        DMXStudio::log( StudioException( "JSON parser error (%s) data (%s)", e.what(), data ) );
-        return false;
+        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
     return true;

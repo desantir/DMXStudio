@@ -117,8 +117,7 @@ bool DMXHttpFull::edit_chase( CString& response, LPCSTR data, EditMode mode ) {
         }
     }
     catch ( std::exception& e ) {
-        DMXStudio::log( StudioException( "JSON parser error (%s) data (%s)", e.what(), data ) );
-        return false;
+        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
     if ( chase_id != 0 ) {

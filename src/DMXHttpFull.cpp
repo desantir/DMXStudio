@@ -149,89 +149,101 @@ DMXHttpFull::~DMXHttpFull(void)
 //
 DWORD DMXHttpFull::processGetRequest( HttpWorkerThread* worker )
 {
-    CString path( CW2A( worker->getRequest()->CookedUrl.pAbsPath ) );
-    int pos = path.Find( '?' );
-    if ( pos != -1 )                                        // Remove query string
-       path = path.Left( pos );
+    try {
+        CString path( CW2A( worker->getRequest()->CookedUrl.pAbsPath ) );
+        int pos = path.Find( '?' );
+        if ( pos != -1 )                                        // Remove query string
+           path = path.Left( pos );
 
-    CString prefix( path );
-    if ( prefix.GetLength() > 0 && prefix[prefix.GetLength()-1] != '/' )
-        prefix += "/";
+        CString prefix( path );
+        if ( prefix.GetLength() > 0 && prefix[prefix.GetLength()-1] != '/' )
+            prefix += "/";
 
-    if ( prefix == DMX_URL_ROOT_FULL ) {                  // Redirect to full index page
-        return worker->sendRedirect( DMX_URL_FULL_HOME );
-    }
-
-    // Invoke the approriate handler
-    RestGetHandlerFunc func = NULL;
-    UINT len = 0;
-    for ( RestGetHandlerMap::iterator it=m_rest_get_handlers.begin(); it != m_rest_get_handlers.end(); ++it ) {
-        if ( prefix.Find( it->first, 0 ) == 0 && strlen(it->first) > len ) {
-            func = it->second;
-            len = strlen(it->first);
+        if ( prefix == DMX_URL_ROOT_FULL ) {                  // Redirect to full index page
+            return worker->sendRedirect( DMX_URL_FULL_HOME );
         }
-    }
 
-    if ( func != NULL ) {
-        CString response;
-        if ( (this->*func)( response, path.Mid( len ) ) )
-            return worker->sendResponse( 200, "OK", response.GetLength() > 0 ? (LPCSTR)response : NULL );
+        // Invoke the approriate handler
+        RestGetHandlerFunc func = NULL;
+        UINT len = 0;
+        for ( RestGetHandlerMap::iterator it=m_rest_get_handlers.begin(); it != m_rest_get_handlers.end(); ++it ) {
+            if ( prefix.Find( it->first, 0 ) == 0 && strlen(it->first) > len ) {
+                func = it->second;
+                len = strlen(it->first);
+            }
+        }
+
+        if ( func != NULL ) {
+            CString response;
+            if ( (this->*func)( response, path.Mid( len ) ) )
+                return worker->sendResponse( 200, "OK", response.GetLength() > 0 ? (LPCSTR)response : NULL );
+            return worker->error_501();
+        }
+
+        // Perhaps this is a file request
+        if ( path.Find( DMX_URL_ROOT, 0 ) == 0 ) {
+            path.Replace( DMX_URL_ROOT, "" );
+
+            if ( path == "full/venue/download/" ) {
+                CString venue_xml, venue_xml_name;
+                studio.writeVenueToString( venue_xml );
+                venue_xml_name.Format( "%s.xml", studio.getVenue()->getName() == NULL ? "venue" : studio.getVenue()->getName() );
+                return worker->sendAttachment( (LPBYTE)(LPCSTR)venue_xml, venue_xml.GetLength(), "text/xml", (LPCSTR)venue_xml_name ); 
+            }
+
+            return worker->sendFile( (LPCSTR)path, this ); 
+        }
+
+        return worker->error_404();
+    }
+    catch( std::exception& ex ) {
+        DMXStudio::log( ex );
         return worker->error_501();
     }
-
-    // Perhaps this is a file request
-    if ( path.Find( DMX_URL_ROOT, 0 ) == 0 ) {
-        path.Replace( DMX_URL_ROOT, "" );
-
-        if ( path == "full/venue/download/" ) {
-            CString venue_xml, venue_xml_name;
-            studio.writeVenueToString( venue_xml );
-            venue_xml_name.Format( "%s.xml", studio.getVenue()->getName() == NULL ? "venue" : studio.getVenue()->getName() );
-            return worker->sendAttachment( (LPBYTE)(LPCSTR)venue_xml, venue_xml.GetLength(), "text/xml", (LPCSTR)venue_xml_name ); 
-        }
-
-        return worker->sendFile( (LPCSTR)path, this ); 
-    }
-
-    return worker->error_404();
 }
 
 // ----------------------------------------------------------------------------
 //
 DWORD DMXHttpFull::processPostRequest( HttpWorkerThread* worker, BYTE* contents, DWORD size  ) 
 {
-    CString url_path( CW2A( worker->getRequest()->CookedUrl.pAbsPath ) );
-    if ( url_path.GetLength() > 0 && url_path[url_path.GetLength()-1] != '/' )
-        url_path += "/";
+    try {
+        CString url_path( CW2A( worker->getRequest()->CookedUrl.pAbsPath ) );
+        if ( url_path.GetLength() > 0 && url_path[url_path.GetLength()-1] != '/' )
+            url_path += "/";
 
-    CString contentType( worker->getContentType() );
-    int semi = contentType.Find( ";" );
-    if ( semi != -1 )
-        contentType = contentType.Left( semi );
+        CString contentType( worker->getContentType() );
+        int semi = contentType.Find( ";" );
+        if ( semi != -1 )
+            contentType = contentType.Left( semi );
 
-    printf( "url=%s\nContentType=%s\nrequest=%s\n", url_path, (LPCSTR)contentType, contents );
+        printf( "url=%s\nContentType=%s\nrequest=%s\n", url_path, (LPCSTR)contentType, contents );
 
-    // Only accept JSON and multipart content types
-    if ( contentType != "application/json" && contentType != "multipart/form-data" )
-        return worker->sendResponse( 415, "Unsupported content type", NULL );
+        // Only accept JSON and multipart content types
+        if ( contentType != "application/json" && contentType != "multipart/form-data" )
+            return worker->sendResponse( 415, "Unsupported content type", NULL );
 
-    // Invoke the approriate handler
-    RestPostHandlerFunc func = NULL;
-    UINT len = 0;
-    for ( RestPostHandlerMap::iterator it=m_rest_post_handlers.begin(); it != m_rest_post_handlers.end(); ++it ) {
-        if ( url_path.Find( it->first, 0 ) == 0 && strlen(it->first) > len ) {
-            func = it->second;
-            len = strlen(it->first);
+        // Invoke the approriate handler
+        RestPostHandlerFunc func = NULL;
+        UINT len = 0;
+        for ( RestPostHandlerMap::iterator it=m_rest_post_handlers.begin(); it != m_rest_post_handlers.end(); ++it ) {
+            if ( url_path.Find( it->first, 0 ) == 0 && strlen(it->first) > len ) {
+                func = it->second;
+                len = strlen(it->first);
+            }
         }
-    }
 
-    if ( func != NULL ) {
-        CString response;
-        if ( (this->*func)( response, (LPCSTR)contents, size, (LPCSTR)contentType ) )
-            return worker->sendResponse( 200, "OK", response.GetLength() > 0 ? (LPCSTR)response : NULL );
-    }
+        if ( func != NULL ) {
+            CString response;
+            if ( (this->*func)( response, (LPCSTR)contents, size, (LPCSTR)contentType ) )
+                return worker->sendResponse( 200, "OK", response.GetLength() > 0 ? (LPCSTR)response : NULL );
+        }
 
-    return worker->error_501();
+        return worker->error_501();
+    }
+    catch( std::exception& ex ) {
+        DMXStudio::log( ex );
+        return worker->error_501();
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -326,8 +338,7 @@ bool DMXHttpFull::control_beatsampler_start( CString& response, LPCSTR data, DWO
         }
     }
     catch ( std::exception& e ) {
-        DMXStudio::log( StudioException( "JSON parser error (%s) data (%s)", e.what(), data ) );
-        return false;
+        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
     for ( BeatBinArray::iterator it=m_beats.begin(); it != m_beats.end(); ++it )

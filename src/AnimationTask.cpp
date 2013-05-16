@@ -118,19 +118,19 @@ void AnimationTask::stageScene( Scene* scene )
 
     m_venue->setHomePositions( m_dmx_packet );
 
-    // Create animation clones
-    AnimationPtrArray& animationPtrs = m_scene->animations();
-    for ( size_t i=0; i < animationPtrs.size(); i++ )
-        m_animations.push_back( animationPtrs[i]->clone() );
-
     // Latch in scene actors
     m_venue->loadSceneChannels( m_dmx_packet, m_scene );
 
     // Initialize animations
     DWORD time_ms = GetCurrentTime();
 
-    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
-        (*it)->initAnimation( this, time_ms, m_dmx_packet );
+    // Create animation clones and initialize
+    AnimationPtrArray& animationPtrs = m_scene->animations();
+    for ( size_t i=0; i < animationPtrs.size(); i++ ) {
+        AbstractAnimation* anim = animationPtrs[i]->clone();
+        anim->initAnimation( this, time_ms, m_dmx_packet );
+        m_animations.push_back( anim );
+    }
 
     m_load_channels = true;             // Make sure we load channels at least once
 }

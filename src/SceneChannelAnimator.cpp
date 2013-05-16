@@ -166,7 +166,7 @@ void SceneChannelAnimator::initAnimation( AnimationTask* task, DWORD time_ms, BY
         Fixture* pf = m_animation_task->getFixture( (*it).getActor() );
         STUDIO_ASSERT( pf != NULL, "Invalid actor UID in animation" );
         SceneActor* actor = m_animation_task->getScene()->getActor( pf->getUID() );
-        STUDIO_ASSERT( pf != NULL, "Invalid scene actor UID in animation" );
+        STUDIO_ASSERT( actor != NULL, "Invalid scene actor UID in animation" );
         channel_t channel = (*it).getChannel();
 
         // Setup state so that the slice animation does not need to gather additional info

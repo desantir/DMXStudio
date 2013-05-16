@@ -27,10 +27,10 @@ var dmx_addresses = null;
 var group_colors = false;
 
 var slider_color_channels = [
-    { "channel": 1, "label": "red", "title": "Red", "value": 0, "ranges": null, "type": 1, "color": "rgb(255,0,0)" },
-    { "channel": 2, "label": "green", "title": "Green", "value": 0, "ranges": null, "type": 2, "color": "rgb(0,255,0)" },
-    { "channel": 3, "label": "blue", "title": "Blue", "value": 0, "ranges": null, "type": 3, "color": "rgb(0,0,255)" },
-    { "channel": 5, "label": "white", "title": "White", "value": 0, "ranges": null, "type": 5, "color": "rgb(255,255,255)" }
+    { "channel": 1, "label": "red", "name": "Red Master", "value": 0, "ranges": null, "type": 1, "color": "rgb(255,0,0)" },
+    { "channel": 2, "label": "green", "name": "Green Master", "value": 0, "ranges": null, "type": 2, "color": "rgb(0,255,0)" },
+    { "channel": 3, "label": "blue", "name": "Blue Master", "value": 0, "ranges": null, "type": 3, "color": "rgb(0,0,255)" },
+    { "channel": 5, "label": "white", "name": "White Master", "value": 0, "ranges": null, "type": 5, "color": "rgb(255,255,255)" }
 ];
 
 // ----------------------------------------------------------------------------
@@ -502,6 +502,8 @@ function arrangeSliders(event) {
     $.map(getActiveFixtures(), function (fixture) {
         loadFixtureChannels(fixture.getId(), null);
     });
+
+    slider_panel.trimUnused();
 }
 
 // ----------------------------------------------------------------------------

@@ -103,8 +103,7 @@ bool DMXHttpFull::edit_venue_update( CString& response, LPCSTR data, DWORD size,
         venue->open();
     }
     catch ( std::exception& e ) {
-        DMXStudio::log( StudioException( "JSON parser error (%s) data (%s)", e.what(), data ) );
-        return false;
+        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
     return true;
@@ -126,8 +125,7 @@ bool DMXHttpFull::edit_venue_save( CString& response, LPCSTR data, DWORD size, L
         venue_filename.Replace( "\\\\", "\\" );
     }
     catch ( std::exception& e ) {
-        DMXStudio::log( StudioException( "JSON parser error (%s) data (%s)", e.what(), data ) );
-        return false;
+        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
     return studio.saveVenueToFile( (LPCSTR)venue_filename );
@@ -146,8 +144,7 @@ bool DMXHttpFull::edit_venue_load( CString& response, LPCSTR data, DWORD size, L
         venue_filename.Replace( "\\\\", "\\" );
     }
     catch ( std::exception& e ) {
-        DMXStudio::log( StudioException( "JSON parser error (%s) data (%s)", e.what(), data ) );
-        return false;
+        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
     return studio.loadVenueFromFile( (LPCSTR)venue_filename );
@@ -165,8 +162,7 @@ bool DMXHttpFull::edit_venue_new( CString& response, LPCSTR data, DWORD size, LP
         reset_what = parser.get<CString>( "reset_what" );
     }
     catch ( std::exception& e ) {
-        DMXStudio::log( StudioException( "JSON parser error (%s) data (%s)", e.what(), data ) );
-        return false;
+        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
     if ( reset_what == "new" ) {
