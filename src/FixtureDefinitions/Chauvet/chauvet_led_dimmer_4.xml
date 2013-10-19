@@ -22,4 +22,23 @@
       </channel>
     </channels>
   </fixture>
+
+  <fixture type="par" channels="4">
+    <manufacturer>Chauvet</manufacturer>
+    <model>DMX 4 LED (on/off)</model>
+    <channels>
+      <channel index="0" type="white" color="false" blackout="true" value="255">
+        <name>Par 1</name>
+      </channel>
+      <channel index="1" type="white" color="false" blackout="true" value="255">
+        <name>Par 2</name>
+      </channel>
+      <channel index="2" type="white" color="false" blackout="true" value="255">
+        <name>Par 3</name>
+      </channel>
+      <channel index="3" type="white" color="false" blackout="true" value="255">
+        <name>Par 4</name>
+      </channel>
+    </channels>
+  </fixture>
 </fixture_definitions>

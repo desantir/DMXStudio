@@ -472,6 +472,9 @@
     <None Include="full\freqviz.js">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="full\music_player.js">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="ftd2xx.lib">

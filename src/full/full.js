@@ -25,6 +25,7 @@ var FIXTURE_SLIDERS = 40;
 var system_status = false;                          // UI is live and pinging the server
 var ignore_ui_events = false;                       // Controls event notifications during async updates
 var edit_mode = false;                              // True when UI is in edit mode
+var delete_mode = false;                            // True when UI is in delete mode
 var active_scene_id = 0;                            // UID of currently active scene
 var active_chase_id = 0;                            // UID of currently active chase
 var auto_blackout = false;                          // Venue is in auto backout mode
@@ -37,6 +38,10 @@ var slider_panel;
 var whiteout_ms = [25, 50, 75, 100, 125, 150, 200, 250, 350, 500, 750, 1000, 1500, 2000];
 
 var venue_filename = "";
+
+var master_dimmer_channel = {
+    "channel": 1, "label": "venue", "name": "Venue Dimmer", "value": 0, "max_value": 100, "ranges": null, "type": -1, "color": null, "slider": null
+};
 
 // ----------------------------------------------------------------------------
 //
@@ -59,6 +64,7 @@ function initializeUI() {
 
     $("#blackout_buttons").buttonset();
     $("#whiteout_buttons").buttonset();
+    $("#music_match_buttons").buttonset();
 
     for (var i = 0; i < whiteout_ms.length; i++) {
         $("#whiteout_custom_value").append($('<option>', {
@@ -80,6 +86,16 @@ function initializeUI() {
             });
     });
 
+    $("#music_match_buttons").change(function () {
+        if (!ignore_ui_events)
+            $.ajax({
+                type: "GET",
+                url: "/dmxstudio/full/control/venue/music_match/" + $('input[name=music_match_enable]:checked').val(),
+                cache: false,
+                error: onAjaxError
+            });
+    });
+
     $("#whiteout_buttons").change(function () {
         if (!ignore_ui_events)
             $.ajax({
@@ -90,7 +106,7 @@ function initializeUI() {
             });
     });
 
-    $("#master_dimmer").on("slide slidestop", sendMasterDimmerUpdate);
+    // $("#master_dimmer").on("slide slidestop", sendMasterDimmerUpdate);
 
     $("#whiteout_custom_value").on("change", function () {
         if (!ignore_ui_events) {
@@ -124,13 +140,19 @@ function initializeUI() {
         setEditMode( !edit_mode );
     });
 
+    $("#toggle_delete_mode").click(function () {
+        setDeleteMode(!delete_mode);
+    });
+
     $("#configure_venue").click( configureVenue );
 
     $("#save_load_venue").click( loadSaveVenue );
 
     $("#show_frequency_visualizer").click( showFrequencyVisualizer );
 
-    $("#show_beat_visualizer").click( showBeatVisualizer );
+    $("#show_beat_visualizer").click(showBeatVisualizer);
+
+    $("#show_music_matcher").click(showMusicMatch);
 
     initializeHorizontalSlider("frequency_sample_rate", 25, 1000, 100);
 
@@ -163,11 +185,8 @@ function initializeUI() {
     updateChases();
     updateFixtures();
 
-    // Force the first UI update
-    updateUI();
-
-    // This starts background updates to the UI
-    setInterval(updateUI, 500);
+    // Start background updates, but allow all data loads to finish
+    setTimeout( updateUI(), 100 );
 }
 
 function messageBox(message) {
@@ -198,7 +217,7 @@ function messageBox(message) {
 // ----------------------------------------------------------------------------
 //
 // No need to keep looking these up on every update and it seems expensive
-var cache_master_dimmer = null;
+//var cache_master_dimmer = null;
 var cache_master_volume = null;
 var cache_whiteout_custom_value = null;
 var cache_master_dimmer_value = null;
@@ -208,8 +227,8 @@ var cache_master_volume_handle = null;
 var cache_volume_mute = null;
 
 function updateUI() {
-    if (!cache_master_dimmer) {
-        cache_master_dimmer = $('#master_dimmer');
+    if (!cache_master_volume) {
+        // cache_master_dimmer = $('#master_dimmer');
         cache_master_volume = $('#master_volume');
         cache_whiteout_custom_value = $('#whiteout_custom_value');
         cache_master_dimmer_value = $('#master_dimmer_value');
@@ -231,13 +250,20 @@ function updateUI() {
             markActiveScene(json.current_scene);
             markActiveChase(json.current_chase);
 
-            // $("#debugoutput").html("sample: " + cache_master_dimmer_handle.is( ':focus'  ) );
+            //$("#debugoutput").html("sample: " + cache_master_dimmer_handle.is( ':focus'  ) );
             //$("#debugoutput").html("sample: " + $('#master_dimmer .ui-slider-handle:focus').length);
 
+            if (master_dimmer_channel.slider != null && master_dimmer_channel.value != json.dimmer && !master_dimmer_channel.slider.slider.is(':focus') ) {
+                master_dimmer_channel.value = json.dimmer;
+                master_dimmer_channel.slider.setValue(json.dimmer);
+            }
+
+            /*
             if (!cache_master_dimmer_handle.is(':focus') && cache_master_dimmer.slider("value") != json.dimmer) {
                 cache_master_dimmer_value.html(json.dimmer);
                 cache_master_dimmer.slider("value", json.dimmer);
             }
+            */
 
             if (!cache_master_volume_handle.is(':focus') && cache_master_volume.slider("value") != json.master_volume) {
                 cache_master_volume_value.html(json.master_volume);
@@ -310,6 +336,8 @@ function updateUI() {
             $('#animations_speed_id').selectmenu('refresh', true);
             */
 
+            update_player_status( json['music_player'] );
+
             ignore_ui_events = false;
 
             if (!system_status) {
@@ -318,6 +346,8 @@ function updateUI() {
                 status_icon.attr("title", "status: running");
                 system_status = true;
             }
+
+            setTimeout(updateUI(), 500);
         },
         error: function () {
             if (system_status) {
@@ -326,6 +356,8 @@ function updateUI() {
                 status_icon.attr("title", "status: disconnected");
                 system_status = false;
             }
+
+            setTimeout(updateUI(), 500);
         }
     });
 }
@@ -356,6 +388,21 @@ function sendMasterDimmerUpdate() {
 
 // ----------------------------------------------------------------------------
 //
+function master_dimmer_callback(unused, channel_type, value) {
+    if (!ignore_ui_events) {
+        master_dimmer_channel.value = value;
+
+        $.ajax({
+            type: "GET",
+            url: "/dmxstudio/full/control/venue/masterdimmer/" + value,
+            cache: false,
+            error: onAjaxError
+        });
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
 function stopEventPropagation(event) {
     if ( event = (event || window.event ) ) {
         if (event.stopPropagation != null)
@@ -381,9 +428,27 @@ function setEditMode(mode) {
         state = 'none';
     }
 
-    $(".delete_item").each(function () { $(this).css('display', state); });
     $(".edit_item").each(function () { $(this).css('display', state); });
     $(".new_item").each(function () { $(this).css('display', state); });
+}
+
+// ----------------------------------------------------------------------------
+//
+function setDeleteMode(mode) {
+    delete_mode = mode;
+
+    var state;
+
+    if (delete_mode) {
+        $("#toggle_delete_mode").addClass("lg-icon-white").removeClass("lg-icon-grey");
+        state = 'inline';
+    }
+    else {
+        $("#toggle_delete_mode").removeClass("lg-icon-white").addClass("lg-icon-grey");
+        state = 'none';
+    }
+
+    $(".delete_item").each(function () { $(this).css('display', state); });
 }
 
 // ----------------------------------------------------------------------------

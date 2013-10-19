@@ -3,21 +3,18 @@ TODO ------------------------------------------------------------------------ TO
 Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 
    M Web Full UI - music controller
-		H 3 Track support (list, queue, play, artwork)
-		H 2 Track navigation (pause, stop, forward, back, view played and queued)
-		M 3 Playlist support (list, queue, play)
 		M 1 Log into music player
-		H 3 Positional "map" of fixtures to allow easy selection
-		H 4 Music search
-		H 5 Workspace channel management (delete fixture changes, re-arrange channels, hidden channels, save channel sets)
-		H 5 Animation macros (must be easier to create animations from the UI)
 		M 3 Music mapping (Music Scene Select, Map music to scene or chase, Remove music mapping, Show music mappings)
 
    L Web UI
+		H 1 Scrolling text plugin for playing track name
+		H 5 Positional "map" of fixtures to allow easy selection
+		M 5 Workspace channel management (re-arrange channels, hidden channels, save channel sets)
+		m 5 Animation macros (must be easier to create animations from the UI)
 		L 5 Alternative to dialogs
 		L 5 Alternative to edit/delete mode icon clutter
 		L 1 Improved error responses (e.g. "<item> not found")
-		L 1 UI Preferences (update frequency etc, collapsed sections)
+		L 1 UI Preferences (update frequency etc, collapsed sections, expanded sections)
 		L 1 Fixture icon images rather than text (preference)
 		L 1 Animated running GIFs for chases
 		L 2 Cleanup CSS styles - put in css file
@@ -28,6 +25,8 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L 2 Authentication & session control
 		L 2 Chase beat (follows music) and tap (follows user)
 		L 3 Track pan/tilt with mouse
+		L 4 Album artwork
+		H 4 Music search
 
 	L Scene Animations:
 		L Movement animation travel time
@@ -44,6 +43,7 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L Add channel mixing to audio stream class
 		L Support format conversion in audio output
 		H Improved sound animation affects (currently they are not very exact and are hard to setup)
+		L Song blending / beat matching
 
 	M Fixtures / Fixture Definitions
 		L Simple angle->value options (angle*xx) == DMX code
@@ -64,6 +64,7 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L Chase changed based on beat, time or track transition
 		L Chase random scene from all/pool
 		L Chase crossfade = % of time cues fading into each other (kill fade time change to crossfade model)?
+		L Chase learn mode - track time and scene transitions
 
 	L General Enhancements
 		L MIDI fogger control with ready indicator (auto fog timer?)

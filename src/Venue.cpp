@@ -649,7 +649,7 @@ void Venue::moveDefaultFixtureToScene( UID scene_uid, UID actor_uid ) {
         return;
 
     SceneActor* actor = getDefaultScene()->getActor( actor_uid );
-    if ( actor_uid != NULL ) {
+    if ( actor != NULL ) {
         scene->addActor( *actor );
         getDefaultScene()->removeActor( actor_uid );
     }

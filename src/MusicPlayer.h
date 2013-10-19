@@ -40,7 +40,7 @@ typedef bool (__cdecl *ForwardTrack)( void );
 typedef bool (__cdecl *BackTrack)( void );
 typedef bool (__cdecl *StopTrack)( void );
 typedef bool (__cdecl *PauseTrack)( bool pause );
-typedef bool (__cdecl *GetPlayingTrack)( DWORD* track_id, DWORD* track_length, DWORD* time_remaining, UINT* queued_tracks );
+typedef bool (__cdecl *GetPlayingTrack)( DWORD* track_id, DWORD* track_length, DWORD* time_remaining, UINT* queued_tracks, UINT *played_tracks );
 typedef bool (__cdecl *IsTrackPaused)( void );
 typedef bool (__cdecl *IsLoggedIn)( void );
 typedef bool (__cdecl *GetQueuedTracks)( UINT* num_tracks, DWORD* track_ids, size_t track_ids_capacity );
@@ -123,7 +123,7 @@ public:
     bool isLoggedIn( void );
     bool isTrackPaused( void );
     bool getTrackInfo( DWORD track_id, DWORD* track_length, bool* track_starred=NULL );
-    DWORD getPlayingTrack( DWORD* track_length=NULL, DWORD* time_remaining=NULL, UINT* queued_tracks=NULL );
+    DWORD getPlayingTrack( DWORD* track_length=NULL, DWORD* time_remaining=NULL, UINT* queued_tracks=NULL, UINT *played_tracks=NULL );
     CString getLastPlayerError( void );
     bool waitOnTrackEvent( DWORD wait_ms, DWORD* track_id, bool* paused );
     bool getTrackInfo( DWORD track_id, CString* track_name=NULL, CString* artist_name=NULL, CString* album_name=NULL, DWORD* track_duration_ms=NULL, bool* starred=NULL );

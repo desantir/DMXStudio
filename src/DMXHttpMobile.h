@@ -61,14 +61,5 @@ private:
     // Potentially reusable
     bool control_animation_speed( CString& response, LPCSTR data );
     bool query_sound( CString& response, LPCSTR data );
-    bool control_music_track_back( CString& response, LPCSTR data );
-    bool control_music_track_forward( CString& response, LPCSTR data );
-    bool control_music_track_stop( CString& response, LPCSTR data );
-    bool control_music_track_pause( CString& response, LPCSTR data );
-    bool control_music_track_play( CString& response, LPCSTR data );
-    bool query_music_playlists( CString& response, LPCSTR data );
-    bool query_music_playlist_tracks( CString& response, LPCSTR data );
-    bool control_music_play_track( CString& response, LPCSTR data );
-    bool control_music_play_playlist( CString& response, LPCSTR data );
 };
 

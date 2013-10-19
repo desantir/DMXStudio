@@ -43,6 +43,7 @@ MA 02111-1307, USA.
     <script src="slider-panel.js"></script>
     <script src="tile-scroll-panel.js"></script>
     <script src="full.js"></script>
+    <script src="music_player.js"></script>
     <script src="fixture.js"></script>
     <script src="chase.js"></script>
     <script src="scene.js"></script>
@@ -52,8 +53,8 @@ MA 02111-1307, USA.
 
     <style>
         .scroll-pane { overflow: auto; width: 99%; /* float:left; Causes _odd_ issues with layout */ }
-        .scroll-content { clear:both; width: 100%; float: left; }
-        .scroll-content-item { width: 92px; height: 92px; float: left; margin: 8px 2px 10px 2px; font-family: sans-serif; text-align: left; }
+        .scroll-content { clear:both; width: 100%; float: left; margin-top: 10px; margin-bottom: 5px; }   /* Tile container */
+        .scroll-content-item { width: 92px; height: 92px; float: left; margin: 0px 2px 6px 2px; font-family: sans-serif; text-align: left; }
         .scroll-content-header { margin: 1px 1px 2px 2px; border-bottom: 1px solid white; font-size: 16pt; font-weight: normal; }        
         .scroll-content-interior { margin: 1px 2px 1px 2px; font-size: 8pt; font-weight:normal; padding: 0px; overflow: hidden; height: 60px; }
         .highlight-scroll-item { border: 1px solid #808080;  }
@@ -84,7 +85,8 @@ MA 02111-1307, USA.
         .ui-icon-widget-content { width: 16px; height: 16px; background-image: url(css/dark-hive-custom/images/ui-icons_cccccc_256x240.png); }   
         .ui-icon-red { width: 16px; height: 16px; background-image: url(css/dark-hive-custom/images/ui-icons_a83300_256x240.png); }        
         .ui-icon-green { width: 16px; height: 16px; background-image: url(css/dark-hive-custom/images/ui-icons_4b8e0b_256x240.png); }        
-           
+        .ui-icon-blank { background-position: -160px 0; }           
+
         .lg-icon-grey { width: 32px; height: 32px; background-image: url(large-icons.png);}
         .lg-icon-white { width: 32px; height: 32px; background-image: url(large-icons-white.png); }
         .lg-icon-disabled { width: 32px; height: 32px; background-image: url(large-icons-disabled.png); }
@@ -170,6 +172,14 @@ MA 02111-1307, USA.
 
         .track_slider_icon { float:right; cursor:pointer; }
 
+        .track_status { float: right; font-family: sans-serif; color: #0972a5; font-size: 8pt; margin-right: 8px; display:none; }
+        .track_title { font-family: sans-serif; font-size: 10pt; text-overflow:ellipsis; width: 350px; white-space:nowrap; overflow:hidden; }
+        .track_length { font-family: sans-serif; color: #808080; font-size: 8pt; margin-top: 2px;}
+        .player_multilist { font-size: 10pt; font-family: sans-serif; }
+        .playlist_button { font-size: 7pt; font-family: sans-serif; }
+        .track_list { font-family: sans-serif; font-size: 10pt; height: 95%; width: 99%; }
+        .player_error { float:left; font-family: sans-serif; font-size: 10pt; margin-left: 10px; color: red; }
+
     </style>
 
     <script>
@@ -189,10 +199,12 @@ MA 02111-1307, USA.
         <span id="system_blackout_icon" class="ui-icon-red ui-icon-lightbulb" title="auto blackout" style="float:right; display: none; margin-right: 5px;"></span>
     </div>
     <div class="collapsable_content" style="margin-top: 8px; margin-bottom: 10px; height: 80px;">
+        <!--
         <div style="width: 240px; margin: 4px 30px 4px 10px; float:left; display:inline;">
             <p class="ui-state-default ui-corner-all" style="padding: 4px; margin: 0px;" >Master Dimmer <span id="master_dimmer_value"></span></p>
             <div id="master_dimmer" style="width: 220px; margin: 14px 4px 8px 4px; "></div>
         </div>
+        -->
         <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
             <p class="ui-state-default ui-corner-all" style="padding: 4px; margin: 0px; width:100%;" >Blackout</p>
             <fieldset data-role="controlgroup" id="blackout_buttons" data-type="horizontal" style="border: 0px; margin: 2px 0px 0px 0px; padding: 0px;">
@@ -217,12 +229,23 @@ MA 02111-1307, USA.
                 </div>
             </fieldset>
         </div>
+        <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
+            <p class="ui-state-default ui-corner-all" style="padding: 4px; margin: 0px; width:100%;" >Music Match</p>
+            <fieldset data-role="controlgroup" id="music_match_buttons" data-type="horizontal" style="border: 0px; margin: 2px 0px 0px 0px; padding: 0px;">
+                <legend></legend>
+                <div>
+                    <input type="radio" id="music_match_0" name="music_match_enable" value="0" checked="checked" /><label for="music_match_0">Off</label>
+                    <input type="radio" id="music_match_1" name="music_match_enable" value="1" /><label for="music_match_1">On</label>
+                </div>
+            </fieldset>
+        </div>
         <div style="float:left; display:inline;">
             <span id="debugoutput" style="color:black;height:20px;"></span>
         </div>
         <div style="float:right; display:inline;">
             <div id="save_load_venue" class="lg-icon-grey lg-icon-folder menu_icon" title="load / save venue" style="float:right;width:32px;"></div>
             <div id="configure_venue" class="lg-icon-grey lg-icon-gear menu_icon" title="venue configuration" style="float:right;"></div>
+            <div id="toggle_delete_mode" class="lg-icon-grey lg-icon-trash menu_icon" title="delete" style="float:right;"></div>
             <div id="toggle_edit_mode" class="lg-icon-grey lg-icon-pencil menu_icon" title="edit" style="float:right;"></div>
         </div>
     </div>
@@ -232,28 +255,49 @@ MA 02111-1307, USA.
     <div class="section_title_container">
         <span class="section_title">SOUND</span>
         <span class="collapsable_icon"></span>
+        <span id="player_error" class="player_error"></span>
+        <span id="track_status" class="track_status"></span>
     </div>
-    <div class="collapsable_content" style="margin-top: 8px; margin-bottom: 10px; height: 65px; ">
-        <div style="width: 230px; margin: 8px 4px 4px 8px;  float:left; display:inline;">
+    <div class="collapsable_content" style="margin-top: 8px; margin-bottom: 10px; height: 76px; ">
+        <div style="width: 230px; margin: 3px 4px 4px 8px;  float:left; display:inline;">
             <p class="ui-state-default ui-corner-all" style="padding: 4px; margin: 0px;" >
                 <span id="volume_mute" class="ui-icon ui-icon-volume-on" style="float: left; margin: -1px 5px 0 0;" title="mute"></span>
                 Master Volume <span id="master_volume_value"></span>
             </p>
             <div id="master_volume" style="width: 220px; margin: 10px 8px 8px 8px;"></div>
         </div>
-        <div style="width: 240px; margin: 18px 4px 4px 30px; float:left; display:inline;">
-            <!-- p class="ui-state-default ui-corner-all" style="padding: 4px; margin: 0px;" >UNDER CONSTRUCTION</!-->
-            <div id="track_back" class="lg-icon-disabled lg-icon-track-back menu_icon" title="track back" style="float:left; margin-right: 14px;"></div>
-            <div id="track_stop" class="lg-icon-disabled lg-icon-track-stop menu_icon" title="track stop" style="float:left; margin-right: 14px;"></div>
-            <div id="track_play" class="lg-icon-disabled lg-icon-track-play menu_icon" title="track play" style="float:left; margin-right: 14px;"></div>
-            <div id="track_pause" class="lg-icon-disabled lg-icon-track-pause menu_icon" title="track pause" style="float:left; margin-right: 14px;"></div>
-            <div id="track_forward" class="lg-icon-disabled lg-icon-track-forward menu_icon" title="track forward" style="float:left;"></div>
+        <div id="track_controls" style="width: 350px; margin: 3px 4px 4px 20px; float:left; display:none;">
+            <div class="ui-state-default ui-corner-all" style="float:left; display:inline; height: 31px; width: 100%; padding: 3px 5px 3px 5px;">
+                <div id="now_playing" class="track_title" style="float: left; width: 100%;"></div>
+                <div id="track_length" class="track_length" style="clear: both; float: left;"></div>
+                <div id="track_remaining" class="track_length" style="float: right;"></div>
+            </div>
+            <div style="clear: both; float:left; margin: 5px 0px 0px 30px;">
+                <div id="track_back_info" class="ui-icon ui-icon-blank" style="float:left; margin-top: 20px;" title="show played tracks"></div>
+                <div id="track_back" class="lg-icon-disabled lg-icon-track-back menu_icon" title="track back" style="float:left; margin-right: 20px;" ></div>
+                <div id="track_play" class="lg-icon-disabled lg-icon-track-play menu_icon" title="track play" style="float:left; margin-right: 20px;"></div>
+                <div id="track_stop" class="lg-icon-disabled lg-icon-track-stop menu_icon" title="track stop" style="float:left; margin-right: 20px;"></div>
+                <div id="track_pause" class="lg-icon-disabled lg-icon-track-pause menu_icon" title="track pause" style="float:left; margin-right: 20px;"></div>
+                <div id="track_forward" class="lg-icon-disabled lg-icon-track-forward menu_icon" title="track forward" style="float:left;"></div>
+                <div id="track_forward_info" class="ui-icon ui-icon-blank" style="float:left; margin-top: 20px; width: 14px;" title="show queued tracks"></div>
+            </div>
+        </div>
+        <div id="track_select" style="float:left; margin:3px 0px 0px 36px; display:none;">
+            <div>
+                <select id="playlist_list"></select>
+                <button id="playlist_play" class="playlist_button">play</button>
+                <button id="playlist_queue" class="playlist_button">queue</button>
+            </div>
+            <div style="clear: both; float:left; margin-top: 8px;">
+                <select id="track_list"></select>
+                <button id="track_list_play" class="playlist_button">play</button>
+                <button id="track_list_queue" class="playlist_button">queue</button>
+            </div>
         </div>
         <div style="float:right; display:inline;">
-            <div id="show_frequency_visualizer" class="lg-icon-grey lg-icon-chart menu_icon" title="frequency visualizer"></div>
-        </div>
-        <div style="float:right; display:inline;">
-            <div id="show_beat_visualizer" class="lg-icon-grey lg-icon-speaker menu_icon" title="beat visualizer"></div>
+            <div id="show_frequency_visualizer" class="lg-icon-grey lg-icon-chart menu_icon" title="frequency visualizer" style="float:right;"></div>
+            <div id="show_beat_visualizer" class="lg-icon-grey lg-icon-speaker menu_icon" title="beat visualizer" style="float:right;"></div>
+            <div id="show_music_matcher" class="lg-icon-grey lg-icon-tag menu_icon" title="music matcher" style="float:right;"></div>
         </div>
     </div>
 </div>
@@ -264,6 +308,7 @@ MA 02111-1307, USA.
         <span class="collapsable_icon"></span>
         <span class="scroll_or_grid_icon" style="margin-right: 5px;"></span>
         <span class="ui-icon ui-icon-plusthick new_item" title="new scene" style="float:right; display: none; margin-right: 5px;" onclick="createScene(event);"></span>
+        <span id="copy_scene_button" class="ui-icon ui-icon-clipboard new_item" title="copy scene" style="float:right; display: none; margin-right: 5px;" onclick="copyScene(event);"></span>
     </div>
     <div class="collapsable_content">
         <div class="scroll-content"></div>    
@@ -295,8 +340,8 @@ MA 02111-1307, USA.
         <span class="scroll_or_grid_icon"  style="margin-right: 5px;"></span>
         <span class="ui-icon ui-icon-plusthick new_item" title="new fixture" style="float:right; display: none; margin-right: 5px; " onclick="createFixture(event);"></span>
         <span class="ui-icon ui-icon-plusthick new_item" title="new fixture group" style="float:right; display: none; margin: 0px 5px 0px 0px; border: 1px solid #808080;" onclick="createFixtureGroup(event);"></span>
-        <span id="copy_fixtures_button" class="ui-icon ui-icon-clipboard new_item" title="copy fixtures to scene" style="float:right; display: none; margin-right: 5px; "onclick="copyFixtures(event);"></span>
-        <span id="clear_fixtures_button"class="ui-icon ui-icon-minus play_item" title="clear all fixtures" style="float:right; margin-right: 5px; border: 1px solid #000000;" onclick="clearFixtures(event);" ></span>
+        <span id="copy_fixtures_button" class="ui-icon ui-icon-clipboard new_item" title="copy fixtures to scene" style="float:right; display: none; margin-right: 5px; " onclick="copyFixtures(event);"></span>
+        <span id="clear_fixtures_button" class="ui-icon ui-icon-minus play_item" title="clear all fixtures" style="float:right; margin-right: 5px; border: 1px solid #000000;" onclick="clearFixtures(event);" ></span>
     </div>
     <div class="collapsable_content">
         <div class="scroll-content"></div>    
@@ -402,7 +447,7 @@ MA 02111-1307, USA.
 
 <div id="delete_item_dialog" style="display:none;" title="Delete Venue Item">
     <div>
-        <div class="lg-icon-grey lg-icon-trash" style="float:left; margin: 0px 10px 4px 0px""></div>Delete <span id="delete_item_name"></span>
+        <div class="lg-icon-grey lg-icon-trash" style="float:left; margin: 0px 10px 4px 0px"></div>Delete <span id="delete_item_name"></span>
     </div>
 </div>
 
@@ -501,7 +546,6 @@ MA 02111-1307, USA.
         <div id="nsd_accordion">
             <h3>General</h3>
             <div>
-
                 <label for="nsd_fixtures" style="display:block; margin: 0px 0px 4px 0px;">fixtures</label>
                 <select id="nsd_fixtures" style="display:block;" multiple="multiple" ></select>
 
@@ -655,7 +699,7 @@ MA 02111-1307, USA.
 
 <div id="wait_dialog" style="display:none;border: solid #2e7db2 1px;"> 
     <div id="loading-div" class="ui-corner-all" >
-      <img style="height:30px; margin:40px auto;display:block" " src="loading.gif" alt="Wait"/> 
+      <img style="height:30px; margin:40px auto;display:block;" src="loading.gif" alt="Wait"/> 
       <div style="font-weight:normal; color:#808080;text-align:center;" id="wd_reason"></div>
      </div>
 </div>
@@ -671,7 +715,7 @@ MA 02111-1307, USA.
             <label for="nfd_description" style="display:block; margin: 10px 0px 4px 0px;">description</label>
             <input id="nfd_description" style="display:block; width: 400px;" />
 
-            <label for="nfd_manufacturer" style="display:block; margin: 20px 0px 4px 0px;"">manufacturer</label>
+            <label for="nfd_manufacturer" style="display:block; margin: 20px 0px 4px 0px;">manufacturer</label>
             <select id="nfd_manufacturer" style="display:block;" ></select>
 
             <div style="margin-left: 30px;">
@@ -709,7 +753,7 @@ MA 02111-1307, USA.
         </div>
     </fieldset>
 
-    <div id="cda_addresses"">
+    <div id="cda_addresses">
     </div>
 </div>
 
@@ -732,7 +776,7 @@ MA 02111-1307, USA.
             </div>
 
             <div style="clear:both; float: left; margin-top: 10px;">
-                <label for="NNN_sample_rate_ms" style="display:block; "margin-top: 6px;">sample rate</label>
+                <label for="NNN_sample_rate_ms" style="display:block; margin-top: 6px;">sample rate</label>
                 <input id="NNN_sample_rate_ms" style="display:block; width:80px;" title="how often to sample this signal or fire the timer"/>&nbsp;ms
             </div>
 
@@ -879,8 +923,8 @@ MA 02111-1307, USA.
                 <div id="escs_colorpicker" style="height:30px; width:60px; border: 1px solid #808080; border-radius: 6pt 6pt;"></div>
             </div>
             <div style="clear:both;float:left; margin-top: 10px;">
-                <div style ="float: left;margin-right:6px;">custom color progression</div>
-                <div style ="float: left;"id="escs_color_progression"></div>
+                <div style ="float: left; margin-right:6px;">custom color progression</div>
+                <div style ="float: left;" id="escs_color_progression"></div>
             </div>
         </fieldset>
         <div id="escs_signal" style="clear:both;" ></div>
@@ -1105,7 +1149,7 @@ MA 02111-1307, USA.
 
                   <div style="float:left; margin-right: 20px; margin-top: 10px;">
                         <label for="esma7_pan_increment" style="display:block;">rotation increment&deg;</label>
-                        <input id="esma7_pan_increment"style="display:block; width:60px;" />
+                        <input id="esma7_pan_increment" style="display:block; width:60px;" />
                     </div>
 
                     <div style="float:left; margin-right: 20px; margin-top: 10px;">
@@ -1137,7 +1181,7 @@ MA 02111-1307, USA.
 </div>
 
 <div id="esca_channel_template" style="display:none;">
-    <div style="padding:10px; width:600px; background-color: black; border: 1px solid #808080; border-radius: 6pt 6pt;"">
+    <div style="padding:10px; width:600px; background-color: black; border: 1px solid #808080; border-radius: 6pt 6pt;">
         <div style="margin-bottom:10px;">
             <select class="esca_fixture"></select>
         </div>
@@ -1161,6 +1205,11 @@ MA 02111-1307, USA.
         <div class="esca_channel_range_container" style="float:left;">
             <input class="esca_channel_range_start" style="width:50px;" value="1"/> - <input class="esca_channel_range_end" style="width:50px;" value="255"/>
         </div>
+    </div>
+</div>
+
+<div id="track_list_dialog" style="display:none;">
+    <div id="tld_tracks" class="track_list">
     </div>
 </div>
 

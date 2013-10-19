@@ -37,6 +37,8 @@ MA 02111-1307, USA.
 #define DMX_URL_CONTROL_VENUE_STROBE            DMX_URL_ROOT_FULL "control/venue/strobe/" 
 #define DMX_URL_CONTROL_SCENE_SHOW              DMX_URL_ROOT_FULL "control/scene/show/" 
 #define DMX_URL_CONTROL_CHASE_SHOW              DMX_URL_ROOT_FULL "control/chase/show/" 
+#define DMX_URL_CONTROL_VENUE_MUSIC_MATCH       DMX_URL_ROOT_FULL "control/venue/music_match/"
+
 
 #define DMX_URL_CONTROL_FIXTURE_CHANNELS        DMX_URL_ROOT_FULL "control/fixture/channels/"
 #define DMX_URL_CONTROL_FIXTURE                 DMX_URL_ROOT_FULL "control/fixture/"
@@ -78,6 +80,18 @@ MA 02111-1307, USA.
 
 #define DMX_URL_VENUE_UPLOAD                    DMX_URL_ROOT_FULL "venue/upload/"
 
+#define DMX_URL_CONTROL_MUSIC_TRACK_BACK        DMX_URL_ROOT_FULL "control/music/track/back/"
+#define DMX_URL_CONTROL_MUSIC_TRACK_FORWARD     DMX_URL_ROOT_FULL "control/music/track/forward/"
+#define DMX_URL_CONTROL_MUSIC_TRACK_STOP        DMX_URL_ROOT_FULL "control/music/track/stop/"
+#define DMX_URL_CONTROL_MUSIC_TRACK_PAUSE       DMX_URL_ROOT_FULL "control/music/track/pause/"
+#define DMX_URL_CONTROL_MUSIC_TRACK_PLAY        DMX_URL_ROOT_FULL "control/music/track/play/"
+#define DMX_URL_QUERY_MUSIC_PLAYLISTS           DMX_URL_ROOT_FULL "query/music/playlists/"
+#define DMX_URL_QUERY_MUSIC_PLAYLIST_TRACKS     DMX_URL_ROOT_FULL "query/music/playlist/tracks/"
+#define DMX_URL_QUERY_MUSIC_QUEUED              DMX_URL_ROOT_FULL "query/music/queued/"
+#define DMX_URL_QUERY_MUSIC_PLAYED              DMX_URL_ROOT_FULL "query/music/played/"
+#define DMX_URL_CONTROL_MUSIC_PLAY_TRACK        DMX_URL_ROOT_FULL "control/music/play/track/"
+#define DMX_URL_CONTROL_MUSIC_PLAY_PLAYLIST     DMX_URL_ROOT_FULL "control/music/play/playlist/"
+
 // ----------------------------------------------------------------------------
 //
 DMXHttpFull::DMXHttpFull(void) :
@@ -92,6 +106,7 @@ DMXHttpFull::DMXHttpFull(void) :
 
     m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_BLACKOUT ] = &DMXHttpFull::control_venue_blackout;
     m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_WHITEOUT ] = &DMXHttpFull::control_venue_whiteout;
+    m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_MUSIC_MATCH ] = &DMXHttpFull::control_venue_music_match;
     m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_MASTERDIMMER ] = &DMXHttpFull::control_venue_masterdimmer;
     m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_STROBE ] = &DMXHttpFull::control_venue_strobe;
     m_rest_get_handlers[ DMX_URL_CONTROL_SCENE_SHOW ] = &DMXHttpFull::control_scene_show;
@@ -109,6 +124,18 @@ DMXHttpFull::DMXHttpFull(void) :
     m_rest_get_handlers[ DMX_URL_DELETE_CHASE ] = &DMXHttpFull::delete_chase;
     m_rest_get_handlers[ DMX_URL_DELETE_FIXTURE ] = &DMXHttpFull::delete_fixture;
     m_rest_get_handlers[ DMX_URL_DELETE_FIXTUREGROUP ] = &DMXHttpFull::delete_fixturegroup;
+
+    m_rest_get_handlers[ DMX_URL_CONTROL_MUSIC_TRACK_BACK ] = &DMXHttpFull::control_music_track_back;
+    m_rest_get_handlers[ DMX_URL_CONTROL_MUSIC_TRACK_FORWARD ] = &DMXHttpFull::control_music_track_forward;
+    m_rest_get_handlers[ DMX_URL_CONTROL_MUSIC_TRACK_STOP ] = &DMXHttpFull::control_music_track_stop;
+    m_rest_get_handlers[ DMX_URL_CONTROL_MUSIC_TRACK_PAUSE ] = &DMXHttpFull::control_music_track_pause;
+    m_rest_get_handlers[ DMX_URL_CONTROL_MUSIC_TRACK_PLAY ] = &DMXHttpFull::control_music_track_play;
+    m_rest_get_handlers[ DMX_URL_QUERY_MUSIC_PLAYLISTS ] = &DMXHttpFull::query_music_playlists;
+    m_rest_get_handlers[ DMX_URL_QUERY_MUSIC_PLAYLIST_TRACKS ] = &DMXHttpFull::query_music_playlist_tracks;
+    m_rest_get_handlers[ DMX_URL_QUERY_MUSIC_QUEUED ] = &DMXHttpFull::query_music_queued;
+    m_rest_get_handlers[ DMX_URL_QUERY_MUSIC_PLAYED ] = &DMXHttpFull::query_music_played;
+    m_rest_get_handlers[ DMX_URL_CONTROL_MUSIC_PLAY_TRACK ] = &DMXHttpFull::control_music_play_track;
+    m_rest_get_handlers[ DMX_URL_CONTROL_MUSIC_PLAY_PLAYLIST ] = &DMXHttpFull::control_music_play_playlist;
 
     // POST request handlers
     m_rest_post_handlers[ DMX_URL_CONTROL_FIXTURE_CHANNELS ] = &DMXHttpFull::control_fixture_channels;
@@ -216,7 +243,8 @@ DWORD DMXHttpFull::processPostRequest( HttpWorkerThread* worker, BYTE* contents,
         if ( semi != -1 )
             contentType = contentType.Left( semi );
 
-        printf( "url=%s\nContentType=%s\nrequest=%s\n", url_path, (LPCSTR)contentType, contents );
+        if ( studio.isDebug() )
+            printf( "url=%s\nContentType=%s\nrequest=%s\n", url_path, (LPCSTR)contentType, contents );
 
         // Only accept JSON and multipart content types
         if ( contentType != "application/json" && contentType != "multipart/form-data" )

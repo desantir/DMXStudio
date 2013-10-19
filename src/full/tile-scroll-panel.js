@@ -31,7 +31,16 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
 
     // method getTile
     this.getTile = function (id) {
-        return $("#" + this.panel_id + '_' + '_icon_' + id);
+        // Interestly enough, when the tile container div is emptied, it seems we can still find the
+        // tile in the DOM.  Not sure what or who's bug this is at the moment, but verify ID is in
+        // our list before DOM lookup.
+
+        for (var i = 0; i < this.tiles.length; i++) {
+            if (this.tiles[i] == id)
+                return $("#" + this.panel_id + '_' + '_icon_' + id);
+        }
+
+        return null;
     }
 
     // method deleteTile

@@ -92,16 +92,19 @@ bool DMXHttpFull::query_scenes( CString& response, LPCSTR data )
 
     Scene* default_scene = studio.getVenue()->getDefaultScene();
 
+    UID active_uid = studio.getVenue()->getCurrentSceneUID();
+
     for ( ScenePtrArray::iterator it=scenes.begin(); it != scenes.end(); it++, first=false) {
         if ( !first )
             response.Append( "," );
 
         Scene* scene = (*it);
 
-        response.AppendFormat( "{ \"id\":%lu, \"number\":%lu, \"name\":\"%s\", \"description\":\"%s\", \"is_default\":%s, \"is_private\":%s, ", 
+        response.AppendFormat( "{ \"id\":%lu, \"number\":%lu, \"name\":\"%s\", \"description\":\"%s\", \"is_default\":%s, \"is_private\":%s, \"is_running\":%s,", 
             scene->getUID(), scene->getSceneNumber(), encodeJsonString( scene->getName() ), encodeJsonString( scene->getDescription() ),
             (scene == default_scene) ? "true" : "false",
             (scene->isPrivate() ) ? "true" : "false",
+            (active_uid == scene->getUID() ) ? "true" : "false",
             makeUIDArray<UIDArray>( scene->getActorUIDs() ) );
 
 

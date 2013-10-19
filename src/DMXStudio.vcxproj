@@ -133,6 +133,7 @@ xcopy /y /s "$(SolutionDir)DMXStudio\colorpicker" "$(SolutionDir)$(Configuration
     </None>
     <None Include="full\jquery.container.js" />
     <None Include="full\jquery.multiselect.js" />
+    <None Include="full\music_player.js" />
     <None Include="full\scene.js" />
     <None Include="full\slider-panel.js" />
     <None Include="mobile\mobile.htm">

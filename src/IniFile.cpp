@@ -31,7 +31,8 @@ IniFile::IniFile( LPCSTR filename ) :
     m_whiteout_strobe_fast( 100, 50 ),
     m_http_enabled( false ),
     m_music_player_enabled( false ),
-    m_dmx_required( true )
+    m_dmx_required( true ),
+    m_debug( false )
 {
 }
 
@@ -53,6 +54,7 @@ bool IniFile::read( )
 
     TiXmlElement* dmx_studio = doc.FirstChildElement( "dmx_studio" );
     m_dmx_required = read_bool_attribute( dmx_studio, "dmx_required", true );
+    m_debug = read_bool_attribute( dmx_studio, "debug", false );
 
     m_venue_filename = read_text_element( dmx_studio, "venue_filename" );
     m_venue_container = read_text_element( dmx_studio, "venue_container" );

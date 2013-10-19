@@ -198,7 +198,7 @@ bool MusicPlayer::getPlayedTracks( PlayerItems& played_tracks )
     played_tracks.clear();
 
     bool results = (*m_GetPlayedTracks)( &num_tracks, track_ids, sizeof(track_ids) );
-    std::copy( track_ids, track_ids+num_tracks, std::inserter( played_tracks, played_tracks.begin() ) );
+    std::reverse_copy( track_ids, track_ids+num_tracks, std::inserter( played_tracks, played_tracks.begin() ) );
     return results;
 }
 
@@ -335,14 +335,14 @@ bool MusicPlayer::isTrackPaused( )
 
 // ----------------------------------------------------------------------------
 //
-DWORD MusicPlayer::getPlayingTrack( DWORD* track_length, DWORD* time_remaining, UINT* queued_tracks )
+DWORD MusicPlayer::getPlayingTrack( DWORD* track_length, DWORD* time_remaining, UINT* queued_tracks, UINT *played_tracks )
 {
     VERIFY_LIBRARY_LOADED;
     VERIFY_PLAYER_LOGGED_IN;
 
     DWORD track_id = 0;
 
-    (*m_GetPlayingTrack)( &track_id, track_length, time_remaining, queued_tracks );
+    (*m_GetPlayingTrack)( &track_id, track_length, time_remaining, queued_tracks, played_tracks );
 
     return track_id;
 }

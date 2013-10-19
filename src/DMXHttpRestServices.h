@@ -37,6 +37,7 @@ protected:
     bool control_venue_blackout( CString& response, LPCSTR data );
     bool control_venue_whiteout( CString& response, LPCSTR data );
     bool control_venue_masterdimmer( CString& response, LPCSTR data );
+    bool control_venue_music_match( CString& response, LPCSTR data );
     bool control_scene_show( CString& response, LPCSTR data );
     bool control_chase_show( CString& response, LPCSTR data );
     bool control_venue_strobe( CString& response, LPCSTR data );
@@ -44,5 +45,17 @@ protected:
     bool control_fixture_channel( CString& response, LPCSTR data );
     bool control_master_volume( CString& response, LPCSTR data );
     bool control_mute_volume( CString& response, LPCSTR data );
+
+    bool control_music_track_back( CString& response, LPCSTR data );
+    bool control_music_track_forward( CString& response, LPCSTR data );
+    bool control_music_track_stop( CString& response, LPCSTR data );
+    bool control_music_track_pause( CString& response, LPCSTR data );
+    bool control_music_track_play( CString& response, LPCSTR data );
+    bool query_music_playlists( CString& response, LPCSTR data );
+    bool query_music_queued( CString& response, LPCSTR data );
+    bool query_music_played( CString& response, LPCSTR data );
+    bool query_music_playlist_tracks( CString& response, LPCSTR data );
+    bool control_music_play_track( CString& response, LPCSTR data );
+    bool control_music_play_playlist( CString& response, LPCSTR data );
 };
 

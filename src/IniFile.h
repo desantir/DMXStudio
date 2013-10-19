@@ -40,6 +40,8 @@ class IniFile : public ISerializable
     CString         m_music_player_ddl;
     CString         m_music_player_username;
     bool            m_dmx_required;
+    bool            m_debug;
+
 public:
     IniFile( LPCSTR filename );
     ~IniFile(void);
@@ -119,6 +121,13 @@ public:
     }
     LPCSTR getMusicUsername( void ) const {
         return m_music_player_username;
+    }
+
+    bool isDebug() const {
+        return m_debug;
+    }
+    void setDebug( bool debug ) {
+        m_debug = debug;
     }
 };
 

@@ -63,6 +63,11 @@ function Slider(panel, number, slider_frame) {
         return this.owner;
     }
 
+    // method getOwnerChannel
+    this.getOwnerChannel = function () {
+        return this.owner_channel;
+    }
+
     // method getSliderFrame
     this.getSliderFrame = function () {
         return this.slider_frame;
@@ -118,6 +123,8 @@ function Slider(panel, number, slider_frame) {
     // method setValue
     this.setValue = function (value) {
         this.getSlider().slider("value", value);
+        this.getFooter().html(value);
+        this.getSlider().attr("title", escapeForHTML(this.getRangeDescription(value)));
         this.valueChange(value);
     }
 
@@ -130,27 +137,29 @@ function Slider(panel, number, slider_frame) {
         }
     }
 
-    // method allocate
-    this.allocate = function (owner, owner_channel, callback, name, label, value, ranges, type, color, header_tip ) {
+    // method allocate: channel data { channel, label, name, value, max_value, ranges }
+
+    this.allocate = function (owner, header_tip, slider_data, callback) {
         this.owner = owner;
         this.in_use = true;
-        this.ranges = ranges;
+        this.ranges = slider_data.ranges;
         this.callback = callback;
-        this.owner_channel = owner_channel;
-        this.value = value;
-        this.type = type;
+        this.owner_channel = slider_data.channel;
+        this.value = slider_data.value;
+        this.type = slider_data.type;
 
-        this.getHeader().text(name);
+        this.getHeader().text(slider_data.label);
         this.getHeader().attr("title",header_tip);
-        this.getLabel().text(label);
-        this.getFooter().text(value);
-        this.getHeader().css('color', color ? color : "");
+        this.getLabel().text(slider_data.name);
+        this.getFooter().text(slider_data.value);
+        this.getHeader().css('color', slider_data.color ? slider_data.color : "");
 
         var slider = this.getSlider();
-        slider.slider("value", value);
-        slider.attr("title", this.getRangeDescription(value));
+        slider.slider("value", slider_data.value);
+        slider.attr("title", this.getRangeDescription(slider_data.value));
         slider.slider("option", "disabled", false);
         slider.slider("option", "animate", true);
+        slider.slider("option", "max", slider_data.max_value);
     }
 
     // method release
@@ -184,7 +193,7 @@ function Slider(panel, number, slider_frame) {
 
     // Stylize bottom area
     var slider_range = slider_frame.find(".ui-slider-range");
-    slider_range.css('background', 'url() rgb( 18, 18, 84 ) 0px 0px');
+    slider_range.css('background', 'url() rgb( 3, 11, 46 ) 0px 0px');
 
     // Add sidecar for range information
     var ui_handle = slider.find('.ui-slider-handle');
@@ -278,9 +287,7 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
         }
 
         for (var i = 0; i < num_channels; i++ ) {
-            this.sliders[i + channel_start].allocate(owner, channel_data[i].channel, callback, channel_data[i].label,
-                channel_data[i].name, channel_data[i].value, channel_data[i].ranges,
-                channel_data[i].type, channel_data[i].color, owner_name);
+            this.sliders[i + channel_start].allocate(owner, owner_name, channel_data[i], callback);
         }
     }
 
@@ -306,6 +313,16 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
             if (this.sliders[i].isUsed())
                 callback( this.sliders[i] );
         }
+    }
+
+    // method findChannel
+    this.findChannel = function ( owner, channel_id ) {
+        for (var i = 0; i < this.num_sliders; i++) {
+            if (this.sliders[i].isUsed() && this.sliders[i].getOwner() == owner && this.sliders[i].getOwnerChannel())
+                return this.sliders[i];
+        }
+
+        return null;
     }
 
     // method isTrackSlider

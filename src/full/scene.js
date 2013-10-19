@@ -21,7 +21,6 @@ MA 02111-1307, USA.
 */
 
 var scenes = new Array();
-var active_scene_id = 0;
 
 // ----------------------------------------------------------------------------
 // class Scene
@@ -151,9 +150,11 @@ function getDefaultSceneId() {
 function updateScenes() {
     highlightSceneFixtures(active_scene_id, false);
     active_scene_id = 0;
+    $("#copy_scene_button").hide();
 
     scene_tile_panel.empty();
     scenes = [];
+    loading = true;
 
     $.ajax({
         type: "GET",
@@ -198,6 +199,32 @@ function playScene(event, scene_id) {
 
 // ----------------------------------------------------------------------------
 //
+function copyScene(event) {
+    stopEventPropagation(event);
+
+    var scene = getSceneById(active_scene_id);
+    if (scene == null)
+        return;
+
+    var new_number = getUnusedSceneNumber();
+
+    var actors = [];
+    for (var i = 0; i < scene.getActors().length; i++)
+        actors.push(scene.getActors()[i].id);
+
+    openNewSceneDialog("Copy Scene " + scene.getName(), "Create Scene", true,  {
+        id: scene.getId(),
+        name: "Copy of " + scene.getName(),
+        description: scene.getDescription(),
+        number: new_number,
+        private_scene: scene.isPrivate(),
+        animations: scene.getAnimations(),
+        actors: actors
+    });
+}
+
+// ----------------------------------------------------------------------------
+//
 function createScene(event) {
     stopEventPropagation(event);
 
@@ -216,7 +243,7 @@ function createScene(event) {
             actors.push(list[i].getId());
     }
 
-    openNewSceneDialog("Create Scene", {
+    openNewSceneDialog("New Scene", "Create Scene", false, {
         id: 0,
         name: "New Scene " + new_number,
         description: "",
@@ -240,7 +267,7 @@ function editScene(event, scene_id) {
     for (var i = 0; i < scene.getActors().length; i++)
         actors.push(scene.getActors()[i].id);
 
-    openNewSceneDialog("Update Scene", {
+    openNewSceneDialog("Edit Scene " + scene.getName(), "Update Scene", false, {
         id: scene.getId(),
         name: scene.getName(),
         description: scene.getDescription(),
@@ -253,7 +280,7 @@ function editScene(event, scene_id) {
 
 // ----------------------------------------------------------------------------
 //
-function openNewSceneDialog(dialog_title, data) {
+function openNewSceneDialog(dialog_title, action_title, copy, data) {
 
     var send_update = function ( make_copy ) {
         var json = {
@@ -302,7 +329,7 @@ function openNewSceneDialog(dialog_title, data) {
 
     var dialog_buttons = new Array();
 
-    if (data.id != 0) {
+    if (data.id != 0 && !copy) {
         dialog_buttons[dialog_buttons.length] = {
             text: "Make Copy",
             click: function () { send_update(true); }
@@ -310,8 +337,8 @@ function openNewSceneDialog(dialog_title, data) {
     }
 
     dialog_buttons[dialog_buttons.length] = {
-        text: dialog_title,
-        click: function () { send_update(false); }
+        text: action_title,
+        click: function () { send_update(copy); }
     };
 
     dialog_buttons[dialog_buttons.length] = {
@@ -330,7 +357,7 @@ function openNewSceneDialog(dialog_title, data) {
         buttons: dialog_buttons
     });
 
-    $("#new_scene_dialog").dialog( "option", "title", dialog_title + " " + data.number );
+    $("#new_scene_dialog").dialog( "option", "title", dialog_title );
 
     $("#nsd_accordion").accordion({ heightStyle: "fill" });
 
@@ -665,6 +692,11 @@ function markActiveScene(new_scene_id) {
         highlightSceneFixtures(new_scene_id, true);
         active_scene_id = new_scene_id;
     }
+
+    if ( active_scene_id != 0 )
+        $("#copy_scene_button").show();
+    else
+        $("#copy_scene_button").hide();
 }
 
 // ----------------------------------------------------------------------------

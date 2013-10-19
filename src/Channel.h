@@ -48,6 +48,7 @@ typedef enum channel_type {
     CHNLT_CONTROL = 18,
     CHNLT_DIMMER_AND_STROBE = 19,
     CHNLT_PROG_SPEED = 20,
+    CHNLT_LASER = 21,
     CHNLT_NUM_TYPES
 
 } ChannelType;

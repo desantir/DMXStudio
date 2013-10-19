@@ -435,6 +435,7 @@ void DMXStudio::readIniFile()
             setVenueContainer( iniFile.getVenueContainer() );
 
         setDMXRequired( iniFile.isDMXRequired() );
+        setDebug( iniFile.isDebug() );
 
         if ( iniFile.isHttpEnabled() ) {
             m_http_port = iniFile.getHttpPort();

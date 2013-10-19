@@ -26,11 +26,14 @@ var fixture_definitions = null;     // Fixture definitions - populated only if n
 var dmx_addresses = null;
 var group_colors = false;
 
+var COLOR_CHANNELS_OWNER = -1;
+var MASTER_DIMMER_OWNER = -2;
+
 var slider_color_channels = [
-    { "channel": 1, "label": "red", "name": "Red Master", "value": 0, "ranges": null, "type": 1, "color": "rgb(255,0,0)" },
-    { "channel": 2, "label": "green", "name": "Green Master", "value": 0, "ranges": null, "type": 2, "color": "rgb(0,255,0)" },
-    { "channel": 3, "label": "blue", "name": "Blue Master", "value": 0, "ranges": null, "type": 3, "color": "rgb(0,0,255)" },
-    { "channel": 5, "label": "white", "name": "White Master", "value": 0, "ranges": null, "type": 5, "color": "rgb(255,255,255)" }
+    { "channel": 1, "label": "red", "name": "Master Red", "value": 0, "max_value":255, "ranges": null, "type": 1, "color": "rgb(255,0,0)" },
+    { "channel": 2, "label": "green", "name": "Master Green", "value": 0, "max_value": 255, "ranges": null, "type": 2, "color": "rgb(0,255,0)" },
+    { "channel": 3, "label": "blue", "name": "Master Blue", "value": 0, "max_value": 255, "ranges": null, "type": 3, "color": "rgb(0,0,255)" },
+    { "channel": 5, "label": "white", "name": "Master White", "value": 0, "max_value": 255, "ranges": null, "type": 5, "color": "rgb(255,255,255)" }
 ];
 
 // ----------------------------------------------------------------------------
@@ -189,10 +192,7 @@ function updateFixtures() {
     $("#copy_fixtures_button").removeClass("ui-icon-white").addClass("ui-icon");
     $("#clear_fixtures_button").removeClass("ui-icon-white").addClass("ui-icon");
 
-    slider_panel.releaseAllChannels();
-
-    if (group_colors)
-        slider_panel.allocateChannels(-1, "Colors", slider_color_channels, fixture_slider_colors_callback);
+    this.arrangeSliders();          // Reset sliders, add colors and other static channels
 
     $.ajax({
         type: "GET",
@@ -324,6 +324,8 @@ function loadFixtureChannels( fixture_id, updated_channel_data ) {
         channel.label = ((fixture.isGroup()) ? "G" : "") + fixture.getNumber() + "-" + (i + 1);
         if ( updated_channel_data != null )
             channel.value = updated_channel_data[i];
+
+        channel.max_value = 255;
 
         channels_to_load.push(channel);
     }
@@ -490,10 +492,15 @@ function arrangeSliders(event) {
 
     slider_panel.releaseAllChannels();
 
+    // Add venue master dimmer
+    slider_panel.allocateChannels(MASTER_DIMMER_OWNER, "Venue Dimmer", [master_dimmer_channel], master_dimmer_callback);
+    master_dimmer_channel.slider = slider_panel.findChannel(MASTER_DIMMER_OWNER, master_dimmer_channel.channel);
+
+    // Add color masters if enabled
     if (group_colors) {
         $("#channel_panel_groupcolors").removeClass('ui-icon').addClass('ui-icon-white');
 
-        slider_panel.allocateChannels(-1, "Colors", slider_color_channels, fixture_slider_colors_callback);
+        slider_panel.allocateChannels(COLOR_CHANNELS_OWNER, "Colors", slider_color_channels, fixture_slider_colors_callback);
     }
     else {
         $("#channel_panel_groupcolors").removeClass('ui-icon-white').addClass('ui-icon');
