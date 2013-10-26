@@ -264,6 +264,7 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
         scroll_or_grid_icon.click(function (event) {
             stopEventPropagation(event);
             self.setScrollContent(!self.isScrollContent());
+            client_config_update = true;
         });
     }
 

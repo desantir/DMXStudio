@@ -438,6 +438,7 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
         scroll_or_grid_icon.click(function (event) {
             stopEventPropagation(event);
             self.setScrollContent(!self.isScrollContent());
+            client_config_update = true;
         });
     }
 

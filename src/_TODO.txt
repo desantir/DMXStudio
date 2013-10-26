@@ -52,6 +52,7 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L Dimmer curve (LEDs can fall off fast at the end)
 		L Editable fixture defaults
 		L Minimum dimmer setting
+		M Handle music format changes and other formats
 
 	M Code Maintainence
 		M Bullet proof error detection and automatic restart

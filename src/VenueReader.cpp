@@ -103,6 +103,8 @@ Venue * VenueReader::read( TiXmlElement* self, Venue* venue ) {
         venue->m_audio_sample_size = (UINT)read_unsigned_attribute( audio, "sample_size", 1024 );
     }
 
+    venue->m_venue_layout = read_text_element( self, "venue_layout" );
+
     // Add all fixtures
     std::vector<Fixture *> fixtures = 
         read_xml_list<Fixture>( self->FirstChildElement( "fixtures" ), "fixture" );

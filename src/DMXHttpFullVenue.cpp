@@ -25,6 +25,33 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
+bool DMXHttpFull::query_venue_layout( CString& response, LPCSTR data ) {
+    Venue* venue = studio.getVenue();
+    if ( !venue )
+        return false;
+
+    LPCSTR layout = venue->getVenueLayout();
+    if ( layout == NULL )
+        return false;
+
+    response = layout; 
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool DMXHttpFull::edit_venue_layout_save( CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
+    Venue* venue = studio.getVenue();
+    if ( !venue )
+        return false;
+
+    venue->setVenueLayout( data );
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
 bool DMXHttpFull::query_venue_describe( CString& response, LPCSTR data ) {
     Venue* venue = studio.getVenue();
     if ( !venue )

@@ -121,6 +121,10 @@ void VenueWriter::visit( Venue* venue ) {
     add_text_element( audio, "capture_device",venue-> m_audio_capture_device );
     venueElement.InsertEndChild( audio );
 
+    // Add venue layout
+    if ( venue->m_venue_layout.GetLength() > 0 )
+        add_cdata_element( venueElement, "venue_layout", venue-> m_venue_layout );
+
     // Add fixtures
     TiXmlElement fixtures( "fixtures" );
     visit_map<FixtureMap>( fixtures, venue->m_fixtures );

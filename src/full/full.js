@@ -29,6 +29,7 @@ var delete_mode = false;                            // True when UI is in delete
 var active_scene_id = 0;                            // UID of currently active scene
 var active_chase_id = 0;                            // UID of currently active chase
 var auto_blackout = false;                          // Venue is in auto backout mode
+var client_config_update = false;                   // Client layou has changed -  update server
 
 var scene_tile_panel;
 var chase_tile_panel;
@@ -40,8 +41,25 @@ var whiteout_ms = [25, 50, 75, 100, 125, 150, 200, 250, 350, 500, 750, 1000, 150
 var venue_filename = "";
 
 var master_dimmer_channel = {
-    "channel": 1, "label": "venue", "name": "Venue Dimmer", "value": 0, "max_value": 100, "ranges": null, "type": -1, "color": null, "slider": null
+    "channel": 1, "label": "venue", "name": "Master Dimmer", "value": 0, "max_value": 100, "ranges": null, "type": -1, "color": null, "slider": null
 };
+
+var client_config = null;
+/*
+    {
+        "edit_mode": true,
+        "delete_mode": false,
+
+        "sections": {
+            "venue_pane": { collapsed: false },
+            "music_pane": { collapsed: true },
+            "scene_tiles_pane": { collapsed: false, scroll: false },
+            "chase_tiles_pane": { collapsed: true, scroll: true },
+            "fixture_tiles_pane": { collapsed: false, scroll: false },
+            "slider_pane": { collapsed: false, scroll: false }
+        }
+    };
+*/
 
 // ----------------------------------------------------------------------------
 //
@@ -137,11 +155,13 @@ function initializeUI() {
     });
 
     $("#toggle_edit_mode").click(function () {
-        setEditMode( !edit_mode );
+        setEditMode(!edit_mode);
+        client_config_update = true;
     });
 
     $("#toggle_delete_mode").click(function () {
         setDeleteMode(!delete_mode);
+        client_config_update = true;
     });
 
     $("#configure_venue").click( configureVenue );
@@ -181,6 +201,7 @@ function initializeUI() {
     });
 
     // Update the UI from server's current state
+    updateVenueLayout();
     updateScenes();
     updateChases();
     updateFixtures();
@@ -236,6 +257,11 @@ function updateUI() {
         cache_master_dimmer_handle = $('#master_dimmer .ui-slider-handle');
         cache_master_volume_handle = $('#master_volume .ui-slider-handle')
         cache_volume_mute = $("#volume_mute");
+    }
+
+    // See if we need to push configuration updates to the server
+    if (client_config_update) {
+        saveVenueLayout();
     }
 
     $.ajax({
@@ -830,17 +856,137 @@ function initializeCollapsableSections() {
 
         collapse_icon.click(function (event) {
             stopEventPropagation(event);
-
-            if (collapse_content.is(":visible")) {
-                collapse_icon.removeClass('ui-icon-triangle-1-s').addClass('ui-icon-triangle-1-e');
-                collapse_icon.attr('title', 'show');
-                collapse_content.hide();
-            }
-            else {
-                collapse_icon.removeClass('ui-icon-triangle-1-e').addClass('ui-icon-triangle-1-s');
-                collapse_icon.attr('title', 'hide');
-                collapse_content.show();
-            }
+            client_config_update = true;
+            _expand_collapse_section( collapse_content, collapse_content.is(":visible") );
         });
     } );
+}
+
+// ----------------------------------------------------------------------------
+//
+function isSectionCollapsed( section_id ) {
+    var collapse_content = $(document.body).find("#" + section_id + " .collapsable_content");
+    if (collapse_content == null)
+        return false;
+
+    return !collapse_content.is(":visible");
+}
+
+// ----------------------------------------------------------------------------
+//
+function setSectionCollapsed(section_id,collapsed) {
+    var collapse_content = $(document.body).find("#" + section_id + " .collapsable_content");
+    if (collapse_content == null)
+        return;
+
+    _expand_collapse_section(collapse_content, collapsed);
+}
+
+function _expand_collapse_section(collapse_content, collapsed) {
+    var collapse_icon = $(collapse_content).find(".collapsable_icon");
+
+    if (collapsed) {
+        collapse_icon.removeClass('ui-icon-triangle-1-s').addClass('ui-icon-triangle-1-e');
+        collapse_icon.attr('title', 'show');
+        collapse_content.hide();
+    }
+    else {
+        collapse_icon.removeClass('ui-icon-triangle-1-e').addClass('ui-icon-triangle-1-s');
+        collapse_icon.attr('title', 'hide');
+        collapse_content.show();
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+function updateVenueLayout() {
+
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/full/query/venue/layout/",
+        cache: false,
+        success: function (data) {
+            client_config = jQuery.parseJSON(data);
+
+            for (var prop in client_config) {
+                if (prop == "edit_mode")
+                    setEditMode(client_config.edit_mode);
+                else if (prop == "delete_mode")
+                    setDeleteMode(client_config.delete_mode);
+                else if (prop == "sections") {
+                    for (section in client_config.sections) {
+                        if (section == "scene_tiles_pane") {
+                            scene_tile_panel.setScrollContent(client_config.sections.scene_tiles_pane.scroll);
+                            setSectionCollapsed("scene_tiles_pane", client_config.sections.scene_tiles_pane.collapsed);
+                        }
+                        else if (section == "chase_tiles_pane") {
+                            chase_tile_panel.setScrollContent(client_config.sections.chase_tiles_pane.scroll);
+                            setSectionCollapsed("chase_tiles_pane", client_config.sections.chase_tiles_pane.collapsed);
+                        }
+                        else if (section == "fixture_tiles_pane") {
+                            fixture_tile_panel.setScrollContent(client_config.sections.fixture_tiles_pane.scroll);
+                            setSectionCollapsed("fixture_tiles_pane", client_config.sections.fixture_tiles_pane.collapsed);
+                        }
+                        else if (section == "slider_pane") {
+                            slider_panel.setScrollContent(client_config.sections.slider_pane.scroll);
+                            setSectionCollapsed("slider_pane", client_config.sections.slider_pane.collapsed);
+                        }
+                        else if (section == "venue_pane") {
+                            setSectionCollapsed("venue_pane", client_config.sections.venue_pane.collapsed);
+                        }
+                        else if (section == "music_pane") {
+                            setSectionCollapsed("music_pane", client_config.sections.music_pane.collapsed);
+                        }
+                    }
+                }
+            }
+        },
+        error: function() {
+            // ignore - no layout data available
+        }
+    });
+}
+
+// ----------------------------------------------------------------------------
+//
+function saveVenueLayout() {
+    client_config = {};
+    client_config.edit_mode = edit_mode;
+    client_config.delete_mode = delete_mode;
+
+    client_config.sections = {
+        "venue_pane": {
+            "collapsed": isSectionCollapsed("venue_pane")
+        },
+        "music_pane": {
+            "collapsed": isSectionCollapsed("music_pane")
+        },
+        "scene_tiles_pane": {
+            "scroll": scene_tile_panel.isScrollContent(),
+            "collapsed": isSectionCollapsed("scene_tiles_pane")
+        },
+        "chase_tiles_pane": {
+            "scroll": chase_tile_panel.isScrollContent(),
+            "collapsed": isSectionCollapsed("chase_tiles_pane")
+        },
+        "fixture_tiles_pane": {
+            "scroll": fixture_tile_panel.isScrollContent(),
+            "collapsed": isSectionCollapsed("fixture_tiles_pane")
+        },
+        "slider_pane": {
+            "scroll": slider_panel.isScrollContent(),
+            "collapsed": isSectionCollapsed("slider_pane")
+        }
+    };
+
+    client_config_update = false;
+
+    $.ajax({
+        type: "POST",
+        url: "/dmxstudio/full/edit/venue/layout/save",
+        data: JSON.stringify(client_config),
+        contentType: 'application/json',
+        cache: false,
+        error: onAjaxError
+    });
 }

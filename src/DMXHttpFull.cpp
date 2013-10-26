@@ -29,7 +29,8 @@ MA 02111-1307, USA.
 #define DMX_URL_QUERY_FIXTURES                  DMX_URL_ROOT_FULL "query/fixtures/"
 #define DMX_URL_QUERY_VENUE_STATUS              DMX_URL_ROOT_FULL "query/venue/status/"
 #define DMX_URL_QUERY_VENUE_DESCRIBE            DMX_URL_ROOT_FULL "query/venue/describe/"
-#define DMX_URL_QUERY_FIXTURE_DEFINITIONS       DMX_URL_ROOT_FULL "query/fixture/definitions"
+#define DMX_URL_QUERY_FIXTURE_DEFINITIONS       DMX_URL_ROOT_FULL "query/fixture/definitions/"
+#define DMX_URL_QUERY_VENUE_LAYOUT              DMX_URL_ROOT_FULL "query/venue/layout/"
 
 #define DMX_URL_CONTROL_VENUE_BLACKOUT          DMX_URL_ROOT_FULL "control/venue/blackout/"
 #define DMX_URL_CONTROL_VENUE_WHITEOUT          DMX_URL_ROOT_FULL "control/venue/whiteout/"
@@ -70,6 +71,7 @@ MA 02111-1307, USA.
 #define DMX_URL_EDIT_CHASE_COPY                 DMX_URL_ROOT_FULL "edit/chase/copy/"
 #define DMX_URL_EDIT_FIXTURE_CREATE             DMX_URL_ROOT_FULL "edit/fixture/create/"
 #define DMX_URL_EDIT_FIXTURE_UPDATE             DMX_URL_ROOT_FULL "edit/fixture/update/"
+#define DMX_URL_EDIT_VENUE_LAYOUT_SAVE          DMX_URL_ROOT_FULL "edit/venue/layout/save/"
 
 #define DMX_URL_EDIT_VENUE_SAVE                 DMX_URL_ROOT_FULL "edit/venue/save/"
 #define DMX_URL_EDIT_VENUE_LOAD                 DMX_URL_ROOT_FULL "edit/venue/load/"
@@ -103,6 +105,7 @@ DMXHttpFull::DMXHttpFull(void) :
     m_rest_get_handlers[ DMX_URL_QUERY_VENUE_STATUS ] = &DMXHttpFull::query_venue_status;
     m_rest_get_handlers[ DMX_URL_QUERY_VENUE_DESCRIBE ] = &DMXHttpFull::query_venue_describe;
     m_rest_get_handlers[ DMX_URL_QUERY_FIXTURE_DEFINITIONS ] = &DMXHttpFull::query_fixture_definitions;
+    m_rest_get_handlers[ DMX_URL_QUERY_VENUE_LAYOUT ] = &DMXHttpFull::query_venue_layout;
 
     m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_BLACKOUT ] = &DMXHttpFull::control_venue_blackout;
     m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_WHITEOUT ] = &DMXHttpFull::control_venue_whiteout;
@@ -152,6 +155,7 @@ DMXHttpFull::DMXHttpFull(void) :
     m_rest_post_handlers[ DMX_URL_EDIT_CHASE_COPY ] = &DMXHttpFull::edit_chase_copy;
     m_rest_post_handlers[ DMX_URL_EDIT_FIXTURE_CREATE ] = &DMXHttpFull::edit_fixture_create;
     m_rest_post_handlers[ DMX_URL_EDIT_FIXTURE_UPDATE ] = &DMXHttpFull::edit_fixture_update;
+    m_rest_post_handlers[ DMX_URL_EDIT_VENUE_LAYOUT_SAVE ] = &DMXHttpFull::edit_venue_layout_save;
 
     m_rest_post_handlers[ DMX_URL_EDIT_VENUE_SAVE ] = &DMXHttpFull::edit_venue_save;
     m_rest_post_handlers[ DMX_URL_EDIT_VENUE_LOAD ] = &DMXHttpFull::edit_venue_load;

@@ -115,6 +115,7 @@ private:
     bool query_chases( CString& response, LPCSTR data );
     bool query_venue_describe( CString& response, LPCSTR data );
     bool query_fixture_definitions( CString& response, LPCSTR data );
+    bool query_venue_layout( CString& response, LPCSTR data );
 
     bool control_soundsampler_start( CString& response, LPCSTR data );
     bool control_soundsampler_stop( CString& response, LPCSTR data );
@@ -159,6 +160,7 @@ private:
     bool edit_venue_save( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
     bool edit_venue_load( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
     bool edit_venue_new( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool edit_venue_layout_save( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
 
     bool venue_upload( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
 };

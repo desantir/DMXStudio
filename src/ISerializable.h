@@ -83,6 +83,17 @@ public:
         element.InsertEndChild( node );
     }
 
+    static void add_cdata_element( TiXmlElement& element, const char *name, const char * value ) {
+        if ( !value || strlen( value ) == 0 )
+            return;
+
+        TiXmlText text( value );
+        text.SetCDATA( true );
+        TiXmlElement node( name );
+        node.InsertEndChild( text );
+        element.InsertEndChild( node );
+    }
+
     template <class T>
     static void add_pfuids_element( TiXmlElement& element, T &uids  ) {
         TiXmlElement pfuids( "pfuids" );

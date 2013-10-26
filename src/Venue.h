@@ -99,6 +99,8 @@ class Venue : public DObject
 
     UID                     m_captured_actor;                   // Last actor captured to default
 
+    CString                 m_venue_layout;                     // Client venue layout (JSON)
+
     Venue(Venue& other) {}
     Venue& operator=(Venue& rhs) { return *this; }
 
@@ -191,6 +193,19 @@ public:
     }
     void setDmxPort( const char* dmx_port ) {
         m_dmx_port = dmx_port;
+    }
+
+    const char *getVenueLayout() const {
+        if ( m_venue_layout.GetLength() == 0 )
+            return NULL;
+
+        return (LPCSTR)m_venue_layout;
+    }
+    void setVenueLayout( const char * layout ) {
+        if ( layout != NULL )
+            m_venue_layout = layout;
+        else
+            m_venue_layout.Empty();
     }
 
     inline unsigned getDmxPacketDelayMS() const {
