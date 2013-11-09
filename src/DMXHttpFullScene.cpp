@@ -60,33 +60,15 @@ static PARSER_MAP animation_parsers = init_animation_parsers();
 
 // ----------------------------------------------------------------------------
 //
-template <class T>
-CString makeColorArray( T& array )
-{
-    CString response( "[" );
-
-    for ( T::iterator it=array.begin(); it != array.end(); ++it ) {
-        if ( it != array.begin() )
-            response.Append( "," );
-        response.AppendFormat( "\"%06lX\"", (ULONG)(*it) );
-    }
-
-    response.Append( "]" );
-
-    return response;
-}
-
-// ----------------------------------------------------------------------------
-//
 bool DMXHttpFull::query_scenes( CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
-    response = "[";
-    
+    JsonBuilder json( response );
+    json.startArray();
+
     ScenePtrArray scenes = studio.getVenue()->getScenes();
-    bool first = true;
 
     std::sort( scenes.begin(), scenes.end(), CompareObjectNumber );
 
@@ -94,160 +76,159 @@ bool DMXHttpFull::query_scenes( CString& response, LPCSTR data )
 
     UID active_uid = studio.getVenue()->getCurrentSceneUID();
 
-    for ( ScenePtrArray::iterator it=scenes.begin(); it != scenes.end(); it++, first=false) {
-        if ( !first )
-            response.Append( "," );
-
+    for ( ScenePtrArray::iterator it=scenes.begin(); it != scenes.end(); it++ ) {
         Scene* scene = (*it);
 
-        response.AppendFormat( "{ \"id\":%lu, \"number\":%lu, \"name\":\"%s\", \"description\":\"%s\", \"is_default\":%s, \"is_private\":%s, \"is_running\":%s,", 
-            scene->getUID(), scene->getSceneNumber(), encodeJsonString( scene->getName() ), encodeJsonString( scene->getDescription() ),
-            (scene == default_scene) ? "true" : "false",
-            (scene->isPrivate() ) ? "true" : "false",
-            (active_uid == scene->getUID() ) ? "true" : "false",
-            makeUIDArray<UIDArray>( scene->getActorUIDs() ) );
+        json.startObject();
+        json.add( "id", scene->getUID() );
+        json.add( "number", scene->getSceneNumber() );
+        json.add( "name", scene->getName() );
+        json.add( "description", scene->getDescription() );
+        json.add( "is_default", (scene == default_scene) );
+        json.add( "is_private", scene->isPrivate() );
+        json.add( "is_running", (active_uid == scene->getUID()) );
 
-
-        response.Append( "\"actors\": [ " );
+        json.startArray( "actors" );
 
         ActorPtrArray actors = scene->getActors();
 
         for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
-            if ( it != actors.begin() )
-                response.AppendFormat( "," );
-
             Fixture* fixture = studio.getVenue()->getFixture( (*it)->getFUID() );
 
-            response.AppendFormat( "{ \"id\":%lu, \"address\":%u, \"channels\": [", 
-                    fixture->getUID(), fixture->getAddress() );
+            json.startObject();
+            json.add( "id", fixture->getUID() );
+            json.add( "address", (int)fixture->getAddress() );
 
+            json.startArray( "channels" );
             for ( channel_t channel=0; channel < fixture->getNumChannels(); channel++ ) {
-                if ( channel > 0 )
-                    response.AppendFormat( "," );
-
                 Channel* ch = fixture->getChannel( channel );
                 BYTE value = (*it)->getChannelValue( fixture->mapChannel( channel ) );
                 ChannelValueRange* range = ch->getRange( value );
                 LPCSTR range_name = range ? range->getName() : "";
 
-                 response.AppendFormat( "{ \"channel\":%u, \"name\":\"%s\", \"value\": %u, \"range_name\":\"%s\" }", 
-                    channel, encodeJsonString( ch->getName() ), value, encodeJsonString( range_name ) );
+                json.startObject();
+                json.add( "channel", (int)channel );
+                json.add( "name", ch->getName() );
+                json.add( "value", value );
+                json.add( "range_name", range_name );
+                json.endObject();
             }
+            json.endArray( "channels" );
 
-            response.AppendFormat( "]}" );   // End of channels
+            json.endObject();
         }
 
-        response.Append( "], \"animations\":[" );
+        json.endArray( "actors" );
+
+        json.startArray( "animations" );
 
         for ( size_t a=0; a < scene->getNumAnimations(); a++ ) {
-            if ( a > 0 ) 
-                response.Append( "," );
-
             AbstractAnimation* animation = scene->getAnimation( a );
 
-            response.AppendFormat( "{ \"class_name\":\"%s\", \"name\":\"%s\", \"number\":%u, \"actors\":%s, ",
-                encodeJsonString( animation->getClassName() ),
-                encodeJsonString( animation->getName() ),
-                animation->getNumber(),
-                makeUIDArray<UIDArray>( animation->getActors() ) );
+            json.startObject();
+            json.add( "class_name", animation->getClassName() );
+            json.add( "name", animation->getName() );
+            json.add( "number", animation->getNumber() );
+            json.addArray<UIDArray>( "actors", animation->getActors() );
 
             // Add common signal data
             AnimationSignal& signal = animation->signal();
-            response.AppendFormat( "\"signal\":{ \"sample_rate_ms\":%lu, \"input_type\":%u, \"input_low\":%u, \"input_high\":%u, \"sample_decay_ms\":%lu, \"scale_factor\":%u, \"max_threshold\":%u, \"apply_to\":%u }, ",
-                signal.getSampleRateMS(),
-                signal.getInputType(),
-                signal.getInputLow(),
-                signal.getInputHigh(),
-                signal.getSampleDecayMS(),
-                signal.getScaleFactor(),
-                signal.getMaxThreshold(),
-                signal.getApplyTo() );
+            json.startObject( "signal" );
+            json.add( "sample_rate_ms", signal.getSampleRateMS() );
+            json.add( "input_type", signal.getInputType() );
+            json.add( "input_low", signal.getInputLow() );
+            json.add( "input_high", signal.getInputHigh() );
+            json.add( "sample_decay_ms", signal.getSampleDecayMS() );
+            json.add( "scale_factor", signal.getScaleFactor() );
+            json.add( "max_threshold", signal.getMaxThreshold() );
+            json.add( "apply_to", signal.getApplyTo() );
+            json.endObject();
 
             // Add animation specific data
-            response.AppendFormat( "\"%s\":", encodeJsonString( animation->getClassName() ) );
+            CString json_anim_name = JsonObject::encodeJsonString( animation->getClassName() );
+            json.startObject( json_anim_name );
 
             if ( !strcmp( animation->getClassName(), SceneStrobeAnimator::className ) ) {
                 SceneStrobeAnimator* ssa = (SceneStrobeAnimator*)animation;
-                response.AppendFormat( "{ \"strobe_neg_color\":\"%06lX\",\"strobe_pos_ms\":%lu,\"strobe_neg_ms\":%lu }",
-                    ssa->getStrobeNegColor(),
-                    ssa->getStrobePosMS(),
-                    ssa->getStrobeNegMS() );
+                json.addColor( "strobe_neg_color", ssa->getStrobeNegColor() );
+                json.add( "strobe_pos_ms", ssa->getStrobePosMS() );
+                json.add( "strobe_neg_ms", ssa->getStrobeNegMS() );
             }
             else if ( !strcmp( animation->getClassName(), ScenePatternDimmer::className ) ) {
                 ScenePatternDimmer* spd = (ScenePatternDimmer*)animation;
-                response.AppendFormat( "{ \"dimmer_pattern\":%u }",
-                    spd->getDimmerPattern() );
+                json.add( "dimmer_pattern", spd->getDimmerPattern() );
             }
             else if ( !strcmp( animation->getClassName(), SceneSoundLevel::className ) ) {
                 SceneSoundLevel* ssl = (SceneSoundLevel*)animation;
-                response.AppendFormat( "{ \"fade_what\":%u }",
-                    ssl->getFadeWhat() );
+                json.add( "fade_what", ssl->getFadeWhat() );
             }
-           else if ( !strcmp( animation->getClassName(), SceneColorSwitcher::className ) ) {
+            else if ( !strcmp( animation->getClassName(), SceneColorSwitcher::className ) ) {
                 SceneColorSwitcher* scs = (SceneColorSwitcher*)animation;
-                response.AppendFormat( "{ \"strobe_neg_color\":\"%06lX\",\"strobe_pos_ms\":%lu,\"strobe_neg_ms\":%lu, \"color_progression\":%s }",
-                    scs->getStrobeNegColor(),
-                    scs->getStrobePosMS(),
-                    scs->getStrobeNegMS(),
-                    makeColorArray<ColorProgression>( scs->getCustomColors() ) );
+                json.addColor( "strobe_neg_color", scs->getStrobeNegColor() );
+                json.add( "strobe_pos_ms", scs->getStrobePosMS() );
+                json.add( "strobe_neg_ms", scs->getStrobeNegMS() );
+                json.addColorArray<ColorProgression>( "color_progression", scs->getCustomColors() );
             }
-           else if ( !strcmp( animation->getClassName(), SceneMovementAnimator::className ) ) {
+            else if ( !strcmp( animation->getClassName(), SceneMovementAnimator::className ) ) {
                 SceneMovementAnimator* sma = (SceneMovementAnimator*)animation;
                 MovementAnimation& movement = sma->movement();
 
-                response.AppendFormat( "{ \"movement_type\":%u, \"tilt_start_angle\":%u, \"tilt_end_angle\":%u, \"pan_start_angle\":%u, \"pan_end_angle\":%u, \"pan_increment\":%u,",
-                    movement.m_movement_type, movement.m_tilt_start, movement.m_tilt_end, movement.m_pan_start, movement.m_pan_end, movement.m_pan_increment );
+                json.add( "movement_type", movement.m_movement_type );
+                json.add( "tilt_start_angle", movement.m_tilt_start );
+                json.add( "tilt_end_angle", movement.m_tilt_end );
+                json.add( "pan_start_angle", movement.m_pan_start );
+                json.add( "pan_end_angle", movement.m_pan_end );
+                json.add( "pan_increment", movement.m_pan_increment );
+                json.add( "speed", movement.m_speed );
+                json.add( "home_wait_periods", movement.m_home_wait_periods );
+                json.add( "dest_wait_periods", movement.m_dest_wait_periods );
+                json.add( "group_size", movement.m_group_size );
+                json.add( "positions", movement.m_positions );
+                json.add( "alternate_groups", movement.m_alternate_groups );
+                json.add( "blackout_return", movement.m_backout_home_return );
+                json.add( "run_once", movement.m_run_once );
+                json.add( "home_x", movement.m_home_x );
+                json.add( "home_y", movement.m_home_y );
+                json.add( "height", movement.m_height );
+                json.add( "fixture_spacing", movement.m_fixture_spacing );
+                json.add( "radius", movement.m_radius );
 
-                response.AppendFormat( "\"speed\":%u, \"home_wait_periods\":%u, \"dest_wait_periods\":%u, \"group_size\":%u, \"positions\":%u, ",
-                    movement.m_speed, movement.m_home_wait_periods, movement.m_dest_wait_periods, movement.m_group_size, movement.m_positions );
-
-                response.AppendFormat( "\"alternate_groups\":%s, \"blackout_return\":%s, \"run_once\":%s, \"home_x\":%f, \"home_y\":%f, \"height\":%f, \"fixture_spacing\":%f, \"radius\":%f, ",
-                    movement.m_alternate_groups ? "true" : "false",
-                    movement.m_backout_home_return ? "true" : "false",
-                    movement.m_run_once ? "true" : "false",
-                    movement.m_home_x, movement.m_home_y, movement.m_height, movement.m_fixture_spacing, movement.m_radius );
-
-                response.Append( "\"coordinates\":[" );
-
+                json.startArray( "coordinates" );
                 for ( size_t index=0; index <  movement.m_coordinates.size(); index++ ) {
-                    if ( index > 0 )
-                        response.Append( "," );
-
-                    response.AppendFormat( "{ \"pan\":%u, \"tilt\":%u }", movement.m_coordinates[index].m_pan, movement.m_coordinates[index].m_tilt );
+                    json.startObject();
+                    json.add( "pan", movement.m_coordinates[index].m_pan );
+                    json.add( "tilt", movement.m_coordinates[index].m_tilt );
+                    json.endObject();
                 }
-
-                response.Append( "]}" );
+                json.endArray( "coordinates" );
             }
             else if ( !strcmp( animation->getClassName(), SceneChannelAnimator::className ) ) {
                 SceneChannelAnimator* sca = (SceneChannelAnimator*)animation;
                 ChannelAnimationArray& chan_anims = sca->channelAnimations();
 
-                response.AppendFormat( "{ \"channel_animations\":[ " );
+                json.startArray( "channel_animations" );
 
                 for ( ChannelAnimationArray::iterator it=chan_anims.begin(); it != chan_anims.end(); ++it ) {
-                    if ( it != chan_anims.begin() )
-                        response.Append( "," );
-
-                    response.AppendFormat( "{ \"actor_uid\":%lu, \"channel\":%u, \"style\":%u, \"values\":%s } ",
-                        (*it).getActor(),
-                        (*it).getChannel(),
-                        (*it).getAnimationStyle(),
-                        makeUIDArray<ChannelValueArray>( (*it).getChannelValues() ) );
+                    json.startObject();
+                    json.add( "actor_uid", (*it).getActor() );
+                    json.add( "channel", (*it).getChannel() );
+                    json.add( "style", (*it).getAnimationStyle() );
+                    json.addArray<ChannelValueArray>( "values", (*it).getChannelValues() );
+                    json.endObject();
                 }
 
-                response.Append( "]}" );
-            }
-            else {
-                response.Append( "{}" );
+                json.endArray( "channel_animations" );
             }
 
-            response.Append( "} ");
+            json.endObject( json_anim_name );
+            json.endObject();
         }
 
-        response.Append( "]}" );
+        json.endArray( "animations" );
+        json.endObject();
     }
 
-    response.Append( "]" );
+    json.endArray();
 
     return true;
 }

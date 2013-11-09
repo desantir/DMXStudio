@@ -21,6 +21,7 @@ MA 02111-1307, USA.
 */
 
 #include "DMXHttpFull.h"
+#include "SimpleJsonBuilder.h"
 
 #include "Venue.h"
 
@@ -321,21 +322,22 @@ bool DMXHttpFull::query_soundsampler( CString& response, LPCSTR data )
     ULONG sample_number;
     SampleSet samples = m_sound_sampler.getSampleSet( sample_number );
 
-    response.Format( "{ \"sample_number\":%lu, \"audio_data\": [", sample_number );
+    JsonBuilder json( response );
 
-    bool first = true;
-    for ( SampleSet::iterator it=samples.begin(); it != samples.end(); it++, first=false ) {
+    json.startObject();
+    json.add( "sample_number", sample_number );
+
+    json.startArray( "audio_data" );
+    for ( SampleSet::iterator it=samples.begin(); it != samples.end(); it++ ) {
         int value = 100 + (*it).getDB();
         if ( value < 0 )
             value = 0;
         
-        if ( !first )
-            response.AppendFormat( ",%d", value );
-        else
-            response.AppendFormat( "%d", value );
+        json.add( value );
     }
+    json.endArray( "audio_data" );
 
-    response.Append( "]}" );
+    json.endObject();
 
     return true;
 }
@@ -403,17 +405,19 @@ bool DMXHttpFull::query_beatsampler( CString& response, LPCSTR data )
     if ( !m_beat_sampler.isAttached() )
          return false;
 
-    response.Format( "[" );
+    JsonBuilder json( response );
+
+    json.startArray();
 
     for ( BeatBinArray::iterator it=m_beats.begin(); it != m_beats.end(); ++it ) {
-        if ( it != m_beats.begin() )
-            response.Append( "," );
-
-        response.AppendFormat( "{ \"start_freq\":%u, \"end_freq\":%u, \"beat\":%s }",
-                    (*it).getStartFreq(), (*it).getEndFreq(), (*it).isBeat( ) ? "true" : "false" );
+        json.startObject();
+        json.add( "start_freq", (*it).getStartFreq() );
+        json.add( "end_freq", (*it).getEndFreq() );
+        json.add( "beat", (*it).isBeat( ) );
+        json.endObject();
     }
 
-    response.Append( "]" );
+    json.endArray();
 
     return true;
 }

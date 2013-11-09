@@ -29,6 +29,7 @@ MA 02111-1307, USA.
 #include "SoundSampler.h"
 #include "BeatDetector.h"
 #include "SimpleJsonParser.h"
+#include "SimpleJsonBuilder.h"
 
 #define DMX_URL_ROOT_FULL                   DMX_URL_ROOT "full/"
 #define DMX_URL_FULL_HOME                   DMX_URL_ROOT_FULL "full.htm"
@@ -167,21 +168,5 @@ private:
 
 extern bool CompareObjectNumber( DObject* o1,  DObject* o2 );
 
-// ----------------------------------------------------------------------------
-//
-template <class T>
-CString makeUIDArray( T& array )
-{
-    CString response( "[" );
 
-    for ( T::iterator it=array.begin(); it != array.end(); ++it ) {
-        if ( it != array.begin() )
-            response.Append( "," );
-        response.AppendFormat( "%lu", (ULONG)(*it) );
-    }
-
-    response.Append( "]" );
-
-    return response;
-}
 

@@ -209,8 +209,12 @@ MA 02111-1307, USA.
                     index = o.index();
                 }
 
-                $( "#blackout_" + json['blackout'] ).prop("checked", true).checkboxradio("refresh");
-                $( "#whiteout_" + json['whiteout']).prop("checked", true).checkboxradio("refresh");
+                if (json.blackout)
+                    $("#blackout_1").prop("checked", true).checkboxradio("refresh");
+                else
+                    $("#blackout_0").prop("checked", true).checkboxradio("refresh");
+
+                $( "#whiteout_" + json.whiteout).prop("checked", true).checkboxradio("refresh");
 
                 $('#slider_whiteout_strobe_id').val(json["whiteout_strobe"]);
                 $('#slider_whiteout_strobe_id').slider("refresh");
@@ -372,36 +376,7 @@ MA 02111-1307, USA.
     });
 
     $("#sound").live("pageshow", function (event, ui) {
-        updateMusicPlayer();
-
-        if (music_player == null)
-            return;
-
-        // Get playlists
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/mobile/query/music/playlists/",
-            cache: false,
-            success: function (data) {
-                var json = jQuery.parseJSON(data);
-                playlists = json['playlists'];
-
-                var data = [];
-                data = $.map(playlists, function (pl, index) {
-                    return "<option value=" + pl.id + ">" + pl.name + "</option>";
-                });
-
-                $("#playlist_select_id").html(data.join(""));
-                $("#playlist_tracks_id").html("");
-
-                // Select option and refresh the dropdown
-                $('#playlist_select_id option').eq(0).attr("selected", true);
-                $('#playlist_select_id').selectmenu('refresh', true);
-
-                $('#playlist_select_id').trigger('change');
-            },
-            error: onError
-        });
+        updateMusicPlayer( true );
     });
 
     $(function () {
@@ -487,38 +462,38 @@ MA 02111-1307, USA.
         }, 100);
     }
 
-    function updateMusicPlayer() {
+    function updateMusicPlayer( update_selections ) {
         clearTimeout(track_timer);
 
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/mobile/query/sound/",
+            url: "/dmxstudio/mobile/query/venue/status/",
             cache: false,
             success: function (data) {
                 var json = jQuery.parseJSON(data);
 
-                $('#volume_slider').val(json["volume"]);
+                $('#volume_slider').val(json.master_volume);
                 $('#volume_slider').slider("refresh");
 
-                name = ( json['mute'] ) ? '#volume_mute_1' : '#volume_mute_0';
+                name = ( json.mute ) ? '#volume_mute_1' : '#volume_mute_0';
                 $(name).prop("checked", true).checkboxradio("refresh");
 
                 clearTimeout(timeout);                  // Stop events from going back to server
 
-                music_player = json["music_player"];
-
-                if ( music_player == null ) {            // There is no music player
+                if (!json.has_music_player) {           // There is no music player
                     track_controls.style.display = "none";
                     track_selector.style.display = "none";
                     return;
                 }
 
-                if (music_player['playing']) {
-                    id_track_name.innerHTML = music_player['track'];
-                    id_track_length.innerHTML = trackTime( music_player[ 'length' ] )
+                music_player = json.music_player;
 
-                    track_remaining = music_player['remaining'];
-                    track_paused = music_player['paused'];
+                if (music_player.playing) {
+                    id_track_name.innerHTML = music_player.playing.name;
+                    id_track_length.innerHTML = trackTime(music_player.playing.length)
+
+                    track_remaining = music_player.playing.remaining;
+                    track_paused = music_player.playing.paused;
 
                     id_track_remaining.innerHTML = "Remaining: " + trackTime(track_remaining);
 
@@ -537,11 +512,39 @@ MA 02111-1307, USA.
                     track_play_id.style.display = "none";
                 }
 
-                tracks_queued = music_player['queued'];
+                tracks_queued = music_player.queued;
                 id_tracks_queued.innerHTML = tracks_queued + " in queue";
 
                 track_timer = setTimeout('track_timeout()', 1000);
                 server_track_sync_ms = 0;
+
+                if (update_selections) {
+                    // Get playlists
+                    $.ajax({
+                        type: "GET",
+                        url: "/dmxstudio/mobile/query/music/playlists/",
+                        cache: false,
+                        success: function (data) {
+                            var json = jQuery.parseJSON(data);
+                            playlists = json.playlists;
+
+                            var data = [];
+                            data = $.map(playlists, function (pl, index) {
+                                return "<option value=" + pl.id + ">" + pl.name + "</option>";
+                            });
+
+                            $("#playlist_select_id").html(data.join(""));
+                            $("#playlist_tracks_id").html("");
+
+                            // Select option and refresh the dropdown
+                            $('#playlist_select_id option').eq(0).attr("selected", true);
+                            $('#playlist_select_id').selectmenu('refresh', true);
+
+                            $('#playlist_select_id').trigger('change');
+                        },
+                        error: onError
+                    });
+                }
             },
         });
     }

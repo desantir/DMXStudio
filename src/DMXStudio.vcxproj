@@ -268,6 +268,7 @@ xcopy /y /s "$(SolutionDir)DMXStudio\colorpicker" "$(SolutionDir)$(Configuration
     <ClInclude Include="SceneMovementAnimator.h" />
     <ClInclude Include="SceneSoundLevel.h" />
     <ClInclude Include="SceneStrobeAnimator.h" />
+    <ClInclude Include="SimpleJsonBuilder.h" />
     <ClInclude Include="SimpleJsonParser.h" />
     <ClInclude Include="SoundDetector.h" />
     <ClInclude Include="SoundSampler.h" />

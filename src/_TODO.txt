@@ -80,3 +80,18 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 
 TODO ------------------------------------------------------------------------ TODO
 
+IDEA ------------------------------------------------------------------------ IDEA
+
+- Higher level abstraction for fixture behaviors. For Example:
+		- ROTATE TO 180
+		- PAN TO 180
+		- STROBE AT <rate>
+		- INTENSITY <intensity>
+		- SPECIAL EFFECT <args>
+		- PLAY <song>
+
+- Wrap behaviors in LUA or Python
+
+- Attach behaviors to fixures and allow easy selection from UI
+
+IDEA ------------------------------------------------------------------------ IDEA

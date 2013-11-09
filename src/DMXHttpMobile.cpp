@@ -39,7 +39,6 @@ MA 02111-1307, USA.
 #define DMX_URL_QUERY_VENUE_STATUS          DMX_URL_ROOT_MOBILE "query/venue/status/"
 
 #define DMX_URL_CONTROL_MASTER_VOLUME       DMX_URL_ROOT_MOBILE "control/venue/master_volume/"
-#define DMX_URL_QUERY_SOUND                 DMX_URL_ROOT_MOBILE "query/sound/"
 #define DMX_URL_CONTROL_MUTE_VOLUME         DMX_URL_ROOT_MOBILE "control/venue/mute_volume/"
 #define DMX_URL_CONTROL_MUSIC_TRACK_BACK    DMX_URL_ROOT_MOBILE "control/music/track/back/"
 #define DMX_URL_CONTROL_MUSIC_TRACK_FORWARD DMX_URL_ROOT_MOBILE "control/music/track/forward/"
@@ -67,7 +66,6 @@ DMXHttpMobile::DMXHttpMobile(void)
     m_rest_handlers[ DMX_URL_CONTROL_ANIMATION_SPEED ] = &DMXHttpMobile::control_animation_speed;
     m_rest_handlers[ DMX_URL_QUERY_VENUE_STATUS ] = &DMXHttpMobile::query_venue_status;
     m_rest_handlers[ DMX_URL_CONTROL_MASTER_VOLUME ] = &DMXHttpMobile::control_master_volume;
-    m_rest_handlers[ DMX_URL_QUERY_SOUND ] = &DMXHttpMobile::query_sound;
     m_rest_handlers[ DMX_URL_CONTROL_MUTE_VOLUME ] = &DMXHttpMobile::control_mute_volume;
     m_rest_handlers[ DMX_URL_CONTROL_MUSIC_TRACK_BACK ] = &DMXHttpMobile::control_music_track_back;
     m_rest_handlers[ DMX_URL_CONTROL_MUSIC_TRACK_FORWARD ] = &DMXHttpMobile::control_music_track_forward;
@@ -155,42 +153,6 @@ bool DMXHttpMobile::control_animation_speed( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpMobile::query_sound( CString& response, LPCSTR data )
-{
-    // TODO this info is now available in venue status
-
-    CString music_player_json;
-
-    if ( studio.hasMusicPlayer() ) {
-        DWORD length, remaining;
-        UINT queued;
-        DWORD track = studio.getMusicPlayer()->getPlayingTrack( &length, &remaining, &queued );
-
-        music_player_json.Format( ", \"music_player\": { \"queued\": %d, \"playing\": ", queued );
-
-        if ( track != 0 ) {
-            CString track_name = studio.getMusicPlayer()->getTrackFullName( track );
-            bool paused = studio.getMusicPlayer()->isTrackPaused();
-            
-            music_player_json.AppendFormat( 
-                "1, \"track\": \"%s\", \"length\": %lu, \"remaining\": %lu, \"paused\": %d }",
-                encodeHtmlString( track_name ), length, remaining, paused ? 1 : 0 );
-        }
-        else
-            music_player_json.Append( "0 }" );
-    }
-
-    response.Format( "{ \"volume\": %u, \"mute\": %u, \"has_music_player\": %d %s }", 
-        studio.getVenue()->getMasterVolume( ),
-        studio.getVenue()->isMasterVolumeMute( ),
-        studio.hasMusicPlayer() ? 1 : 0,
-        (LPCSTR)music_player_json );
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
 bool DMXHttpMobile::control_fixture_capture( CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
@@ -213,8 +175,7 @@ bool DMXHttpMobile::control_fixture_capture( CString& response, LPCSTR data )
 //
 bool DMXHttpMobile::substitute( LPCSTR marker, LPCSTR data, CString& marker_content )
 {
-    // TODO PARAMETERIZE PATHS (Low)
-    // TODO Send objects and assemble in client i.e. no more HTML?
+    // TODO Send objects and assemble in client i.e. no more HTML!!!!
 
     if ( !strcmp( marker, "page_header" ) ) {
         // Cloning the header in JS is a non-starter in jQuery as there is a bug where you can not refomat the header div

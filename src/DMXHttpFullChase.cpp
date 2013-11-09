@@ -30,42 +30,44 @@ bool DMXHttpFull::query_chases( CString& response, LPCSTR data )
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
-    response = "{\"chases\":[";
-    
     ChasePtrArray chases = studio.getVenue()->getChases();
-    bool first = true;
 
     std::sort( chases.begin(), chases.end(), CompareObjectNumber );
-
-    for ( ChasePtrArray::iterator it=chases.begin(); it != chases.end(); it++, first=false ) {
-        if ( !first )
-            response.Append( "," );
-
+    
+    JsonBuilder json( response );
+    json.startObject();
+        
+    json.startArray( "chases" );
+    for ( ChasePtrArray::iterator it=chases.begin(); it != chases.end(); it++ ) {
         Chase* chase = (*it);
 
-        response.AppendFormat( "{ \"id\":%lu, \"number\":%lu, \"name\":\"%s\", \"description\":\"%s\", \"is_private\":%s, \"is_running\":%s, \"delay_ms\":%lu, \"fade_ms\":%lu, \"steps\":[ ", 
-            chase->getUID(), 
-            chase->getChaseNumber(), 
-            encodeJsonString( (*it)->getName() ), 
-            encodeJsonString( (*it)->getDescription() ),
-            chase->isPrivate() ? "true" : "false",
-            chase->getUID() == studio.getVenue()->getRunningChase() ? "true" : "false",
-            chase->getDelayMS(),
-            chase->getFadeMS() );
+        json.startObject();
+        json.add( "id", chase->getUID() );
+        json.add( "number", chase->getChaseNumber() );
+        json.add( "name", chase->getName() );
+        json.add( "description", chase->getDescription() );
+        json.add( "is_private", chase->isPrivate() );
+        json.add( "is_running", (chase->getUID() == studio.getVenue()->getRunningChase()) );
+        json.add( "delay_ms", chase->getDelayMS() );
+        json.add( "fade_ms", chase->getFadeMS() );
 
         // Add chase steps
         ChaseStepArray steps = chase->getSteps();
+
+        json.startArray( "steps" );
         for ( ChaseStepArray::iterator steps_it=steps.begin(); steps_it != steps.end(); steps_it++ ) {
-            if ( steps_it != steps.begin() )
-                response.Append( "," );
-            response.AppendFormat( "{ \"id\":%lu, \"delay_ms\":%lu }", (*steps_it).getSceneUID(), (*steps_it).getDelayMS() );
+            json.startObject();
+            json.add( "id", (*steps_it).getSceneUID() );
+            json.add( "delay_ms", (*steps_it).getDelayMS() );
+            json.endObject();
         }
+        json.endArray( "steps" );
 
-        response.AppendFormat( "]}" );
+        json.endObject();
     }
+    json.endArray( "chases" );
 
-    response.Append( "]}" );
-
+    json.endObject();
     return true;
 }
 

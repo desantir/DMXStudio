@@ -57,32 +57,35 @@ bool DMXHttpFull::query_venue_describe( CString& response, LPCSTR data ) {
     if ( !venue )
         return false;
 
-    response.Format( "{ \"name\":\"%s\", \"description\":\"%s\", \"auto_blackout\":%u, \"dmx_port\":\"%s\", \"dmx_packet_delay_ms\":%u, \"dmx_minimum_delay_ms\":%u, ",
-                    encodeJsonString( venue->getName() ), 
-                    encodeJsonString( venue->getDescription() ),
-                    venue->getAutoBlackout(),
-                    encodeJsonString( venue->getDmxPort() ),
-                    venue->getDmxPacketDelayMS(),
-                    venue->getDmxMinimumDelayMS() );
+    JsonBuilder json( response );
 
-    response.AppendFormat( "\"audio_capture_device\":\"%s\", \"audio_sample_size\":%u, \"audio_boost\":%f, \"audio_boost_floor\":%f, ",
-                    encodeJsonString( venue->getAudioCaptureDevice() ), 
-                    venue->getAudioSampleSize(),
-                    venue->getAudioBoost(),
-                    venue->getAudioBoostFloor() );
+    json.startObject();
+    json.add( "name", venue->getName() );
+    json.add( "description", venue->getDescription() );
+    json.add( "auto_blackout", venue->getAutoBlackout() );
+    json.add( "dmx_port", venue->getDmxPort() );
+    json.add( "dmx_packet_delay_ms", venue->getDmxPacketDelayMS() );
+    json.add( "dmx_minimum_delay_ms", venue->getDmxMinimumDelayMS() );
+    json.add( "audio_capture_device", venue->getAudioCaptureDevice() );
+    json.add( "audio_sample_size", venue->getAudioSampleSize() );
+    json.add( "audio_boost", venue->getAudioBoost() );
+    json.add( "audio_boost_floor", venue->getAudioBoostFloor() );
 
-    response.AppendFormat( "\"ports\":[\"com1\",\"com2\",\"com3\",\"com4\",\"com5\",\"com6\",\"com7\",\"com8\",\"com9\",\"com10\",\"com11\",\"com12\"], " );
-
-    response.AppendFormat( "\"capture_devices\":[" );
-
-    for ( AudioCaptureDeviceArray::iterator it=AudioInputStream::audioCaptureDevices.begin();
-            it != AudioInputStream::audioCaptureDevices.end(); ++it ) {
-        if ( it != AudioInputStream::audioCaptureDevices.begin() )
-            response.AppendFormat( "," );
-        response.AppendFormat( "\"%s\"", encodeJsonString ((*it).m_friendly_name) );
+    json.startArray( "ports" );
+    for ( int i=1; i <= 12; i++ ) {
+        CString com_port;
+        com_port.Format( "com%d", i );
+        json.add( com_port );
     }
+    json.endArray( "ports" );
 
-    response.AppendFormat( "]}" );
+    json.startArray( "capture_devices" );
+    for ( AudioCaptureDeviceArray::iterator it=AudioInputStream::audioCaptureDevices.begin();
+            it != AudioInputStream::audioCaptureDevices.end(); ++it )
+        json.add( (*it).m_friendly_name );
+    json.endArray( "capture_devices" );
+
+    json.endObject();
 
     return true;
 }

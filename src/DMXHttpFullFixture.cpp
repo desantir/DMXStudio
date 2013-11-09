@@ -22,6 +22,7 @@ MA 02111-1307, USA.
 
 #include "DMXHttpFull.h"
 #include "Venue.h"
+#include "SimpleJsonBuilder.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -38,72 +39,76 @@ static size_t getNumChannels( FixtureGroup* group )
 
 // ----------------------------------------------------------------------------
 //
-static void append_channel_json( CString& response, ChannelPtrArray& channels, BYTE* channel_values )
+static void append_channel_json( JsonBuilder& json, ChannelPtrArray& channels, BYTE* channel_values )
 {
-    response.AppendFormat( "\"num_channels\":%u, \"channels\":[", channels.size() );
+    json.add( "num_channels", channels.size() );
 
+    json.startArray( "channels" );
     for ( channel_t ch=0; ch < channels.size(); ch++ ) {
         Channel* channel = channels[ch];
 
-        if ( ch != 0 )
-            response.Append( "," );
-
-        response.AppendFormat( "{ \"channel\":%u, \"name\":\"%s\", \"type\":%u, \"type_name\":\"%s\", \"value\":%u",
-                                ch, encodeJsonString(channel->getName()), channel->getType(), Channel::getTypeName(channel->getType()), 
-                                channel_values ? channel_values[ch] : 0 );
-
-        response.AppendFormat( ",\"ranges\": [" );
-
+        json.startObject();
+        json.add( "channel", ch );
+        json.add( "name", channel->getName() );
+        json.add( "type", channel->getType() );
+        json.add( "type_name", Channel::getTypeName(channel->getType()) );
+        json.add( "value", channel_values ? channel_values[ch] : 0 );
 
         ChannelValueRangeArray cvra = channel->getRanges();
 
+        json.startArray( "ranges" );
         for ( ChannelValueRangeArray::iterator it=cvra.begin(); it != cvra.end(); ++it ) {
-            if ( it != cvra.begin() )
-                response.Append( "," );
-
-            response.AppendFormat( "{ \"start\":%u, \"end\":%u, \"name\":\"%s\" }",
-                    (*it).getStart(), (*it).getEnd(), (*it).getName() );
+            json.startObject();
+            json.add( "start", (*it).getStart() );
+            json.add( "end", (*it).getEnd() );
+            json.add( "name", (*it).getName() );
+            json.endObject();
         }
+        json.endArray( "ranges" );
 
-        response.Append( "]}" );
+        json.endObject();
     }
-
-    response.Append( "]" );
+    json.endArray( "channels" );
 }
 
 // ----------------------------------------------------------------------------
 //
 bool DMXHttpFull::query_fixture_definitions( CString& response, LPCSTR data )
 {
-    response = "[";
-    
+    JsonBuilder json( response );
+    json.startArray();
+
     LPCSTRArray manufacturers = FixtureDefinition::getUniqueManufacturers();
     for ( LPCSTRArray::iterator it=manufacturers.begin(); it != manufacturers.end(); ++it ) {
-        if ( it != manufacturers.begin() )
-            response.Append( "," );
-        response.AppendFormat( " { \"manufacturer\":\"%s\", \"fixtures\": [", encodeJsonString( (*it) ) );
+        json.startObject();
+        json.add( "manufacturer", (*it) );
 
         LPCSTRArray models = FixtureDefinition::getUniqueModels( (*it) );
+
+        json.startArray( "fixtures" );
         for ( LPCSTRArray::iterator it2=models.begin(); it2 != models.end(); it2++ ) {
-            if ( it2 != models.begin() )
-                response.Append( "," );
-            response.AppendFormat( " { \"model\":\"%s\", \"personalities\": [", encodeJsonString( (*it2) ) );
+            json.startObject();
+            json.add( "model", (*it2) );
 
             FixturePersonalityToFUID personalities=FixtureDefinition::getModelPersonalities( (*it), (*it2) );
 
+            json.startArray( "personalities" );
             for ( FixturePersonalityToFUID::iterator it3=personalities.begin(); it3 != personalities.end(); it3++ ) {
-                if ( it3 != personalities.begin() )
-                    response.Append( "," );
-                response.AppendFormat( "{ \"fuid\":%lu, \"num_channels\":%d }", (*it3).second, (*it3).first );
+                json.startObject();
+                json.add( "fuid", (*it3).second );
+                json.add( "num_channels", (*it3).first );
+                json.endObject();
             }
+            json.endArray( "personalities" );
 
-            response.Append( "]}" );
+            json.endObject();
         }
+        json.endArray( "fixtures" );
 
-        response.Append( "]}" );
+        json.endObject();
     }
     
-    response.Append( "]" );
+    json.endArray();
 
     return true;
 }
@@ -115,36 +120,24 @@ bool DMXHttpFull::query_fixtures( CString& response, LPCSTR data )
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
-    response = "[";
-
     FixtureGroupPtrArray groups = studio.getVenue()->getFixtureGroups();
-    bool first = true;
 
     std::sort( groups.begin(), groups.end(), CompareObjectNumber );
 
-    LPCSTR record_format = "{ \"id\":%lu, \"number\":%lu, \"dmx_address\":%u, \"fuid\":%lu, \"full_name\":\"%s\", \"is_group\":%s, \"name\":\"%s\", \"description\":\"%s\", \"fixture_ids\":%s, \"is_active\":%s, ";
+    JsonBuilder json( response );
+    json.startArray();
 
     UIDSet group_uids;
     BYTE channel_values[DMX_PACKET_SIZE];
 
-    for ( FixtureGroupPtrArray::iterator it=groups.begin(); it != groups.end(); it++, first=false) {
-        if ( !first )
-            response.Append( "," );
-
+    for ( FixtureGroupPtrArray::iterator it=groups.begin(); it != groups.end(); it++ ) {
         FixtureGroup* group = (*it);
         UIDSet fixtures = group->getFixtures();
-        CString fixture_ids = makeUIDArray<UIDSet>(fixtures);
 
         bool is_active = studio.getVenue()->isGroupCaptured( group );
         if ( is_active )
             group_uids.insert( fixtures.begin(), fixtures.end() );
-
-        response.AppendFormat( record_format, 
-            group->getUID(), group->getGroupNumber(), 0, 0L, encodeJsonString( group->getName() ), "true", 
-            encodeJsonString( group->getName() ), encodeJsonString( group->getDescription() ), 
-            (LPCSTR)fixture_ids,
-            is_active ? "true" : "false" );
-
+        
         ChannelPtrArray channels;
 
         for ( UIDSet::iterator it=fixtures.begin(); it != fixtures.end(); ++it ) {
@@ -157,32 +150,33 @@ bool DMXHttpFull::query_fixtures( CString& response, LPCSTR data )
             }
         }
 
-        append_channel_json( response, channels, channel_values );
+        json.startObject();
+        json.add( "id", group->getUID() );
+        json.add( "number", group->getGroupNumber() );
+        json.add( "dmx_address", 0 );
+        json.add( "fuid", 0L );
+        json.add( "full_name", group->getName() );
+        json.add( "is_group", true );
+        json.add( "name", group->getName() );
+        json.add( "description", group->getDescription() );
+        json.addArray<UIDSet>( "fixture_ids", fixtures );
+        json.add( "is_active", is_active );
 
-        response.Append( "}" );
+        append_channel_json( json, channels, channel_values );
+
+        json.endObject();
     }
 
     FixturePtrArray fixtures = studio.getVenue()->getFixtures();
 
     std::sort( fixtures.begin(), fixtures.end(), CompareObjectNumber );
 
-    for ( FixturePtrArray::iterator it=fixtures.begin(); it != fixtures.end(); it++, first=false) {
-        if ( !first )
-            response.Append( "," );
-
+    for ( FixturePtrArray::iterator it=fixtures.begin(); it != fixtures.end(); it++ ) {
         Fixture* pf = (*it);
 
         // Check if fixture is captured and not already captured as part of a group
         bool is_active = group_uids.find( pf->getUID() ) == group_uids.end() &&
                          studio.getVenue()->getDefaultScene()->getActor( pf->getUID() ) != NULL;
-
-        response.AppendFormat( record_format, 
-            pf->getUID(), pf->getFixtureNumber(), pf->getAddress(), pf->getFUID(), encodeJsonString(pf->getFullName() ), "false",
-            encodeJsonString( pf->getName() ), encodeJsonString( pf->getDescription() ), "null", 
-            is_active ? "true" : "false" );
-
-        response.AppendFormat( "\"manufacturer\":\"%s\", \"model\":\"%s\", \"type_name\":\"%s\",",
-            encodeJsonString( pf->getManufacturer() ), encodeJsonString( pf->getModel() ), encodeJsonString( pf->getTypeName() ) );
 
         ChannelPtrArray channels;
 
@@ -191,12 +185,27 @@ bool DMXHttpFull::query_fixtures( CString& response, LPCSTR data )
             channel_values[ch] = studio.getVenue()->getChannelValue( pf, ch );
         }
 
-        append_channel_json( response, channels, channel_values );
+        json.startObject();
+        json.add( "id", pf->getUID() );
+        json.add( "number", pf->getFixtureNumber() );
+        json.add( "dmx_address", pf->getAddress() );
+        json.add( "fuid", pf->getFUID() );
+        json.add( "full_name", pf->getFullName() );
+        json.add( "is_group", false );
+        json.add( "name", pf->getName() );
+        json.add( "description", pf->getDescription() );
+        json.addNull( "fixture_ids" );
+        json.add( "is_active", is_active );
+        json.add( "manufacturer", pf->getManufacturer() );
+        json.add( "model", pf->getModel() );
+        json.add( "type_name", pf->getTypeName() );
 
-        response.Append( "}" );
+        append_channel_json( json, channels, channel_values );
+
+        json.endObject();
     }
 
-    response.Append( "]" );
+    json.endArray();
 
     return true;
 }
@@ -384,13 +393,11 @@ bool DMXHttpFull::control_fixture( CString& response, LPCSTR data, DWORD size, L
         }
 
         // Return current channel values
-        response.Format( "[" );
-        for ( channel_t ch=0; ch < actor->getNumChannels(); ch++ ) {
-            if ( ch > 0 )
-                response.Append( "," );
-            response.AppendFormat( "%u", actor->getChannelValue( ch ) );
-        }
-        response.AppendFormat( "]" );
+        JsonBuilder json( response );
+        json.startArray();
+        for ( channel_t ch=0; ch < actor->getNumChannels(); ch++ )
+            json.add( actor->getChannelValue( ch ) );
+        json.endArray();
     }
     else {
         if ( fixture_id != 0 )
@@ -433,22 +440,21 @@ bool DMXHttpFull::control_fixture_group( CString& response, LPCSTR data, DWORD s
         unsigned num_channels = 0;
 
         // Return current channel values 
-        response.Format( "[" );
+        JsonBuilder json( response );
+
+        json.startArray();
         for ( UIDSet::iterator it=uidset.begin(); it != uidset.end(); ++it ) {
             studio.getVenue()->captureActor( (*it) );
 
             Fixture* pf = studio.getVenue()->getFixture( (*it) );
             if ( pf->getNumChannels() > num_channels ) {
-                for ( UINT ch=num_channels; ch < pf->getNumChannels(); ch++ ) {
-                    if ( ch > 0 )
-                        response.Append( "," );
-                    response.AppendFormat( "%u", studio.getVenue()->getChannelValue( pf, ch ) );
-                }
+                for ( UINT ch=num_channels; ch < pf->getNumChannels(); ch++ )
+                    json.add( studio.getVenue()->getChannelValue( pf, ch ) );
 
                 num_channels = pf->getNumChannels();
             }
         }
-        response.AppendFormat( "]" );
+        json.endArray();
     }
     else {
         for ( UIDSet::iterator it=uidset.begin(); it != uidset.end(); ++it )

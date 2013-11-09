@@ -21,7 +21,7 @@ MA 02111-1307, USA.
 */
 
 #include "DMXHttpRestServices.h"
-
+#include "SimpleJsonBuilder.h"
 #include "Venue.h"
 
 // ----------------------------------------------------------------------------
@@ -31,66 +31,59 @@ bool DMXHttpRestServices::query_venue_status( CString& response, LPCSTR data )
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
-    response.Format( "{ \"blackout\":%d, \"auto_blackout\":%d, \"dimmer\":%u, \"whiteout\":%d, \"whiteout_strobe\":%u, \"animation_speed\": %lu, \"current_scene\":%lu, \"current_chase\":%lu, ",
-        studio.getVenue()->getUniverse()->isBlackout(), 
-        studio.getVenue()->isLightBlackout(),
-        studio.getVenue()->getMasterDimmer(),
-        studio.getVenue()->getWhiteout(),
-        studio.getVenue()->getWhiteoutStrobeMS(),
-        studio.getVenue()->getAnimationSampleRate( ),
-        studio.getVenue()->getCurrentSceneUID(),
-        studio.getVenue()->getRunningChase() );
-
-    response.AppendFormat( "\"master_volume\": %u, \"mute\": %s, \"has_music_player\": %s, \"music_match\": %s, \"venue_filename\":\"%s\", \"captured_fixtures\": [", 
-        studio.getVenue()->getMasterVolume( ),
-        studio.getVenue()->isMasterVolumeMute( ) ? "true" : "false",
-        studio.hasMusicPlayer() ? "true" : "false",
-        studio.getVenue()->isMusicSceneSelectEnabled() ? "true" : "false",
-        encodeHtmlString( studio.getVenueFileName()) );
-
-    UIDArray captured_actors = studio.getVenue()->getDefaultScene()->getActorUIDs();
-
-    for ( UIDArray::iterator it=captured_actors.begin(); it != captured_actors.end(); ++it ) {
-        if ( it != captured_actors.begin() )
-            response.Append( "," );
-        response.AppendFormat( "%lu", (*it) );
-    }
-
-    response.Append( "]" );
+    JsonBuilder json( response );
+    json.startObject();
+    json.add( "blackout", studio.getVenue()->getUniverse()->isBlackout() );
+    json.add( "auto_blackout", studio.getVenue()->isLightBlackout() );
+    json.add( "dimmer", studio.getVenue()->getMasterDimmer() );
+    json.add( "whiteout", studio.getVenue()->getWhiteout() );
+    json.add( "whiteout_strobe", studio.getVenue()->getWhiteoutStrobeMS() );
+    json.add( "animation_speed", studio.getVenue()->getAnimationSampleRate() );
+    json.add( "current_scene", studio.getVenue()->getCurrentSceneUID() );
+    json.add( "current_chase", studio.getVenue()->getRunningChase() );
+    json.add( "master_volume", studio.getVenue()->getMasterVolume() );
+    json.add( "mute", studio.getVenue()->isMasterVolumeMute() );
+    json.add( "has_music_player", studio.hasMusicPlayer() );
+    json.add( "music_match", studio.getVenue()->isMusicSceneSelectEnabled() );
+    json.add( "venue_filename", studio.getVenueFileName() );
+    json.addArray<UIDArray>( "captured_fixtures", studio.getVenue()->getDefaultScene()->getActorUIDs() );
 
     // If we have a music player, return player status
     if ( studio.hasMusicPlayer() ) {
-        response.Append( ", \"music_player\": { " );
+        json.startObject( "music_player" );
 
         if ( studio.getMusicPlayer()->isLoggedIn() ) {
             DWORD length, remaining;
             UINT queued, played;
             DWORD track = studio.getMusicPlayer()->getPlayingTrack( &length, &remaining, &queued, &played );
             
-            response.AppendFormat( "\"logged_in\": true, \"mapping\": %s, \"queued\": %u, \"played\": %u",
-                studio.getVenue()->isMusicSceneSelectEnabled() ? "true" : "false", queued, played );
+            json.add( "logged_in", true );
+            json.add( "mapping", studio.getVenue()->isMusicSceneSelectEnabled() );
+            json.add( "queued", queued );
+            json.add( "played", played );
 
             if ( track ) {
-                response.AppendFormat( ", \"playing\": { \"track\":%lu, \"name\": \"%s\", \"length\":%lu, \"remaining\":%lu, \"paused\":%s }",
-                    track,
-                    encodeHtmlString( studio.getMusicPlayer()->getTrackFullName( track ) ), 
-                    length, 
-                    remaining,
-                    studio.getMusicPlayer()->isTrackPaused() ? "true" : "false" );
+                json.startObject( "playing" );
+                json.add( "track", track );
+                json.add( "name", studio.getMusicPlayer()->getTrackFullName( track ) );
+                json.add( "length", length );
+                json.add( "remaining", remaining );
+                json.add( "paused", studio.getMusicPlayer()->isTrackPaused() );
+                json.endObject( "playing" );
             }
         }
         else {
-            response.Append( "\"logged_in\": false" );
+            json.add( "logged_in", false );
         }
 
         CString last_error = studio.getMusicPlayer()->getLastPlayerError( );
         if ( !last_error.IsEmpty() )
-            response.AppendFormat( ", \"player_error\": \"%s\"", encodeHtmlString( (LPCSTR)last_error ) );
+            json.add( "player_error", last_error );
 
-        response.Append( "}" );
+        json.endObject( "music_player" );
     }
     
-    response.Append( "}" );
+    json.endObject();
 
     return true;
 }
@@ -374,19 +367,24 @@ bool DMXHttpRestServices::query_music_playlists( CString& response, LPCSTR data 
     if ( !studio.hasMusicPlayer() )
         return false;
 
-    response =  "{ \"playlists\": [ ";
+    JsonBuilder json( response );
+    json.startObject();
+
     PlayerItems playlists;
     studio.getMusicPlayer()->getPlaylists( playlists );
 
     UINT playlist_number = 1;
+
+    json.startArray( "playlists" );
     for ( PlayerItems::iterator it=playlists.begin(); it != playlists.end(); it++, playlist_number++ ) {
-        CString name = studio.getMusicPlayer()->getPlaylistName( (*it) );
-        if ( it != playlists.begin() )
-            response.Append( "," );
-        response.AppendFormat( " { \"id\": %lu, \"name\": \"%s\" }", playlist_number, encodeHtmlString( name ) );
+        json.startObject();
+        json.add( "id", playlist_number );
+        json.add( "name", studio.getMusicPlayer()->getPlaylistName( (*it) ) );
+        json.endObject();
     }
-    
-    response.Append( "]}" );
+    json.endArray( "playlists" );
+        
+    json.endObject();
 
     return true;
 }
@@ -398,19 +396,24 @@ bool DMXHttpRestServices::query_music_queued( CString& response, LPCSTR data )
     if ( !studio.hasMusicPlayer() )
         return false;
 
-    response =  "{ \"tracks\": [ ";
     PlayerItems tracks;
     studio.getMusicPlayer()->getQueuedTracks(tracks);
 
     UINT track_number = 1;
+
+    JsonBuilder json( response );
+    json.startObject();
+
+    json.startArray( "tracks" );
     for ( PlayerItems::iterator it=tracks.begin(); it != tracks.end(); it++, track_number++ ) {
-        CString name = studio.getMusicPlayer()->getTrackFullName( (*it) );
-        if ( it != tracks.begin() )
-            response.Append( "," );
-        response.AppendFormat( " { \"id\": %lu, \"name\": \"%s\" }", track_number, encodeHtmlString( name ) );
+        json.startObject();
+        json.add( "id", track_number );
+        json.add( "name", studio.getMusicPlayer()->getTrackFullName( (*it) ) );
+        json.endObject();
     }
-    
-    response.Append( "]}" );
+    json.endArray( "tracks" );
+        
+    json.endObject();
 
     return true;
 }
@@ -422,19 +425,24 @@ bool DMXHttpRestServices::query_music_played( CString& response, LPCSTR data )
     if ( !studio.hasMusicPlayer() )
         return false;
 
-    response =  "{ \"tracks\": [ ";
     PlayerItems tracks;
     studio.getMusicPlayer()->getPlayedTracks(tracks);
 
     UINT track_number = 1;
+
+    JsonBuilder json( response );
+    json.startObject();
+
+    json.startArray( "tracks" );
     for ( PlayerItems::iterator it=tracks.begin(); it != tracks.end(); it++, track_number++ ) {
-        CString name = studio.getMusicPlayer()->getTrackFullName( (*it) );
-        if ( it != tracks.begin() )
-            response.Append( "," );
-        response.AppendFormat( " { \"id\": %lu, \"name\": \"%s\" }", track_number, encodeHtmlString( name ) );
+        json.startObject();
+        json.add( "id", track_number );
+        json.add( "name", studio.getMusicPlayer()->getTrackFullName( (*it) ) );
+        json.endObject();
     }
-    
-    response.Append( "]}" );
+    json.endArray( "tracks" );
+        
+    json.endObject();
 
     return true;
 }
@@ -458,20 +466,24 @@ bool DMXHttpRestServices::query_music_playlist_tracks( CString& response, LPCSTR
 
     DWORD playlist_id = playlists[ playlist_number-1 ];
 
-    response = "{ \"playlist\": [ ";
-
     PlayerItems tracks;
     studio.getMusicPlayer()->getTracks( playlist_id, tracks );
 
     UINT track_number = 1;
+
+    JsonBuilder json( response );
+    json.startObject();  
+      
+    json.startArray( "playlist" );
     for ( PlayerItems::iterator it=tracks.begin(); it != tracks.end(); it++, track_number++ ) {
-        CString name = studio.getMusicPlayer()->getTrackFullName( (*it) );
-        if ( it != tracks.begin() )
-            response.Append( "," );
-        response.AppendFormat( " { \"id\": %lu, \"name\": \"%s\" }", track_number, encodeHtmlString( name ) );
+        json.startObject();
+        json.add( "id", track_number );
+        json.add( "name", studio.getMusicPlayer()->getTrackFullName( (*it) ) );
+        json.endObject();
     }
-    
-    response.Append( "]}" );
+    json.endArray( "playlist" );
+        
+    json.endObject();
 
     return true;
 }

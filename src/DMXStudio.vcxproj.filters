@@ -416,6 +416,9 @@
     <ClInclude Include="SimpleJsonParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SimpleJsonBuilder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ftd2xx.dll">

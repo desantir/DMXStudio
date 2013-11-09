@@ -60,6 +60,5 @@ private:
 
     // Potentially reusable
     bool control_animation_speed( CString& response, LPCSTR data );
-    bool query_sound( CString& response, LPCSTR data );
 };
 
