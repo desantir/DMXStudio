@@ -76,7 +76,7 @@ void DMXStudio::runStudio()
     try {
         openStudioLogFile();
 
-        log_status( "DMX Studio v0.0.30" );
+        log_status( "DMX Studio v0.1.0" );
 
         readIniFile();
 

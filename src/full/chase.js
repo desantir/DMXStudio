@@ -126,13 +126,12 @@ function updateChases() {
 
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/full/query/chases/",
+        url: "/dmxstudio/rest/query/chases/",
         cache: false,
         success: function (data) {
             var json = jQuery.parseJSON(data);
-            chase_data = json['chases'];
 
-            $.map(chase_data, function (chase, index) {
+            $.map(json, function (chase, index) {
                 chase_tile_panel.addTile(chase.id, chase.number, escapeForHTML(chase.name), true);
                 chases.push( new Chase(chase) );
                 if (chase.is_running)
@@ -155,7 +154,7 @@ function playChase(event, chase_id) {
 
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/full/control/chase/show/" + chase_id,
+        url: "/dmxstudio/rest/control/chase/show/" + chase_id,
         cache: false,
         success: function () {
             markActiveChase(chase_id);
@@ -247,7 +246,7 @@ function openNewChaseDialog(dialog_title, data) {
 
         $.ajax({
             type: "POST",
-            url: "/dmxstudio/full/edit/chase/" + action + "/",
+            url: "/dmxstudio/rest/edit/chase/" + action + "/",
             data: JSON.stringify(json),
             contentType: 'application/json',
             cache: false,
@@ -397,7 +396,7 @@ function deleteChase(event, chase_id) {
     deleteVenueItem(getChaseById(chase_id), function (item) {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/full/delete/chase/" + item.getId(),
+            url: "/dmxstudio/rest/delete/chase/" + item.getId(),
             cache: false,
             success: updateChases,
             error: onAjaxError

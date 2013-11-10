@@ -30,7 +30,6 @@ MA 02111-1307, USA.
 #include <http.h>
 
 extern CString encodeHtmlString( LPCSTR string );
-extern CString encodeJsonString( LPCSTR string );
 
 #define ALLOC_MEM(cb) HeapAlloc(GetProcessHeap(), 0, (cb))
 #define FREE_MEM(ptr) HeapFree(GetProcessHeap(), 0, (ptr))

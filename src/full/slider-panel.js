@@ -214,7 +214,7 @@ function Slider(panel, number, slider_frame) {
 
     slider.on("slidestop", function (event, ui) {
         // Tooltip becomes range value
-        $(this).attr("title", escapeForHTML(channel_hint.html()));
+        $(this).attr("title", channel_hint.html());
 
         channel_hint.html("");
         channel_hint.css("display", "none");

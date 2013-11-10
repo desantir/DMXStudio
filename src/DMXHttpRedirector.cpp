@@ -21,8 +21,8 @@ MA 02111-1307, USA.
 */
 
 #include "DMXHttpRedirector.h"
-#include "DMXHttpMobile.h"
-#include "DMXHttpFull.h"
+#include "HttpMobile.h"
+#include "HttpFull.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -60,9 +60,9 @@ DWORD DMXHttpRedirector::processGetRequest( HttpWorkerThread* worker )
         LPCSTR redirect;
 
         if ( user_agent.Find( "ipad" ) != -1 || user_agent.Find( "iphone" ) != -1 || user_agent.Find( "android" ) != -1 )
-            redirect = DMX_URL_ROOT_MOBILE;
+            redirect = DMX_URL_MOBILE_HOME;
         else
-            redirect = DMX_URL_ROOT_FULL;
+            redirect = DMX_URL_FULL_HOME;
 
         return worker->sendRedirect( redirect );
     }

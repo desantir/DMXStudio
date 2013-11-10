@@ -55,7 +55,7 @@ function showBeatVisualizer() {
         close: function () {
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/full/control/beatsampler/stop/",
+                url: "/dmxstudio/rest/control/beatsampler/stop/",
                 cache: false
             });
             $("#show_beat_visualizer").removeClass("lg-icon-white").addClass("lg-icon-grey");
@@ -90,7 +90,7 @@ function showBeatVisualizer() {
 
     $.ajax({
         type: "POST",
-        url: "/dmxstudio/full/control/beatsampler/start/",
+        url: "/dmxstudio/rest/control/beatsampler/start/",
         data: JSON.stringify(beat_frequencies),
         contentType: 'application/json',
         cache: false,
@@ -156,7 +156,7 @@ function updateBeats() {
 
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/full/query/beatsampler/",
+        url: "/dmxstudio/rest/query/beatsampler/",
         cache: false,
         success: function (data) {
             var json = jQuery.parseJSON(data);
@@ -179,7 +179,7 @@ function updateBeats() {
 function restartBeats() {
     $.ajax({
         type: "POST",
-        url: "/dmxstudio/full/control/beatsampler/start/",
+        url: "/dmxstudio/rest/control/beatsampler/start/",
         data: JSON.stringify(beat_frequencies),
         contentType: 'application/json',
         cache: false,

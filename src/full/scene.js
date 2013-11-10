@@ -158,7 +158,7 @@ function updateScenes() {
 
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/full/query/scenes/",
+        url: "/dmxstudio/rest/query/scenes/",
         cache: false,
         success: function (data) {
             //alert(data);
@@ -188,7 +188,7 @@ function playScene(event, scene_id) {
 
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/full/control/scene/show/" + scene_id,
+        url: "/dmxstudio/rest/control/scene/show/" + scene_id,
         cache: false,
         success: function () {
             markActiveScene(scene_id);
@@ -311,7 +311,7 @@ function openNewSceneDialog(dialog_title, action_title, copy, data) {
 
         $.ajax({
             type: "POST",
-            url: "/dmxstudio/full/edit/scene/" +action + "/",
+            url: "/dmxstudio/rest/edit/scene/" +action + "/",
             data: JSON.stringify(json),
             contentType: 'application/json',
             cache: false,
@@ -523,7 +523,7 @@ function deleteScene(event, scene_id) {
     deleteVenueItem(getSceneById(scene_id), function (item) {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/full/delete/scene/" + item.getId(),
+            url: "/dmxstudio/rest/delete/scene/" + item.getId(),
             cache: false,
             success: updateScenes,
             error: onAjaxError

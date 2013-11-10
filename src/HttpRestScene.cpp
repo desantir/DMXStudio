@@ -20,7 +20,7 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-#include "DMXHttpFull.h"
+#include "HttpRestServices.h"
 
 #include "Venue.h"
 #include "ScenePatternDimmer.h"
@@ -60,7 +60,7 @@ static PARSER_MAP animation_parsers = init_animation_parsers();
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::query_scenes( CString& response, LPCSTR data )
+bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -235,7 +235,7 @@ bool DMXHttpFull::query_scenes( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::delete_scene( CString& response, LPCSTR data ) {
+bool HttpRestServices::delete_scene( CString& response, LPCSTR data ) {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
@@ -249,7 +249,7 @@ bool DMXHttpFull::delete_scene( CString& response, LPCSTR data ) {
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::edit_scene_copy_fixtures( CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
+bool HttpRestServices::edit_scene_copy_fixtures( CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
 
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -316,7 +316,7 @@ bool DMXHttpFull::edit_scene_copy_fixtures( CString& response, LPCSTR data, DWOR
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::edit_scene( CString& response, LPCSTR data, EditMode mode ) {
+bool HttpRestServices::edit_scene( CString& response, LPCSTR data, EditMode mode ) {
    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 

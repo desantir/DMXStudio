@@ -27,570 +27,52 @@ MA 02111-1307, USA.
 <head> 
 	<title>DMXStudio Mobile</title> 
 	<meta name="viewport" content="width=device-width, initial-scale=1"> 
-	<link rel="stylesheet" href="jquery.mobile-1.1.0.min.css" />
-	<script src="jquery-1.7.1.min.js"></script>
-	<script src="jquery.mobile-1.1.0.min.js"></script>
+    <link rel="stylesheet" href="dmx-mobile-theme.min.css" />
+    <link rel="stylesheet" href="jquery.mobile.structure-1.3.2.min.css" />
+	<script src="jquery-1.9.1.min.js"></script>
+	<script src="jquery.mobile-1.3.2.min.js"></script>
+    <script src="mobile.js"></script>
+
+    <script>
+        $(function () {
+            initializeUI(); // Get it started
+        });
+    </script>
+
 </head> 
-
-<!-- #_name_ = DOM id and ._name = class_name -->
-
-<script>
-    var SLIDER_TIMEOUT = 500;
-
-    var track_timer = null;
-    var track_remaining = 0;
-    var track_paused = false;
-    var tracks_queued = 0;
-    var server_track_sync_ms = 0;
-    var timeout = null;
-    var music_player = null;
-
-    function onError(data) {
-        alert( "Unable to complete server operation." );
-    }
-
-    function trackTime(time) {
-        var track_time = "";
-        if (time > 60 * 60 * 1000) {
-            track_time += Math.floor(time / (60 * 60 * 1000));
-            track_time += ":";
-            time %= (60 * 60 * 1000);
-        }
-
-        track_time += Math.floor(time / (60 * 1000));
-        track_time += ":";
-        time %= (60 * 1000);
-        time = Math.floor(time / (1000))
-
-        if (time < 10)
-            track_time += "0"
-
-        track_time += time;
-
-        return track_time;
-    }
-
-    $(function () {
-        $("#blackout").change(function () {
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/mobile/control/venue/blackout/" + $('input[name=select_blackout]:checked').val(),
-                cache: false,
-                error: onError
-            });
-        });
-    });
-
-    $(function () {
-        $("#dimmer").click(function () {
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/mobile/control/venue/dimmer/" + slider_dimmer_id.value,
-                cache: false,
-                error: onError
-            });
-        });
-    });
-
-    $(function () {
-        $("#whiteoutChange").change(function () {
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/mobile/control/venue/whiteout/" + $('input[name=select_whiteout]:checked').val(),
-                cache: false,
-                error: onError
-            });
-        });
-    });
-
-    $(function () {
-        $("#sceneChange").change(function () {
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/mobile/control/scene/show/" + $('input[name=select_scene]:checked').val(),
-                cache: false,
-                error: onError
-            });
-        });
-    });
-
-    $(function () {
-        $("#chaseChange").change(function () {
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/mobile/control/chase/show/" + $('input[name=chase_scene]:checked').val(),
-                cache: false,
-                error: onError
-            });
-        });
-    });
-
-    $(function () {
-        $("#control_fixture").click(function () {
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/mobile/control/fixture/select/" + fixture_select_id.value,
-                cache: false,
-                success: function (data) {
-                    $('#fixtureSliders').html(data).trigger('create');
-                },
-                error: onError
-            });
-        });
-    });
-
-    function release_fixture(fixture_id) {
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/mobile/control/fixture/release/" + fixture_id,
-            cache: false,
-            success: function (data) {
-                $('#fixtureSliders').html(data).trigger('create');
-            },
-            error: onError
-        });
-    }
-
-    function timeout_send_ajax_request() {
-        $.ajax({
-            type: "GET",
-            url: document.timer_url,
-            cache: false,
-            error: onError
-        });
-    }
-
-    function change_fixture_channel(fixture_id, channel, channel_value) {
-        clearTimeout(timeout);
-
-        document.timer_url = "/dmxstudio/mobile/control/fixture/channel/" + fixture_id + "/" + channel + "/" + channel_value;
-
-        timeout = setTimeout('timeout_send_ajax_request()', SLIDER_TIMEOUT);
-    }
-
-    function change_dimmer(dimmer_value) {
-        clearTimeout(timeout);
-
-        document.timer_url = "/dmxstudio/mobile/control/venue/dimmer/" + dimmer_value
-
-        timeout = setTimeout('timeout_send_ajax_request()', SLIDER_TIMEOUT);
-    }
-
-    function change_strobe(strobe_value) {
-        clearTimeout(timeout);
-
-        document.timer_url = "/dmxstudio/mobile/control/venue/strobe/" + strobe_value
-
-        timeout = setTimeout('timeout_send_ajax_request()', SLIDER_TIMEOUT);
-    }
-
-    function change_animation_speed( speed ) {
-        clearTimeout(timeout);
-
-        document.timer_url = "/dmxstudio/mobile/control/venue/animation_speed/" + speed
-
-        timeout = setTimeout('timeout_send_ajax_request()', SLIDER_TIMEOUT);
-    }
-
-    $("#venue").live("pageshow", function () {
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/mobile/query/venue/status/",
-            cache: false,
-            success: function (data) {
-                venue_content.style.display = "";
-
-                var json = eval('(' + data + ')');
-
-                var o = $("#animations_speed_id option[value='" + json['animation_speed'] + "']");
-                var index = 0;
-
-                if ( o != null && o.index() != -1 ) {
-                    index = o.index();
-                }
-
-                if (json.blackout)
-                    $("#blackout_1").prop("checked", true).checkboxradio("refresh");
-                else
-                    $("#blackout_0").prop("checked", true).checkboxradio("refresh");
-
-                $( "#whiteout_" + json.whiteout).prop("checked", true).checkboxradio("refresh");
-
-                $('#slider_whiteout_strobe_id').val(json["whiteout_strobe"]);
-                $('#slider_whiteout_strobe_id').slider("refresh");
-
-                $('#slider_dimmer_id').val(json["dimmer"]);
-                $('#slider_dimmer_id').slider("refresh");
-
-                $('#animations_speed_id option:eq(0)').text("Default: " + json['animation_speed'] + " ms");
-                $('#animations_speed_id option:eq(0)').val(json['animation_speed']);
-
-                // Select option and refresh the dropdown
-                $('#animations_speed_id option').eq(index).attr("selected", true);
-                $('#animations_speed_id').selectmenu('refresh', true);
-
-                clearTimeout(timeout); // Stop events from going back to server
-            },
-            error: function () {
-                venue_content.style.display = "none";
-                alert( "Venue is not available" );
-            }
-        });
-    });
-
-    $("#scene").live("pageshow", function () {
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/mobile/query/venue/status/",
-            cache: false,
-            success: function (data) {
-                scene_content.style.display = "";
-            },
-            error: function () {
-                scene_content.style.display = "none";
-                alert("Venue is not available");
-            }
-        });
-    });
-
-    $("#chase").live("pageshow", function () {
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/mobile/query/venue/status/",
-            cache: false,
-            success: function (data) {
-                chase_content.style.display = "";
-            },
-            error: function () {
-                chase_content.style.display = "none";
-                alert("Venue is not available");
-            }
-        });
-    });
-
-    $("#fixture").live("pageshow", function () {
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/mobile/query/venue/status/",
-            cache: false,
-            success: function (data) {
-                fixture_content.style.display = "";
-            },
-            error: function () {
-                fixture_content.style.display = "none";
-                alert("Venue is not available");
-            }
-        });
-    });
-
-    function change_volume(volume_value) {
-        clearTimeout(timeout);
-        
-        document.timer_url = "/dmxstudio/mobile/control/venue/master_volume/" + volume_value
-
-        timeout = setTimeout('timeout_send_ajax_request()', 50);
-    }
-
-    $(function () {
-        $("#volume_mute").change(function () {
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/mobile/control/venue/mute_volume/" + $('input[name=select_volume_mute]:checked').val(),
-                cache: false,
-                error: onError
-            });
-        });
-    });
-
-    $(function () {
-        $("#track_back_id").click(function () {
-            clearTimeout(track_timer);
-
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/mobile/control/music/track/back",
-                cache: false,
-                error: onError
-            });
-
-            track_remaining = 0;
-            track_paused = false;
-            track_timer = setTimeout('track_timeout()', 500);
-        });
-    });
-
-    $(function () {
-        $("#track_forward_id").click(function () {
-            clearTimeout(track_timer);
-
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/mobile/control/music/track/forward",
-                cache: false,
-                error: onError
-            });
-
-            track_remaining = 0;
-            track_paused = false;
-            track_timer = setTimeout('track_timeout()', 500);
-        });
-    });
-
-    $(function () {
-        $("#track_pause_id").click(function () {
-            clearTimeout(track_timer);
-
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/mobile/control/music/track/pause",
-                cache: false,
-                error: onError
-            });
-
-            track_remaining = 0;
-            track_paused = true;
-
-            track_pause_id.style.display = "none";
-            track_play_id.style.display = "";
-
-            track_timer = setTimeout('track_timeout()', 500);
-        });
-    });
-
-
-    $(function () {
-        $("#track_play_id").click(function () {
-            clearTimeout(track_timer);
-
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/mobile/control/music/track/play",
-                cache: false,
-                error: onError
-            });
-
-            track_remaining = 0;
-            track_paused = false;
-            track_timer = setTimeout('track_timeout()', 500);
-        });
-    });
-
-    $("#sound").live("pageshow", function (event, ui) {
-        updateMusicPlayer( true );
-    });
-
-    $(function () {
-        $("#playlist_select_id").change(function () {
-            var playlist_id = playlist_select_id.value;
-
-            // Get tracks
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/mobile/query/music/playlist/tracks/" + playlist_id,
-                cache: false,
-                success: function (data) {
-                    var json = jQuery.parseJSON(data);
-                    playlist = json['playlist'];
-
-                    var data = [];
-                    data = $.map(playlist, function (pl, index) {
-                        return "<option value=" + pl.id + ">" + pl.name + "</option>";
-                    });
-
-                    data.unshift("<option value=0>Select Track</option>", "<option value=-1>PLAY ENTIRE PLAYLIST</option>");
-
-                    $("#playlist_tracks_id").html(data.join(""));
-
-                    // Select option and refresh the dropdown
-                    $('#playlist_tracks_id option').eq(0).attr("selected", true);
-                    $('#playlist_tracks_id').selectmenu('refresh', true);
-                },
-                error: onError
-            });
-        });
-    });
-
-    $(function () {
-        $("#playlist_tracks_id").change(function () {
-            var track_id = playlist_tracks_id.value;
-            var playlist_id = playlist_select_id.value;
-            if (track_id == 0 || playlist_id == 0)
-                return;
-
-            var queue = parseInt($('input[name=track_play_mode]:checked').val());
-
-            if (track_id == -1) {                       // Play all tracks
-                url_str = "/dmxstudio/mobile/control/music/play/playlist/" + playlist_id + "/" + queue;
-            }
-            else {                                      // Play single track
-                url_str = "/dmxstudio/mobile/control/music/play/track/" + playlist_id + "/" + track_id + "/" + queue;
-            }
-
-            $.ajax({
-                type: "GET",
-                url: url_str,
-                cache: false,
-                success: function (data) {
-                    updateMusicPlayer();
-                },
-                error: onError
-            });
-
-            if (queue && tracks_queued) {       // Indicate to the user queue has changed
-                flash_tracks_queued();
-            }
-            else {                              // Track name will change momentarily
-                $('#playlist_tracks_id option').eq(0).attr("selected", true);
-                $('#playlist_tracks_id').selectmenu('refresh', true);
-            }
-        });
-    });
-
-    var tracks_queued_flasher = 1;
-    var tracks_queued_flasher_interval;
-    function flash_tracks_queued() {
-        tracks_queued_flasher = 1;
-        tracks_queued_flasher_interval = setInterval(function () {
-            $('#id_tracks_queued').css("display", (tracks_queued_flasher&1) ? "none" : "");
-            tracks_queued_flasher += 1;
-            if (tracks_queued_flasher == 11) {
-                clearInterval(tracks_queued_flasher_interval);
-                // Select option and refresh the dropdown
-                $('#playlist_tracks_id option').eq(0).attr("selected", true);
-                $('#playlist_tracks_id').selectmenu('refresh', true);
-            }
-        }, 100);
-    }
-
-    function updateMusicPlayer( update_selections ) {
-        clearTimeout(track_timer);
-
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/mobile/query/venue/status/",
-            cache: false,
-            success: function (data) {
-                var json = jQuery.parseJSON(data);
-
-                $('#volume_slider').val(json.master_volume);
-                $('#volume_slider').slider("refresh");
-
-                name = ( json.mute ) ? '#volume_mute_1' : '#volume_mute_0';
-                $(name).prop("checked", true).checkboxradio("refresh");
-
-                clearTimeout(timeout);                  // Stop events from going back to server
-
-                if (!json.has_music_player) {           // There is no music player
-                    track_controls.style.display = "none";
-                    track_selector.style.display = "none";
-                    return;
-                }
-
-                music_player = json.music_player;
-
-                if (music_player.playing) {
-                    id_track_name.innerHTML = music_player.playing.name;
-                    id_track_length.innerHTML = trackTime(music_player.playing.length)
-
-                    track_remaining = music_player.playing.remaining;
-                    track_paused = music_player.playing.paused;
-
-                    id_track_remaining.innerHTML = "Remaining: " + trackTime(track_remaining);
-
-                    track_pause_id.style.display = track_paused ? "none" : "";
-                    track_play_id.style.display = !track_paused ? "none" : "";
-                }
-                else {
-                    id_track_name.innerHTML = "NO TRACK";
-                    id_track_length.innerHTML = "";
-                    id_track_remaining.innerHTML = "";
-
-                    track_remaining = 0;
-                    track_paused = false;
-
-                    track_pause_id.style.display = "none";
-                    track_play_id.style.display = "none";
-                }
-
-                tracks_queued = music_player.queued;
-                id_tracks_queued.innerHTML = tracks_queued + " in queue";
-
-                track_timer = setTimeout('track_timeout()', 1000);
-                server_track_sync_ms = 0;
-
-                if (update_selections) {
-                    // Get playlists
-                    $.ajax({
-                        type: "GET",
-                        url: "/dmxstudio/mobile/query/music/playlists/",
-                        cache: false,
-                        success: function (data) {
-                            var json = jQuery.parseJSON(data);
-                            playlists = json.playlists;
-
-                            var data = [];
-                            data = $.map(playlists, function (pl, index) {
-                                return "<option value=" + pl.id + ">" + pl.name + "</option>";
-                            });
-
-                            $("#playlist_select_id").html(data.join(""));
-                            $("#playlist_tracks_id").html("");
-
-                            // Select option and refresh the dropdown
-                            $('#playlist_select_id option').eq(0).attr("selected", true);
-                            $('#playlist_select_id').selectmenu('refresh', true);
-
-                            $('#playlist_select_id').trigger('change');
-                        },
-                        error: onError
-                    });
-                }
-            },
-        });
-    }
-
-/* This stops page transitions ?!?
-    $("#sound").live("pagehide", function (event, ui) {
-        if (track_timer) {
-            clearTimeout(track_timer);
-            track_timer = NULL;
-        }
-    });
-*/
-
-    function track_timeout() {
-        if (!track_paused && track_remaining > 1000 && server_track_sync_ms < 5000 ) {
-            track_remaining -= 1000;
-            id_track_remaining.innerHTML = "Remaining: " + trackTime(track_remaining);
-            track_timer = setTimeout('track_timeout()', 1000);
-            server_track_sync_ms += 1000;
-            return;
-        }
-
-        clearTimeout(track_timer);
-
-        updateMusicPlayer();
-    }
-
-    function change_volume_mute(mute) {
-        clearTimeout(timeout);
-
-        document.timer_url = "/dmxstudio/mobile/control/venue/mute_volume/" + (mute ? 1 : 0);
-
-        timeout = setTimeout('timeout_send_ajax_request()', 100);
-    }
-</script>
 
 <body> 
     <div data-role="page" id="intro">
-        [$[page_header:intro]$]
+        <div data-role="header" data-id="dmxstudio_header" >
+        	<h2 style="margin-right:0;margin-left:0;margin-top:5px;margin-bottom:5px;">DMX Studio Remote</h2>
+            <div data-role="navbar">
+        	    <ul>
+                    <li><a href="#venue">Venue</a></li>
+        		    <li><a href="#scene">Scene</a></li>
+        		    <li><a href="#chase">Chase</a></li>
+        		    <li><a href="#fixture">Fixture</a></li>
+        		    <li><a href="#sound">Sound</a></li>
+        	    </ul>
+            </div>
+        </div>
 	    <div data-role="content">	
-            <p>DMXStudio mobile remote control version 1.0.1</p>
+            <p>DMXStudio mobile remote control version 1.2.0</p>
 	    </div><!-- /content -->
     </div>
 
     <div data-role="page" id="venue">
-        [$[page_header:venue]$]
+        <div data-role="header" data-id="dmxstudio_header" >
+        	<h2 style="margin-right:0;margin-left:0;margin-top:5px;margin-bottom:5px;">DMX Studio Remote</h2>
+            <div data-role="navbar">
+        	    <ul>
+                    <li><a href="#venue" class="ui-state-persist ui-btn-active">Venue</a></li>
+        		    <li><a href="#scene">Scene</a></li>
+        		    <li><a href="#chase">Chase</a></li>
+        		    <li><a href="#fixture">Fixture</a></li>
+        		    <li><a href="#sound">Sound</a></li>
+        	    </ul>
+            </div>
+        </div>
 	    <div data-role="content" id="venue_content">	
             <div data-role="fieldcontain">
                 <fieldset data-role="controlgroup" id="blackout" data-type="horizontal">
@@ -602,7 +84,7 @@ MA 02111-1307, USA.
                 </fieldset>
             </div>
             <div data-role="fieldcontain">
-                <label for="slider-dimmer">Dimmer:</label><br />
+                <label for="slider-dimmer">Master Dimmer:</label><br />
                 <input type="range" name="slider_dimmer" id="slider_dimmer_id" 
                         min="0" max="100" data-highlight="true"
                         onchange="change_dimmer(this.value); return false;" />
@@ -656,42 +138,83 @@ MA 02111-1307, USA.
     </div><!-- /page -->
 
     <div data-role="page" id="scene">
-        [$[page_header:scene]$]
+        <div data-role="header" data-id="dmxstudio_header" >
+        	<h2 style="margin-right:0;margin-left:0;margin-top:5px;margin-bottom:5px;">DMX Studio Remote</h2>
+            <div data-role="navbar">
+        	    <ul>
+                    <li><a href="#venue">Venue</a></li>
+        		    <li><a href="#scene" class="ui-state-persist ui-btn-active">Scene</a></li>
+        		    <li><a href="#chase">Chase</a></li>
+        		    <li><a href="#fixture">Fixture</a></li>
+        		    <li><a href="#sound">Sound</a></li>
+        	    </ul>
+            </div>
+        </div>
 	    <div data-role="content" id="scene_content">	
             <fieldset data-role="controlgroup" id="sceneChange">
-                [$[scene_buttons]$]
+                <legend>Loading scenes ...</legend>
             </fieldset>
 	    </div><!-- /content -->
 
     </div><!-- /page -->
 
     <div data-role="page" id="chase">
-        [$[page_header:chase]$]
+        <div data-role="header" data-id="dmxstudio_header" >
+        	<h2 style="margin-right:0;margin-left:0;margin-top:5px;margin-bottom:5px;">DMX Studio Remote</h2>
+            <div data-role="navbar">
+        	    <ul>
+                    <li><a href="#venue">Venue</a></li>
+        		    <li><a href="#scene">Scene</a></li>
+        		    <li><a href="#chase" class="ui-state-persist ui-btn-active">Chase</a></li>
+        		    <li><a href="#fixture">Fixture</a></li>
+        		    <li><a href="#sound">Sound</a></li>
+        	    </ul>
+            </div>
+        </div>
 	    <div data-role="content" id="chase_content">	
             <fieldset data-role="controlgroup" id="chaseChange">
-                [$[chase_buttons]$]
+                <legend>Loading chases ...</legend>
             </fieldset>
 	    </div><!-- /content -->
     </div><!-- /page -->
 
     <div data-role="page" id="fixture">
-        [$[page_header:fixture]$]
+        <div data-role="header" data-id="dmxstudio_header" >
+        	<h2 style="margin-right:0;margin-left:0;margin-top:5px;margin-bottom:5px;">DMX Studio Remote</h2>
+            <div data-role="navbar">
+        	    <ul>
+                    <li><a href="#venue">Venue</a></li>
+        		    <li><a href="#scene">Scene</a></li>
+        		    <li><a href="#chase">Chase</a></li>
+        		    <li><a href="#fixture" class="ui-state-persist ui-btn-active">Fixture</a></li>
+        		    <li><a href="#sound">Sound</a></li>
+        	    </ul>
+            </div>
+        </div>
 	    <div data-role="content" id="fixture_content">	
             <div class="containing-element">
                 <select name="fixture_select" id="fixture_select_id" data-mini="true" data-theme="a" >
-                   [$[fixture_select]$]
                 </select>
-
                 <a data-role="button" data-icon="gear" id="control_fixture" data-mini="true">Control Fixture</a>
             </div>
             <div id="fixtureSliders" class="containing-element">  
-                [$[fixture_slider_content]$]
             </div>
 	    </div><!-- /content -->
     </div><!-- /page -->
 
     <div data-role="page" id="sound">
-        [$[page_header:sound]$]
+        <div data-role="header" data-id="dmxstudio_header" >
+        	<h2 style="margin-right:0;margin-left:0;margin-top:5px;margin-bottom:5px;">DMX Studio Remote</h2>
+            <div data-role="navbar">
+        	    <ul>
+                    <li><a href="#venue">Venue</a></li>
+        		    <li><a href="#scene">Scene</a></li>
+        		    <li><a href="#chase">Chase</a></li>
+        		    <li><a href="#fixture">Fixture</a></li>
+        		    <li><a href="#sound" class="ui-state-persist ui-btn-active">Sound</a></li>
+        	    </ul>
+            </div>
+        </div>
 	    <div data-role="content" id="sound_content">	
             <div data-role="fieldcontain">
                 <label for="volume_slider">Volume:</label>

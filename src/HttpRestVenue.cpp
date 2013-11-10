@@ -20,12 +20,12 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-#include "DMXHttpFull.h"
+#include "HttpRestServices.h"
 #include "Venue.h"
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::query_venue_layout( CString& response, LPCSTR data ) {
+bool HttpRestServices::query_venue_layout( CString& response, LPCSTR data ) {
     Venue* venue = studio.getVenue();
     if ( !venue )
         return false;
@@ -40,7 +40,7 @@ bool DMXHttpFull::query_venue_layout( CString& response, LPCSTR data ) {
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::edit_venue_layout_save( CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
+bool HttpRestServices::edit_venue_layout_save( CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
     Venue* venue = studio.getVenue();
     if ( !venue )
         return false;
@@ -52,7 +52,7 @@ bool DMXHttpFull::edit_venue_layout_save( CString& response, LPCSTR data, DWORD 
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::query_venue_describe( CString& response, LPCSTR data ) {
+bool HttpRestServices::query_venue_describe( CString& response, LPCSTR data ) {
     Venue* venue = studio.getVenue();
     if ( !venue )
         return false;
@@ -92,7 +92,7 @@ bool DMXHttpFull::query_venue_describe( CString& response, LPCSTR data ) {
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::edit_venue_update( CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
+bool HttpRestServices::edit_venue_update( CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
 
     Venue* venue = studio.getVenue();
     if ( !venue )
@@ -141,7 +141,7 @@ bool DMXHttpFull::edit_venue_update( CString& response, LPCSTR data, DWORD size,
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::edit_venue_save( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::edit_venue_save( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
    if ( !studio.getVenue() )
         return false;
@@ -163,7 +163,7 @@ bool DMXHttpFull::edit_venue_save( CString& response, LPCSTR data, DWORD size, L
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::edit_venue_load( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::edit_venue_load( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     SimpleJsonParser parser;
     CString venue_filename;
@@ -182,7 +182,7 @@ bool DMXHttpFull::edit_venue_load( CString& response, LPCSTR data, DWORD size, L
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::edit_venue_new( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::edit_venue_new( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     SimpleJsonParser parser;
     CString reset_what;
@@ -215,7 +215,7 @@ bool DMXHttpFull::edit_venue_new( CString& response, LPCSTR data, DWORD size, LP
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::venue_upload( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::venue_upload( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     /*
         -----------------------------7dd1a41420546

@@ -73,7 +73,7 @@ mkdir "$(SolutionDir)$(Configuration)\docroot\mobile"
 mkdir "$(SolutionDir)$(Configuration)\docroot\full"
 xcopy /y /s "$(SolutionDir)DMXStudio\mobile\*" "$(SolutionDir)$(Configuration)\docroot\mobile"
 xcopy /y /s "$(SolutionDir)DMXStudio\full\*" "$(SolutionDir)$(Configuration)\docroot\full"
-xcopy /y /s "$(SolutionDir)DMXStudio\jquery.mobile-1.1.0\*" "$(SolutionDir)$(Configuration)\docroot\mobile"
+xcopy /y /s "$(SolutionDir)DMXStudio\jquery.mobile.1.3.2\*" "$(SolutionDir)$(Configuration)\docroot\mobile"
 xcopy /y /s "$(SolutionDir)DMXStudio\jquery-ui-1.9.2.custom\*" "$(SolutionDir)$(Configuration)\docroot\full"
 mkdir "$(SolutionDir)$(Configuration)\docroot\full\flot"
 xcopy /y /s "$(SolutionDir)DMXStudio\flot-flot-f0e78fc" "$(SolutionDir)$(Configuration)\docroot\full\flot"
@@ -108,7 +108,7 @@ mkdir "$(SolutionDir)$(Configuration)\docroot\mobile"
 mkdir "$(SolutionDir)$(Configuration)\docroot\full"
 xcopy /y /s "$(SolutionDir)DMXStudio\mobile\*" "$(SolutionDir)$(Configuration)\docroot\mobile"
 xcopy /y /s "$(SolutionDir)DMXStudio\full\*" "$(SolutionDir)$(Configuration)\docroot\full"
-xcopy /y /s "$(SolutionDir)DMXStudio\jquery.mobile-1.1.0\*" "$(SolutionDir)$(Configuration)\docroot\mobile"
+xcopy /y /s "$(SolutionDir)DMXStudio\jquery.mobile.1.3.2\*" "$(SolutionDir)$(Configuration)\docroot\mobile"
 xcopy /y /s "$(SolutionDir)DMXStudio\jquery-ui-1.9.2.custom\*" "$(SolutionDir)$(Configuration)\docroot\full"
 mkdir "$(SolutionDir)$(Configuration)\docroot\full\flot"
 xcopy /y /s "$(SolutionDir)DMXStudio\flot-flot-f0e78fc" "$(SolutionDir)$(Configuration)\docroot\full\flot"
@@ -139,6 +139,7 @@ xcopy /y /s "$(SolutionDir)DMXStudio\colorpicker" "$(SolutionDir)$(Configuration
     <None Include="mobile\mobile.htm">
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="mobile\mobile.js" />
     <None Include="_COPYING.txt" />
     <None Include="_FEATURES.txt" />
     <None Include="_TODO.txt" />
@@ -159,15 +160,8 @@ xcopy /y /s "$(SolutionDir)DMXStudio\colorpicker" "$(SolutionDir)$(Configuration
     <ClCompile Include="ChaseTask.cpp" />
     <ClCompile Include="DefinitionReader.cpp" />
     <ClCompile Include="DefinitionWriter.cpp" />
-    <ClCompile Include="DMXHttpFullChase.cpp" />
-    <ClCompile Include="DMXHttpFullFixture.cpp" />
-    <ClCompile Include="DMXHttpFullScene.cpp" />
-    <ClCompile Include="DMXHttpFullVenue.cpp" />
-    <ClCompile Include="DMXHttpMobile.cpp" />
     <ClCompile Include="DMXHttpRedirector.cpp" />
-    <ClCompile Include="DMXHttpRestServices.cpp" />
     <ClCompile Include="DMXHttpServer.cpp" />
-    <ClCompile Include=".\DMXHttpFull.cpp" />
     <ClCompile Include="DMXTextAnim.cpp" />
     <ClCompile Include="DMXTextForms.cpp" />
     <ClCompile Include="DMXTextMusic.cpp" />
@@ -177,6 +171,14 @@ xcopy /y /s "$(SolutionDir)DMXStudio\colorpicker" "$(SolutionDir)$(Configuration
     <ClCompile Include="FixtureDefinition.cpp" />
     <ClCompile Include="FixtureGroup.cpp" />
     <ClCompile Include="Form.cpp" />
+    <ClCompile Include="HttpFull.cpp" />
+    <ClCompile Include="HttpMobile.cpp" />
+    <ClCompile Include="HttpRestBeats.cpp" />
+    <ClCompile Include="HttpRestChase.cpp" />
+    <ClCompile Include="HttpRestFixture.cpp" />
+    <ClCompile Include="HttpRestScene.cpp" />
+    <ClCompile Include="HttpRestServices.cpp" />
+    <ClCompile Include="HttpRestVenue.cpp" />
     <ClCompile Include="IniFile.cpp" />
     <ClCompile Include="MovementAnimation.cpp" />
     <ClCompile Include="MusicPlayer.cpp" />
@@ -226,11 +228,8 @@ xcopy /y /s "$(SolutionDir)DMXStudio\colorpicker" "$(SolutionDir)$(Configuration
     <ClInclude Include="DefinitionReader.h" />
     <ClInclude Include="DefinitionWriter.h" />
     <ClInclude Include="DMXFixtureIDs.h" />
-    <ClInclude Include="DMXHttpMobile.h" />
     <ClInclude Include="DMXHttpRedirector.h" />
-    <ClInclude Include="DMXHttpRestServices.h" />
     <ClInclude Include="DMXHttpServer.h" />
-    <ClInclude Include=".\DMXHttpFull.h" />
     <ClInclude Include="DMXStudio.h" />
     <ClInclude Include="DMXTextUI.h" />
     <ClInclude Include="DObject.h" />
@@ -250,6 +249,9 @@ xcopy /y /s "$(SolutionDir)DMXStudio\colorpicker" "$(SolutionDir)$(Configuration
     <ClInclude Include="FreqBin.h" />
     <ClInclude Include="ftd2xx.h" />
     <ClInclude Include="AbstractAnimation.h" />
+    <ClInclude Include="HttpFull.h" />
+    <ClInclude Include="HttpMobile.h" />
+    <ClInclude Include="HttpRestServices.h" />
     <ClInclude Include="IDefinitionVisitor.h" />
     <ClInclude Include="IniFile.h" />
     <ClInclude Include="ISerializable.h" />

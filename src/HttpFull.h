@@ -23,25 +23,23 @@ MA 02111-1307, USA.
 #pragma once
 
 #include "DMXHttpServer.h"
-#include "DMXHttpRestServices.h"
-#include "MusicPlayer.h"
 
-#define DMX_URL_ROOT_MOBILE                 DMX_URL_ROOT "mobile/"
-#define DMX_URL_MOBILE_HOME                 DMX_URL_ROOT_MOBILE "mobile.htm"
+#define DMX_URL_ROOT_FULL                   DMX_URL_ROOT "full/"
+#define DMX_URL_FULL_HOME                   DMX_URL_ROOT_FULL "full.htm"
 
-class DMXHttpMobile : public DMXHttpRestServices
+class HttpFull : public IRequestHandler
 {
-    typedef bool (DMXHttpMobile::*RestHandlerFunc)( CString& response, LPCSTR data );
+    typedef bool (HttpFull::*RestHandlerFunc)( CString& response, LPCSTR data );
     typedef std::map<CString, RestHandlerFunc> RestHandlerMap;
 
     RestHandlerMap      m_rest_handlers;
 
 public:
-    DMXHttpMobile(void);
-    ~DMXHttpMobile(void);
+    HttpFull(void);
+    ~HttpFull(void);
 
     LPCSTR getPrefix() {
-        return DMX_URL_ROOT_MOBILE;
+        return DMX_URL_ROOT_FULL;
     }
 
     UINT getPort() {
@@ -50,15 +48,9 @@ public:
 
     DWORD processGetRequest( HttpWorkerThread* worker );
     DWORD processPostRequest( HttpWorkerThread* worker, BYTE* contents, DWORD size );
-    bool substitute( LPCSTR marker, LPCSTR data, CString& marker_content );
-
-private:
-    CString getFixtureDivContent();
-
-    // Mobile UI specific responses
-    bool control_fixture_capture( CString& response, LPCSTR data );
-
-    // Potentially reusable
-    bool control_animation_speed( CString& response, LPCSTR data );
+    bool substitute( LPCSTR marker, LPCSTR data, CString& marker_content ) { return false; }
 };
+
+
+
 

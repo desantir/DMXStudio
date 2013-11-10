@@ -21,8 +21,9 @@ MA 02111-1307, USA.
 */
 
 #include "DMXHttpServer.h"
-#include "DMXHttpMobile.h"
-#include "DMXHttpFull.h"
+#include "HttpMobile.h"
+#include "HttpFull.h"
+#include "HttpRestServices.h"
 #include "DMXHttpRedirector.h"
 
 static const HTTPAPI_VERSION HttpApiVersion = HTTPAPI_VERSION_1;
@@ -32,8 +33,9 @@ static const HTTPAPI_VERSION HttpApiVersion = HTTPAPI_VERSION_1;
 DMXHttpServer::DMXHttpServer(void) :
     Threadable( "DMXHttpServer" )
 {
-    registerHandler( new DMXHttpMobile() );             // Textbook example of need for DI
-    registerHandler( new DMXHttpFull() );
+    registerHandler( new HttpMobile() );             // Textbook example of need for DI
+    registerHandler( new HttpFull() );
+    registerHandler( new HttpRestServices() );
     registerHandler( new DMXHttpRedirector() );
 
     // Some MIME code we recognize
@@ -221,18 +223,6 @@ CString encodeHtmlString( LPCSTR string )
     result.Replace( "<", "&lt;" );
     result.Replace( ">", "&gt;" );
     result.Replace( "\"", "&quot;" );
-    return result;
-}
-
-// ----------------------------------------------------------------------------
-//
-CString encodeJsonString( LPCSTR string )
-{
-    CString result( string );
-    result.Replace( "\\", "\\\\" );
-    result.Replace( "\"", "\\\"" );
-    result.Replace( "\n", "\\n" );
-    result.Replace( "\r", "\\r" );
     return result;
 }
 

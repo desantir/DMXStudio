@@ -36,7 +36,7 @@ function showFrequencyVisualizer() {
         close: function () {
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/full/control/soundsampler/stop/",
+                url: "/dmxstudio/rest/control/soundsampler/stop/",
                 cache: false
             });
             $("#show_frequency_visualizer").removeClass("lg-icon-white").addClass("lg-icon-grey");
@@ -91,7 +91,7 @@ function showFrequencyVisualizer() {
 
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/full/control/soundsampler/start/",
+        url: "/dmxstudio/rest/control/soundsampler/start/",
         cache: false,
         success: function () {
             setTimeout(updateFrequencies, 200);
@@ -108,7 +108,7 @@ function updateFrequencies() {
 
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/full/query/soundsampler/",
+        url: "/dmxstudio/rest/query/soundsampler/",
         cache: false,
         success: function (data) {
             var json = jQuery.parseJSON(data);

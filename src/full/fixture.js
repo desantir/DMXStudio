@@ -196,7 +196,7 @@ function updateFixtures() {
 
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/full/query/fixtures/",
+        url: "/dmxstudio/rest/query/fixtures/",
         cache: false,
         success: function (data) {
             var json = jQuery.parseJSON(data);
@@ -264,7 +264,7 @@ function controlFixture2(event, fixture_id, preload_channel_values) {
 
     $.ajax({
         type: "POST",
-        url: "/dmxstudio/full/control/" + what + "/",
+        url: "/dmxstudio/rest/control/" + what + "/",
         data: JSON.stringify(json),
         contentType: 'application/json',
         cache: false,
@@ -337,7 +337,7 @@ function loadFixtureChannels( fixture_id, updated_channel_data ) {
     if (json.length > 0) {
         $.ajax({
             type: "POST",
-            url: "/dmxstudio/full/control/fixture/channels/",
+            url: "/dmxstudio/rest/control/fixture/channels/",
             data: JSON.stringify(json),
             contentType: 'application/json',
             cache: false,
@@ -358,7 +358,7 @@ function clearFixtures(event) {
 
     $.ajax({
         type: "POST",
-        url: "/dmxstudio/full/control/fixture/",
+        url: "/dmxstudio/rest/control/fixture/",
         data: JSON.stringify(json),
         contentType: 'application/json',
         cache: false,
@@ -384,7 +384,7 @@ function fixture_slider_callback(fixture_id, channel, value) {
 
     $.ajax({
         type: "POST",
-        url: "/dmxstudio/full/control/fixture/channels/",
+        url: "/dmxstudio/rest/control/fixture/channels/",
         data: JSON.stringify(json),
         contentType: 'application/json',
         cache: false,
@@ -408,7 +408,7 @@ function fixturegroup_slider_callback(fixture_group_id, channel, value) {
 
     $.ajax({
         type: "POST",
-        url: "/dmxstudio/full/control/fixture/channels/",
+        url: "/dmxstudio/rest/control/fixture/channels/",
         data: JSON.stringify(json),
         contentType: 'application/json',
         cache: false,
@@ -455,7 +455,7 @@ function fixture_slider_colors_callback(unused, channel_type, value) {
 
     $.ajax({
         type: "POST",
-        url: "/dmxstudio/full/control/fixture/channels/",
+        url: "/dmxstudio/rest/control/fixture/channels/",
         data: JSON.stringify(json),
         contentType: 'application/json',
         cache: false,
@@ -558,7 +558,7 @@ function openNewFixtureDialog(dialog_title, fixture_data) {
         // Get fixture definitions only once
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/full/query/fixture/definitions/",
+            url: "/dmxstudio/rest/query/fixture/definitions/",
             cache: false,
             success: function ( data ) {
                 fixture_definitions = JSON.parse(data);
@@ -642,7 +642,7 @@ function createNewFixtureDialog(dialog_title, data) {
 
         $.ajax({
             type: "POST",
-            url: "/dmxstudio/full/edit/fixture/" + action + "/",
+            url: "/dmxstudio/rest/edit/fixture/" + action + "/",
             data: JSON.stringify(json),
             contentType: 'application/json',
             cache: false,
@@ -885,7 +885,7 @@ function deleteFixture(event, fixture_id) {
     deleteVenueItem(getFixtureById(fixture_id), function (item) {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/full/delete/fixture/" + item.getId(),
+            url: "/dmxstudio/rest/delete/fixture/" + item.getId(),
             cache: false,
             success: updateFixtures,
             error: onAjaxError
@@ -1022,7 +1022,7 @@ function openNewFixtureGroupDialog(dialog_title, data) {
 
         $.ajax({
             type: "POST",
-            url: "/dmxstudio/full/edit/fixturegroup/" + action + "/",
+            url: "/dmxstudio/rest/edit/fixturegroup/" + action + "/",
             data: JSON.stringify(json),
             contentType: 'application/json',
             cache: false,
@@ -1095,7 +1095,7 @@ function deleteFixtureGroup(event, fixture_group_id) {
     deleteVenueItem(getFixtureById(fixture_group_id), function (item) {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/full/delete/fixturegroup/" + item.getId(),
+            url: "/dmxstudio/rest/delete/fixturegroup/" + item.getId(),
             cache: false,
             success: updateFixtures,
             error: onAjaxError
@@ -1130,7 +1130,7 @@ function copyFixtures(event) {
 
                 $.ajax({
                     type: "POST",
-                    url: "/dmxstudio/full/edit/scene/copy_fixtures/",
+                    url: "/dmxstudio/rest/edit/scene/copy_fixtures/",
                     data: JSON.stringify( json ),
                     contentType: 'application/json',
                     cache: false,

@@ -135,9 +135,6 @@
     <ClCompile Include="DMXHttpServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DMXHttpMobile.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SceneStrobeAnimator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -174,28 +171,34 @@
     <ClCompile Include="MusicWatcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include=".\DMXHttpFull.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DMXHttpRedirector.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DMXHttpRestServices.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SimpleJsonParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DMXHttpFullScene.cpp">
+    <ClCompile Include="HttpMobile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DMXHttpFullChase.cpp">
+    <ClCompile Include="HttpRestBeats.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DMXHttpFullFixture.cpp">
+    <ClCompile Include="HttpRestVenue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DMXHttpFullVenue.cpp">
+    <ClCompile Include="HttpRestFixture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HttpRestChase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HttpRestScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HttpRestServices.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HttpFull.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -359,9 +362,6 @@
     <ClInclude Include="DMXHttpServer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DMXHttpMobile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SceneStrobeAnimator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -404,19 +404,22 @@
     <ClInclude Include="MusicWatcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include=".\DMXHttpFull.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DMXHttpRedirector.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DMXHttpRestServices.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimpleJsonParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimpleJsonBuilder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HttpMobile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HttpRestServices.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HttpFull.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -476,6 +479,9 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="full\music_player.js">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="mobile\mobile.js">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

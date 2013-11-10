@@ -20,7 +20,7 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-#include "DMXHttpFull.h"
+#include "HttpRestServices.h"
 #include "Venue.h"
 #include "SimpleJsonBuilder.h"
 
@@ -73,7 +73,7 @@ static void append_channel_json( JsonBuilder& json, ChannelPtrArray& channels, B
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::query_fixture_definitions( CString& response, LPCSTR data )
+bool HttpRestServices::query_fixture_definitions( CString& response, LPCSTR data )
 {
     JsonBuilder json( response );
     json.startArray();
@@ -115,7 +115,7 @@ bool DMXHttpFull::query_fixture_definitions( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::query_fixtures( CString& response, LPCSTR data )
+bool HttpRestServices::query_fixtures( CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -212,7 +212,7 @@ bool DMXHttpFull::query_fixtures( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::delete_fixture( CString& response, LPCSTR data ) {
+bool HttpRestServices::delete_fixture( CString& response, LPCSTR data ) {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
@@ -231,7 +231,7 @@ bool DMXHttpFull::delete_fixture( CString& response, LPCSTR data ) {
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::delete_fixturegroup( CString& response, LPCSTR data ) {
+bool HttpRestServices::delete_fixturegroup( CString& response, LPCSTR data ) {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
@@ -250,7 +250,7 @@ bool DMXHttpFull::delete_fixturegroup( CString& response, LPCSTR data ) {
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::edit_fixturegroup( CString& response, LPCSTR data, EditMode mode ) {
+bool HttpRestServices::edit_fixturegroup( CString& response, LPCSTR data, EditMode mode ) {
    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
@@ -304,7 +304,7 @@ bool DMXHttpFull::edit_fixturegroup( CString& response, LPCSTR data, EditMode mo
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::edit_fixture( CString& response, LPCSTR data, EditMode mode )
+bool HttpRestServices::edit_fixture( CString& response, LPCSTR data, EditMode mode )
 {
     // {"id":9,"name":"Audio Center","description":"","number":9,"fuid":"984018742","dmx_address":7 }
 
@@ -361,7 +361,7 @@ bool DMXHttpFull::edit_fixture( CString& response, LPCSTR data, EditMode mode )
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::control_fixture( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::control_fixture( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     SimpleJsonParser parser;
     UID fixture_id;
@@ -414,7 +414,7 @@ bool DMXHttpFull::control_fixture( CString& response, LPCSTR data, DWORD size, L
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::control_fixture_group( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::control_fixture_group( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     SimpleJsonParser parser;
     UID group_id;
@@ -469,7 +469,7 @@ bool DMXHttpFull::control_fixture_group( CString& response, LPCSTR data, DWORD s
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::control_fixture_channels( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::control_fixture_channels( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;

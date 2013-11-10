@@ -98,7 +98,7 @@ function initializeUI() {
         if ( ! ignore_ui_events )
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/full/control/venue/blackout/" + $('input[name=blackout]:checked').val(),
+                url: "/dmxstudio/rest/control/venue/blackout/" + $('input[name=blackout]:checked').val(),
                 cache: false,
                 error: onAjaxError
             });
@@ -108,7 +108,7 @@ function initializeUI() {
         if (!ignore_ui_events)
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/full/control/venue/music_match/" + $('input[name=music_match_enable]:checked').val(),
+                url: "/dmxstudio/rest/control/venue/music_match/" + $('input[name=music_match_enable]:checked').val(),
                 cache: false,
                 error: onAjaxError
             });
@@ -118,7 +118,7 @@ function initializeUI() {
         if (!ignore_ui_events)
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/full/control/venue/whiteout/" + $('input[name=whiteout]:checked').val(),
+                url: "/dmxstudio/rest/control/venue/whiteout/" + $('input[name=whiteout]:checked').val(),
                 cache: false,
                 error: onAjaxError
             });
@@ -132,7 +132,7 @@ function initializeUI() {
             if ( ms >= 25 && ms <= 10000 )
                 $.ajax({
                     type: "GET",
-                    url: "/dmxstudio/full/control/venue/strobe/" + ms,
+                    url: "/dmxstudio/rest/control/venue/strobe/" + ms,
                     cache: false,
                     error: onAjaxError
                 });
@@ -147,7 +147,7 @@ function initializeUI() {
 
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/full/control/venue/volume/mute/" + ((mute) ? 1 : 0),
+                url: "/dmxstudio/rest/control/venue/volume/mute/" + ((mute) ? 1 : 0),
                 cache: false,
                 error: onAjaxError
             });
@@ -266,7 +266,7 @@ function updateUI() {
 
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/full/query/venue/status/",
+        url: "/dmxstudio/rest/query/venue/status/",
         cache: false,
         success: function (data) {
             var json = jQuery.parseJSON(data);
@@ -394,7 +394,7 @@ function sendMasterVolumeUpdate() {
     if (!ignore_ui_events)
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/full/control/venue/volume/master/" + $("#master_volume").slider("value"),
+            url: "/dmxstudio/rest/control/venue/volume/master/" + $("#master_volume").slider("value"),
             cache: false,
             error: onAjaxError
         });
@@ -406,7 +406,7 @@ function sendMasterDimmerUpdate() {
     if (!ignore_ui_events)
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/full/control/venue/masterdimmer/" + $("#master_dimmer").slider("value"),
+            url: "/dmxstudio/rest/control/venue/masterdimmer/" + $("#master_dimmer").slider("value"),
             cache: false,
             error: onAjaxError
         });
@@ -420,7 +420,7 @@ function master_dimmer_callback(unused, channel_type, value) {
 
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/full/control/venue/masterdimmer/" + value,
+            url: "/dmxstudio/rest/control/venue/masterdimmer/" + value,
             cache: false,
             error: onAjaxError
         });
@@ -506,7 +506,7 @@ function configureVenue(event) {
 
                 $.ajax({
                     type: "POST",
-                    url: "/dmxstudio/full/edit/venue/update/",
+                    url: "/dmxstudio/rest/edit/venue/update/",
                     data: JSON.stringify(json),
                     contentType: 'application/json',
                     cache: false,
@@ -548,7 +548,7 @@ function configureVenue(event) {
 
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/full/query/venue/describe/",
+        url: "/dmxstudio/rest/query/venue/describe/",
         cache: false,
         success: function (data) {
             var json = jQuery.parseJSON(data);
@@ -632,7 +632,7 @@ function loadSaveVenue( event ) {
 
                         $.ajax({
                             type: "POST",
-                            url: "/dmxstudio/full/edit/venue/new/",
+                            url: "/dmxstudio/rest/edit/venue/new/",
                             data: JSON.stringify(json),
                             contentType: 'application/json',
                             cache: false,
@@ -660,7 +660,7 @@ function loadSaveVenue( event ) {
 
                         $.ajax({
                             type: "POST",
-                            url: "/dmxstudio/full/edit/venue/save/",
+                            url: "/dmxstudio/rest/edit/venue/save/",
                             data: JSON.stringify(json),
                             contentType: 'application/json',
                             cache: false,
@@ -675,7 +675,8 @@ function loadSaveVenue( event ) {
                         });
                     }
                     else {
-                        document.getElementById("load_save_dialog_downloadFrame").src = "/dmxstudio/full/venue/download/";
+                        document.getElementById("load_save_dialog_downloadFrame").src = "/dmxstudio/rest/venue/download/";
+                        setTimeout(function () { ice_dialog.dialog("close"); }, 500);
                     }
                 }
             },
@@ -690,7 +691,7 @@ function loadSaveVenue( event ) {
 
                         $.ajax({
                             type: "POST",
-                            url: "/dmxstudio/full/edit/venue/load/",
+                            url: "/dmxstudio/rest/edit/venue/load/",
                             data: JSON.stringify(json),
                             contentType: 'application/json',
                             cache: false,
@@ -902,7 +903,7 @@ function _expand_collapse_section(collapsable_section, collapsed) {
 //
 function updateVenueLayout() {
 
-    $.getJSON( "/dmxstudio/full/query/venue/layout/", function (data) {
+    $.getJSON( "/dmxstudio/rest/query/venue/layout/", function (data) {
         client_config = data;
         for (var prop in client_config) {
             if (prop == "edit_mode")
@@ -975,7 +976,7 @@ function saveVenueLayout() {
 
     $.ajax({
         type: "POST",
-        url: "/dmxstudio/full/edit/venue/layout/save",
+        url: "/dmxstudio/rest/edit/venue/layout/save",
         data: JSON.stringify(client_config),
         contentType: 'application/json',
         cache: false,

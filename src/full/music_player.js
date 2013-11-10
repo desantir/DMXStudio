@@ -171,7 +171,7 @@ function initialize_player_ui() {
     // Populate playlists
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/full/query/music/playlists/",
+        url: "/dmxstudio/rest/query/music/playlists/",
         cache: false,
         success: function (data) {
             var json = jQuery.parseJSON(data);
@@ -205,7 +205,7 @@ function initialize_player_ui() {
 function selectPlaylist(playlist_id) {
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/full/query/music/playlist/tracks/" + playlist_id,
+        url: "/dmxstudio/rest/query/music/playlist/tracks/" + playlist_id,
         cache: false,
         success: function (data) {
             var json = jQuery.parseJSON(data);
@@ -306,7 +306,7 @@ function playlistPlay(event) {
     if (playlist_id != null && playlist_id > 0) {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/full/control/music/play/playlist/" + playlist_id + "/0",
+            url: "/dmxstudio/rest/control/music/play/playlist/" + playlist_id + "/0",
             cache: false,
             error: onAjaxError
         });
@@ -323,7 +323,7 @@ function playlistQueue(event) {
     if (playlist_id != null && playlist_id > 0) {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/full/control/music/play/playlist/" + playlist_id + "/1",
+            url: "/dmxstudio/rest/control/music/play/playlist/" + playlist_id + "/1",
             cache: false,
             error: onAjaxError
         });
@@ -341,7 +341,7 @@ function tracklistPlay(event) {
     if (track_id != null && track_id > 0) {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/full/control/music/play/track/" + playlist_id + "/" + track_id + "/0",
+            url: "/dmxstudio/rest/control/music/play/track/" + playlist_id + "/" + track_id + "/0",
             cache: false,
             error: onAjaxError
         });
@@ -361,7 +361,7 @@ function tracklistQueue(event) {
     if (track_id != null && track_id > 0) {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/full/control/music/play/track/" + playlist_id + "/" + track_id + "/1",
+            url: "/dmxstudio/rest/control/music/play/track/" + playlist_id + "/" + track_id + "/1",
             cache: false,
             error: onAjaxError
         });
@@ -398,7 +398,7 @@ function track_back_info(event) {
 
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/full/query/music/played/",
+        url: "/dmxstudio/rest/query/music/played/",
         cache: false,
         success: function (data) {
             var json = jQuery.parseJSON(data);
@@ -415,7 +415,7 @@ function track_forward_info(event) {
 
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/full/query/music/queued/",
+        url: "/dmxstudio/rest/query/music/queued/",
         cache: false,
         success: function (data) {
             var json = jQuery.parseJSON(data);

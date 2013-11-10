@@ -3,14 +3,12 @@ TODO ------------------------------------------------------------------------ TO
 Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 
    M Web Full UI - music controller
-		M 1 Log into music player
-		M 3 Music mapping (Music Scene Select, Map music to scene or chase, Remove music mapping, Show music mappings)
-
-   L Web UI
+   		H 3 Music mapping (Music Scene Select, Map music to scene or chase, Remove music mapping, Show music mappings)
 		H 1 Scrolling text plugin for playing track name
 		H 5 Positional "map" of fixtures to allow easy selection
 		M 5 Workspace channel management (re-arrange channels, hidden channels, save channel sets)
-		m 5 Animation macros (must be easier to create animations from the UI)
+		M 5 Animation macros (must be easier to create animations from the UI)
+		M 1 Log into music player
 		L 5 Alternative to dialogs
 		L 5 Alternative to edit/delete mode icon clutter
 		L 1 Improved error responses (e.g. "<item> not found")
@@ -20,8 +18,6 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L 2 Cleanup CSS styles - put in css file
 		L 1 Handle disconnected server state (disable UI)
 		L 1 Animation Speed
-		L 2 All rest edit services are POST
-		L 3 Finish refactoring of mobile (re-using all REST services)
 		L 2 Authentication & session control
 		L 2 Chase beat (follows music) and tap (follows user)
 		L 3 Track pan/tilt with mouse
@@ -44,6 +40,7 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L Support format conversion in audio output
 		H Improved sound animation affects (currently they are not very exact and are hard to setup)
 		L Song blending / beat matching
+		M Handle music format changes and other formats
 
 	M Fixtures / Fixture Definitions
 		L Simple angle->value options (angle*xx) == DMX code
@@ -52,7 +49,6 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L Dimmer curve (LEDs can fall off fast at the end)
 		L Editable fixture defaults
 		L Minimum dimmer setting
-		M Handle music format changes and other formats
 
 	M Code Maintainence
 		M Bullet proof error detection and automatic restart

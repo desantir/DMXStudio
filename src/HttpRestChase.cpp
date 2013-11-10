@@ -20,12 +20,12 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-#include "DMXHttpFull.h"
+#include "HttpRestServices.h"
 #include "Venue.h"
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::query_chases( CString& response, LPCSTR data )
+bool HttpRestServices::query_chases( CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -35,9 +35,8 @@ bool DMXHttpFull::query_chases( CString& response, LPCSTR data )
     std::sort( chases.begin(), chases.end(), CompareObjectNumber );
     
     JsonBuilder json( response );
-    json.startObject();
-        
-    json.startArray( "chases" );
+
+    json.startArray();
     for ( ChasePtrArray::iterator it=chases.begin(); it != chases.end(); it++ ) {
         Chase* chase = (*it);
 
@@ -65,15 +64,14 @@ bool DMXHttpFull::query_chases( CString& response, LPCSTR data )
 
         json.endObject();
     }
-    json.endArray( "chases" );
+    json.endArray();
 
-    json.endObject();
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::delete_chase( CString& response, LPCSTR data ) {
+bool HttpRestServices::delete_chase( CString& response, LPCSTR data ) {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
@@ -87,7 +85,7 @@ bool DMXHttpFull::delete_chase( CString& response, LPCSTR data ) {
 
 // ----------------------------------------------------------------------------
 //
-bool DMXHttpFull::edit_chase( CString& response, LPCSTR data, EditMode mode ) {
+bool HttpRestServices::edit_chase( CString& response, LPCSTR data, EditMode mode ) {
    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
