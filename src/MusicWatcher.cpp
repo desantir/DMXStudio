@@ -42,7 +42,7 @@ MusicWatcher::~MusicWatcher(void)
 // ----------------------------------------------------------------------------
 //
 UINT MusicWatcher::run(void) {
-    DMXStudio::log_status( "Music watcher running" );
+    DMXStudio::log_status( "Music match running" );
 
     DWORD current_track_id = 0;
     bool current_track_paused = false;
@@ -86,15 +86,17 @@ UINT MusicWatcher::run(void) {
 
             if ( type == MST_RANDOM_SCENE ) {
                 Scene* scene = m_venue->getSceneByNumber( (rand() % m_venue->getNumScenes())+1 );
-                if ( scene )
+                if ( scene ) {
                     type_uid = scene->getUID();
-                type = MST_SCENE;
+                    type = MST_SCENE;
+                }
             }
-            else if ( type == MST_RANDOM_SCENE ) {
+            else if ( type == MST_RANDOM_CHASE ) {
                 Chase* chase = m_venue->getChaseByNumber( (rand() % m_venue->getNumChases())+1 );
-                if ( chase )
+                if ( chase ) {
                     type_uid = chase->getUID();
-                type = MST_CHASE;
+                    type = MST_CHASE;
+                }
             }
 
             // Stop any running chases and load the new object
@@ -102,14 +104,14 @@ UINT MusicWatcher::run(void) {
 
             if ( type == MST_SCENE ) {
                 Scene* scene = m_venue->getScene( type_uid );
-                STUDIO_ASSERT( scene, "Music watcher scene %lu does not exist for track '%s'", type_uid, track_name );
-                DMXStudio::log_status( "Music watcher selected scene '%s' for track '%s'", scene->getName(), track_name );
+                STUDIO_ASSERT( scene, "Music match scene %lu does not exist for track '%s'", type_uid, track_name );
+                DMXStudio::log_status( "Music match selected scene '%s' for track '%s'", scene->getName(), track_name );
                 m_venue->selectScene( type_uid );
             }
             else if ( type == MST_CHASE ) {
                 Chase* chase = m_venue->getChase( type_uid );
-                STUDIO_ASSERT( chase, "Music watcher scene %lu does not exist for track '%s'", type_uid, track_name );
-                DMXStudio::log_status( "Music watcher selected chase '%s' for track '%s'", chase->getName(), track_name );
+                STUDIO_ASSERT( chase, "Music match chase %lu does not exist for track '%s'", type_uid, track_name );
+                DMXStudio::log_status( "Music match selected chase '%s' for track '%s'", chase->getName(), track_name );
                 m_venue->startChase( type_uid );
             }
         }
@@ -119,7 +121,7 @@ UINT MusicWatcher::run(void) {
         }
     }
 
-    DMXStudio::log_status( "Music watcher stopped" );
+    DMXStudio::log_status( "Music match stopped" );
 
     return 0;
 }

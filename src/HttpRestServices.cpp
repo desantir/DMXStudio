@@ -73,6 +73,7 @@ HttpRestServices::HttpRestServices(void) :
     m_rest_get_handlers[ DMX_URL_QUERY_MUSIC_PLAYED ] = &HttpRestServices::query_music_played;
     m_rest_get_handlers[ DMX_URL_CONTROL_MUSIC_PLAY_TRACK ] = &HttpRestServices::control_music_play_track;
     m_rest_get_handlers[ DMX_URL_CONTROL_MUSIC_PLAY_PLAYLIST ] = &HttpRestServices::control_music_play_playlist;
+    m_rest_get_handlers[  DMX_URL_QUERY_MUSIC_MATCHER ] = &HttpRestServices::query_music_matcher;
 
     // POST request handlers
     m_rest_post_handlers[ DMX_URL_CONTROL_FIXTURE_CHANNELS ] = &HttpRestServices::control_fixture_channels;
@@ -90,6 +91,7 @@ HttpRestServices::HttpRestServices(void) :
     m_rest_post_handlers[ DMX_URL_EDIT_FIXTURE_CREATE ] = &HttpRestServices::edit_fixture_create;
     m_rest_post_handlers[ DMX_URL_EDIT_FIXTURE_UPDATE ] = &HttpRestServices::edit_fixture_update;
     m_rest_post_handlers[ DMX_URL_EDIT_VENUE_LAYOUT_SAVE ] = &HttpRestServices::edit_venue_layout_save;
+    m_rest_post_handlers[ DMX_URL_EDIT_MUSIC_MATCHER ] = &HttpRestServices::edit_music_matcher;
 
     m_rest_post_handlers[ DMX_URL_EDIT_VENUE_SAVE ] = &HttpRestServices::edit_venue_save;
     m_rest_post_handlers[ DMX_URL_EDIT_VENUE_LOAD ] = &HttpRestServices::edit_venue_load;
@@ -212,260 +214,6 @@ DWORD HttpRestServices::processPostRequest( HttpWorkerThread* worker, BYTE* cont
 //
 bool CompareObjectNumber( DObject* o1,  DObject* o2 ) {
     return o1->getNumber() < o2->getNumber();
-}
-
-// ----------------------------------------------------------------------------
-//
-bool HttpRestServices::query_venue_status( CString& response, LPCSTR data )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    JsonBuilder json( response );
-    json.startObject();
-    json.add( "blackout", studio.getVenue()->getUniverse()->isBlackout() );
-    json.add( "auto_blackout", studio.getVenue()->isLightBlackout() );
-    json.add( "dimmer", studio.getVenue()->getMasterDimmer() );
-    json.add( "whiteout", studio.getVenue()->getWhiteout() );
-    json.add( "whiteout_strobe", studio.getVenue()->getWhiteoutStrobeMS() );
-    json.add( "animation_speed", studio.getVenue()->getAnimationSampleRate() );
-    json.add( "current_scene", studio.getVenue()->getCurrentSceneUID() );
-    json.add( "current_chase", studio.getVenue()->getRunningChase() );
-    json.add( "master_volume", studio.getVenue()->getMasterVolume() );
-    json.add( "mute", studio.getVenue()->isMasterVolumeMute() );
-    json.add( "has_music_player", studio.hasMusicPlayer() );
-    json.add( "music_match", studio.getVenue()->isMusicSceneSelectEnabled() );
-    json.add( "venue_filename", studio.getVenueFileName() );
-    json.addArray<UIDArray>( "captured_fixtures", studio.getVenue()->getDefaultScene()->getActorUIDs() );
-
-    // If we have a music player, return player status
-    if ( studio.hasMusicPlayer() ) {
-        json.startObject( "music_player" );
-
-        if ( studio.getMusicPlayer()->isLoggedIn() ) {
-            DWORD length, remaining;
-            UINT queued, played;
-            DWORD track = studio.getMusicPlayer()->getPlayingTrack( &length, &remaining, &queued, &played );
-            
-            json.add( "logged_in", true );
-            json.add( "mapping", studio.getVenue()->isMusicSceneSelectEnabled() );
-            json.add( "queued", queued );
-            json.add( "played", played );
-
-            if ( track ) {
-                json.startObject( "playing" );
-                json.add( "track", track );
-                json.add( "name", studio.getMusicPlayer()->getTrackFullName( track ) );
-                json.add( "length", length );
-                json.add( "remaining", remaining );
-                json.add( "paused", studio.getMusicPlayer()->isTrackPaused() );
-                json.endObject( "playing" );
-            }
-        }
-        else {
-            json.add( "logged_in", false );
-        }
-
-        CString last_error = studio.getMusicPlayer()->getLastPlayerError( );
-        if ( !last_error.IsEmpty() )
-            json.add( "player_error", last_error );
-
-        json.endObject( "music_player" );
-    }
-    
-    json.endObject();
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool HttpRestServices::control_venue_blackout( CString& response, LPCSTR data )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    unsigned blackout;
-        
-    if ( sscanf_s( data, "%u", &blackout ) != 1 )
-        return false;
-
-    studio.getVenue()->getUniverse()->setBlackout( blackout ? true : false );
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool HttpRestServices::control_venue_music_match( CString& response, LPCSTR data )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    unsigned music_match;
-        
-    if ( sscanf_s( data, "%u", &music_match ) != 1 )
-        return false;
-
-    studio.getVenue()->setMusicSceneSelectEnabled( music_match ? true : false );
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool HttpRestServices::control_venue_whiteout( CString& response, LPCSTR data )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    int whiteout;
-
-    if ( sscanf_s( data, "%d", &whiteout ) != 1 )
-        return false;
-    if ( whiteout < 0 || whiteout > 4)
-        return false;
-
-    studio.getVenue()->setWhiteout( (WhiteoutMode)whiteout );
-    studio.getVenue()->loadScene();
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool HttpRestServices::control_venue_masterdimmer( CString& response, LPCSTR data )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    int dimmer;
-
-    if ( sscanf_s( data, "%d", &dimmer ) != 1 )
-        return false;
-    if ( dimmer < 0 || dimmer > 100 )
-        return false;
-
-    studio.getVenue()->setMasterDimmer( dimmer );
-    studio.getVenue()->loadScene();
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool HttpRestServices::control_scene_show( CString& response, LPCSTR data )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    UID scene_id;
-
-    if ( sscanf_s( data, "%lu", &scene_id ) != 1 )
-        return false;
-
-    if ( scene_id == 0 )
-        scene_id = studio.getVenue()->getDefaultScene() ->getUID();
-
-    Scene* scene = studio.getVenue()->getScene( scene_id );
-    if ( !scene )
-        return false;
-
-    studio.getVenue()->stopChase();
-
-    studio.getVenue()->selectScene( scene_id );
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool HttpRestServices::control_chase_show( CString& response, LPCSTR data )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    UID chase_id;
-        
-    if ( sscanf_s( data, "%lu", &chase_id ) != 1 )
-        return false;
-
-    if ( chase_id > 0 ) {
-        Chase* chase = studio.getVenue()->getChase( chase_id );
-        if ( !chase )
-            return false;
-
-        studio.getVenue()->startChase( chase_id );
-    }
-    else
-        studio.getVenue()->stopChase();
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool HttpRestServices::control_venue_strobe( CString& response, LPCSTR data )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    UINT whiteout_strobe_ms;
-
-    if ( sscanf_s( data, "%u", &whiteout_strobe_ms ) != 1 )
-        return false;
-    if ( whiteout_strobe_ms < 25 || whiteout_strobe_ms > 10000)
-        return false;
-
-    studio.getVenue()->setWhiteoutStrobeMS( whiteout_strobe_ms );
-    studio.getVenue()->loadScene();
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool HttpRestServices::control_fixture_release( CString& response, LPCSTR data )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    UID fixture_id;
-        
-    if ( sscanf_s( data, "%lu", &fixture_id ) != 1 )
-        return false;
-
-    if ( fixture_id != 0 )
-        studio.getVenue()->releaseActor( fixture_id );
-    else
-        studio.getVenue()->clearAllCapturedActors();
-
-    studio.getVenue()->loadScene();
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool HttpRestServices::control_fixture_channel( CString& response, LPCSTR data )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    UID fixture_id;
-    channel_t channel;
-    unsigned channel_value;
-
-    if ( sscanf_s( data, "%lu/%u/%u", &fixture_id, &channel, &channel_value ) != 3 )
-        return false;
-
-    Fixture* pf = studio.getVenue()->getFixture( fixture_id );
-    if ( !pf )
-        return false;
-
-    studio.getVenue()->captureAndSetChannelValue( pf, channel, channel_value );
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
@@ -735,45 +483,98 @@ bool HttpRestServices::control_music_track_play( CString& response, LPCSTR data 
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_animation_speed( CString& response, LPCSTR data )
+bool HttpRestServices::query_music_matcher( CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+   if ( !studio.getVenue() )
         return false;
 
-    DWORD sample_rate_ms;
-        
-    if ( sscanf_s( data, "%lu", &sample_rate_ms ) != 1 )
-        return false;
+    MusicSceneSelectMap& mm = studio.getVenue()->music_scene_select_map();
+    JsonBuilder json( response );
 
-    studio.getVenue()->setAnimationSampleRate( sample_rate_ms );
+    json.startArray( );
+
+    json.startObject();
+    if ( mm.find( SILENCE_TRACK_NAME ) != mm.end() ) {
+        MusicSceneSelector& silence = mm[SILENCE_TRACK_NAME];
+        json.add( "track", silence.m_track_full_name );
+        json.add( "id", silence.m_selection_uid );
+        json.add( "type", silence.m_selection_type );
+        json.add( "special", true );
+    }
+    else {
+        json.add( "track", SILENCE_TRACK_NAME );
+        json.add( "id", studio.getVenue()->getDefaultScene()->getUID() );
+        json.add( "type", MST_SCENE );
+        json.add( "special", true );
+    }
+    json.endObject();
+
+    json.startObject();
+    if ( mm.find( UNMAPPED_TRACK_NAME ) != mm.end() ) {
+        MusicSceneSelector& unmapped = mm[UNMAPPED_TRACK_NAME];
+        json.add( "track", unmapped.m_track_full_name );
+        json.add( "id", unmapped.m_selection_uid );
+        json.add( "type", unmapped.m_selection_type );
+        json.add( "special", true );
+    }
+    else {
+        json.add( "track", UNMAPPED_TRACK_NAME );
+        json.add( "id", 0 );
+        json.add( "type", MST_RANDOM_SCENE );
+        json.add( "special", true );
+    }
+    json.endObject();
+
+    for ( MusicSceneSelectMap::iterator it=mm.begin(); it != mm.end(); ++it ) {
+        MusicSceneSelector& mss = it->second;
+
+        if ( mss.m_track_full_name == SILENCE_TRACK_NAME || 
+             mss.m_track_full_name == UNMAPPED_TRACK_NAME )
+            continue;
+
+        json.startObject();
+        json.add( "track", mss.m_track_full_name );
+        json.add( "id", mss.m_selection_uid );
+        json.add( "type", mss.m_selection_type );
+        json.endObject();
+    }
+    json.endArray( );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_fixture_capture( CString& response, LPCSTR data )
+bool HttpRestServices::edit_music_matcher( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+   if ( !studio.getVenue() )
         return false;
 
-    UID fixture_id;
-        
-    if ( sscanf_s( data, "%lu", &fixture_id ) != 1 )
-        return false;
+    SimpleJsonParser parser;
 
-    if ( fixture_id > 0 ) {
-        SceneActor* actor = studio.getVenue()->captureActor( fixture_id );
+    std::vector<MusicSceneSelector> selections;
 
-        // Return current channel values
-        JsonBuilder json( response );
-        json.startArray();
-        for ( channel_t ch=0; ch < actor->getNumChannels(); ch++ )
-            json.add( actor->getChannelValue( ch ) );
-        json.endArray();
+    try {
+        parser.parse( data );
+
+        PARSER_LIST selection_parsers = parser.get<PARSER_LIST>( "" );
+
+        for ( PARSER_LIST::iterator it=selection_parsers.begin(); it != selection_parsers.end(); ++it ) {
+            UID selection_id = (*it).get<UID>( "id" );
+            CString selection_name = (*it).get<CString>( "track" );
+            MusicSelectorType selection_type = (MusicSelectorType)(*it).get<int>( "type" );
+
+            selections.push_back( MusicSceneSelector( selection_name, selection_type, selection_id ) );
+        }
     }
+    catch ( std::exception& e ) {
+        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
+    }
+
+    // Reload the selection map
+    studio.getVenue()->clearMusicMappings();
+    studio.getVenue()->addMusicMappings( selections );
 
     return true;
 }
-
 

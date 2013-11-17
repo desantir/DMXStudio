@@ -185,9 +185,9 @@ void DMXTextUI::run()
             DWORD track = studio.getMusicPlayer()->getPlayingTrack( &length, &remaining );
             
             if ( getVenue()->isMusicSceneSelectEnabled() )
-                music_status.AppendFormat( " | Scene Select ON" );
+                music_status.AppendFormat( " | Music Match ON" );
             else
-                music_status.AppendFormat( " | Scene Select OFF" );
+                music_status.AppendFormat( " | Music Match OFF" );
 
             if ( track ) {
                 music_status.AppendFormat( " | %s", studio.getMusicPlayer()->getTrackFullName( track ) );

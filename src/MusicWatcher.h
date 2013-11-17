@@ -27,8 +27,8 @@ MA 02111-1307, USA.
 #include "MusicPlayer.h"
 #include "IVisitor.h"
 
-#define SILENCE_TRACK_NAME      "Music Watcher Silence by DMXStudio"
-#define UNMAPPED_TRACK_NAME     "Music Watcher Unrecognized Track Name by DMXStudio"
+#define SILENCE_TRACK_NAME      "Silence"
+#define UNMAPPED_TRACK_NAME     "Unmapped Tracks"
 
 class Venue;
 

@@ -172,7 +172,8 @@ function updateScenes() {
                     markActiveScene(scene.id);
             });
 
-            setEditMode(edit_mode);     // Refresh editing icons on new tiles
+            setEditMode(edit_mode);         // Refresh editing icons on new tiles
+            setDeleteMode(delete_mode);     // Refresh editing icons on new tiles
         },
         error: onAjaxError
     });

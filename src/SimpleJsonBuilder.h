@@ -103,13 +103,20 @@ public:
     }
 
     void endArray( LPCSTR name ) {
-        JsonObject jobj = m_stack.back();
-        if ( !jobj.isArray() ) 
-            printf( "EXPECTING ARRAY\n" );
-        if ( name != NULL && !jobj.isName( name ) ) 
-            printf( "EXPECTING ARRAY NAME %s\n", name );
-        m_buffer.Append( "]" );
-        m_stack.pop_back();
+        if ( m_stack.size() == 0 )
+            throw std::exception( "END ARRAY ON EMPTY STACK" );
+        else {
+            JsonObject jobj = m_stack.back();
+            if ( !jobj.isArray() ) 
+                throw std::exception( "EXPECTING ARRAY" );
+            if ( name != NULL && !jobj.isName( name ) ) {
+                CString error;
+                error.Format( "EXPECTING ARRAY NAME %s", name );
+                throw std::exception( error );
+            }
+            m_buffer.Append( "]" );
+            m_stack.pop_back();
+        }
     }
 
     inline void endArray(  ) {
@@ -117,13 +124,20 @@ public:
     }
 
     void endObject( LPCSTR name ) {
-        JsonObject jobj = m_stack.back();
-        if ( jobj.isArray() ) 
-            printf( "EXPECTING OBJECT\n" );
-        if ( name != NULL && !jobj.isName( name ) ) 
-            printf( "EXPECTING OBJECT NAME %s\n", name );
-        m_buffer.Append( "}" );
-        m_stack.pop_back();
+        if ( m_stack.size() == 0 ) 
+            throw std::exception( "END OBJECT ON EMPTY STACK" );
+        else {
+            JsonObject jobj = m_stack.back();
+            if ( jobj.isArray() ) 
+                throw std::exception( "EXPECTING OBJECT" );
+            if ( name != NULL && !jobj.isName( name ) ) {
+                CString error;
+                error.Format( "EXPECTING OBJECT NAME %s", name );
+                throw std::exception( error );
+            }
+            m_buffer.Append( "}" );
+            m_stack.pop_back();
+       }
     }
 
     inline void endObject() {

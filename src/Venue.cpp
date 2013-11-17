@@ -1027,3 +1027,21 @@ void Venue::deleteMusicMappings( MusicSelectorType type, UID uid  )
             it++;
     }
 }
+
+// ----------------------------------------------------------------------------
+//
+void Venue::clearMusicMappings() 
+{
+    CSingleLock lock( &m_venue_mutex, TRUE );
+
+    m_music_scene_select_map.clear();
+}
+
+// ----------------------------------------------------------------------------
+//    
+void Venue::addMusicMappings( std::vector<MusicSceneSelector>& selectors ) {
+    CSingleLock lock( &m_venue_mutex, TRUE );
+
+    for ( std::vector<MusicSceneSelector>::iterator it=selectors.begin(); it != selectors.end(); ++it )
+        m_music_scene_select_map[ (*it).m_track_full_name ] = (*it);
+}

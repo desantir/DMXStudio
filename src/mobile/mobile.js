@@ -472,13 +472,6 @@ function show_venue() {
 
             var json = jQuery.parseJSON(data);
 
-            var o = $("#animations_speed_id option[value='" + json.animation_speed + "']");
-            var index = 0;
-
-            if (o != null && o.index() != -1) {
-                index = o.index();
-            }
-
             if (json.blackout)
                 $("#blackout_1").prop("checked", true).checkboxradio("refresh");
             else
@@ -491,6 +484,13 @@ function show_venue() {
 
             $('#slider_dimmer_id').val(json.dimmer);
             $('#slider_dimmer_id').slider("refresh");
+
+            var o = $("#animations_speed_id option[value='" + json.animation_speed + "']");
+            var index = 0;
+
+            if (o != null && o.index() != -1) {
+                index = o.index();
+            }
 
             $('#animations_speed_id option:eq(0)').text("Default: " + json.animation_speed + " ms");
             $('#animations_speed_id option:eq(0)').val(json.animation_speed);

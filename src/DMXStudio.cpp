@@ -73,6 +73,8 @@ void DMXStudio::runStudio()
 {
     CoInitializeEx( NULL, COINIT_MULTITHREADED );
 
+    srand( (unsigned)time( NULL ) );
+
     try {
         openStudioLogFile();
 

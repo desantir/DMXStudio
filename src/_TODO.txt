@@ -3,7 +3,6 @@ TODO ------------------------------------------------------------------------ TO
 Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 
    M Web Full UI - music controller
-   		H 3 Music mapping (Music Scene Select, Map music to scene or chase, Remove music mapping, Show music mappings)
 		H 1 Scrolling text plugin for playing track name
 		H 5 Positional "map" of fixtures to allow easy selection
 		M 5 Workspace channel management (re-arrange channels, hidden channels, save channel sets)
@@ -12,12 +11,10 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L 5 Alternative to dialogs
 		L 5 Alternative to edit/delete mode icon clutter
 		L 1 Improved error responses (e.g. "<item> not found")
-		L 1 UI Preferences (update frequency etc, collapsed sections, expanded sections)
 		L 1 Fixture icon images rather than text (preference)
 		L 1 Animated running GIFs for chases
 		L 2 Cleanup CSS styles - put in css file
 		L 1 Handle disconnected server state (disable UI)
-		L 1 Animation Speed
 		L 2 Authentication & session control
 		L 2 Chase beat (follows music) and tap (follows user)
 		L 3 Track pan/tilt with mouse
@@ -31,7 +28,6 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L Animation speed changes based on beat detection
 		L Multiple animations per fixture (deal with channel contention)
 		L Pixel Map support (single/multiple fixtures)
-		L Sine wave movement
 		L Loadable, scripted, self contained animations with specific properties (versus the current rat's nest)
 
 	L Sound processing

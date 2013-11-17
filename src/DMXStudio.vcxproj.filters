@@ -478,10 +478,10 @@
     <None Include="full\freqviz.js">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="full\music_player.js">
+    <None Include="mobile\mobile.js">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="mobile\mobile.js">
+    <None Include="full\music-player.js">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

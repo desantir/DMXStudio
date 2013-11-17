@@ -507,3 +507,74 @@ bool HttpRestServices::control_fixture_channels( CString& response, LPCSTR data,
 
     return true;
 }
+
+// ----------------------------------------------------------------------------
+//
+bool HttpRestServices::control_fixture_capture( CString& response, LPCSTR data )
+{
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
+    UID fixture_id;
+        
+    if ( sscanf_s( data, "%lu", &fixture_id ) != 1 )
+        return false;
+
+    if ( fixture_id > 0 ) {
+        SceneActor* actor = studio.getVenue()->captureActor( fixture_id );
+
+        // Return current channel values
+        JsonBuilder json( response );
+        json.startArray();
+        for ( channel_t ch=0; ch < actor->getNumChannels(); ch++ )
+            json.add( actor->getChannelValue( ch ) );
+        json.endArray();
+    }
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool HttpRestServices::control_fixture_release( CString& response, LPCSTR data )
+{
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
+    UID fixture_id;
+        
+    if ( sscanf_s( data, "%lu", &fixture_id ) != 1 )
+        return false;
+
+    if ( fixture_id != 0 )
+        studio.getVenue()->releaseActor( fixture_id );
+    else
+        studio.getVenue()->clearAllCapturedActors();
+
+    studio.getVenue()->loadScene();
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool HttpRestServices::control_fixture_channel( CString& response, LPCSTR data )
+{
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
+    UID fixture_id;
+    channel_t channel;
+    unsigned channel_value;
+
+    if ( sscanf_s( data, "%lu/%u/%u", &fixture_id, &channel, &channel_value ) != 3 )
+        return false;
+
+    Fixture* pf = studio.getVenue()->getFixture( fixture_id );
+    if ( !pf )
+        return false;
+
+    studio.getVenue()->captureAndSetChannelValue( pf, channel, channel_value );
+
+    return true;
+}

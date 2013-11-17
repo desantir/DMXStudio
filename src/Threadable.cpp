@@ -95,6 +95,9 @@ bool Threadable::stopThread() {
 //
 UINT __cdecl _run( LPVOID object )
 {
+    // Must be set in each thread ...
+    srand( (unsigned)time( NULL ) );
+
     try {
         Threadable* t = reinterpret_cast<Threadable *>(object);
         t->setThreadName();

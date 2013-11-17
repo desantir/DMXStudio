@@ -218,7 +218,8 @@ function updateFixtures() {
 
             highlightSceneFixtures(active_scene_id, true);
 
-            setEditMode(edit_mode);     // Refresh editing icons on new tiles
+            setEditMode(edit_mode);         // Refresh editing icons on new tiles
+            setDeleteMode(delete_mode);     // Refresh editing icons on new tiles
         },
         error: onAjaxError
     });

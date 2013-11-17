@@ -130,7 +130,9 @@ public:
     void mapMusicToScene( LPCSTR track_name, MusicSelectorType& type, UID& type_uid );
     void addMusicMapping( MusicSceneSelector& music_scene_selector );
     void deleteMusicMapping( LPCSTR track_full_name );
-    void deleteMusicMappings( MusicSelectorType type, UID uid  );
+    void deleteMusicMappings( MusicSelectorType type, UID uid );
+    void clearMusicMappings();
+    void addMusicMappings( std::vector<MusicSceneSelector>& music_scene_selectors );
 
     inline UINT getAudioSampleSize() const {
         return m_audio_sample_size;

@@ -23,7 +23,6 @@ MA 02111-1307, USA.
 var FIXTURE_SLIDERS = 40;                          
 
 var system_status = false;                          // UI is live and pinging the server
-var ignore_ui_events = false;                       // Controls event notifications during async updates
 var edit_mode = false;                              // True when UI is in edit mode
 var delete_mode = false;                            // True when UI is in delete mode
 var active_scene_id = 0;                            // UID of currently active scene
@@ -78,7 +77,6 @@ function initializeUI() {
 
     // setup master volume
     initializeHorizontalSlider("master_volume", 0, 100, 0);
-    initializeHorizontalSlider("master_dimmer", 0, 100, 0);
 
     $("#blackout_buttons").buttonset();
     $("#whiteout_buttons").buttonset();
@@ -94,64 +92,69 @@ function initializeUI() {
 
     $("#whiteout_custom_value").multiselect({ minWidth: 120, multiple: false, selectedList: 1, header: false, noneSelectedText:'Select ms' });
 
+    $("#animations_speed").multiselect({ minWidth: 200, multiple: false, selectedList: 1, header: false, noneSelectedText: 'Select ms' });
+
     $("#blackout_buttons").change(function () {
-        if ( ! ignore_ui_events )
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/rest/control/venue/blackout/" + $('input[name=blackout]:checked').val(),
-                cache: false,
-                error: onAjaxError
-            });
+        $.ajax({
+            type: "GET",
+            url: "/dmxstudio/rest/control/venue/blackout/" + $('input[name=blackout]:checked').val(),
+            cache: false,
+            error: onAjaxError
+        });
     });
 
     $("#music_match_buttons").change(function () {
-        if (!ignore_ui_events)
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/rest/control/venue/music_match/" + $('input[name=music_match_enable]:checked').val(),
-                cache: false,
-                error: onAjaxError
-            });
+        $.ajax({
+            type: "GET",
+            url: "/dmxstudio/rest/control/venue/music_match/" + $('input[name=music_match_enable]:checked').val(),
+            cache: false,
+            error: onAjaxError
+        });
     });
 
     $("#whiteout_buttons").change(function () {
-        if (!ignore_ui_events)
+        var value = $('input[name=whiteout]:checked').val();
+        $.ajax({
+            type: "GET",
+            url: "/dmxstudio/rest/control/venue/whiteout/" + value,
+            cache: false,
+            error: onAjaxError
+        });
+    });
+
+    $("#master_dimmer").on("slide slidestop", sendMasterDimmerUpdate);
+
+    $("#whiteout_custom_value").on("change", function () {
+        var ms = $(this).val();
+        if ( ms >= 25 && ms <= 10000 ) {
             $.ajax({
                 type: "GET",
-                url: "/dmxstudio/rest/control/venue/whiteout/" + $('input[name=whiteout]:checked').val(),
+                url: "/dmxstudio/rest/control/venue/strobe/" + ms,
                 cache: false,
                 error: onAjaxError
             });
-    });
-
-    // $("#master_dimmer").on("slide slidestop", sendMasterDimmerUpdate);
-
-    $("#whiteout_custom_value").on("change", function () {
-        if (!ignore_ui_events) {
-            var ms = $("#whiteout_custom_value").val();
-            if ( ms >= 25 && ms <= 10000 )
-                $.ajax({
-                    type: "GET",
-                    url: "/dmxstudio/rest/control/venue/strobe/" + ms,
-                    cache: false,
-                    error: onAjaxError
-                });
         }
     });
 
     $("#master_volume").on("slide slidestop", sendMasterVolumeUpdate);
 
-    $("#volume_mute").click(function () {
-        if (!ignore_ui_events) {
-            var mute = $("#volume_mute").hasClass("ui-icon-volume-on"); // Toggle mute
+    $("#animations_speed").on("change", function () {
+        $.ajax({
+            type: "GET",
+            url: "/dmxstudio/rest/control/venue/animation_speed/" + $(this).val(),
+            cache: false,
+            error: onAjaxError
+        });
+    });
 
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/rest/control/venue/volume/mute/" + ((mute) ? 1 : 0),
-                cache: false,
-                error: onAjaxError
-            });
-        }
+    $("#volume_mute").click(function () {
+        var mute = $(this).hasClass("ui-icon-volume-on"); // Toggle mute
+        $.ajax({
+            type: "GET",
+            url: "/dmxstudio/rest/control/venue/volume/mute/" + ((mute) ? 1 : 0),
+            cache: false,
+            error: onAjaxError
+        });
     });
 
     $("#toggle_edit_mode").click(function () {
@@ -246,6 +249,8 @@ var cache_master_volume_value = null;
 var cache_master_dimmer_handle = null;
 var cache_master_volume_handle = null;
 var cache_volume_mute = null;
+var cache_animation_speed = null;
+var animation_default = null;
 
 function updateUI() {
     if (!cache_master_volume) {
@@ -271,25 +276,13 @@ function updateUI() {
         success: function (data) {
             var json = jQuery.parseJSON(data);
 
-            ignore_ui_events = true;
-
             markActiveScene(json.current_scene);
             markActiveChase(json.current_chase);
-
-            //$("#debugoutput").html("sample: " + cache_master_dimmer_handle.is( ':focus'  ) );
-            //$("#debugoutput").html("sample: " + $('#master_dimmer .ui-slider-handle:focus').length);
 
             if (master_dimmer_channel.slider != null && master_dimmer_channel.value != json.dimmer && !master_dimmer_channel.slider.slider.is(':focus') ) {
                 master_dimmer_channel.value = json.dimmer;
                 master_dimmer_channel.slider.setValue(json.dimmer);
             }
-
-            /*
-            if (!cache_master_dimmer_handle.is(':focus') && cache_master_dimmer.slider("value") != json.dimmer) {
-                cache_master_dimmer_value.html(json.dimmer);
-                cache_master_dimmer.slider("value", json.dimmer);
-            }
-            */
 
             if (!cache_master_volume_handle.is(':focus') && cache_master_volume.slider("value") != json.master_volume) {
                 cache_master_volume_value.html(json.master_volume);
@@ -305,7 +298,7 @@ function updateUI() {
                     $("#system_blackout_icon").hide();
             }
 
-            if (!cache_whiteout_custom_value.is(":focus") && cache_whiteout_custom_value.val() != json.whiteout_strobe) {
+            if (!cache_whiteout_custom_value.multiselect( "isOpen" ) && cache_whiteout_custom_value.val() != json.whiteout_strobe) {
                 $("#whiteout_custom_value").empty();
                 var found = false;
                 for (var i = 0; i < whiteout_ms.length; i++) {
@@ -327,44 +320,56 @@ function updateUI() {
                 $("#whiteout_custom_value").multiselect("refresh");
             }
 
-            if (!$("#blackout_" + json.blackout).prop("checked"))
-                $("#blackout_" + json.blackout).prop("checked", true).button("refresh");
+            var blackout_id = json.blackout ? "#blackout_1" : "#blackout_0";
+            if (!$("#blackout_buttons").is(":focus") && !$(blackout_id).prop("checked"))
+                $(blackout_id).prop("checked", true).button("refresh");
 
-            if (!$("#whiteout_" + json.whiteout).prop("checked"))
+            if ( !$("#whiteout_buttons").is(":focus") && !$("#whiteout_" + json.whiteout).prop("checked"))
                 $("#whiteout_" + json.whiteout).prop("checked", true).button("refresh");
+
+            if (!$("#music_match_buttons").is(":focus")) {
+                var mm_id = json.music_match ? "#music_match_1" : "#music_match_0";
+                if (!$(mm_id).prop("checked"))
+                    $(mm_id).prop("checked", true).button("refresh");
+            }
 
             if (json.mute != cache_volume_mute.hasClass("ui-icon-volume-off")) {
                 if (!json.mute) {
                     cache_volume_mute.attr('class', "ui-icon ui-icon-volume-on");
-                    cache_volume_mute.attr('title', 'unmute');
+                    cache_volume_mute.attr('title', 'mute');
                 }
                 else {
                     cache_volume_mute.attr('class', "ui-icon-red ui-icon-volume-off");
-                    cache_volume_mute.attr('title', 'mute');
+                    cache_volume_mute.attr('title', 'unmute');
                 }
+            }
+ 
+            var animation_speed = $('#animations_speed');
+
+            // Establish the default speed 
+            if (animation_default == null) {
+                animation_default = animation_speed.find('option[value=0]');
+                if (animation_default != null) {
+                    animation_default.html("Default: " + json.animation_speed + " ms");
+                    animation_default.val(json.animation_speed);
+                    animation_speed.multiselect('refresh');
+                }
+            }
+
+            if (!animation_speed.multiselect("isOpen") && animation_speed.val() != json.animation_speed) {
+                var o = animation_speed.find("option[value='" + json.animation_speed + "']");
+                var index = 0;
+
+                if (o != null && o.index() != -1)
+                    index = o.index();
+
+                animation_speed.find('option').eq(index).attr("selected", true);
+                animation_speed.multiselect('refresh');
             }
 
             venue_filename = json.venue_filename;
 
-            /* TODO Animation speed
-            var o = $("#animations_speed_id option[value='" + json['animation_speed'] + "']");
-            var index = 0;
-    
-            if (o != null && o.index() != -1) {
-                index = o.index();
-            }
-    
-            $('#animations_speed_id option:eq(0)').html("Default: " + json['animation_speed'] + " ms");
-            $('#animations_speed_id option:eq(0)').val(json['animation_speed']);
-    
-            // Select option and refresh the dropdown
-            $('#animations_speed_id option').eq(index).attr("selected", true);
-            $('#animations_speed_id').selectmenu('refresh', true);
-            */
-
-            update_player_status( json['music_player'] );
-
-            ignore_ui_events = false;
+            update_player_status( json.music_player );
 
             if (!system_status) {
                 var status_icon = $("#system_status_icon");
@@ -391,40 +396,36 @@ function updateUI() {
 // ----------------------------------------------------------------------------
 //
 function sendMasterVolumeUpdate() {
-    if (!ignore_ui_events)
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/rest/control/venue/volume/master/" + $("#master_volume").slider("value"),
-            cache: false,
-            error: onAjaxError
-        });
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/control/venue/volume/master/" + $("#master_volume").slider("value"),
+        cache: false,
+        error: onAjaxError
+    });
 }
 
 // ----------------------------------------------------------------------------
 //
 function sendMasterDimmerUpdate() {
-    if (!ignore_ui_events)
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/rest/control/venue/masterdimmer/" + $("#master_dimmer").slider("value"),
-            cache: false,
-            error: onAjaxError
-        });
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/control/venue/masterdimmer/" + $("#master_dimmer").slider("value"),
+        cache: false,
+        error: onAjaxError
+    });
 }
 
 // ----------------------------------------------------------------------------
 //
 function master_dimmer_callback(unused, channel_type, value) {
-    if (!ignore_ui_events) {
-        master_dimmer_channel.value = value;
+    master_dimmer_channel.value = value;
 
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/rest/control/venue/masterdimmer/" + value,
-            cache: false,
-            error: onAjaxError
-        });
-    }
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/control/venue/masterdimmer/" + value,
+        cache: false,
+        error: onAjaxError
+    });
 }
 
 // ----------------------------------------------------------------------------
@@ -812,11 +813,11 @@ function initializeHorizontalSlider(name, min_value, max_value, init_value) {
         max: max_value,
         value: init_value,
         animate: true,
-        change: function () {
-            $(name + "_value").html($(name).slider("value"));
+        change: function (event, ui) {
+            $(name + "_value").html( ui.value );
         },
-        slide: function () {
-            $(name + "_value").html($(name).slider("value"));
+        slide: function (event, ui ) {
+            $(name + "_value").html( ui.value );
         }
     });
 }
