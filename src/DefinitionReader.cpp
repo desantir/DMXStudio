@@ -22,6 +22,7 @@ MA 02111-1307, USA.
 
 
 #include "DefinitionReader.h"
+#include "DefinitionWriter.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -90,14 +91,28 @@ void DefinitionReader::readFixtureDefinitions( LPCSTR directory )
         if ( !doc.LoadFile( file_name ) )
             throw StudioException( "Error reading fixture definition '%s'", file_name );
 
-        std::vector<FixtureDefinition *> fixture_definitions = 
-            read_xml_list<FixtureDefinition>( doc.FirstChildElement( "fixture_definitions" ), "fixture" );
+        try {
+            TiXmlElement* root = doc.FirstChildElement( "fixture_definitions" );
+            LPCSTR author = read_text_element( root, "author" );
+            LPCSTR version = read_text_element( root, "version" );
 
-        for ( std::vector<FixtureDefinition *>::iterator it=fixture_definitions.begin(); it != fixture_definitions.end(); ++it ) {
-            FixtureDefinition*definition = (*it);
-            definition->setSourceFile( file_name );
-            FixtureDefinition::addFixtureDefinition( definition );
-            delete definition;
+            FixtureDefinitionPtrArray fixture_definitions = read_xml_list<FixtureDefinition>( root, "fixture" );
+
+            //DefinitionWriter writer;
+            //writer.writeFixtureDefinition( file_name, author, version, fixture_definitions );
+
+            for ( std::vector<FixtureDefinition *>::iterator it=fixture_definitions.begin(); it != fixture_definitions.end(); ++it ) {
+                FixtureDefinition* definition = (*it);
+                definition->setSourceFile( file_name );
+                definition->m_author = author;
+                definition->m_version = version;
+
+                FixtureDefinition::addFixtureDefinition( definition );
+                delete definition;
+            }
+        }
+        catch ( StudioException e ) {
+            throw StudioException( "%s: %s", file_name, e.what() );
         }
     }
     
@@ -110,25 +125,31 @@ FixtureDefinition* DefinitionReader::read( TiXmlElement* self, FixtureDefinition
 {
     fixture = new FixtureDefinition();
 
-    fixture->m_fuid = (FUID)read_dword_attribute( self, "fuid" );
-    fixture->m_type = fixture->convertTextToFixtureType( read_text_attribute( self, "type" ) );
-    fixture->m_manufacturer = read_text_element( self, "manufacturer" );
-    fixture->m_model = read_text_element( self, "model" );
+    try {
+        fixture->m_fuid = (FUID)read_dword_attribute( self, "fuid" );
+        fixture->m_type = fixture->convertTextToFixtureType( read_text_attribute( self, "type" ) );
+        fixture->m_manufacturer = read_text_element( self, "manufacturer" );
+        fixture->m_model = read_text_element( self, "model" );
 
-    // Add channel list(s)
-    std::vector<Channel *> channels = 
-        read_xml_list<Channel>( self->FirstChildElement( "channels" ), "channel" );
+        // Add channel list(s)
+        std::vector<Channel *> channels = 
+            read_xml_list<Channel>( self->FirstChildElement( "channels" ), "channel" );
 
-    for ( std::vector<Channel *>::iterator it=channels.begin(); it != channels.end(); ++it ) {
-        fixture->m_channels.push_back( *(*it) );
-        delete (*it);
+        for ( std::vector<Channel *>::iterator it=channels.begin(); it != channels.end(); ++it ) {
+            fixture->m_channels.push_back( *(*it) );
+            delete (*it);
+        }
+
+        if ( fixture->m_fuid == 0 ) {                           // Generate FUID with a (hopefully) unique hash
+            fixture->m_fuid = fixture->generateFUID( );
+        }
+
+        fixture->chooseCapabilities();
     }
-
-    if ( fixture->m_fuid == 0 ) {                           // Generate FUID with a (hopefully) unique hash
-        fixture->m_fuid = fixture->generateFUID( );
+    catch ( ... ) {
+        delete fixture;
+        throw;
     }
-
-    fixture->chooseCapabilities();
 
     return fixture;
 }
@@ -148,6 +169,11 @@ Channel* DefinitionReader::read( TiXmlElement* self, Channel* channel )
         channel->m_can_whiteout = read_bool_attribute( self, "whiteout", true );
         channel->m_default_value = (BYTE)read_int_attribute( self, "value" );
         channel->m_home_value = (BYTE)read_int_attribute( self, "home_value" );
+        channel->m_pixel_index = (BYTE)read_int_attribute( self, "pixel" );
+
+        STUDIO_ASSERT( channel->m_channel_offset > 0, "Channel '%s' index < 1", channel->m_name );
+
+        channel->m_channel_offset--;        // Adjust offset for internal zero based
 
         TiXmlElement *dimmer = self->FirstChildElement( "dimmer" );
         if ( dimmer ) {
@@ -166,9 +192,9 @@ Channel* DefinitionReader::read( TiXmlElement* self, Channel* channel )
             read_xml_list<ChannelValueRange>( self->FirstChildElement( "ranges" ), "range" );
 
         for ( std::vector<ChannelValueRange *>::iterator it=ranges.begin(); it != ranges.end(); ++it ) {
-            STUDIO_ASSERT( (*it)->getEnd() >= (*it)->getStart(), "Channel %s range %s invalid", channel->m_name, (*it)->getName() );
-            STUDIO_ASSERT( channel->getRange( (*it)->getEnd() ) == NULL, "Channel %s range %s overlaps", channel->m_name, (*it)->getName() );
-            STUDIO_ASSERT( channel->getRange( (*it)->getStart() ) == NULL, "Channel %s range %s overlaps", channel->m_name, (*it)->getName() );
+            STUDIO_ASSERT( (*it)->getEnd() >= (*it)->getStart(), "Channel '%s' range %s invalid", channel->m_name, (*it)->getName() );
+            STUDIO_ASSERT( channel->getRange( (*it)->getEnd() ) == NULL, "Channel '%s' range %s overlaps", channel->m_name, (*it)->getName() );
+            STUDIO_ASSERT( channel->getRange( (*it)->getStart() ) == NULL, "Channel '%s' range %s overlaps", channel->m_name, (*it)->getName() );
             channel->m_ranges.push_back( *(*it) );
             delete (*it);
         }

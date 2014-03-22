@@ -84,11 +84,14 @@ UINT MusicWatcher::run(void) {
 
             m_venue->mapMusicToScene( track_name, type, type_uid );
 
+            bool random = false;
+
             if ( type == MST_RANDOM_SCENE ) {
                 Scene* scene = m_venue->getSceneByNumber( (rand() % m_venue->getNumScenes())+1 );
                 if ( scene ) {
                     type_uid = scene->getUID();
                     type = MST_SCENE;
+                    random = true;
                 }
             }
             else if ( type == MST_RANDOM_CHASE ) {
@@ -96,6 +99,7 @@ UINT MusicWatcher::run(void) {
                 if ( chase ) {
                     type_uid = chase->getUID();
                     type = MST_CHASE;
+                    random = true;
                 }
             }
 
@@ -105,13 +109,17 @@ UINT MusicWatcher::run(void) {
             if ( type == MST_SCENE ) {
                 Scene* scene = m_venue->getScene( type_uid );
                 STUDIO_ASSERT( scene, "Music match scene %lu does not exist for track '%s'", type_uid, track_name );
-                DMXStudio::log_status( "Music match selected scene '%s' for track '%s'", scene->getName(), track_name );
+
+                DMXStudio::log_status( "Music match %sselected scene '%s' for track '%s'", 
+                    (random) ? "randomly " : "", scene->getName(), track_name );
                 m_venue->selectScene( type_uid );
             }
             else if ( type == MST_CHASE ) {
                 Chase* chase = m_venue->getChase( type_uid );
                 STUDIO_ASSERT( chase, "Music match chase %lu does not exist for track '%s'", type_uid, track_name );
-                DMXStudio::log_status( "Music match selected chase '%s' for track '%s'", chase->getName(), track_name );
+
+                DMXStudio::log_status( "Music match %sselected chase '%s' for track '%s'", 
+                    (random) ? "randomly " : "", chase->getName(), track_name );
                 m_venue->startChase( type_uid );
             }
         }

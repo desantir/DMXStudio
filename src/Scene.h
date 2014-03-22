@@ -26,6 +26,7 @@ MA 02111-1307, USA.
 #include "IVisitor.h"
 #include "SceneActor.h"
 #include "AbstractAnimation.h"
+#include "Act.h"
 
 typedef ULONG SceneNumber;								// Scene numbers will be user friendly numbers 1-n
 
@@ -41,6 +42,8 @@ class Scene : public DObject
     AnimationPtrArray	m_animations;
 
     void copy_animations( Scene& rhs );
+
+    Acts                 m_acts;                         // List of acts this object belongs to
 
 public:
     Scene() {}
@@ -64,26 +67,26 @@ public:
         return getActor( uid ) != NULL;
     }
 
-    size_t getNumActors( void ) const {
+    inline size_t getNumActors( void ) const {
         return m_actors.size();
     }
 
-    void removeAllActors() {
+    inline void removeAllActors() {
         m_actors.clear();
     }
 
-    SceneNumber getSceneNumber( void ) const {
+    inline SceneNumber getSceneNumber( void ) const {
         return getNumber();
     }
-    void setSceneNumber( SceneNumber scene_number ) {
+    inline void setSceneNumber( SceneNumber scene_number ) {
         setNumber( scene_number );
     }
 
-    bool hasAnimations() const {
+    inline bool hasAnimations() const {
         return m_animations.size() > 0;
     }
 
-    size_t getNumAnimations() const {
+    inline size_t getNumAnimations() const {
         return m_animations.size();
     }
 
@@ -102,6 +105,13 @@ public:
 
     AnimationPtrArray& animations() {
         return m_animations;
+    }
+
+    inline Acts getActs() const {
+        return m_acts;
+    }
+    inline void setActs( Acts& acts ) {
+        m_acts = acts;
     }
 };
 

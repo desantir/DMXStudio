@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -117,6 +117,8 @@ public:
     inline bool canMove() { return canPan() || canTilt(); }
     inline bool canWhiteout() { return getFixtureDefinition()->canWhiteout(); }
     inline size_t getNumChannels() { return getFixtureDefinition()->getNumChannels(); }
+    inline size_t getNumPixels() { return getFixtureDefinition()->getNumPixels(); }
+    inline PixelArray* getPixels() { return getFixtureDefinition()->getPixels(); }
 
     inline channel_t getChannelByType( ChannelType channel_type ) {
         for ( channel_t channel=0; channel < getNumChannels(); channel++ ) {

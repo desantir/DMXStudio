@@ -20,7 +20,6 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
 #include "SceneChannelAnimator.h"
@@ -39,10 +38,11 @@ class ScenePatternDimmer : public SceneChannelAnimator
     friend class VenueWriter;
     friend class VenueReader;
 
-    DimmerPattern			m_dimmer_pattern;
+    DimmerPattern m_dimmer_pattern;
 
 public:
     static const char* className;
+    static const char* animationName;
 
     ScenePatternDimmer( UID animation_uid, 
                         AnimationSignal signal,
@@ -55,7 +55,7 @@ public:
     AbstractAnimation* clone();
     CString getSynopsis(void);
 
-    const char* getName() { return "Scene Pattern Sequencer"; }
+    const char* getName() { return ScenePatternDimmer::animationName; }
     const char* getClassName() { return ScenePatternDimmer::className; }
 
     void accept( IVisitor* visitor) {

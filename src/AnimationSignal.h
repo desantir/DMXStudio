@@ -131,11 +131,11 @@ public:
     }
 
     bool isApplyToSpeed( ) const {
-        return m_apply_to == APPLY_SPEED;
+        return m_apply_to == APPLY_SPEED || m_apply_to == APPLY_SPEED_AND_CHANNEL;
     }
 
     bool isApplyToChannel( ) const {
-        return m_apply_to == APPLY_CHANNEL;
+        return m_apply_to == APPLY_CHANNEL || m_apply_to == APPLY_SPEED_AND_CHANNEL;
     }
 
     bool isApplyInverseSpeed( ) const {

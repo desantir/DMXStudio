@@ -1,478 +1,470 @@
-<?xml version="1.0"?>
-
+<?xml version="1.0" ?>
 <fixture_definitions>
-  <author>Robert DeSantis</author>
-  <version>1</version>
-
-  <fixture type="scanner" channels="1">
-    <manufacturer>ADJ</manufacturer>
-    <model>Quad Scan LED</model>
-    <channels>
-      <channel index="0" type="Auto Program" color="false" blackout="true">
-        <name>Show</name>
-        <ranges>
-          <range start="0" end="7">
-            <name>Blackout</name>
-          </range>
-          <range start="8" end="22">
-            <name>Show 1</name>
-          </range>
-          <range start="23" end="37">
-            <name>Show 2</name>
-          </range>
-          <range start="38" end="52">
-            <name>Show 3</name>
-          </range>
-          <range start="53" end="67">
-            <name>Show 4</name>
-          </range>
-          <range start="68" end="82">
-            <name>Show 5</name>
-          </range>
-          <range start="83" end="87">
-            <name>Show 6</name>
-          </range>
-          <range start="88" end="112">
-            <name>Show 7</name>
-          </range>
-          <range start="113" end="127">
-            <name>Show 8</name>
-          </range>
-          <range start="128" end="142">
-            <name>Show 9</name>
-          </range>
-          <range start="143" end="157">
-            <name>Show 10</name>
-          </range>
-          <range start="158" end="172">
-            <name>Show 11</name>
-          </range>
-          <range start="173" end="187">
-            <name>Show 12</name>
-          </range>
-          <range start="188" end="202">
-            <name>Show 13</name>
-          </range>
-          <range start="203" end="217">
-            <name>Show 14</name>
-          </range>
-          <range start="218" end="232">
-            <name>Show 15</name>
-          </range>
-          <range start="233" end="247">
-            <name>Show 16</name>
-          </range>
-          <range start="248" end="255">
-            <name>Sound Activated Shows 1-16</name>
-          </range>          
-        </ranges>
-      </channel>
-    </channels>
-  </fixture>
-
-
-  <fixture type="scanner" channels="5">
-    <manufacturer>ADJ</manufacturer>
-    <model>Quad Scan LED</model>
-    <channels>
-      <channel index="0" type="Movement Macro" color="false" blackout="true">
-        <name>Pan/Tilt Movements</name>
-        <ranges>
-          <range start="0" end="7">
-            <name>No Movement</name>
-          </range>
-          <range start="8" end="22">
-            <name>Movement 1</name>
-          </range>
-          <range start="23" end="37">
-            <name>Movement 2</name>
-          </range>
-          <range start="38" end="52">
-            <name>Movement 3</name>
-          </range>
-          <range start="53" end="67">
-            <name>Movement 4</name>
-          </range>
-          <range start="68" end="82">
-            <name>Movement 5</name>
-          </range>
-          <range start="83" end="87">
-            <name>Movement 6</name>
-          </range>
-          <range start="88" end="112">
-            <name>Movement 7</name>
-          </range>
-          <range start="113" end="127">
-            <name>Movement 8</name>
-          </range>
-          <range start="128" end="142">
-            <name>Movement 9</name>
-          </range>
-          <range start="143" end="157">
-            <name>Movement 10</name>
-          </range>
-          <range start="158" end="172">
-            <name>Movement 11</name>
-          </range>
-          <range start="173" end="187">
-            <name>Movement 12</name>
-          </range>
-          <range start="188" end="202">
-            <name>Movement 13</name>
-          </range>
-          <range start="203" end="217">
-            <name>Movement 14</name>
-          </range>
-          <range start="218" end="232">
-            <name>Movement 15</name>
-          </range>
-          <range start="233" end="247">
-            <name>Movement 16</name>
-          </range>
-          <range start="248" end="255">
-            <name>Sound Activated Movement</name>
-          </range>
-        </ranges>
-      </channel>
-      <channel index="1" type="Movement Macro" color="false" blackout="true">
-        <name>Pan/Tilt Movement Speed</name>
-        <ranges>
-          <range start="0" end="255">
-            <name>Slow to Fast</name>
-          </range>
-        </ranges>
-      </channel>
-      <channel index="2" type="dimmer" color="false" blackout="true" value="255">
-        <name>Dimmer</name>
-      </channel>
-      <channel index="3" type="strobe" color="false" blackout="true">
-        <name>Strobe</name>
-        <ranges>
-          <range start="0" end="8">
-            <name>Open</name>
-          </range>
-          <range start="9" end="131">
-            <name>Slow to Fast</name>
-          </range>
-          <range start="132" end="139">
-            <name>Open</name>
-          </range>
-          <range start="140" end="181">
-            <name>Fast Close - Slow Open</name>
-          </range>
-          <range start="182" end="189">
-            <name>Open</name>
-          </range>
-          <range start="190" end="231">
-            <name>Slow Close - Fast Open</name>
-          </range>
-          <range start="232" end="239">
-            <name>Open</name>
-          </range>
-          <range start="240" end="247">
-            <name>Sound Activated</name>
-          </range>
-        </ranges>
-      </channel>
-      <channel index="0" type="Color Macro" color="false" blackout="false">
-        <name>Color Chase</name>
-        <ranges>
-          <range start="0" end="7">
-            <name>Color Chase 1</name>
-          </range>
-          <range start="8" end="15">
-            <name>Color Chase 2</name>
-          </range>
-          <range start="16" end="23">
-            <name>Color Chase 3</name>
-          </range>
-          <range start="24" end="31">
-            <name>Color Chase 4</name>
-          </range>
-          <range start="32" end="39">
-            <name>Color Chase 5</name>
-          </range>
-          <range start="40" end="47">
-            <name>Color Chase 6</name>
-          </range>
-          <range start="48" end="55">
-            <name>Color Chase 7</name>
-          </range>
-          <range start="56" end="63">
-            <name>Color Chase 8</name>
-          </range>
-          <range start="64" end="71">
-            <name>Color Chase 9</name>
-          </range>
-          <range start="72" end="79">
-            <name>Color Chase 10</name>
-          </range>
-          <range start="80" end="87">
-            <name>Color Chase 11</name>
-          </range>
-          <range start="88" end="95">
-            <name>Color Chase 12</name>
-          </range>
-          <range start="96" end="103">
-            <name>Color Chase 13</name>
-          </range>
-          <range start="104" end="111">
-            <name>Color Chase 14</name>
-          </range>
-          <range start="112" end="119">
-            <name>Color Chase 15</name>
-          </range>
-          <range start="120" end="127">
-            <name>Color Chase 16</name>
-          </range>
-          <range start="128" end="135">
-            <name>Color Chase 17</name>
-          </range>
-          <range start="136" end="143">
-            <name>Color Chase 18</name>
-          </range>
-          <range start="144" end="151">
-            <name>Color Chase 19</name>
-          </range>
-          <range start="152" end="159">
-            <name>Color Chase 20</name>
-          </range>
-          <range start="160" end="167">
-            <name>Color Chase 21</name>
-          </range>
-          <range start="168" end="175">
-            <name>Color Chase 22</name>
-          </range>
-          <range start="176" end="183">
-            <name>Color Chase 23</name>
-          </range>
-          <range start="184" end="191">
-            <name>Color Chase 24</name>
-          </range>
-          <range start="192" end="199">
-            <name>Color Chase 25</name>
-          </range>
-          <range start="200" end="207">
-            <name>Color Chase 26</name>
-          </range>
-          <range start="208" end="215">
-            <name>Color Chase 27</name>
-          </range>
-          <range start="216" end="223">
-            <name>Color Chase 28</name>
-          </range>
-          <range start="224" end="231">
-            <name>Color Chase 29</name>
-          </range>
-          <range start="232" end="239">
-            <name>Color Chase 30</name>
-          </range>
-          <range start="240" end="247">
-            <name>Color Chase 31</name>
-          </range>
-          <range start="248" end="255">
-            <name>Color Chase 32</name>
-          </range>        
-        </ranges>
-      </channel>
-    </channels>
-  </fixture>
-
-  <fixture type="scanner" channels="28">
-    <manufacturer>ADJ</manufacturer>
-    <model>Quad Scan LED</model>
-    <channels>
-      <channel index="0" type="Pan" color="false" blackout="true">
-        <name>Mirror 1 Pan</name>
-      </channel>
-      <channel index="1" type="Tilt" color="false" blackout="true">
-        <name>Mirror 1 Tilt</name>
-      </channel>
-      <channel index="2" type="red" color="true" blackout="true">
-        <name>Mirror 1 Red</name>
-      </channel>
-      <channel index="3" type="green" color="true" blackout="true">
-        <name>Mirror 1 Green</name>
-      </channel>
-      <channel index="4" type="blue" color="true" blackout="true">
-        <name>Mirror 1 Blue</name>
-      </channel>
-      <channel index="5" type="dimmer" color="false" blackout="true" value="255">
-        <name>Mirror 1 Dimmer</name>
-      </channel>
-      <channel index="6" type="strobe" color="false" blackout="true">
-        <name>Mirror 1 Strobe</name>
-        <ranges>
-          <range start="0" end="8">
-            <name>Open</name>
-          </range>
-          <range start="9" end="131">
-            <name>Slow to Fast</name>
-          </range>
-          <range start="132" end="139">
-            <name>Open</name>
-          </range>
-          <range start="140" end="181">
-            <name>Fast Close - Slow Open</name>
-          </range>
-          <range start="182" end="189">
-            <name>Open</name>
-          </range>
-          <range start="190" end="231">
-            <name>Slow Close - Fast Open</name>
-          </range>
-          <range start="232" end="239">
-            <name>Open</name>
-          </range>
-          <range start="240" end="247">
-            <name>Sound Activated</name>
-          </range>
-        </ranges>
-      </channel>
-
-      <channel index="7" type="Pan" color="false" blackout="true">
-        <name>Mirror 2 Pan</name>
-      </channel>
-      <channel index="8" type="Tilt" color="false" blackout="true">
-        <name>Mirror 2 Tilt</name>
-      </channel>
-      <channel index="9" type="red" color="true" blackout="true">
-        <name>Mirror 2 Red</name>
-      </channel>
-      <channel index="10" type="green" color="true" blackout="true">
-        <name>Mirror 2 Green</name>
-      </channel>
-      <channel index="11" type="blue" color="true" blackout="true">
-        <name>Mirror 2 Blue</name>
-      </channel>
-      <channel index="12" type="dimmer" color="false" blackout="true" value="255">
-        <name>Mirror 2 Dimmer</name>
-      </channel>
-      <channel index="13" type="strobe" color="false" blackout="false">
-        <name>Mirror 2 Strobe</name>
-        <ranges>
-          <range start="0" end="8">
-            <name>Open</name>
-          </range>
-          <range start="9" end="131">
-            <name>Slow to Fast</name>
-          </range>
-          <range start="132" end="139">
-            <name>Open</name>
-          </range>
-          <range start="140" end="181">
-            <name>Fast Close - Slow Open</name>
-          </range>
-          <range start="182" end="189">
-            <name>Open</name>
-          </range>
-          <range start="190" end="231">
-            <name>Slow Close - Fast Open</name>
-          </range>
-          <range start="232" end="239">
-            <name>Open</name>
-          </range>
-          <range start="240" end="247">
-            <name>Sound Activated</name>
-          </range>
-        </ranges>
-      </channel>
-
-      <channel index="14" type="Pan" color="false" blackout="true">
-        <name>Mirror 3 Pan</name>
-      </channel>
-      <channel index="15" type="Tilt" color="false" blackout="true">
-        <name>Mirror 3 Tilt</name>
-      </channel>
-      <channel index="16" type="red" color="true" blackout="true">
-        <name>Mirror 3 Red</name>
-      </channel>
-      <channel index="17" type="green" color="true" blackout="true">
-        <name>Mirror 3 Green</name>
-      </channel>
-      <channel index="18" type="blue" color="true" blackout="true">
-        <name>Mirror 3 Blue</name>
-      </channel>
-      <channel index="19" type="dimmer" color="false" blackout="true" value="255">
-        <name>Mirror 3 Dimmer</name>
-      </channel>
-      <channel index="20" type="strobe" color="false" blackout="false">
-        <name>Mirror 3 Strobe</name>
-        <ranges>
-          <range start="0" end="8">
-            <name>Open</name>
-          </range>
-          <range start="9" end="131">
-            <name>Slow to Fast</name>
-          </range>
-          <range start="132" end="139">
-            <name>Open</name>
-          </range>
-          <range start="140" end="181">
-            <name>Fast Close - Slow Open</name>
-          </range>
-          <range start="182" end="189">
-            <name>Open</name>
-          </range>
-          <range start="190" end="231">
-            <name>Slow Close - Fast Open</name>
-          </range>
-          <range start="232" end="239">
-            <name>Open</name>
-          </range>
-          <range start="240" end="247">
-            <name>Sound Activated</name>
-          </range>
-        </ranges>
-      </channel>
-
-      <channel index="21" type="Pan" color="false" blackout="true">
-        <name>Mirror 4 Pan</name>
-      </channel>
-      <channel index="22" type="Tilt" color="false" blackout="true">
-        <name>Mirror 4 Tilt</name>
-      </channel>
-      <channel index="23" type="red" color="true" blackout="true">
-        <name>Mirror 4 Red</name>
-      </channel>
-      <channel index="24" type="green" color="true" blackout="true">
-        <name>Mirror 4 Green</name>
-      </channel>
-      <channel index="25" type="blue" color="true" blackout="true">
-        <name>Mirror 4 Blue</name>
-      </channel>
-      <channel index="26" type="dimmer" color="false" blackout="true" value="255">
-        <name>Mirror 4 Dimmer</name>
-      </channel>
-      <channel index="27" type="strobe" color="false" blackout="false">
-        <name>Mirror 4 Strobe</name>
-        <ranges>
-          <range start="0" end="8">
-            <name>Open</name>
-          </range>
-          <range start="9" end="131">
-            <name>Slow to Fast</name>
-          </range>
-          <range start="132" end="139">
-            <name>Open</name>
-          </range>
-          <range start="140" end="181">
-            <name>Fast Close - Slow Open</name>
-          </range>
-          <range start="182" end="189">
-            <name>Open</name>
-          </range>
-          <range start="190" end="231">
-            <name>Slow Close - Fast Open</name>
-          </range>
-          <range start="232" end="239">
-            <name>Open</name>
-          </range>
-          <range start="240" end="247">
-            <name>Sound Activated</name>
-          </range>
-        </ranges>
-      </channel>
-    </channels>
-  </fixture>
+    <author>Robert DeSantis</author>
+    <version>1</version>
+    <fixture type="scanner" channels="1">
+        <manufacturer>ADJ</manufacturer>
+        <model>Quad Scan LED</model>
+        <channels>
+            <channel index="1" type="auto program" color="false" blackout="true">
+                <name>Show</name>
+                <ranges>
+                    <range start="0" end="7">
+                        <name>Blackout</name>
+                    </range>
+                    <range start="8" end="22">
+                        <name>Show 1</name>
+                    </range>
+                    <range start="23" end="37">
+                        <name>Show 2</name>
+                    </range>
+                    <range start="38" end="52">
+                        <name>Show 3</name>
+                    </range>
+                    <range start="53" end="67">
+                        <name>Show 4</name>
+                    </range>
+                    <range start="68" end="82">
+                        <name>Show 5</name>
+                    </range>
+                    <range start="83" end="87">
+                        <name>Show 6</name>
+                    </range>
+                    <range start="88" end="112">
+                        <name>Show 7</name>
+                    </range>
+                    <range start="113" end="127">
+                        <name>Show 8</name>
+                    </range>
+                    <range start="128" end="142">
+                        <name>Show 9</name>
+                    </range>
+                    <range start="143" end="157">
+                        <name>Show 10</name>
+                    </range>
+                    <range start="158" end="172">
+                        <name>Show 11</name>
+                    </range>
+                    <range start="173" end="187">
+                        <name>Show 12</name>
+                    </range>
+                    <range start="188" end="202">
+                        <name>Show 13</name>
+                    </range>
+                    <range start="203" end="217">
+                        <name>Show 14</name>
+                    </range>
+                    <range start="218" end="232">
+                        <name>Show 15</name>
+                    </range>
+                    <range start="233" end="247">
+                        <name>Show 16</name>
+                    </range>
+                    <range start="248" end="255">
+                        <name>Sound Activated Shows 1-16</name>
+                    </range>
+                </ranges>
+            </channel>
+        </channels>
+    </fixture>
+    <fixture type="scanner" channels="5">
+        <manufacturer>ADJ</manufacturer>
+        <model>Quad Scan LED</model>
+        <channels>
+            <channel index="1" type="movement macro" color="false" blackout="true">
+                <name>Pan/Tilt Movements</name>
+                <ranges>
+                    <range start="0" end="7">
+                        <name>No Movement</name>
+                    </range>
+                    <range start="8" end="22">
+                        <name>Movement 1</name>
+                    </range>
+                    <range start="23" end="37">
+                        <name>Movement 2</name>
+                    </range>
+                    <range start="38" end="52">
+                        <name>Movement 3</name>
+                    </range>
+                    <range start="53" end="67">
+                        <name>Movement 4</name>
+                    </range>
+                    <range start="68" end="82">
+                        <name>Movement 5</name>
+                    </range>
+                    <range start="83" end="87">
+                        <name>Movement 6</name>
+                    </range>
+                    <range start="88" end="112">
+                        <name>Movement 7</name>
+                    </range>
+                    <range start="113" end="127">
+                        <name>Movement 8</name>
+                    </range>
+                    <range start="128" end="142">
+                        <name>Movement 9</name>
+                    </range>
+                    <range start="143" end="157">
+                        <name>Movement 10</name>
+                    </range>
+                    <range start="158" end="172">
+                        <name>Movement 11</name>
+                    </range>
+                    <range start="173" end="187">
+                        <name>Movement 12</name>
+                    </range>
+                    <range start="188" end="202">
+                        <name>Movement 13</name>
+                    </range>
+                    <range start="203" end="217">
+                        <name>Movement 14</name>
+                    </range>
+                    <range start="218" end="232">
+                        <name>Movement 15</name>
+                    </range>
+                    <range start="233" end="247">
+                        <name>Movement 16</name>
+                    </range>
+                    <range start="248" end="255">
+                        <name>Sound Activated Movement</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="2" type="movement macro" color="false" blackout="true">
+                <name>Pan/Tilt Movement Speed</name>
+                <ranges>
+                    <range start="0" end="255">
+                        <name>Slow to Fast</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="3" type="dimmer" color="false" blackout="true" value="255">
+                <name>Dimmer</name>
+            </channel>
+            <channel index="4" type="strobe" color="false" blackout="true">
+                <name>Strobe</name>
+                <ranges>
+                    <range start="0" end="8">
+                        <name>Open</name>
+                    </range>
+                    <range start="9" end="131">
+                        <name>Slow to Fast</name>
+                    </range>
+                    <range start="132" end="139">
+                        <name>Open</name>
+                    </range>
+                    <range start="140" end="181">
+                        <name>Fast Close - Slow Open</name>
+                    </range>
+                    <range start="182" end="189">
+                        <name>Open</name>
+                    </range>
+                    <range start="190" end="231">
+                        <name>Slow Close - Fast Open</name>
+                    </range>
+                    <range start="232" end="239">
+                        <name>Open</name>
+                    </range>
+                    <range start="240" end="247">
+                        <name>Sound Activated</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="1" type="color macro" color="false" blackout="false">
+                <name>Color Chase</name>
+                <ranges>
+                    <range start="0" end="7">
+                        <name>Color Chase 1</name>
+                    </range>
+                    <range start="8" end="15">
+                        <name>Color Chase 2</name>
+                    </range>
+                    <range start="16" end="23">
+                        <name>Color Chase 3</name>
+                    </range>
+                    <range start="24" end="31">
+                        <name>Color Chase 4</name>
+                    </range>
+                    <range start="32" end="39">
+                        <name>Color Chase 5</name>
+                    </range>
+                    <range start="40" end="47">
+                        <name>Color Chase 6</name>
+                    </range>
+                    <range start="48" end="55">
+                        <name>Color Chase 7</name>
+                    </range>
+                    <range start="56" end="63">
+                        <name>Color Chase 8</name>
+                    </range>
+                    <range start="64" end="71">
+                        <name>Color Chase 9</name>
+                    </range>
+                    <range start="72" end="79">
+                        <name>Color Chase 10</name>
+                    </range>
+                    <range start="80" end="87">
+                        <name>Color Chase 11</name>
+                    </range>
+                    <range start="88" end="95">
+                        <name>Color Chase 12</name>
+                    </range>
+                    <range start="96" end="103">
+                        <name>Color Chase 13</name>
+                    </range>
+                    <range start="104" end="111">
+                        <name>Color Chase 14</name>
+                    </range>
+                    <range start="112" end="119">
+                        <name>Color Chase 15</name>
+                    </range>
+                    <range start="120" end="127">
+                        <name>Color Chase 16</name>
+                    </range>
+                    <range start="128" end="135">
+                        <name>Color Chase 17</name>
+                    </range>
+                    <range start="136" end="143">
+                        <name>Color Chase 18</name>
+                    </range>
+                    <range start="144" end="151">
+                        <name>Color Chase 19</name>
+                    </range>
+                    <range start="152" end="159">
+                        <name>Color Chase 20</name>
+                    </range>
+                    <range start="160" end="167">
+                        <name>Color Chase 21</name>
+                    </range>
+                    <range start="168" end="175">
+                        <name>Color Chase 22</name>
+                    </range>
+                    <range start="176" end="183">
+                        <name>Color Chase 23</name>
+                    </range>
+                    <range start="184" end="191">
+                        <name>Color Chase 24</name>
+                    </range>
+                    <range start="192" end="199">
+                        <name>Color Chase 25</name>
+                    </range>
+                    <range start="200" end="207">
+                        <name>Color Chase 26</name>
+                    </range>
+                    <range start="208" end="215">
+                        <name>Color Chase 27</name>
+                    </range>
+                    <range start="216" end="223">
+                        <name>Color Chase 28</name>
+                    </range>
+                    <range start="224" end="231">
+                        <name>Color Chase 29</name>
+                    </range>
+                    <range start="232" end="239">
+                        <name>Color Chase 30</name>
+                    </range>
+                    <range start="240" end="247">
+                        <name>Color Chase 31</name>
+                    </range>
+                    <range start="248" end="255">
+                        <name>Color Chase 32</name>
+                    </range>
+                </ranges>
+            </channel>
+        </channels>
+    </fixture>
+    <fixture type="scanner" channels="28">
+        <manufacturer>ADJ</manufacturer>
+        <model>Quad Scan LED</model>
+        <channels>
+            <channel index="1" type="pan" color="false" blackout="true">
+                <name>Mirror 1 Pan</name>
+            </channel>
+            <channel index="2" type="tilt" color="false" blackout="true">
+                <name>Mirror 1 Tilt</name>
+            </channel>
+            <channel index="3" type="red" color="true" blackout="true">
+                <name>Mirror 1 Red</name>
+            </channel>
+            <channel index="4" type="green" color="true" blackout="true">
+                <name>Mirror 1 Green</name>
+            </channel>
+            <channel index="5" type="blue" color="true" blackout="true">
+                <name>Mirror 1 Blue</name>
+            </channel>
+            <channel index="6" type="dimmer" color="false" blackout="true" value="255">
+                <name>Mirror 1 Dimmer</name>
+            </channel>
+            <channel index="7" type="strobe" color="false" blackout="true">
+                <name>Mirror 1 Strobe</name>
+                <ranges>
+                    <range start="0" end="8">
+                        <name>Open</name>
+                    </range>
+                    <range start="9" end="131">
+                        <name>Slow to Fast</name>
+                    </range>
+                    <range start="132" end="139">
+                        <name>Open</name>
+                    </range>
+                    <range start="140" end="181">
+                        <name>Fast Close - Slow Open</name>
+                    </range>
+                    <range start="182" end="189">
+                        <name>Open</name>
+                    </range>
+                    <range start="190" end="231">
+                        <name>Slow Close - Fast Open</name>
+                    </range>
+                    <range start="232" end="239">
+                        <name>Open</name>
+                    </range>
+                    <range start="240" end="247">
+                        <name>Sound Activated</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="8" type="pan" color="false" blackout="true">
+                <name>Mirror 2 Pan</name>
+            </channel>
+            <channel index="9" type="tilt" color="false" blackout="true">
+                <name>Mirror 2 Tilt</name>
+            </channel>
+            <channel index="10" type="red" color="true" blackout="true">
+                <name>Mirror 2 Red</name>
+            </channel>
+            <channel index="11" type="green" color="true" blackout="true">
+                <name>Mirror 2 Green</name>
+            </channel>
+            <channel index="12" type="blue" color="true" blackout="true">
+                <name>Mirror 2 Blue</name>
+            </channel>
+            <channel index="13" type="dimmer" color="false" blackout="true" value="255">
+                <name>Mirror 2 Dimmer</name>
+            </channel>
+            <channel index="14" type="strobe" color="false" blackout="false">
+                <name>Mirror 2 Strobe</name>
+                <ranges>
+                    <range start="0" end="8">
+                        <name>Open</name>
+                    </range>
+                    <range start="9" end="131">
+                        <name>Slow to Fast</name>
+                    </range>
+                    <range start="132" end="139">
+                        <name>Open</name>
+                    </range>
+                    <range start="140" end="181">
+                        <name>Fast Close - Slow Open</name>
+                    </range>
+                    <range start="182" end="189">
+                        <name>Open</name>
+                    </range>
+                    <range start="190" end="231">
+                        <name>Slow Close - Fast Open</name>
+                    </range>
+                    <range start="232" end="239">
+                        <name>Open</name>
+                    </range>
+                    <range start="240" end="247">
+                        <name>Sound Activated</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="15" type="pan" color="false" blackout="true">
+                <name>Mirror 3 Pan</name>
+            </channel>
+            <channel index="16" type="tilt" color="false" blackout="true">
+                <name>Mirror 3 Tilt</name>
+            </channel>
+            <channel index="17" type="red" color="true" blackout="true">
+                <name>Mirror 3 Red</name>
+            </channel>
+            <channel index="18" type="green" color="true" blackout="true">
+                <name>Mirror 3 Green</name>
+            </channel>
+            <channel index="19" type="blue" color="true" blackout="true">
+                <name>Mirror 3 Blue</name>
+            </channel>
+            <channel index="20" type="dimmer" color="false" blackout="true" value="255">
+                <name>Mirror 3 Dimmer</name>
+            </channel>
+            <channel index="21" type="strobe" color="false" blackout="false">
+                <name>Mirror 3 Strobe</name>
+                <ranges>
+                    <range start="0" end="8">
+                        <name>Open</name>
+                    </range>
+                    <range start="9" end="131">
+                        <name>Slow to Fast</name>
+                    </range>
+                    <range start="132" end="139">
+                        <name>Open</name>
+                    </range>
+                    <range start="140" end="181">
+                        <name>Fast Close - Slow Open</name>
+                    </range>
+                    <range start="182" end="189">
+                        <name>Open</name>
+                    </range>
+                    <range start="190" end="231">
+                        <name>Slow Close - Fast Open</name>
+                    </range>
+                    <range start="232" end="239">
+                        <name>Open</name>
+                    </range>
+                    <range start="240" end="247">
+                        <name>Sound Activated</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="22" type="pan" color="false" blackout="true">
+                <name>Mirror 4 Pan</name>
+            </channel>
+            <channel index="23" type="tilt" color="false" blackout="true">
+                <name>Mirror 4 Tilt</name>
+            </channel>
+            <channel index="24" type="red" color="true" blackout="true">
+                <name>Mirror 4 Red</name>
+            </channel>
+            <channel index="25" type="green" color="true" blackout="true">
+                <name>Mirror 4 Green</name>
+            </channel>
+            <channel index="26" type="blue" color="true" blackout="true">
+                <name>Mirror 4 Blue</name>
+            </channel>
+            <channel index="27" type="dimmer" color="false" blackout="true" value="255">
+                <name>Mirror 4 Dimmer</name>
+            </channel>
+            <channel index="28" type="strobe" color="false" blackout="false">
+                <name>Mirror 4 Strobe</name>
+                <ranges>
+                    <range start="0" end="8">
+                        <name>Open</name>
+                    </range>
+                    <range start="9" end="131">
+                        <name>Slow to Fast</name>
+                    </range>
+                    <range start="132" end="139">
+                        <name>Open</name>
+                    </range>
+                    <range start="140" end="181">
+                        <name>Fast Close - Slow Open</name>
+                    </range>
+                    <range start="182" end="189">
+                        <name>Open</name>
+                    </range>
+                    <range start="190" end="231">
+                        <name>Slow Close - Fast Open</name>
+                    </range>
+                    <range start="232" end="239">
+                        <name>Open</name>
+                    </range>
+                    <range start="240" end="247">
+                        <name>Sound Activated</name>
+                    </range>
+                </ranges>
+            </channel>
+        </channels>
+    </fixture>
 </fixture_definitions>

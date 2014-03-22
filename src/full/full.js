@@ -24,11 +24,11 @@ var FIXTURE_SLIDERS = 40;
 
 var system_status = false;                          // UI is live and pinging the server
 var edit_mode = false;                              // True when UI is in edit mode
-var delete_mode = false;                            // True when UI is in delete mode
 var active_scene_id = 0;                            // UID of currently active scene
 var active_chase_id = 0;                            // UID of currently active chase
 var auto_blackout = false;                          // Venue is in auto backout mode
 var client_config_update = false;                   // Client layou has changed -  update server
+var current_act = 0;                                // All acts
 
 var scene_tile_panel;
 var chase_tile_panel;
@@ -69,11 +69,31 @@ function initializeUI() {
     slider_panel = new SliderPanel("slider_pane", FIXTURE_SLIDERS, true );
 
     // Cutomizations for fixtures and fixture groups
-    fixture_tile_panel.actions[0].action = "control";
-    fixture_tile_panel.actions[0].tile_class = "ui-icon ui-icon-plus";
-    fixture_tile_panel.actions[0].selected_class = "ui-icon-minus ui-icon-white";
+    fixture_tile_panel.actions[fixture_tile_panel.ACTION_PLAY].action = "control";
+    fixture_tile_panel.actions[fixture_tile_panel.ACTION_PLAY].tile_class = "ui-icon ui-icon-plus";
+    fixture_tile_panel.actions[fixture_tile_panel.ACTION_PLAY].selected_class = "ui-icon-minus ui-icon-white";
+    fixture_tile_panel.actions[fixture_tile_panel.ACTION_HOVER].used = true;
 
     initializeCollapsableSections();
+
+    // setup act master
+    $("#master_act").empty();
+
+    for (var i = 0; i <= 20; i++) {
+        $("#master_act").append($('<option>', {
+            value: i,
+            text: (i==0) ? "all" : i,
+            selected: false
+        }));
+    }
+
+    $("#master_act").multiselect({ minWidth: 80, multiple: false, noneSelectedText: 'All', header: false, height: 300, selectedList: 1, classes: "master-act-button" });
+
+    $("#master_act").on("change", function () {
+        current_act = parseInt($(this).val());
+        createSceneTiles();
+        createChaseTiles();
+    });
 
     // setup master volume
     initializeHorizontalSlider("master_volume", 0, 100, 0);
@@ -162,11 +182,6 @@ function initializeUI() {
         client_config_update = true;
     });
 
-    $("#toggle_delete_mode").click(function () {
-        setDeleteMode(!delete_mode);
-        client_config_update = true;
-    });
-
     $("#configure_venue").click( configureVenue );
 
     $("#save_load_venue").click( loadSaveVenue );
@@ -244,9 +259,7 @@ function messageBox(message) {
 //var cache_master_dimmer = null;
 var cache_master_volume = null;
 var cache_whiteout_custom_value = null;
-var cache_master_dimmer_value = null;
 var cache_master_volume_value = null;
-var cache_master_dimmer_handle = null;
 var cache_master_volume_handle = null;
 var cache_volume_mute = null;
 var cache_animation_speed = null;
@@ -257,9 +270,7 @@ function updateUI() {
         // cache_master_dimmer = $('#master_dimmer');
         cache_master_volume = $('#master_volume');
         cache_whiteout_custom_value = $('#whiteout_custom_value');
-        cache_master_dimmer_value = $('#master_dimmer_value');
         cache_master_volume_value = $('#master_volume_value');
-        cache_master_dimmer_handle = $('#master_dimmer .ui-slider-handle');
         cache_master_volume_handle = $('#master_volume .ui-slider-handle')
         cache_volume_mute = $("#volume_mute");
     }
@@ -279,9 +290,13 @@ function updateUI() {
             markActiveScene(json.current_scene);
             markActiveChase(json.current_chase);
 
-            if (master_dimmer_channel.slider != null && master_dimmer_channel.value != json.dimmer && !master_dimmer_channel.slider.slider.is(':focus') ) {
-                master_dimmer_channel.value = json.dimmer;
-                master_dimmer_channel.slider.setValue(json.dimmer);
+            if (master_dimmer_channel.slider != null && master_dimmer_channel.value != json.dimmer) {
+                var slider = master_dimmer_channel.slider;
+                
+                if (slider != null && !slider.isBusy()) {
+                    master_dimmer_channel.value = json.dimmer;
+                    master_dimmer_channel.slider.setValue(json.dimmer);
+                }
             }
 
             if (!cache_master_volume_handle.is(':focus') && cache_master_volume.slider("value") != json.master_volume) {
@@ -378,6 +393,8 @@ function updateUI() {
                 system_status = true;
             }
 
+            updateCapturedFixtures(json.captured_fixtures);
+
             setTimeout(updateUI(), 500);
         },
         error: function () {
@@ -455,27 +472,7 @@ function setEditMode(mode) {
         state = 'none';
     }
 
-    $(".edit_item").each(function () { $(this).css('display', state); });
-    $(".new_item").each(function () { $(this).css('display', state); });
-}
-
-// ----------------------------------------------------------------------------
-//
-function setDeleteMode(mode) {
-    delete_mode = mode;
-
-    var state;
-
-    if (delete_mode) {
-        $("#toggle_delete_mode").addClass("lg-icon-white").removeClass("lg-icon-grey");
-        state = 'inline';
-    }
-    else {
-        $("#toggle_delete_mode").removeClass("lg-icon-white").addClass("lg-icon-grey");
-        state = 'none';
-    }
-
-    $(".delete_item").each(function () { $(this).css('display', state); });
+    $(".edit_mode").each(function () { $(this).css('display', state); });
 }
 
 // ----------------------------------------------------------------------------
@@ -909,8 +906,6 @@ function updateVenueLayout() {
         for (var prop in client_config) {
             if (prop == "edit_mode")
                 setEditMode(client_config.edit_mode);
-            else if (prop == "delete_mode")
-                setDeleteMode(client_config.delete_mode);
             else if (prop == "sections") {
                 for (section in client_config.sections) {
                     if (section == "scene_tiles_pane") {
@@ -946,7 +941,6 @@ function updateVenueLayout() {
 function saveVenueLayout() {
     client_config = {};
     client_config.edit_mode = edit_mode;
-    client_config.delete_mode = delete_mode;
 
     client_config.sections = {
         "venue_pane": {

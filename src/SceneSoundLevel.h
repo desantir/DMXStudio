@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -19,7 +19,6 @@ along with DMX Studio; see the file _COPYING.txt.  If not, write to
 the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
-
 
 #pragma once
 
@@ -42,6 +41,7 @@ class SceneSoundLevel : public SceneChannelAnimator
 
 public:
     static const char* className;
+    static const char* animationName;
 
     SceneSoundLevel( void ) {};
     SceneSoundLevel( UID animation_uid, AnimationSignal signal, UIDArray actors, WORD fade_what );
@@ -50,7 +50,7 @@ public:
     AbstractAnimation* clone();
     CString getSynopsis(void);
 
-    const char* getName() { return "Sound Level"; }
+    const char* getName() { return SceneSoundLevel::animationName; }
     const char* getClassName() { return SceneSoundLevel::className; }
 
     void accept( IVisitor* visitor) {

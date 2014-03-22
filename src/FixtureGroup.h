@@ -36,11 +36,24 @@ class FixtureGroup : public DObject
     friend class VenueWriter;
     friend class VenueReader;
 
-    UIDSet	m_fixtures;
+    UIDSet	    m_fixtures;
+
+    size_t      m_channels;
+
+    // m_channel_values always contains unmapped fixture channel values. For
+    // example, if a fixture maps channel 3 to channel 0, the value for physical
+    // channel 3 will be stored in m_channel_values[0].  The value will be 
+    // remapped from channel 0 to 3 when added to the DMX packet.
+
+    BYTE		m_channel_values[DMX_PACKET_SIZE];			// Not worth a container for this
 
 public:
     FixtureGroup(void) :
-      DObject() {}
+      DObject(),
+      m_channels( 0 ) 
+    {
+        reset_channel_values();
+    }
       
     FixtureGroup( UID uid, ULONG group_number, const char * name, const char *description );
     ~FixtureGroup(void);
@@ -69,6 +82,29 @@ public:
 
     UIDSet getFixtures( ) const {
         return UIDSet( m_fixtures );
+    }
+
+    void reset_channel_values( void ) {
+        memset( m_channel_values, 0, sizeof(m_channel_values) );
+    }
+
+    inline size_t getNumChannelValues() const {
+        return m_channels;
+    }
+
+    inline BYTE getChannelValue( channel_t channel ) const {
+        STUDIO_ASSERT( channel < m_channels, "Channel out of range" );
+        return m_channel_values[ channel ];
+    }
+
+    inline void setChannelValues( size_t channels, BYTE* channel_values ) {
+        m_channels = channels;
+        memcpy( m_channel_values, channel_values, channels );
+    }
+
+    inline size_t getChannelValues( BYTE * destination ) const {
+        memcpy( destination, m_channel_values, m_channels );
+        return m_channels;
     }
 };
 

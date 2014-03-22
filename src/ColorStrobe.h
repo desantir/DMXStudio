@@ -27,9 +27,9 @@ MA 02111-1307, USA.
 
 class ColorStrobe
 {
-    BYTE			m_current_color[COLOR_CHANNELS];			// Current RGBWA
-    BYTE			m_target_color[COLOR_CHANNELS];			    // RGBWA targets
-    BYTE			m_strobe_negative[COLOR_CHANNELS];
+    RGBWA			m_current_color;			// Current RGBWA
+    RGBWA			m_target_color;			    // RGBWA targets
+    RGBWA			m_strobe_negative;
 
     StrobeTime      m_timing;
 
@@ -37,28 +37,19 @@ class ColorStrobe
     bool			m_strobe_on;
 
 public:
-    ColorStrobe( void ) {
-        for ( int i=0; i < COLOR_CHANNELS; i++ ) 
-            m_strobe_negative[i] = 0;
-    }
-
+    ColorStrobe( void ) {}
     ~ColorStrobe(void) {}
 
-    inline BYTE red() const { return m_current_color[0]; }
-    inline BYTE green() const { return m_current_color[1]; }
-    inline BYTE blue() const { return m_current_color[2]; }
-    inline BYTE white() const { return m_current_color[3]; }
-    inline BYTE amber() const { return m_current_color[4]; }
     inline bool isOn() const { return m_strobe_on; }
 
-    inline BYTE* rgbwa() { return m_current_color; }
+    inline RGBWA rgbwa() { return m_current_color; }
 
-    inline void setColor( const BYTE rgbwa[COLOR_CHANNELS] ) {
-        memcpy( m_target_color, rgbwa, COLOR_CHANNELS );
+    inline void setColor( const RGBWA& rgbwa ) {
+        m_target_color = rgbwa;
     }
 
-    inline void setNegative( const BYTE rgbwa[COLOR_CHANNELS] ) {
-        memcpy( m_strobe_negative, rgbwa, COLOR_CHANNELS );
+    inline void setNegative( const RGBWA& rgbwa ) {
+        m_strobe_negative = rgbwa;
     }
 
     void start( DWORD time_ms, UINT light_ms, UINT dark_ms ) {
@@ -79,7 +70,7 @@ public:
         if ( time_ms <= m_strobe_next_ms )
             return false;
 
-        memcpy( m_current_color, ( m_strobe_on ) ? m_target_color : m_strobe_negative, COLOR_CHANNELS );
+        m_current_color = ( m_strobe_on ) ? m_target_color : m_strobe_negative;
 
         m_strobe_on = !m_strobe_on;
 

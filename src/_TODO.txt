@@ -4,22 +4,20 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 
    M Web Full UI - music controller
 		H 1 Scrolling text plugin for playing track name
-		H 5 Positional "map" of fixtures to allow easy selection
+		H 5 Positional "map" of fixtures (with icons showing type and direction) for easy capture
 		M 5 Workspace channel management (re-arrange channels, hidden channels, save channel sets)
-		M 5 Animation macros (must be easier to create animations from the UI)
+		M 5 Simplify animations (must be easier to create animations from the UI)
 		M 1 Log into music player
 		L 5 Alternative to dialogs
-		L 5 Alternative to edit/delete mode icon clutter
 		L 1 Improved error responses (e.g. "<item> not found")
-		L 1 Fixture icon images rather than text (preference)
 		L 1 Animated running GIFs for chases
-		L 2 Cleanup CSS styles - put in css file
 		L 1 Handle disconnected server state (disable UI)
 		L 2 Authentication & session control
 		L 2 Chase beat (follows music) and tap (follows user)
 		L 3 Track pan/tilt with mouse
 		L 4 Album artwork
 		H 4 Music search
+		L 2 Support group channel defaults in web UI (and in scene too?)
 
 	L Scene Animations:
 		L Movement animation travel time
@@ -43,27 +41,27 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L Multiple universes (increase DMX packet size, zero-based universe ID is simply the high byte)
 		L Movement speed abstraction
 		L Dimmer curve (LEDs can fall off fast at the end)
-		L Editable fixture defaults
 		L Minimum dimmer setting
 
 	M Code Maintainence
 		M Bullet proof error detection and automatic restart
-		H Comments - doxygen?
 		L Introduce studio fault to kill and restart program (vs error based execeptions)
 		M Unit tests
 
-	L Scene / Chase Improvements
+	L Scene / Chase / Act Improvements
 		L Scene selection based on the music beat (BPM)
 		L Chase changed based on beat, time or track transition
 		L Chase random scene from all/pool
 		L Chase crossfade = % of time cues fading into each other (kill fade time change to crossfade model)?
 		L Chase learn mode - track time and scene transitions
+		L Name acts and easier act selection in UI
 
 	L General Enhancements
 		L MIDI fogger control with ready indicator (auto fog timer?)
 		L Midi controller support ( tablet support )
 		L Fixture duty cycle support?
 		L Video support
+		? Need real color transforms
 	
  	M Test Targets
 		Verify channel remapping works across UI, ACTORS, and ANIMATIONS 

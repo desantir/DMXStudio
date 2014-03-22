@@ -25,13 +25,14 @@ MA 02111-1307, USA.
 AnimationEditorArray DMXTextUI::animEditors;
 
 void DMXTextUI::initializeAnimationEditors() {
-    animEditors.push_back( AnimationEditor( "Fixture sequencer",	SceneSequence::className, &DMXTextUI::animSequencerEditor ) );
-    animEditors.push_back( AnimationEditor( "Sound level",			SceneSoundLevel::className, &DMXTextUI::animSoundLevelEditor) );
-    animEditors.push_back( AnimationEditor( "Pattern sequencer",	ScenePatternDimmer::className, &DMXTextUI::animPatternDimmerEditor) );
-    animEditors.push_back( AnimationEditor( "Channel animation",	SceneChannelAnimator::className, &DMXTextUI::animChannelEditor) );
-    animEditors.push_back( AnimationEditor( "Color switcher",		SceneColorSwitcher::className, &DMXTextUI::animColorSwitcherEditor) );
-    animEditors.push_back( AnimationEditor( "Movement animator",	SceneMovementAnimator::className, &DMXTextUI::animMovementEditor) );
-    animEditors.push_back( AnimationEditor( "Strobe animator",	    SceneStrobeAnimator::className, &DMXTextUI::animStrobeEditor) );
+    animEditors.push_back( AnimationEditor( SceneSequence::animationName,	        SceneSequence::className, &DMXTextUI::animSequencerEditor ) );
+    animEditors.push_back( AnimationEditor( SceneSoundLevel::animationName,		    SceneSoundLevel::className, &DMXTextUI::animSoundLevelEditor) );
+    animEditors.push_back( AnimationEditor( ScenePatternDimmer::animationName,	    ScenePatternDimmer::className, &DMXTextUI::animPatternDimmerEditor) );
+    animEditors.push_back( AnimationEditor( SceneChannelAnimator::animationName,	SceneChannelAnimator::className, &DMXTextUI::animChannelEditor) );
+    animEditors.push_back( AnimationEditor( SceneColorFader::animationName,		SceneColorFader::className, &DMXTextUI::animColorFaderEditor) );
+    animEditors.push_back( AnimationEditor( SceneMovementAnimator::animationName,	SceneMovementAnimator::className, &DMXTextUI::animMovementEditor) );
+    animEditors.push_back( AnimationEditor( SceneStrobeAnimator::animationName,	    SceneStrobeAnimator::className, &DMXTextUI::animStrobeEditor) );
+    animEditors.push_back( AnimationEditor( ScenePixelAnimator::animationName,	    ScenePixelAnimator::className, &DMXTextUI::animPixelEditor) );
 }
 
 // ----------------------------------------------------------------------------
@@ -78,6 +79,7 @@ public:
         m_apply_to.setDefaultListValue( signal.getApplyTo() );
 
         add( m_input_type );
+        add( m_apply_to );
         add( m_sample_ms );
         add( m_freq_low );
         add( m_freq_high );
@@ -86,7 +88,6 @@ public:
         add( m_decay_ms );
         add( m_scale_factor );
         add( m_max_threshold );
-        add( m_apply_to );
     }
 
     void updateAnimationSignal( AnimationSignal& signal ) {
@@ -156,8 +157,7 @@ class ChannelAnimationForm : public Form
 {
     Venue*					m_venue;
 
-    FixtureSelect			m_fixtures_select;
-    SceneFixtureSelectField	m_fixture_field;
+    ActorSelectField        m_actor_select;
     BooleanField			m_more_field;
     FixtureChannelField		m_channel_field;
     NumberedListField		m_value_anim_field;
@@ -170,8 +170,7 @@ public:
                           bool multiple_fixtures, bool show_more ) :
         Form( input_stream, "Define/Update Channel Animation" ),
         m_venue( venue ),
-        m_fixtures_select( "Fixtures (comma separated)", venue, scene->getActorUIDs(), UIDArray( animation.getActor() ) ),
-        m_fixture_field( "Fixture", venue, scene->getUID(), animation.getActor() ),
+        m_actor_select( "Fixtures (comma separated)", venue, scene, UIDArray( animation.getActorUID() ) ),
         m_more_field( "Add another channel", false ),
         m_channel_field( "Channel", NULL, animation.getChannel() ),
         m_value_anim_field( "Value animation" ),
@@ -184,8 +183,7 @@ public:
         m_value_anim_field.addKeyValue( 3, "Scale" );
         m_value_anim_field.setDefaultListValue( animation.getAnimationStyle() );
 
-        add( m_fixtures_select );
-        add( m_fixture_field );
+        add( m_actor_select );
         add( m_channel_field );
         add( m_value_anim_field );
         add( m_range_low_field );
@@ -194,8 +192,11 @@ public:
         add( m_more_field );
 
         m_more_field.setHidden( !show_more );
-        m_fixture_field.setHidden( multiple_fixtures );
-        m_fixtures_select.setHidden( !multiple_fixtures );
+
+        if ( !multiple_fixtures ) {
+            m_actor_select.allowMultiple( false );
+            m_actor_select.setLabel( "Fixture" );
+        }
 
         ChannelValueArray values = animation.getChannelValues();
         if ( values.size() >= 2 ) {
@@ -209,7 +210,7 @@ public:
     }
 
     void updateAnimation( ChannelAnimation& animation ) {
-        animation.setActor( m_fixture_field.getFixtureUID() );
+        animation.setActorUID( m_actor_select.getActorUIDs()[0] );
         animation.setChannel( m_channel_field.getChannel() );
         animation.setAnimationStyle( (ChannelAnimationStyle)m_value_anim_field.getListValue() );
 
@@ -226,23 +227,20 @@ public:
     }
 
     void appendAnimations( ChannelAnimationArray& animations ) {
-        UIDArray fixtures = m_fixtures_select.getUIDs();
+        UIDArray fixtures = m_actor_select.getActorUIDs();
         for ( UIDArray::iterator it=fixtures.begin(); it != fixtures.end(); ++it ) {
             ChannelAnimation animation( 0, 0, CAM_SCALE, ChannelValueArray() );
             updateAnimation( animation );
-            animation.setActor( (*it) );
+            animation.setActorUID( (*it) );
             animations.push_back( animation );
         }
     }
     
 protected:
      void fieldLeaveNotify( size_t field_num ) {
-         if ( getField<Field>(field_num) == &m_fixtures_select ) {
-            if ( m_fixtures_select.getUIDs().size() > 0 )
-                m_channel_field.setFixture( m_venue->getFixture( m_fixtures_select.getUIDs()[0] ) );
-         }
-         else if ( getField<Field>(field_num) == &m_fixture_field ) {
-            m_channel_field.setFixture( m_venue->getFixture( m_fixture_field.getFixtureUID() )  );
+         if ( getField<Field>(field_num) == &m_actor_select ) {
+            if ( m_actor_select.getActorUIDs().size() > 0 )
+                m_channel_field.setFixture( m_venue->getFixture( m_actor_select.getActorUIDs()[0] ) );
          }
          else if ( getField<Field>(field_num) == &m_value_anim_field ) {
             m_range_low_field.setHidden( true );
@@ -270,7 +268,7 @@ protected:
 //
 class AnimationMovementForm : public SignalForm
 {
-    FixtureSelect		m_fixture_select;
+    ActorSelectField    m_actor_select;
     NumberedListField	m_movement_field;
     IntegerField		m_movement_speed_field;
     IntegerField		m_tilt_start_field;
@@ -295,7 +293,7 @@ class AnimationMovementForm : public SignalForm
 public:
     AnimationMovementForm( TextIO* text_io, Venue* venue, Scene* scene, SceneMovementAnimator* anim ) :
         SignalForm( text_io, anim->signal() ),
-        m_fixture_select( "Fixtures (comma separated)", venue, scene->getActorUIDs(), anim->getActors() ),
+        m_actor_select( "Fixtures (comma separated)", venue, scene, anim->getActors() ),
         m_movement_field( "Movement" ),
         m_movement_speed_field( "Movement speed (0=fastest)",  anim->movement().m_speed, 0, 255 ),
         m_tilt_start_field( "Start tilt angle (degrees)", anim->movement().m_tilt_start, 0, 360 ),
@@ -346,13 +344,13 @@ public:
         add( m_alternate_groups_field );
         add( m_coordinates_field );
         add( m_run_once_field );
-        add( m_fixture_select );
+        add( m_actor_select );
     }
 
     void update( SceneMovementAnimator* anim ) {
         updateAnimationSignal( anim->signal() );
 
-        anim->setActors( m_fixture_select.getUIDs() );
+        anim->setActors( m_actor_select.getActorUIDs() );
         anim->movement().m_movement_type = (MovementAnimationType)m_movement_field.getListValue();
         anim->movement().m_speed = (BYTE)m_movement_speed_field.getIntValue();
         anim->movement().m_tilt_start = m_tilt_start_field.getIntValue();
@@ -457,6 +455,115 @@ protected:
 
 // ----------------------------------------------------------------------------
 //
+class PixelAnimationForm : public SignalForm
+{
+    ActorSelectField    m_actor_select;
+    NumberedListField	m_effect_field;
+    IntegerField        m_generations_field;
+    IntegerField        m_pixels_field;
+    IntegerField        m_increment_field;
+    BooleanField        m_combine_field;
+    BooleanField        m_color_fade_field;
+    ColorSelectField    m_color_progression_field;
+    ColorSelectField    m_off_pixel_color_field;
+
+public:
+    PixelAnimationForm( TextIO* text_io, Venue* venue, Scene* scene, ScenePixelAnimator* anim ) :
+        m_effect_field( "Pixel Effect" ),
+        SignalForm( text_io, anim->signal() ),
+        m_actor_select( "Fixtures (comma separated)", venue, scene, anim->getActors() ),
+        m_generations_field( "Generations", anim->getGenerations(), 1, 1000 ),
+        m_pixels_field( "Pixels", anim->getPixels(), 1, 64 ),
+        m_increment_field( "Increment", anim->getIncrement(), 1, 64 ),
+        m_color_fade_field( "Fade colors", anim->isFadeColors() ),
+        m_color_progression_field( "Custom color progression (comma separated)", anim->getCustomColors() ),
+        m_off_pixel_color_field( "Off pixel color", anim->getEmptyColor() ),
+        m_combine_field( "Combine fixtures", anim->getCombineFixtures() )
+    {
+        m_effect_field.addKeyValue( 1, "Scrolling" );
+        m_effect_field.addKeyValue( 2, "Stacked" );
+        m_effect_field.addKeyValue( 3, "Stacked (Left)" );
+        m_effect_field.addKeyValue( 4, "Stacked (Right)" );
+        m_effect_field.addKeyValue( 5, "Beam" );
+        m_effect_field.addKeyValue( 6, "Random" );
+        m_effect_field.addKeyValue( 7, "Chase" );
+        m_effect_field.setDefaultListValue( (DWORD)anim->getEffect() );
+
+        add( m_effect_field );
+        add( m_generations_field );
+        add( m_pixels_field );
+        add( m_increment_field );
+        add( m_color_progression_field );
+        add( m_off_pixel_color_field );
+        add( m_color_fade_field );
+        add( m_actor_select );
+        add( m_combine_field );
+    }
+
+    void update( ScenePixelAnimator* anim ) {
+        updateAnimationSignal( anim->signal() );
+
+        anim->setEffect( (PixelEffect)m_effect_field.getListValue() );
+        anim->setActors( m_actor_select.getActorUIDs() );
+        anim->setGenerations( m_generations_field.getIntValue() );
+        anim->setPixel( m_pixels_field.getIntValue() );
+        anim->setIncrement( m_increment_field.getIntValue() );
+        anim->setFadeColors( m_color_fade_field.isSet() );
+        anim->setCombineFixtures( m_combine_field.isSet() );
+        anim->setCustomColors( m_color_progression_field.getColors() );
+        anim->setEmptyColor( m_off_pixel_color_field.getColor() );
+    }
+
+protected:
+     void fieldLeaveNotify( size_t field_num ) {
+         if ( getField<Field>(field_num) != &m_effect_field ) {
+            SignalForm::fieldLeaveNotify( field_num );
+            return;
+        }
+
+        switch ( (PixelEffect)m_effect_field.getListValue() ) {
+            case MOVING:
+                m_generations_field.setHidden( false );
+                m_pixels_field.setHidden( false );
+                m_increment_field.setHidden( false );
+                m_color_fade_field.setHidden( false );
+                break;
+
+            case STACKED:
+            case STACKED_LEFT:
+            case STACKED_RIGHT:
+                m_generations_field.setHidden( true );
+                m_pixels_field.setHidden( true );
+                m_increment_field.setHidden( true );
+                m_color_fade_field.setHidden( true );
+                break;
+        
+            case BEAM:
+                m_generations_field.setHidden( true );
+                m_pixels_field.setHidden( true );
+                m_increment_field.setHidden( true );
+                m_color_fade_field.setHidden( false );
+                break;
+
+            case RANDOM:
+                m_generations_field.setHidden( false );
+                m_pixels_field.setHidden( false );
+                m_increment_field.setHidden( true );
+                m_color_fade_field.setHidden( true );
+                break;
+
+            case CHASE:
+                m_generations_field.setHidden( false );
+                m_pixels_field.setHidden( false );
+                m_increment_field.setHidden( false );
+                m_color_fade_field.setHidden( true );
+                break;
+        }
+     }
+};
+
+// ----------------------------------------------------------------------------
+//
 void DMXTextUI::sceneAddAnimation(void)
 {
     SceneSelectField scene_field( "Scene", getVenue() );
@@ -541,17 +648,16 @@ bool DMXTextUI::animSequencerEditor( Scene* scene, UID anim_uid )
         anim = reinterpret_cast<SceneSequence*>( scene->getAnimation( anim_uid ) );
 
     IntegerField sample_ms_field( "Sequence speed (ms)", anim->signal().getSampleRateMS(), 0 );
-    FixtureSelect fixture_select( "Fixtures (comma separated)", 
-                                getVenue(), scene->getActorUIDs(), anim->getActors() );
+    ActorSelectField actor_select( "Fixtures (comma separated)",  getVenue(), scene, anim->getActors() );
 
     Form form( &m_text_io );
     form.add( sample_ms_field );
-    form.add( fixture_select );
+    form.add( actor_select );
     if ( !form.play() )
         return false;
 
     anim->signal().setSampleRateMS( sample_ms_field.getLongValue() );
-    anim->setActors( fixture_select.getUIDs() );
+    anim->setActors( actor_select.getActorUIDs() );
 
     if ( anim_uid == 0 ) {
         anim->setUID( getVenue()->allocUID() );
@@ -577,18 +683,17 @@ bool DMXTextUI::animSoundLevelEditor( Scene* scene, UID anim_uid )
     fade_what_field.addKeyValue( 2, "Dimmers" );
     fade_what_field.addKeyValue( 3, "Colors & dimmers" );
     fade_what_field.setDefaultListValue( anim->getFadeWhat() );
-    FixtureSelect fixture_select( "Fixtures (comma separated)", 
-                                getVenue(), scene->getActorUIDs(), anim->getActors() );
+    ActorSelectField actor_select( "Fixtures (comma separated)",  getVenue(), scene, anim->getActors() );
 
     SignalForm form( &m_text_io, anim->signal() );
     form.add( fade_what_field );
-    form.add( fixture_select );
+    form.add( actor_select );
     if ( !form.play() )
         return false;
 
     anim->setFadeWhat( (WORD)fade_what_field.getListValue() );
     form.updateAnimationSignal( anim->signal() );
-    anim->setActors( fixture_select.getUIDs() );
+    anim->setActors( actor_select.getActorUIDs() );
 
     if ( anim_uid == 0 ) {
         anim->setUID( getVenue()->allocUID() );
@@ -617,18 +722,17 @@ bool DMXTextUI::animPatternDimmerEditor( Scene* scene, UID anim_uid )
     fade_what_field.addKeyValue( 5, "Alternate" );
     fade_what_field.addKeyValue( 6, "On/Off" );
     fade_what_field.setDefaultListValue( anim->getDimmerPattern() );
-    FixtureSelect fixture_select( "Fixtures (comma separated)", 
-                                getVenue(), scene->getActorUIDs(), anim->getActors() );
+    ActorSelectField actor_select( "Fixtures (comma separated)",  getVenue(), scene, anim->getActors() );
 
     SignalForm form( &m_text_io, anim->signal() );
     form.add( fade_what_field );
-    form.add( fixture_select );
+    form.add( actor_select );
     if ( !form.play() )
         return false;
 
     anim->setDimmerPattern( (DimmerPattern)(fade_what_field.getListValue()) );
     form.updateAnimationSignal( anim->signal() );
-    anim->setActors( fixture_select.getUIDs() );
+    anim->setActors( actor_select.getActorUIDs() );
 
     if ( anim_uid == 0 ) {
         anim->setUID( getVenue()->allocUID() );
@@ -640,46 +744,46 @@ bool DMXTextUI::animPatternDimmerEditor( Scene* scene, UID anim_uid )
 
 // ----------------------------------------------------------------------------
 //
-bool DMXTextUI::animColorSwitcherEditor( Scene* scene, UID anim_uid )
+bool DMXTextUI::animColorFaderEditor( Scene* scene, UID anim_uid )
 {
-    SceneColorSwitcher* anim;
+    SceneColorFader* anim;
 
     if ( anim_uid == 0 )
-        anim = new SceneColorSwitcher( 0, AnimationSignal(), UIDArray(), 0, 200, 100, ColorProgression() );
+        anim = new SceneColorFader( 0, AnimationSignal(), UIDArray(), RGBWA::BLACK, 200, 100, RGBWAArray(), FaderEffect::FADER_EFFECT_ALL );
     else
-        anim = reinterpret_cast<SceneColorSwitcher*>( scene->getAnimation( anim_uid ) );
+        anim = reinterpret_cast<SceneColorFader*>( scene->getAnimation( anim_uid ) );
 
-    //MultiNumberedListField color_progression_field( "Custom color progression (comma separated)" );
-    NumberedListField strobe_neg_color_field( "Negative strobe color" );
+    ColorSelectField color_progression_field( "Custom color progression (comma separated)", anim->getCustomColors() );
+    ColorSelectField strobe_neg_color_field( "Negative strobe color", anim->getStrobeNegColor() );
 
-    for ( ColorNames::iterator it=SceneColorSwitcher::color_names.begin(); it != SceneColorSwitcher::color_names.end(); ++it ) {
-        strobe_neg_color_field.addKeyValue( it->first, it->second );
-        //color_progression_field.addKeyValue( it->first, it->second );
-    }
-
-    strobe_neg_color_field.setDefaultListValue( anim->getStrobeNegColor() );
-    //color_progression_field.setDefaultListValue( anim->getCustomColors() );
+    NumberedListField fader_mode_field( "Fader" );
+    fader_mode_field.addKeyValue( 1, "Color change" );
+    fader_mode_field.addKeyValue( 2, "Strobe" );
+    fader_mode_field.addKeyValue( 3, "Color blend" );
+    fader_mode_field.addKeyValue( 4, "All effects" );
+    fader_mode_field.setDefaultListValue( anim->getFaderEffect() );
 
     IntegerField strobe_pos_ms_field( "Strobe on (ms)", anim->getStrobePosMS(),0, 32000 );
     IntegerField strobe_neg_ms_field( "Strobe off (ms)", anim->getStrobeNegMS(),0, 32000 );
-    FixtureSelect fixture_select( "Fixtures (comma separated)", 
-                                getVenue(), scene->getActorUIDs(), anim->getActors() );
+    ActorSelectField actor_select( "Fixtures (comma separated)",  getVenue(), scene, anim->getActors() );
 
     SignalForm form( &m_text_io, anim->signal() );
-    //form.add( color_progression_field );
+    form.add( fader_mode_field );
+    form.add( color_progression_field );
     form.add( strobe_neg_color_field );
     form.add( strobe_pos_ms_field );
     form.add( strobe_neg_ms_field );
-    form.add( fixture_select );
+    form.add( actor_select );
     if ( !form.play() )
         return false;
 
-    //anim->setCustomColors( color_progression_field.getIntSelections() );
-    anim->setStrobeNegColor( (UINT)strobe_neg_color_field.getListValue() );
+    anim->setFaderEffect( (FaderEffect)fader_mode_field.getListValue() );
+    anim->setCustomColors( color_progression_field.getColors() );
+    anim->setStrobeNegColor( strobe_neg_color_field.getColor() );
     anim->setStrobePosMS( strobe_pos_ms_field.getLongValue() );
     anim->setStrobeNegMS( strobe_neg_ms_field.getLongValue() );
     form.updateAnimationSignal( anim->signal() );
-    anim->setActors( fixture_select.getUIDs() );
+    anim->setActors( actor_select.getActorUIDs() );
 
     if ( anim_uid == 0 ) {
         anim->setUID( getVenue()->allocUID() );
@@ -693,38 +797,30 @@ bool DMXTextUI::animColorSwitcherEditor( Scene* scene, UID anim_uid )
 //
 bool DMXTextUI::animStrobeEditor( Scene* scene, UID anim_uid )
 {
-    SceneColorSwitcher* anim;
+    SceneColorFader* anim;
 
     if ( anim_uid == 0 )
-        anim = new SceneStrobeAnimator( 0, AnimationSignal(), UIDArray(), 0, 200, 100 );
+        anim = new SceneStrobeAnimator( 0, AnimationSignal(), UIDArray(), RGBWA::BLACK, 200, 100 );
     else
         anim = reinterpret_cast<SceneStrobeAnimator*>( scene->getAnimation( anim_uid ) );
 
-    NumberedListField strobe_neg_color_field( "Negative strobe color" );
-
-    for ( ColorNames::iterator it=SceneColorSwitcher::color_names.begin(); it != SceneColorSwitcher::color_names.end(); ++it ) {
-        strobe_neg_color_field.addKeyValue( it->first, it->second );
-    }
-
-    strobe_neg_color_field.setDefaultListValue( anim->getStrobeNegColor() );
-
+    ColorSelectField strobe_neg_color_field( "Negative strobe color", anim->getStrobeNegColor() );
     IntegerField strobe_pos_ms_field( "Strobe on (ms)", anim->getStrobePosMS(),0, 32000 );
     IntegerField strobe_neg_ms_field( "Strobe off (ms)", anim->getStrobeNegMS(),0, 32000 );
-    FixtureSelect fixture_select( "Fixtures (comma separated)", 
-                                getVenue(), scene->getActorUIDs(), anim->getActors() );
+    ActorSelectField actor_select( "Fixtures (comma separated)",  getVenue(), scene, anim->getActors() );
 
     Form form( &m_text_io );
     form.add( strobe_neg_color_field );
     form.add( strobe_pos_ms_field );
     form.add( strobe_neg_ms_field );
-    form.add( fixture_select );
+    form.add( actor_select );
     if ( !form.play() )
         return false;
 
-    anim->setStrobeNegColor( (UINT)strobe_neg_color_field.getListValue() );
+    anim->setStrobeNegColor( strobe_neg_color_field.getColor() );
     anim->setStrobePosMS( strobe_pos_ms_field.getLongValue() );
     anim->setStrobeNegMS( strobe_neg_ms_field.getLongValue() );
-    anim->setActors( fixture_select.getUIDs() );
+    anim->setActors( actor_select.getActorUIDs() );
 
     if ( anim_uid == 0 ) {
         anim->setUID( getVenue()->allocUID() );
@@ -824,4 +920,28 @@ bool DMXTextUI::animChannelEditor( Scene* scene, UID anim_uid )
     return true;
 }
 
+// ----------------------------------------------------------------------------
+//
+bool DMXTextUI::animPixelEditor( Scene* scene, UID anim_uid )
+{
+    ScenePixelAnimator* anim;
 
+    if ( anim_uid == 0 ) 
+        anim = new ScenePixelAnimator( 0, AnimationSignal(), UIDArray(), PixelEffect::BEAM, 
+                                       RGBWAArray(), RGBWA::BLACK, 5, 1, true, 2, true );
+    else
+        anim = reinterpret_cast<ScenePixelAnimator*>( scene->getAnimation( anim_uid ) );
+
+    PixelAnimationForm form( &m_text_io, getVenue(), scene, anim );
+    if ( !form.play() )
+        return false;
+
+    form.update( anim );
+
+    if ( anim_uid == 0 ) {
+        anim->setUID( getVenue()->allocUID() );
+        scene->addAnimation( anim );
+    }
+
+    return true;
+}

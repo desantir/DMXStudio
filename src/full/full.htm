@@ -1,7 +1,7 @@
 <!DOCTYPE html> 
 
 <!--
-Copyright (C) 2011,2013 Robert DeSantis
+Copyright (C) 2011-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -51,141 +51,7 @@ MA 02111-1307, USA.
     <script src="beatviz.js"></script>
     <script src="freqviz.js"></script>
 
-    <style>
-        .scroll-pane { overflow: auto; width: 99%; /* float:left; Causes _odd_ issues with layout */ }
-        .scroll-content { clear:both; width: 100%; float: left; margin-top: 10px; margin-bottom: 5px; }   /* Tile container */
-        .scroll-content-item { width: 92px; height: 92px; float: left; margin: 0px 2px 6px 2px; font-family: sans-serif; text-align: left; }
-        .scroll-content-header { margin: 1px 1px 2px 2px; border-bottom: 1px solid white; font-size: 16pt; font-weight: normal; }        
-        .scroll-content-interior { margin: 1px 2px 1px 2px; font-size: 8pt; font-weight:normal; padding: 0px; overflow: hidden; height: 60px; }
-        .highlight-scroll-item { border: 1px solid #808080;  }
-        .active_scroll_item {  border: 1px solid #0972a5;  background: #444444 url(css/dark-hive-custom/images/ui-bg_loop_25_000000_21x21.png); }
-
-        .scroll-bar-wrap { clear: left; padding: 0 4px 0 2px; margin: 0 -1px -1px -1px; }
-        .scroll-bar-wrap .ui-slider { background: none; border:0;  margin: 0 auto;  }
-        .scroll-bar-wrap .ui-handle-helper-parent { position: relative; width: 100%; height: 100%; margin: 0 auto; }
-        .scroll-bar-wrap .ui-slider-handle { }
-        .scroll-bar-wrap .ui-slider-handle .ui-icon { margin: -8px auto 0; position: relative; top: 50%; }
-
-        .section_title_container { height: 16px; }
-        .section_title { font-weight: bold; color:#808080; font-style:italic; font-size: 10pt; float:left; }
-        .subsection_title { font-size: 10pt; font-family: sans-serif; color: #808080;}
-        .section_button { float:right; margin: 2px 8px 0px 0px; font-family: sans-serif; font-size:6pt; 
-                          color: #808080; padding:1px; cursor: pointer; -moz-user-select: none;-webkit-user-select: none; }
-        .section_button_color { border: 1px solid #808080; color: #808080; }
-        .section_button_color:hover { border: 1px solid white; color: white;  }
-
-        .fieldset_title { font-weight: bold; color:#808080; }
-
-        .animation_fieldset { font-family: sans-serif; font-weight: normal; color:white; }
-        .animation_description { font-family: sans-serif; font-size: 12pt; color:  #0972a5; margin-bottom: 8px;}
-         
-        .ui-spinner-input { color: white; }
-        
-        .ui-icon-white { width: 16px; height: 16px; background-image: url(css/dark-hive-custom/images/ui-icons_ffffff_256x240.png); }
-        .ui-icon-active { width: 16px; height: 16px; background-image: url(css/dark-hive-custom/images/ui-icons_222222_256x240.png); }
-        .ui-icon-widget-content { width: 16px; height: 16px; background-image: url(css/dark-hive-custom/images/ui-icons_cccccc_256x240.png); }   
-        .ui-icon-red { width: 16px; height: 16px; background-image: url(css/dark-hive-custom/images/ui-icons_a83300_256x240.png); }        
-        .ui-icon-green { width: 16px; height: 16px; background-image: url(css/dark-hive-custom/images/ui-icons_4b8e0b_256x240.png); }        
-        .ui-icon-blank { background-position: -160px 0; }           
-
-        .lg-icon-grey { width: 32px; height: 32px; background-image: url(large-icons.png);}
-        .lg-icon-white { width: 32px; height: 32px; background-image: url(large-icons-white.png); }
-        .lg-icon-disabled { width: 32px; height: 32px; background-image: url(large-icons-disabled.png); }
-        .lg-icon-blue { width: 32px; height: 32px; background-image: url(large-icons-blue.png); }
-
-        .lg-icon-sparkle { background-position: 0px 0px; }
-        .lg-icon-gear { background-position: -32px 0px; }
-        .lg-icon-chart { background-position: -64px 0px;}    
-        .lg-icon-pencil { background-position: -96px 0px;}         
-        .lg-icon-folder { background-position: -128px 0px; }
-        .lg-icon-antenna { background-position: -192px 0px; }
-        .lg-icon-plus { background-position: -256px 0px; }
-        .lg-icon-speaker { background-position: -320px 0px; }
-        .lg-icon-tag { background-position: -384px 0px; }
-        .lg-icon-mic { background-position: -512px 0px; }
-        .lg-icon-track-back { background-position: -544px 0px; }
-        .lg-icon-track-forward { background-position: -576px 0px; }
-        .lg-icon-track-stop { background-position: -608px 0px; }
-        .lg-icon-track-pause { background-position: -640px 0px; }
-        .lg-icon-track-play { background-position: -672px 0px; }
-        .lg-icon-trash { background-position: -704px 0px; }
-
-        .menu_icon { margin: 2px 4px 0px 4px; cursor:pointer;} 
-         
-        .slider_container { float:left; width: 42px; margin: 10px 0px 10px 4px; }
-
-        .slider_header { height: 18px; width: 100%; color: #808080; font-family: sans-serif; overflow:hidden; font-size: 10pt; 
-                         text-align:center; white-space:nowrap; border-bottom: 1px solid #808080; } 
-        .slider_footer { height: 18px; width: 100%; color: #808080; font-family: sans-serif; overflow: hidden; font-size: 10pt; 
-                         text-align:center; white-space:nowrap; margin-left: 3px;} 
-           
-        .slider_slider { height:180px; margin:15px 8px 15px 4px; width: 14px; float:right; }
-        
-        .slider_sidecar { position: absolute; top: -15px; left: 0px; width: 300px; height: 12px; background: rgba(0,0,0,0);
-                           color: white; font-family: sans-serif; font-size: 8pt; overflow: no-display;
-                           z-index: 100; }        
-    
-        .slider_side_text { display:block; font-size: 10pt; width:8px; white-space:nowrap; font-family: sans-serif; overflow: visible; 
-                               position:relative; top: 185px; left: -3px; color: #808080;
-                               transform:rotate(-90deg); -moz-transform:rotate(-90deg);-o-transform:rotate(-90deg); 
-                               -webkit-transform:rotate(-90deg); -ms-transform:rotate(-90deg); -webkit-transform-origin: 0 0; 
-                               -moz-transform-origin: 0 0; -ms-transform-origin: 0 0; -o-transform-origin: 0 0; float: left; }    
-
-        .animation_button { width:610px; height: 70px; text-align:left; margin-bottom: 6px; padding: 6px; font-family: sans-serif; }
-        .animation_button_title { clear:both; float:left; color:white; font-size:14pt; }
-        .animation_button_fixtures { float:right; color:white; font-size:10pt; }    
-        .animation_button_signal { clear:both; float:left; color:#2e7db2; font-size:10pt; }
-
-        .describe_number { float:left; font-family:sans-serif; font-weight:normal; font-size: 60pt; margin: 0px 4px 2px 0px; }
-        .describe_title { color: #2e7db2; width:150px; text-align:right; float:left;  clear:both; margin-right: 6px; }
-        .describe_data { color:white; text-align:left; float:left; }
-        .describe_fixture_range { color:#2e7db2; clear:both; float:left;margin:6px 6px 6px 30px; display: none; font-size:8pt;}         
-        .describe_fixture_channels { margin:0px; overflow-y:auto; overflow-x:hidden; height:280px; font-size: smaller; }
-        .describe_chase_step { color:#2e7db2; } 
-        .describe_scene_channels { color:#2e7db2; clear:both; float:left; margin:3px 0px 8px 30px; font-size:8pt;}             
-        .describe_scene_dmx { color:#2e7db2; font-size:8pt; margin-left:4px; } 
-         
-        .dialog_note_text { color:#2e7db2; font-size:8pt; margin-left:4px; } 
-                  
-        .mm_track_label { font-size: 10pt; width: 400px; text-wrap:normal; }
-        .mm_special_track { font-style:italic; }
-        .mm_track_container:hover { color: #2e7db2; cursor: pointer; }
-
-        .dmx_tile {  float:left; border: white solid 1px;height:15px;width:38px; padding: 1px;
-                    font-size: 8pt; font-family: sans-serif; text-align:center;}
-        .dmx_tile_unused { }
-        .dmx_tile_used { background-color: #993300; }
-        .dmx_tile_locked { cursor:no-drop;}
-        .dmx_tile_unlocked { cursor:pointer; }
-        .dmx_tile_unlocked:hover {  background-color: #2e7db2; }
-
-        .sortable_fixtures { list-style-type: none; margin: 0; padding: 0; width: 100%; }
-        .sortable_fixture { margin: 0 4px 5px 0px; padding: 5px; font-family: sans-serif; font-weight: bold; font-size: 10pt; 
-                            height:16px; width: 30px; border-radius: 6pt 6pt; float: left; text-align: center;}
-
-        .delete_item { cursor: pointer; }
-        .edit_item { cursor: pointer; }
-        .play_item { cursor: pointer; }
-        .describe_item { cursor: pointer; }        
-        .new_item { cursor: pointer; }
-
-        .collapsable_section { padding: 4px; margin-top: 2px; width: 99.5%;
-                               background: #000000 url(css/dark-hive-custom/images/ui-bg_highlight-hard_30_000000_1x100.png) 0 24px repeat-x; }
-        .collapsable_icon { cursor:pointer; float: left; }
-        .collapsable_content { }
-        .scroll_or_grid_icon { cursor:pointer; float: right; }
-
-        .track_slider_icon { float:right; cursor:pointer; }
-
-        .track_status { float: right; font-family: sans-serif; color: #0972a5; font-size: 8pt; margin-right: 8px; display:none; }
-        .track_title { font-family: sans-serif; font-size: 10pt; text-overflow:ellipsis; width: 350px; white-space:nowrap; overflow:hidden; }
-        .track_length { font-family: sans-serif; color: #808080; font-size: 8pt; margin-top: 2px;}
-        .player_multilist { font-size: 10pt; font-family: sans-serif; }
-        .playlist_button { font-size: 7pt; font-family: sans-serif; }
-        .track_list { font-family: sans-serif; font-size: 10pt; height: 95%; width: 99%; }
-        .player_error { float:left; font-family: sans-serif; font-size: 10pt; margin-left: 10px; color: red; }
-
-    </style>
+    <link rel="stylesheet" href="full.css" />
 
     <script>
         $(function () {
@@ -205,15 +71,19 @@ MA 02111-1307, USA.
     </div>
     <div class="collapsable_content" style="margin-top: 8px; margin-bottom: 10px; height: 80px;">
         <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
-            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px; width:100%;" >Blackout</p>
-            <div id="blackout_buttons" style="border: 0px; margin: 2px 0px 0px 0px; padding: 0px;">
+            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; width:100%; margin: 0px 0px 4px 0px;" >Act</p>
+            <select id="master_act" style="display:block;"></select>
+        </div>
+        <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
+            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; width:100%; margin: 0px 0px 4px 0px;" >Blackout</p>
+            <div id="blackout_buttons">
                 <input type="radio" id="blackout_0" name="blackout" value="0" checked="checked" /><label for="blackout_0">Off</label>
                 <input type="radio" id="blackout_1" name="blackout" value="1" /><label for="blackout_1">On</label>
             </div>
         </div>
         <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
-            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px;" >Whiteout</p>
-            <div id="whiteout_buttons" style="border: 0px; margin: 2px 0px 0px 0px; padding: 0px;">
+            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px 0px 4px 0px;" >Whiteout</p>
+            <div id="whiteout_buttons">
                 <input type="radio" id="whiteout_0" name="whiteout" value="0" checked="checked" /><label for="whiteout_0">Off</label>
                 <input type="radio" id="whiteout_1" name="whiteout" value="1" /><label for="whiteout_1">Slow</label>
                 <input type="radio" id="whiteout_2" name="whiteout" value="2" /><label for="whiteout_2">Fast</label>
@@ -223,7 +93,7 @@ MA 02111-1307, USA.
             </div>
         </div>
         <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
-            <p class="ui-state-default ui-corner-all subsection_title" style="margin: 0px 0px 2px 0px; padding: 4px;">Current Animation Speed</p>
+            <p class="ui-state-default ui-corner-all subsection_title" style="margin: 0px 0px 4px 0px; padding: 4px;">Current Animation Speed</p>
             <select id="animations_speed" style="width:80px;">
                 <option value="0" selected>Default</option>
                 <option value="100">25 ms</option>
@@ -244,8 +114,8 @@ MA 02111-1307, USA.
             </select>
         </div>
         <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
-            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px; width:100%;" >Music Match</p>
-            <div id="music_match_buttons" style="border: 0px; margin: 2px 0px 0px 0px; padding: 0px;">
+            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px; width:100%; margin: 0px 0px 4px 0px;" >Music Match</p>
+            <div id="music_match_buttons">
                 <input type="radio" id="music_match_0" name="music_match_enable" value="0" checked="checked" /><label for="music_match_0">Off</label>
                 <input type="radio" id="music_match_1" name="music_match_enable" value="1" /><label for="music_match_1">On</label>
             </div>
@@ -256,7 +126,6 @@ MA 02111-1307, USA.
         <div style="float:right; display:inline;">
             <div id="save_load_venue" class="lg-icon-grey lg-icon-folder menu_icon" title="load / save venue" style="float:right;width:32px;"></div>
             <div id="configure_venue" class="lg-icon-grey lg-icon-gear menu_icon" title="venue configuration" style="float:right;"></div>
-            <div id="toggle_delete_mode" class="lg-icon-grey lg-icon-trash menu_icon" title="delete" style="float:right;"></div>
             <div id="toggle_edit_mode" class="lg-icon-grey lg-icon-pencil menu_icon" title="edit" style="float:right;"></div>
         </div>
     </div>
@@ -293,7 +162,7 @@ MA 02111-1307, USA.
                 <div id="track_forward_info" class="ui-icon ui-icon-blank" style="float:left; margin-top: 20px; width: 14px;" title="show queued tracks"></div>
             </div>
         </div>
-        <div id="track_select" style="float:left; margin:3px 0px 0px 36px; display:none;">
+        <div id="track_select" style="float:left; margin:3px 0px 0px 36px; display:none; max-width: 500px;">
             <div>
                 <select id="playlist_list"></select>
                 <button id="playlist_play" class="playlist_button">play</button>
@@ -318,8 +187,8 @@ MA 02111-1307, USA.
         <span class="section_title">SCENES</span>
         <span class="collapsable_icon"></span>
         <span class="scroll_or_grid_icon" style="margin-right: 5px;"></span>
-        <span class="ui-icon ui-icon-plusthick new_item" title="new scene" style="float:right; display: none; margin-right: 5px;" onclick="createScene(event);"></span>
-        <span id="copy_scene_button" class="ui-icon ui-icon-clipboard new_item" title="copy scene" style="float:right; display: none; margin-right: 5px;" onclick="copyScene(event);"></span>
+        <span class="ui-icon ui-icon-plusthick edit_mode" title="new scene" style="float:right; display: none; margin-right: 5px;" onclick="createScene(event);"></span>
+        <span id="copy_scene_button" class="ui-icon ui-icon-clipboard edit_mode" title="copy scene" style="float:right; display: none; margin-right: 5px;" onclick="copyScene(event);"></span>
     </div>
     <div class="collapsable_content">
         <div class="scroll-content"></div>    
@@ -334,7 +203,7 @@ MA 02111-1307, USA.
         <span class="section_title">CHASES</span>
         <span class="collapsable_icon"></span>
         <span class="scroll_or_grid_icon" style="margin-right: 5px;"></span>
-        <span class="ui-icon ui-icon-plusthick new_item" title="new chase" style="float:right; display: none; margin-right: 5px;" onclick="createChase(event);"></span>
+        <span class="ui-icon ui-icon-plusthick edit_mode" title="new chase" style="float:right; display: none; margin-right: 5px;" onclick="createChase(event);"></span>
     </div>
     <div class="collapsable_content">
         <div class="scroll-content"></div>    
@@ -349,9 +218,9 @@ MA 02111-1307, USA.
         <span class="section_title" >GROUPS & FIXTURES</span>
         <span class="collapsable_icon"></span>
         <span class="scroll_or_grid_icon"  style="margin-right: 5px;"></span>
-        <span class="ui-icon ui-icon-plusthick new_item" title="new fixture" style="float:right; display: none; margin-right: 5px; " onclick="createFixture(event);"></span>
-        <span class="ui-icon ui-icon-plusthick new_item" title="new fixture group" style="float:right; display: none; margin: 0px 5px 0px 0px; border: 1px solid #808080;" onclick="createFixtureGroup(event);"></span>
-        <span id="copy_fixtures_button" class="ui-icon ui-icon-clipboard new_item" title="copy fixtures to scene" style="float:right; display: none; margin-right: 5px; " onclick="copyFixtures(event);"></span>
+        <span class="ui-icon ui-icon-plusthick edit_mode" title="new fixture" style="float:right; display: none; margin-right: 5px; " onclick="createFixture(event);"></span>
+        <span class="ui-icon ui-icon-plusthick edit_mode" title="new fixture group" style="float:right; display: none; margin: 0px 5px 0px 0px; border: 1px solid #808080;" onclick="createFixtureGroup(event);"></span>
+        <span id="copy_fixtures_button" class="ui-icon ui-icon-clipboard edit_mode" title="copy fixtures to scene" style="float:right; display: none; margin-right: 5px; " onclick="copyFixtures(event);"></span>
         <span id="clear_fixtures_button" class="ui-icon ui-icon-minus play_item" title="clear all fixtures" style="float:right; margin-right: 5px; border: 1px solid #000000;" onclick="clearFixtures(event);" ></span>
     </div>
     <div class="collapsable_content">
@@ -366,14 +235,16 @@ MA 02111-1307, USA.
     <div class="section_title_container">
         <span class="section_title" >CHANNELS</span>
         <span class="collapsable_icon"></span>
+
         <span class="scroll_or_grid_icon"  style="margin-right: 5px;"></span>
         <span class="track_slider_icon" style="margin-right: 5px;"></span>
         <span id="channel_panel_colorpicker" class="ui-icon ui-icon-lightbulb" title="show color palette" style="float:right; cursor:pointer; margin-right: 5px;"></span>
         <span id="channel_panel_groupcolors" class="ui-icon ui-icon-pin-s" title="group color channels" style="float:right; cursor:pointer; margin-right: 5px;" onclick="groupFixtureSliderColors(event);"></span>
         <span id="channel_panel_rearrange" class="ui-icon ui-icon-grip-solid-vertical" title="arrange channels" style="float:right; cursor:pointer; margin-right: 5px;" onclick="arrangeSliders(event);"></span>
+        <span id="slider_pane_title" class="slider_pane_title"></span>
     </div>
     <div class="collapsable_content">
-        <div class="scroll-content"></div>
+        <div class="scroll-content" style="margin-top:0px;"></div>
         <div class="scroll-bar-wrap ui-widget-content ui-corner-bottom">
             <div id="slider_pane_scrollbar" class="scroll-bar"></div>
         </div>
@@ -382,12 +253,12 @@ MA 02111-1307, USA.
 
 <div id="slider_template" style="display:none;">
     <div class="slider_container">
-        <div class="slider_header"></div>
+        <div class="slider_header slider_text_color"></div>
         <div style="height:200px; width:40px;">
-            <div class="slider_side_text"></div>
+            <div class="slider_side_text slider_text_color"></div>
             <div class="slider_slider"></div>
         </div>
-        <div class="slider_footer"></div>
+        <div class="slider_footer slider_text_color"></div>
     </div>
 </div>
 
@@ -445,6 +316,8 @@ MA 02111-1307, USA.
     <div style="float:left; margin-top: 4px;" >
         <div class="describe_title">name:</div>
         <div class="describe_data" id="describe_chase_name"></div>
+        <div class="describe_title">acts:</div>
+        <div class="describe_data" id="describe_chase_acts"></div>
         <div class="describe_title">delay:</div>
         <div class="describe_data" id="describe_chase_delay"></div>
         <div class="describe_title">fade:</div>
@@ -467,6 +340,8 @@ MA 02111-1307, USA.
     <div style="float:left; margin-top: 4px;" >
         <div class="describe_title">name:</div>
         <div class="describe_data" id="describe_scene_name"></div>
+        <div class="describe_title">acts:</div>
+        <div class="describe_data" id="describe_scene_acts"></div>
         <div class="describe_title">fixtures:</div>
         <div class="describe_data" id="describe_scene_fixture_count"></div>
         <div class="describe_title">animations:</div>
@@ -487,7 +362,10 @@ MA 02111-1307, USA.
         <label for="copy_fixture_scene" style="display:block; margin: 12px 0px 4px 0px;">scene</label>
         <select id="copy_fixture_scene" style="display:block;" ></select>
 
-        <input type="checkbox" id="copy_fixture_remove" checked="checked" value="remove" style="display:block;margin-top: 12px; float:left;"/>
+        <input type="checkbox" id="copy_fixture_keep_groups" checked="checked" value="remove" style="clear:both; margin-top: 12px; float:left;"/>
+        <label for="copy_fixture_keep_groups" style="float:left; margin: 10px 0px 0px 2px;">keep fixtures in groups</label>
+
+        <input type="checkbox" id="copy_fixture_remove" checked="checked" value="remove" style="clear:both; display:block;margin-top: 12px; float:left;"/>
         <label for="copy_fixture_remove" style="float:left; margin: 10px 0px 0px 2px;">release fixtures after copy</label>
     </form>
 </div>
@@ -569,8 +447,15 @@ MA 02111-1307, USA.
                 <label for="nsd_description" style="display:block; margin: 8px 0px 4px 0px;">description</label>
                 <input id="nsd_description" style="display:block; width: 400px;" />
 
-                <input type="checkbox" id="nsd_private_scene" checked="checked" value="remove" style="clear:both; margin-top: 12px; float:left;"/>
-                <label for="nsd_private_scene" style="float:left; margin: 10px 0px 0px 2px;">hide from mobile UI</label>
+                <div>
+                    <label for="nsd_acts" style="display:block; margin: 8px 0px 4px 0px;">acts</label>
+                    <select id="nsd_acts" style="display:block;" multiple="multiple" ></select>
+                </div>
+
+                <div id="nsd_keep_groups_section" style="margin-top: 12px; float:left; margin-left: 40px;">
+                    <input type="checkbox" id="nsd_keep_groups" checked="checked" />
+                    <label for="nsd_keep_groups">keep fixtures in groups</label>
+                </div>
             </div>
 
             <h3>Animations</h3>
@@ -631,7 +516,12 @@ MA 02111-1307, USA.
                 <label for="ncd_description" style="display:block; margin: 8px 0px 4px 0px;">description</label>
                 <input id="ncd_description" style="display:block; width: 400px;" />
 
-                <div style="float:left; margin:10px 18px 4px 0px;">
+                <div>
+                    <label for="ncd_acts" style="display:block; margin: 0px 0px 4px 0px;">acts</label>
+                    <select id="ncd_acts" style="display:block;" multiple="multiple" ></select>
+                </div>
+
+                <div style="clear:both; float:left; margin:10px 18px 4px 0px;">
                     <label for="ncd_delay_ms" style="display:block;">delay</label>
                     <input id="ncd_delay_ms" style="display:block; width:80px;" title="default scene length"/>&nbsp;ms
                 </div>
@@ -640,9 +530,6 @@ MA 02111-1307, USA.
                     <label for="ncd_fade_ms" style="display:block;">fade</label>
                     <input id="ncd_fade_ms" style="display:block; width:80px;" title="inter-scene fade"/>&nbsp;ms
                 </div>
-
-                <input type="checkbox" id="ncd_private_scene" checked="checked" value="remove" style="clear:both; margin-top: 12px; float:left;"/>
-                <label for="ncd_private_scene" style="float:left; margin: 10px 0px 0px 2px;">hide from mobile UI</label>
             </div>
 
             <h3>Scenes</h3>
@@ -787,7 +674,7 @@ MA 02111-1307, USA.
             </div>
 
             <div style="clear:both; float: left; margin-top: 10px;">
-                <label for="NNN_sample_rate_ms" style="display:block; margin-top: 6px;">sample rate</label>
+                <label for="NNN_sample_rate_ms" style="display:block;">sample rate</label>
                 <input id="NNN_sample_rate_ms" style="display:block; width:80px;" title="how often to sample this signal or fire the timer"/>&nbsp;ms
             </div>
 
@@ -912,7 +799,7 @@ MA 02111-1307, USA.
 </div>
 
 <div id="edit_SceneColorSwitcher_dialog" style="display:none;">
-    <form style="height:300px;">
+    <form style="height:360px;">
         <fieldset style="padding:8px; margin-top:10px;">
             <legend class="animation_fieldset"></legend>
             <div id="escs_description" class="animation_description"></div>
@@ -921,6 +808,7 @@ MA 02111-1307, USA.
                 <label for="escs_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
                 <select id="escs_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
             </div>
+
             <div style="clear:both;float:left; margin-right: 20px; margin-top: 10px;">
                 <label for="escs_strobe_pos_ms" style="display:block;">strobe on</label>
                 <input id="escs_strobe_pos_ms" style="display:block; width:70px;"/>&nbsp;ms
@@ -932,6 +820,10 @@ MA 02111-1307, USA.
             <div style="float:left; margin-top: 10px;">
                 <div>negative color</div>
                 <div id="escs_colorpicker" style="height:30px; width:60px; border: 1px solid #808080; border-radius: 6pt 6pt;"></div>
+            </div>
+            <div style="clear:both;float:left; margin-top: 10px;">
+                <label for="escs_fader_effect" style="display:block;">fade</label>
+                <select id="escs_fader_effect" style="display:block;"></select>
             </div>
             <div style="clear:both;float:left; margin-top: 10px;">
                 <div style ="float: left; margin-right:6px;">custom color progression</div>
@@ -1225,7 +1117,7 @@ MA 02111-1307, USA.
 </div>
 
 <div id="music_match_dialog" style="display:none;" title="Configure Venue">
-    <div>
+    <div id="mmd_track_div">
         <div class="mm_track_label" style="clear:both; float:left; margin: 2px 0px 2px 0px;">
             <div>
                 <select id="mmd_playlist_list"></select>
@@ -1236,16 +1128,14 @@ MA 02111-1307, USA.
         </div>
 
         <div style="float:right; margin: 5px 0px 2px 0px;">
-            <button id="mmd_add" style="float:left; font-size: 10pt; font-family: sans-serif;" 
+            <button id="mmd_add" class="mm_panel_button" style="float:left;" 
                 onclick="music_map_add(event); return false;">map track</button>
-            <button id="mmd_add_all" style="float:left; font-size: 10pt; font-family: sans-serif; margin-right:2px;"
+            <button id="mmd_add_all" class="mm_panel_button" style="float:left;"
                  onclick="music_map_add_all(event); return false;">map playlist</button>
         </div>
+        <div style="clear: both; "></div>
+        <hr style="margin: 10px 0px 10px 0px;" />
     </div>
-
-    <div style="clear: both; "></div>
-
-    <hr style="margin: 10px 0px 10px 0px;" />
 
     <div id="mmd_mappings">
     </div>
@@ -1260,6 +1150,58 @@ MA 02111-1307, USA.
             <span class="mm_remove ui-icon ui-icon-circle-minus" title="remove mapping" style="float:left;cursor: pointer;"></span>
         </div>
     </div>
+</div>
+
+<div id="edit_ScenePixelAnimator_dialog" style="display:none;">
+    <form style="height:360px;">
+        <fieldset style="padding:8px; margin-top:10px;">
+            <legend class="animation_fieldset">pixel animator</legend>
+            <div id="espa_description" class="animation_description"></div>
+            <div style="clear:both; float:left;">
+                <label for="espa_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
+                <select id="espa_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
+            </div>
+            <div style="clear:both; float:left; margin-top: 10px;">
+                <input id="espa_combine" type="checkbox" />
+                <label for="espa_combine" >combine fixtures</label>
+            </div>
+
+            <div style="clear:both;float:left; margin-top: 10px;">
+                <div style="clear:both;float:left; height: 60px;">
+                    <label for="espa_pixel_effect" style="clear:both; display:block; margin-bottom: 4px;">pixel effect</label>
+                    <select id="espa_pixel_effect" style="display:block; "></select>
+                </div>
+                <div id="espa_generations_div" style="float:left; margin-left: 20px;">
+                    <label for="espa_generations" style="display:block; margin-bottom: 4px;">generations</label>
+                    <input id="espa_generations" style="display:block; width:70px; "/>
+                </div>
+                <div id="espa_pixels_div" style="float:left; margin-left: 20px;">
+                    <label for="espa_pixels" style="display:block; margin-bottom: 4px;">pixels</label>
+                    <input id="espa_pixels" style="display:block; width:70px;"/>
+                </div>
+                <div id="espa_increment_div" style="float:left; margin-left: 20px;">
+                    <label for="espa_increment" style="display:block; margin-bottom: 4px;">increment</label>
+                    <input id="espa_increment" style="display:block; width:70px; "/>
+                </div>
+                <div id="espa_fade_div" style="float:left; margin-left: 20px; margin-top: 30px;">
+                    <input id="espa_fade" type="checkbox" />
+                    <label for="espa_fade" >fade colors</label>
+                </div>
+            </div>
+  
+            <div style="clear:both;float:left; margin-top: 10px;">
+                <div style ="float: left; margin-right:6px;">custom color progression</div>
+                <div style ="float: left;" id="espa_color_progression"></div>
+            </div>
+
+            <div style="clear:both; float:left; margin-top: 10px;">
+                <div style="margin-bottom: 4px;">pixel off color</div>
+                <div id="espa_pixel_off_color" style="height:30px; width:60px; border: 1px solid #808080; border-radius: 6pt 6pt;"></div>
+            </div>
+
+        </fieldset>
+        <div id="espa_signal" style="clear:both;" ></div>
+    </form>
 </div>
 
 </body>

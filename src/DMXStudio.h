@@ -28,15 +28,6 @@ MA 02111-1307, USA.
 #define DMX_PACKET_SIZE     512
 #define INVALID_CHANNEL     0xFFFF
 
-enum ColorChannels {
-    RED_INDEX=0,
-    GREEN_INDEX=1,
-    BLUE_INDEX=2,
-    WHITE_INDEX=3,
-    AMBER_INDEX=4,
-    COLOR_CHANNELS
-};
-
 struct StrobeTime {
     UINT m_on_ms;
     UINT m_off_ms;
@@ -104,7 +95,7 @@ public:
     void readIniFile();
     void writeIniFile();
         
-    inline Venue* getVenue() {
+    inline Venue* getVenue() const {
         return m_venue;
     }
 

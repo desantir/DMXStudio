@@ -1,25 +1,24 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
-hopluvr at gmail dot com
+    Copyright (C) 2011,2012 Robert DeSantis
+    hopluvr at gmail dot com
 
-This file is part of DMX Studio.
+    This file is part of DMX Studio.
  
-DMX Studio is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3 of the License, or (at your
-option) any later version.
+    DMX Studio is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or (at your
+    option) any later version.
  
-DMX Studio is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-License for more details.
+    DMX Studio is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+    or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+    License for more details.
  
-You should have received a copy of the GNU General Public License
-along with DMX Studio; see the file _COPYING.txt.  If not, write to
-the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-MA 02111-1307, USA.
+    You should have received a copy of the GNU General Public License
+    along with DMX Studio; see the file _COPYING.txt.  If not, write to
+    the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+    MA 02111-1307, USA.
 */
-
 
 #pragma once
 
@@ -40,6 +39,7 @@ typedef enum fixture_type {
     FIXT_DOTS = 9,
     FIXT_H2O = 10,
     FIXT_SCANNER = 11,
+    FIXT_PIXEL = 12,
     FIXT_NUM_TYPES
 } FixtureType;
 
@@ -58,12 +58,55 @@ typedef std::map<UINT,FUID> FixturePersonalityToFUID;
 typedef std::map<CString,FixturePersonalityToFUID, CaseInsensitiveCStringComparitor> FixtureModelToPersonalityMap;
 typedef std::map<CString, FixtureModelToPersonalityMap, CaseInsensitiveCStringComparitor> FixtureDefinitionHierarchy;
 
+class Pixel {
+    channel_t   m_red;
+    channel_t   m_green;
+    channel_t   m_blue;
+    channel_t   m_white;
+    channel_t   m_amber;
+
+public:
+     Pixel() : 
+        m_red( INVALID_CHANNEL ), 
+        m_green( INVALID_CHANNEL ), 
+        m_blue( INVALID_CHANNEL ), 
+        m_white( INVALID_CHANNEL ),
+        m_amber( INVALID_CHANNEL )
+    {}
+
+    inline channel_t red( ) const { return m_red; };
+    inline channel_t green( ) const { return m_green; };
+    inline channel_t blue( ) const { return m_blue; };
+    inline channel_t white( ) const { return m_white; };
+    inline channel_t amber( ) const { return m_amber; };
+
+    inline void red( channel_t red ) { m_red = red; };
+    inline void green( channel_t green ) { m_green = green; };
+    inline void blue( channel_t blue ) { m_blue = blue; };
+    inline void white( channel_t white ) { m_white = white; };
+    inline void amber( channel_t amber ) { m_amber = amber; };
+
+    inline bool hasRed( ) const { return m_red != INVALID_CHANNEL; };
+    inline bool hasGreen( ) const { return m_green != INVALID_CHANNEL; };
+    inline bool hasBlue( ) const { return m_blue != INVALID_CHANNEL; };
+    inline bool hasWhite( ) const { return m_white != INVALID_CHANNEL; };
+    inline bool hasAmber( ) const { return m_amber != INVALID_CHANNEL; };
+
+    inline void reset() {
+        m_red=m_green = m_blue = m_white = m_amber = INVALID_CHANNEL;
+    }
+};
+
+typedef std::vector<Pixel> PixelArray;
+
 class FixtureDefinition
 {
     friend class DefinitionReader;
     friend class DefinitionWriter;
 
     CString         m_source_filename;      // Track source file in case we need it
+    CString         m_author;
+    CString         m_version;
 
     FUID			m_fuid;
     CString	        m_manufacturer;
@@ -74,6 +117,8 @@ class FixtureDefinition
     bool            m_can_whiteout;
 
     ChannelArray	m_channels;				// Ordered list of channels
+
+    PixelArray      m_pixels;               // Pixels for all devices (non-pixel devices will have maximim of one)
 
 public:
     static void readFixtureDefinitions();
@@ -140,6 +185,14 @@ public:
         return &m_channels[offset];
     }
 
+    size_t getNumPixels( ) const {
+        return m_pixels.size();
+    }
+
+    PixelArray* getPixels() {
+        return &m_pixels;
+    }
+
     void print() {
         printf( "FUID %ld: %s %s type=%d tilt=%d pan=%d\n", 
             m_fuid, (const char*)m_manufacturer, (const char*)m_model, m_type, m_can_tilt, m_can_pan );
@@ -155,9 +208,11 @@ public:
 private:
     void chooseCapabilities( void );
     FUID generateFUID( void );
+    bool findPixel( size_t pixel_index, Pixel &pixel );
 
     static FixtureType convertTextToFixtureType( LPCSTR text_type );
     static LPCSTR convertFixtureTypeToText( FixtureType type );
     static void addFixtureDefinition( FixtureDefinition* fd );
 };
 
+typedef std::vector<FixtureDefinition *> FixtureDefinitionPtrArray;

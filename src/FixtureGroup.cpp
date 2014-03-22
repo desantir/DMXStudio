@@ -23,12 +23,15 @@ MA 02111-1307, USA.
 
 #include "DMXStudio.h"
 #include "FixtureGroup.h"
+#include "Venue.h"
 
 // ----------------------------------------------------------------------------
 //
 FixtureGroup::FixtureGroup( UID uid, GroupNumber group_number, const char * name, const char *description ) :
-    DObject( uid, group_number, name, description )
+    DObject( uid, group_number, name, description ),
+    m_channels( 0 )
 {
+    reset_channel_values();
 }
 
 // ----------------------------------------------------------------------------
@@ -54,3 +57,7 @@ bool FixtureGroup::containsFixture( UID pfuid ) {
     UIDSet::iterator it = m_fixtures.find( pfuid );
     return ( it != m_fixtures.end() );
 }
+
+
+
+

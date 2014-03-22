@@ -92,17 +92,17 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
         this.tiles[this.tiles.length] = id;
 
         var new_icon = '<div id="' + this.panel_id + '_' + '_icon_' + id + '" class="scroll-content-item ui-widget-header" tile_id="' + id + '" ' +
-                        this.make_click_event(0, id, object_name, tooltip_name) + '>';
+                        this.make_click_event(this.ACTION_PLAY, id, object_name, tooltip_name) + '>';
 
         new_icon += '<div class="scroll-content-header">' + number;
 
-        for (var i = 0; i < this.actions.length; i++) {
+        for (var i=1; i < this.actions.length; i++) {   // Skip play icon
             if (!allow_modify && (this.actions[i].tag_class == "edit_item" || this.actions[i].tag_class == "delete_item"))
                 continue;
 
             if (this.actions[i].used) {
-                new_icon += '<span class="' + this.actions[i].tile_class + " " + this.actions[i].tag_class +
-                            '" style="' + this.actions[i].style + '" ' +
+                new_icon += '<span class="tile_icon ' + this.actions[i].tile_class + " " + this.actions[i].tag_class +
+                            '" style="display:none; ' + this.actions[i].style + '" ' +
                             this.make_click_event(i, id, object_name, tooltip_name) + '></span>';
             }
         }
@@ -115,7 +115,37 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
 
         this.adjustSize();
 
-        return $("#" + this.panel_id + '_' + '_icon_' + id);
+        var tile = $("#" + this.panel_id + '_' + '_icon_' + id);
+
+        var self = this;
+
+        tile.hover(
+            function () { self.hover(id, true) },
+            function () { self.hover(id, false) }
+        );
+
+        return tile;
+    }
+
+    this.hover = function (id, is_in) {
+        var tile = $("#" + this.panel_id + '_' + '_icon_' + id);
+
+        $.each(tile.find(".tile_icon"), function () {
+            if (is_in) {
+                if ($(this).hasClass("edit_item") || $(this).hasClass("new_item") || $(this).hasClass("delete_item")) {
+                    if( edit_mode )
+                        $(this).css('display', '');
+                }
+                else
+                    $(this).css('display', '');
+            }
+            else
+                $(this).css('display', 'none');
+
+        });
+
+        if (this.actions[this.ACTION_HOVER].used)
+            eval('hover' + object_name + '(' + id + ',' + is_in + ')');
     }
 
     // method selectTile
@@ -124,13 +154,17 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
         if (tile == null)
             return;
 
+        var play_icon = tile.find(".play_item");
+
         if (!selected) {
             tile.removeClass("active_scroll_item");
-            tile.find(".play_item").removeClass(this.actions[0].selected_class).addClass(this.actions[0].tile_class);
+            if ( play_icon != null )
+                play_icon.removeClass(this.actions[0].selected_class).addClass(this.actions[0].tile_class);
         }
         else {
             tile.addClass("active_scroll_item");
-            tile.find(".play_item").addClass(this.actions[0].selected_class).removeClass(this.actions[0].tile_class);
+            if (play_icon != null)
+                play_icon.addClass(this.actions[0].selected_class).removeClass(this.actions[0].tile_class);
         }
     }
 
@@ -250,11 +284,15 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
     this.tooltip_name = tooltip_name;
     this.tiles = new Array();
 
+    this.ACTION_PLAY = 0;
+    this.ACTION_HOVER = 4;
+
     this.actions = [  // Action 0 is always the default and must have the selected_class
         { action: "play", tile_class: "ui-icon ui-icon-play", tag_class: "play_item", selected_class: "ui-icon-pause ui-icon-white", style: "float:right;", used: true },
         { action: "describe", tile_class: "ui-icon ui-icon-tag ", tag_class: "describe_item", style: "float:right;", used: true },
         { action: "delete", tile_class: "ui-icon ui-icon-trash ", tag_class: "delete_item", style: "float:right; display:none;", used: true },
-        { action: "edit", tile_class: "ui-icon ui-icon-pencil ", tag_class: "edit_item", style: "float:right; display:none;", used: true }
+        { action: "edit", tile_class: "ui-icon ui-icon-pencil ", tag_class: "edit_item", style: "float:right; display:none;", used: true },
+        { action: "hover", tile_class: "", tag_class: "", style: "", used: false },
     ];
 
     var scroll_or_grid_icon = $("#" + this.panel_id).find(".scroll_or_grid_icon");

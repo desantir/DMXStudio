@@ -38,28 +38,31 @@ DefinitionWriter::~DefinitionWriter(void)
 
 // ----------------------------------------------------------------------------
 //
-void DefinitionWriter::writeFixtureDefinitions( ) {
-    TiXmlDocument doc;
-
+void DefinitionWriter::writeFixtureDefinition( 
+            LPCSTR file_name, 
+            LPCSTR author, 
+            LPCSTR version, 
+            FixtureDefinitionPtrArray& definitions )
+{
     TiXmlElement fixtures( "fixture_definitions" );
-    visit_map<FixtureDefinitionMap>( fixtures, FixtureDefinition::FixtureDefinitions );
+    add_text_element( fixtures, "author", author );
+    add_text_element( fixtures, "version", version );
+
+    visit_ptr_array<FixtureDefinitionPtrArray>( fixtures, definitions );
+
+    TiXmlDocument doc;
+    TiXmlDeclaration xml_decl( "1.0", "", "" );
+
+    doc.InsertEndChild( xml_decl );
     doc.InsertEndChild( fixtures );
     //doc.Print();
 
-    char output_file[MAX_PATH]; 
-    HRESULT result = SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS, NULL, SHGFP_TYPE_CURRENT, output_file); 
-    STUDIO_ASSERT( SUCCEEDED(result), "Error %d getting document directory", result );
-
-    strcat_s( output_file, "\\DMXStudio" );
-
-    CreateDirectory( output_file, NULL );
-    
-    strcat_s( output_file, "\\FixtureDefinitions.xml" );
+    CString output_file = file_name;
 
     if ( doc.SaveFile( output_file ) )
-        printf( "Wrote fixture definitions to '%s'\n", output_file );
+        studio.log_status( "Wrote fixture definitions to '%s'\n", output_file );
     else
-        printf( "Error writing to '%s'\n", output_file );
+        studio.log_status( "Error writing to '%s'\n", output_file );
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +74,6 @@ void DefinitionWriter::visit( FixtureDefinition* fixture_definition )
     CString type( fixture_definition->convertFixtureTypeToText( fixture_definition->m_type ) );
     type.MakeLower();
 
-    add_attribute( fixture, "fuid", fixture_definition->m_fuid );
     add_attribute( fixture, "type", (LPCSTR)type );
     add_attribute( fixture, "channels", (int)fixture_definition->m_channels.size() );
 
@@ -95,8 +97,13 @@ void DefinitionWriter::visit( Channel* channel )
     add_attribute( channel_element, "type", (LPCSTR)channel->convertChannelTypeToText( channel->m_type ) );
     add_attribute( channel_element, "color", channel->isColor() );
     add_attribute( channel_element, "blackout", channel->canBlackout() );
-    add_attribute( channel_element, "value", channel->m_default_value );
-    add_attribute( channel_element, "home_value", channel->m_home_value );
+
+    if ( channel->m_default_value )
+        add_attribute( channel_element, "value", channel->m_default_value );
+    if ( channel->m_pixel_index )
+        add_attribute( channel_element, "pixel", channel->m_pixel_index );
+    if ( channel->m_home_value )
+        add_attribute( channel_element, "home_value", channel->m_home_value );
 
     // Add dimmer
     if ( channel->isDimmer() && 

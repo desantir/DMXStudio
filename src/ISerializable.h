@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -20,9 +20,9 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
+#include "RGBWA.h"
 #include "tinyxml.h"
 
 class ISerializable
@@ -73,6 +73,12 @@ public:
         element.SetAttribute( name, value );
     }
 
+    static void add_attribute( TiXmlElement& element, const char *name, RGBWA& value ) {
+        char buffer[128];
+        sprintf_s( buffer, "#%08lX", (ULONG)value );
+        element.SetAttribute( name, buffer );
+    }
+
     static void add_text_element( TiXmlElement& element, const char *name, const char * value ) {
         if ( !value || strlen( value ) == 0 )
             return;
@@ -107,6 +113,18 @@ public:
         element.InsertEndChild( pfuids );
     }
 
+    static void add_colors_element( TiXmlElement& element, const char *name, RGBWAArray& colors  ) {
+        TiXmlElement colors_element( name );
+
+        for ( RGBWA& rgb : colors ) {
+            TiXmlElement color_index_element( "color" );
+            add_attribute( color_index_element, "rgb", rgb );
+            colors_element.InsertEndChild( color_index_element );
+        }
+
+        element.InsertEndChild( colors_element );
+    }
+
     static const char *read_text_element( TiXmlElement *self, const char * element_name ) {
         TiXmlElement * element = self->FirstChildElement( element_name );
         if ( element == NULL || element->NoChildren() )
@@ -120,6 +138,15 @@ public:
 
         if ( value != NULL )
             sscanf_s( value, "%lu", &result );
+        return result;
+    }
+
+    static const RGBWA read_rgbw_attribute( TiXmlElement *self, const char * attribute_name, RGBWA default_value=RGBWA::BLACK ) {
+        const char *value = self->Attribute( attribute_name );
+        RGBWA result = default_value;
+
+        if ( value != NULL )
+            sscanf_s( value, "#%lx", &result );
         return result;
     }
 
@@ -191,6 +218,32 @@ public:
         if ( value != NULL )
             result = value;
         return result;
+    }
+
+    static void read_colors( TiXmlElement *self, const char * element_name, RGBWAArray& colors ) {
+        TiXmlElement * colors_element = self->FirstChildElement( element_name );
+        colors.clear();
+
+        if ( colors_element ) {
+            TiXmlElement* element = colors_element->FirstChildElement( "color" );
+            while ( element ) {
+                colors.push_back( read_rgbw_attribute( element, "rgb" ) );
+                element = element->NextSiblingElement();
+            }
+        }
+    }
+
+    static void read_uids( TiXmlElement *self, const char * element_name, UIDArray& uids ) {
+        TiXmlElement * container = self->FirstChildElement( "pfuids" );
+        uids.clear();
+
+        if ( container ) {
+            TiXmlElement* element = container->FirstChildElement( "uid" );
+            while ( element ) {
+                uids.push_back( read_dword_attribute( element, "value" ) );
+                element = element->NextSiblingElement();
+            }
+        }
     }
 
 #if 0

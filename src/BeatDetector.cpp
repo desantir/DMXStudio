@@ -105,15 +105,17 @@ void BeatDetector::addFrequencyEvent( CEvent* eventHandler, unsigned freq_low, u
         mask[bin/32] |= (1L << (bin%32));
     }
 
-    printf( "Beat detect %u-%uHz bins: %u to %u mask=", freq_low, freq_high, bin_start, bin_end );
-    for ( int i=BEAT_DETECTOR_MASK_SIZE; i-- > 0; ) {
-        printf( "%08x", mask[i] );
-        if ( i > 0 )
-            printf( ":" );
-    }
-    printf( "\n" );
+    if ( studio.isDebug() ) {
+        printf( "DEBUG: Beat detect %u-%uHz bins: %u to %u mask=", freq_low, freq_high, bin_start, bin_end );
+        for ( int i=BEAT_DETECTOR_MASK_SIZE; i-- > 0; ) {
+            printf( "%08x", mask[i] );
+            if ( i > 0 )
+                printf( ":" );
+        }
+        printf( "\n" );
 
-    // output( "Beat detect %u-%uHz bins: %u to %u mask=%08x-%08x\n", freq_low, freq_high, bin_start, bin_end, mask[1],mask[0] );
+        // output( "Beat detect %u-%uHz bins: %u to %u mask=%08x-%08x\n", freq_low, freq_high, bin_start, bin_end, mask[1],mask[0] );
+    }
 
     m_event_handlers.push_back( BeatEvent( eventHandler, mask ) );
 }

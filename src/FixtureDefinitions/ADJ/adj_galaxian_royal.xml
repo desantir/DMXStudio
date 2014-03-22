@@ -1,95 +1,88 @@
-<?xml version="1.0"?>
-
+<?xml version="1.0" ?>
 <fixture_definitions>
-  <author>Robert DeSantis</author>
-  <version>1</version>
-
-  <fixture type="laser" channels="4">
-    <manufacturer>ADJ</manufacturer>
-    <model>Galaxian Royale</model>
-    <channels>
-      <channel index="0" type="Laser" color="false" blackout="true">
-        <name>Purple Laser</name>
-        <ranges>
-          <range start="0" end="7">
-            <name>Off</name>
-          </range>
-          <range start="8" end="15">
-            <name>On</name>
-          </range>
-          <range start="16" end="239">
-            <name>Strobing Slow-Fast</name>
-          </range>
-          <range start="240" end="247">
-            <name>Sound Active</name>
-          </range>
-          <range start="248" end="255">
-            <name>On</name>
-          </range>
-        </ranges>
-      </channel>
-      
-      <channel index="1" type="Laser" color="false" blackout="true">
-        <name>Green Laser</name>
-        <ranges>
-          <range start="0" end="7">
-            <name>Off</name>
-          </range>
-          <range start="8" end="15">
-            <name>On</name>
-          </range>
-          <range start="16" end="239">
-            <name>Strobing Slow-Fast</name>
-          </range>
-          <range start="240" end="247">
-            <name>Sound Active</name>
-          </range>
-          <range start="248" end="255">
-            <name>On</name>
-          </range>
-        </ranges>
-      </channel>
-
-      <channel index="2" type="Movement Macro" color="false" blackout="true">
-        <name>Laser Rotation</name>
-        <ranges>
-          <range start="0" end="9">
-            <name>No Rotation</name>
-          </range>
-          <range start="10" end="120">
-            <name>Counter-clockwise Fast - Slow</name>
-          </range>
-          <range start="121" end="134">
-            <name>No Rotation</name>
-          </range>
-          <range start="135" end="245">
-            <name>Clockwise Fast - Slow</name>
-          </range>
-          <range start="246" end="255">
-            <name>No Rotation</name>
-          </range>
-        </ranges>
-      </channel>
-
-      <channel index="3" type="Auto Program" color="false" blackout="true">
-        <name>Macros</name>
-        <ranges>
-          <range start="0" end="7">
-            <name>No Macro</name>
-          </range>
-          <range start="8" end="91">
-            <name>Macro 1</name>
-          </range>
-          <range start="92" end="175">
-            <name>Macro 2</name>
-          </range>
-          <range start="176" end="255">
-            <name>Macro 3</name>
-          </range>
-        </ranges>
-      </channel>
-
-    </channels>
-  </fixture>
-
+    <author>Robert DeSantis</author>
+    <version>1</version>
+    <fixture type="laser" channels="4">
+        <manufacturer>ADJ</manufacturer>
+        <model>Galaxian Royale</model>
+        <channels>
+            <channel index="1" type="laser" color="false" blackout="true">
+                <name>Purple Laser</name>
+                <ranges>
+                    <range start="0" end="7">
+                        <name>Off</name>
+                    </range>
+                    <range start="8" end="15">
+                        <name>On</name>
+                    </range>
+                    <range start="16" end="239">
+                        <name>Strobing Slow-Fast</name>
+                    </range>
+                    <range start="240" end="247">
+                        <name>Sound Active</name>
+                    </range>
+                    <range start="248" end="255">
+                        <name>On</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="2" type="laser" color="false" blackout="true">
+                <name>Green Laser</name>
+                <ranges>
+                    <range start="0" end="7">
+                        <name>Off</name>
+                    </range>
+                    <range start="8" end="15">
+                        <name>On</name>
+                    </range>
+                    <range start="16" end="239">
+                        <name>Strobing Slow-Fast</name>
+                    </range>
+                    <range start="240" end="247">
+                        <name>Sound Active</name>
+                    </range>
+                    <range start="248" end="255">
+                        <name>On</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="3" type="movement macro" color="false" blackout="true">
+                <name>Laser Rotation</name>
+                <ranges>
+                    <range start="0" end="9">
+                        <name>No Rotation</name>
+                    </range>
+                    <range start="10" end="120">
+                        <name>Counter-clockwise Fast - Slow</name>
+                    </range>
+                    <range start="121" end="134">
+                        <name>No Rotation</name>
+                    </range>
+                    <range start="135" end="245">
+                        <name>Clockwise Fast - Slow</name>
+                    </range>
+                    <range start="246" end="255">
+                        <name>No Rotation</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="4" type="auto program" color="false" blackout="true">
+                <name>Macros</name>
+                <ranges>
+                    <range start="0" end="7">
+                        <name>No Macro</name>
+                    </range>
+                    <range start="8" end="91">
+                        <name>Macro 1</name>
+                    </range>
+                    <range start="92" end="175">
+                        <name>Macro 2</name>
+                    </range>
+                    <range start="176" end="255">
+                        <name>Macro 3</name>
+                    </range>
+                </ranges>
+            </channel>
+        </channels>
+    </fixture>
 </fixture_definitions>

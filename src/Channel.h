@@ -63,6 +63,8 @@ class Channel
     channel_t				m_channel_offset;		// Channel offset
     CString				    m_name;					// Channel name
     ChannelType				m_type;					// Channel type
+    BYTE                    m_pixel_index;          // Pixel index (1-255)
+
     bool					m_is_color;				// Is a color channel
     bool					m_can_blackout;			// Should be blacked out
     bool                    m_can_whiteout;         // Modify value on whiteout
@@ -134,6 +136,10 @@ public:
 
     inline BYTE getHomeValue() const {
         return m_home_value;
+    }
+
+    inline BYTE getPixelIndex() const {
+        return m_pixel_index;
     }
 
     ChannelValueRangeArray getRanges() const {

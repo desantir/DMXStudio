@@ -32,6 +32,7 @@ var music_player = null;
 var tracks_queued_flasher = 1;
 var tracks_queued_flasher_interval;
 var fixtures = null;                        // Only load fixture data once
+var current_act = 0;
 
 // #_name_ = DOM id and ._name = class_name 
 
@@ -280,6 +281,12 @@ function change_animation_speed(speed) {
 
 // ----------------------------------------------------------------------------
 //
+function change_act(new_act) {
+    current_act = parseInt(new_act);
+}
+
+// ----------------------------------------------------------------------------
+//
 function change_volume(volume_value) {
     clearTimeout(timeout);
 
@@ -522,25 +529,24 @@ function show_scene() {
             scene_container.empty();
 
             $.map(json, function (scene, index) {
-                if ( scene.is_private )
-                    return;
+                if (scene.number == 0 || current_act == 0 || scene.acts.indexOf(current_act) != -1) {
+                    var id = 'scene_' + scene.id;
 
-                var id = 'scene_' + scene.id;
+                    scene_container.append($('<input>', {
+                        'type': 'radio',
+                        'name': 'select_scene',
+                        'id': id,
+                        'value': scene.id,
+                        'data-theme': 'c'
+                    })
+                    ).append($('<label>', {
+                        'for': id
+                    }).text(scene.name)
+                    );
 
-                scene_container.append( $('<input>', {
-                    'type': 'radio',
-                    'name': 'select_scene',
-                    'id': id,
-                    'value': scene.id,
-                    'data-theme': 'c'
-                })
-                ).append($('<label>', {
-                    'for': id
-                }).text(scene.name)
-                );
-
-                if (scene.is_running)
-                    $("#" + id).attr('checked', 'checked');
+                    if (scene.is_running)
+                        $("#" + id).attr('checked', 'checked');
+                }
             });
 
             scene_container.trigger('create');      // Apply styles
@@ -576,24 +582,23 @@ function show_chase() {
             );
 
             $.map(json, function (chase, index) {
-                if (chase.is_private)
-                    return;
+                if (current_act == 0 || chase.acts.indexOf(current_act) != -1) {
+                    var id = 'chase_' + chase.id;
+                    chase_container.append($('<input>', {
+                        'type': 'radio',
+                        'name': 'select_chase',
+                        'id': id,
+                        'value': chase.id,
+                        'data-theme': 'c'
+                    })
+                    ).append($('<label>', {
+                        'for': id
+                    }).text(chase.name)
+                    );
 
-                var id = 'chase_' + chase.id;
-                chase_container.append($('<input>', {
-                    'type': 'radio',
-                    'name': 'select_chase',
-                    'id': id,
-                    'value': chase.id,
-                    'data-theme': 'c'
-                })
-                ).append($('<label>', {
-                    'for': id
-                }).text(chase.name)
-                );
-
-                if (chase.is_running)
-                    $("#" + id).attr('checked', 'checked');
+                    if (chase.is_running)
+                        $("#" + id).attr('checked', 'checked');
+                }
             });
 
             chase_container.trigger('create');      // Apply styles
@@ -646,20 +651,22 @@ function updateFixtures() {
     var captured = 0;
 
     $.map(fixtures, function (fixture, index) {
-        if (fixture.is_group)   // Not supported in mobile (yet)
-            return;
+        var label = (fixture.is_group) ? "Group " : "";
 
         fixture_select.append($('<option>', {
             value: fixture.id,
-            text: fixture.full_name,
+            text: label + fixture.full_name,
             selected: fixture.is_active || first
         }));
 
         // Add sliders
         if (fixture.is_active) {
             var slider_div = $('<div>');
-            
-            slider_div.append( $('<b>').text(fixture.full_name) );
+            var title = "";
+            if (fixture.is_group)
+                title = "Group ";
+
+            slider_div.append( $('<b>').text(title + fixture.full_name) );
 
             var form = $('<form>');
 
@@ -720,11 +727,15 @@ function updateFixtures() {
 function change_fixture_channel(fixture_id, channel, channel_value) {
     clearTimeout(timeout);
 
-    document.timer_url = "/dmxstudio/rest/control/fixture/channel/" + fixture_id + "/" + channel + "/" + channel_value;
-
     var fixture = getFixtureById(fixture_id);
-    if (fixture != null)
-        fixture.channels[channel].value = channel_value;
+    if (fixture == null)
+        return;
+
+    var what = (fixture.is_group) ? "group" : "fixture";
+
+    document.timer_url = "/dmxstudio/rest/control/channel/" + what + "/" + fixture_id + "/" + channel + "/" + channel_value;
+
+    fixture.channels[channel].value = channel_value;
 
     timeout = setTimeout('timeout_send_ajax_request()', SLIDER_TIMEOUT);
 }
@@ -732,19 +743,22 @@ function change_fixture_channel(fixture_id, channel, channel_value) {
 // ----------------------------------------------------------------------------
 //
 function capture_fixture() {
+    var fixture = getFixtureById(fixture_select_id.value);
+    if (fixture == null)
+        return;
+
+    var what = (fixture.is_group) ? "group" : "fixture";
+
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/rest/control/fixture/select/" + fixture_select_id.value,
+        url: "/dmxstudio/rest/control/select/" + what + "/" + fixture_select_id.value,
         cache: false,
         success: function (data) {
-            var fixture = getFixtureById(fixture_select_id.value);
-            if (fixture != null) {
-                fixture.is_active = true;
-                channel_data = jQuery.parseJSON(data);
-                for (var ch = 0; ch < channel_data.length; ch++)
-                    fixture.channels[ch].value = channel_data[ch];
-                updateFixtures();
-            }
+            fixture.is_active = true;
+            channel_data = jQuery.parseJSON(data);
+            for (var ch = 0; ch < channel_data.length; ch++)
+                fixture.channels[ch].value = channel_data[ch];
+            updateFixtures();
         },
         error: onError
     });

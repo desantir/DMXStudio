@@ -26,6 +26,7 @@ MA 02111-1307, USA.
 #include "DMXStudio.h"
 #include "IDefinitionVisitor.h"
 #include "ISerializable.h"
+#include "FixtureDefinition.h"
 
 class DefinitionWriter : public IDefinitionVisitor, ISerializable
 {
@@ -35,7 +36,7 @@ public:
     DefinitionWriter(void);
     ~DefinitionWriter(void);
 
-    void DefinitionWriter::writeFixtureDefinitions( );
+    void writeFixtureDefinition( LPCSTR file_name, LPCSTR author, LPCSTR version, FixtureDefinitionPtrArray& definitions );
 
     void visit( FixtureDefinition* fixture_definition );
     void visit( Channel* channel );

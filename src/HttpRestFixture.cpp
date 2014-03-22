@@ -26,19 +26,6 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
-static size_t getNumChannels( FixtureGroup* group )
-{
-    size_t num_channels = 0;
-    UIDSet uidset = group->getFixtures( );
-
-    for ( UIDSet::iterator it=uidset.begin(); it != uidset.end(); ++it )
-        num_channels = std::max<size_t>( studio.getVenue()->getFixture( (*it) )->getNumChannels(), num_channels);
-
-    return num_channels;
-}
-
-// ----------------------------------------------------------------------------
-//
 static void append_channel_json( JsonBuilder& json, ChannelPtrArray& channels, BYTE* channel_values )
 {
     json.add( "num_channels", channels.size() );
@@ -127,27 +114,24 @@ bool HttpRestServices::query_fixtures( CString& response, LPCSTR data )
     JsonBuilder json( response );
     json.startArray();
 
-    UIDSet group_uids;
     BYTE channel_values[DMX_PACKET_SIZE];
 
     for ( FixtureGroupPtrArray::iterator it=groups.begin(); it != groups.end(); it++ ) {
         FixtureGroup* group = (*it);
         UIDSet fixtures = group->getFixtures();
 
-        bool is_active = studio.getVenue()->isGroupCaptured( group );
-        if ( is_active )
-            group_uids.insert( fixtures.begin(), fixtures.end() );
+        bool is_active = studio.getVenue()->getDefaultScene()->hasActor( group->getUID() );
         
         ChannelPtrArray channels;
 
-        for ( UIDSet::iterator it=fixtures.begin(); it != fixtures.end(); ++it ) {
-            Fixture* pf = studio.getVenue()->getFixture( (*it) );
-            if ( pf->getNumChannels() > channels.size() ) {
-                for ( UINT ch=channels.size(); ch < pf->getNumChannels(); ch++ ) {
-                    channels.push_back( pf->getChannel( ch ) );
-                    channel_values[ch] = studio.getVenue()->getChannelValue( pf, ch );
-                } 
-            }
+        Fixture* pf = studio.getVenue()->getGroupRepresentative( group->getUID() );
+        if ( pf != NULL ) {
+            SceneActor actor( studio.getVenue(), group );
+
+            for ( UINT ch=channels.size(); ch < pf->getNumChannels(); ch++ ) {
+                channels.push_back( pf->getChannel( ch ) );
+                channel_values[ch] = studio.getVenue()->getChannelValue( actor, ch );
+            } 
         }
 
         json.startObject();
@@ -174,9 +158,8 @@ bool HttpRestServices::query_fixtures( CString& response, LPCSTR data )
     for ( FixturePtrArray::iterator it=fixtures.begin(); it != fixtures.end(); it++ ) {
         Fixture* pf = (*it);
 
-        // Check if fixture is captured and not already captured as part of a group
-        bool is_active = group_uids.find( pf->getUID() ) == group_uids.end() &&
-                         studio.getVenue()->getDefaultScene()->getActor( pf->getUID() ) != NULL;
+        // Check if fixture is captured
+        bool is_active = studio.getVenue()->getDefaultScene()->getActor( pf->getUID() ) != NULL;
 
         ChannelPtrArray channels;
 
@@ -382,11 +365,11 @@ bool HttpRestServices::control_fixture( CString& response, LPCSTR data, DWORD si
     }
 
     if ( is_capture ) {
-        SceneActor* actor = studio.getVenue()->captureActor( fixture_id );
+        SceneActor* actor = studio.getVenue()->captureFixture( fixture_id );
         if ( !actor )
             return false;
 
-        // Pre-set channel values
+        // Pre-set channel values (optional)
         if ( channel_values.size() == actor->getNumChannels() ) {
             for ( channel_t channel=0; channel < channel_values.size(); channel++ )
                 actor->setChannelValue( channel, channel_values[channel] );
@@ -417,48 +400,35 @@ bool HttpRestServices::control_fixture( CString& response, LPCSTR data, DWORD si
 bool HttpRestServices::control_fixture_group( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     SimpleJsonParser parser;
-    UID group_id;
+    UID group_uid;
     bool is_capture;
 
     try {
         parser.parse( data );
 
-        group_id = parser.get<ULONG>( "id" );
+        group_uid = parser.get<ULONG>( "id" );
         is_capture = parser.get<bool>( "is_capture" );
     }
     catch ( std::exception& e ) {
         throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
-    FixtureGroup* group = studio.getVenue()->getFixtureGroup( group_id );
-    if ( !group )
-        return false;
-
-    UIDSet uidset = group->getFixtures( );
-
     if ( is_capture ) {
-        unsigned num_channels = 0;
+        SceneActor* actor = studio.getVenue()->captureFixtureGroup( group_uid );
+        if ( !actor )
+            return false;
 
         // Return current channel values 
         JsonBuilder json( response );
 
         json.startArray();
-        for ( UIDSet::iterator it=uidset.begin(); it != uidset.end(); ++it ) {
-            studio.getVenue()->captureActor( (*it) );
-
-            Fixture* pf = studio.getVenue()->getFixture( (*it) );
-            if ( pf->getNumChannels() > num_channels ) {
-                for ( UINT ch=num_channels; ch < pf->getNumChannels(); ch++ )
-                    json.add( studio.getVenue()->getChannelValue( pf, ch ) );
-
-                num_channels = pf->getNumChannels();
-            }
-        }
+        Fixture* pf = studio.getVenue()->getGroupRepresentative( group_uid );
+        for ( channel_t ch=0; ch < actor->getNumChannels(); ch++ )
+            json.add( actor->getChannelValue( ch ) );
         json.endArray();
     }
     else {
-        for ( UIDSet::iterator it=uidset.begin(); it != uidset.end(); ++it )
-            studio.getVenue()->releaseActor( (*it) );
+        studio.getVenue()->releaseActor( group_uid );
 
         // If releasing, reload the current scene
         studio.getVenue()->loadScene();
@@ -486,49 +456,17 @@ bool HttpRestServices::control_fixture_channels( CString& response, LPCSTR data,
         for ( PARSER_LIST::iterator it=channel_info.begin(); it != channel_info.end(); ++it ) {
             SimpleJsonParser& cp = (*it);
 
-            UID fixture_id = cp.get<UID>( "fixture_id" );
+            UID actor_id = cp.get<UID>( "actor_id" );
             channel_t channel = cp.get<channel_t>( "channel" );
             BYTE channel_value = cp.get<BYTE>( "value" );
 
-            if ( !studio.getVenue()->getDefaultScene()->hasActor( fixture_id ) )          // Actor may have been dropped
-                continue;
-
-            Fixture* pf = studio.getVenue()->getFixture( fixture_id );
-            if ( !pf )
-                return false;
-                
-            if ( channel < pf->getNumChannels() )  // For groups, channel may be > number of channels
-                studio.getVenue()->captureAndSetChannelValue( pf, channel, channel_value );
+            SceneActor* actor = studio.getVenue()->getDefaultScene()->getActor( actor_id );
+            if ( actor )                                                               // Actor may have been dropped
+                studio.getVenue()->captureAndSetChannelValue( *actor, channel, channel_value );
         }
     }
     catch ( std::exception& e ) {
         throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
-    }
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool HttpRestServices::control_fixture_capture( CString& response, LPCSTR data )
-{
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    UID fixture_id;
-        
-    if ( sscanf_s( data, "%lu", &fixture_id ) != 1 )
-        return false;
-
-    if ( fixture_id > 0 ) {
-        SceneActor* actor = studio.getVenue()->captureActor( fixture_id );
-
-        // Return current channel values
-        JsonBuilder json( response );
-        json.startArray();
-        for ( channel_t ch=0; ch < actor->getNumChannels(); ch++ )
-            json.add( actor->getChannelValue( ch ) );
-        json.endArray();
     }
 
     return true;
@@ -558,23 +496,70 @@ bool HttpRestServices::control_fixture_release( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
+bool HttpRestServices::control_fixture_capture( CString& response, LPCSTR data )
+{
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
+    UID fixture_id;
+    char what[11];
+        
+    if ( sscanf_s( data, "%10[^/]/%lu", what, 11, &fixture_id ) != 2 )
+        return false;
+
+    if ( fixture_id > 0 ) {
+        SceneActor* actor = NULL;
+        
+        if ( strcmp( what, "group" ) == 0)
+            actor = studio.getVenue()->captureFixtureGroup( fixture_id );
+        else
+            actor = studio.getVenue()->captureFixture( fixture_id );
+
+        if ( !actor )
+            return false;
+
+        // Return current channel values
+        JsonBuilder json( response );
+        json.startArray();
+        for ( channel_t ch=0; ch < actor->getNumChannels(); ch++ )
+            json.add( actor->getChannelValue( ch ) );
+        json.endArray();
+    }
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
 bool HttpRestServices::control_fixture_channel( CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
     UID fixture_id;
+    char what[11];
     channel_t channel;
     unsigned channel_value;
 
-    if ( sscanf_s( data, "%lu/%u/%u", &fixture_id, &channel, &channel_value ) != 3 )
+    if ( sscanf_s( data, "%10[^/]/%lu/%u/%u", what, 11, &fixture_id, &channel, &channel_value ) != 4 )
         return false;
 
-    Fixture* pf = studio.getVenue()->getFixture( fixture_id );
-    if ( !pf )
-        return false;
+    SceneActor actor;
 
-    studio.getVenue()->captureAndSetChannelValue( pf, channel, channel_value );
+    if ( strcmp( what, "group" ) == 0 ) {
+        FixtureGroup* group = studio.getVenue()->getFixtureGroup( fixture_id );
+        if ( !group )
+            return false;
+        actor = SceneActor( studio.getVenue(), group );
+    }
+    else {
+        Fixture* pf = studio.getVenue()->getFixture( fixture_id );
+        if ( !pf )
+            return false;
+        actor = SceneActor( pf );
+    }
+
+    studio.getVenue()->captureAndSetChannelValue( actor, channel, channel_value );
 
     return true;
 }

@@ -1,31 +1,31 @@
+<?xml version="1.0" ?>
 <fixture_definitions>
-  <author>Robert DeSantis</author>
-  <version>1</version>
-
-  <fixture type="h2o" channels="2">
-    <manufacturer>Chauvet</manufacturer>
-    <model>Abyss</model>
-    <channels>
-      <channel index="0" type="dimmer" color="false" blackout="true" value="255">
-        <name>Dimmer</name>
-      </channel>
-      <channel index="1" type="control" color="false" blackout="false">
-        <name>Control</name>
-        <ranges>
-          <range start="0" end="63">
-            <name>Water, color rotate</name>
-          </range>
-          <range start="64" end="127">
-            <name>Water static, color rotate</name>
-          </range>
-          <range start="128" end="191">
-            <name>Water rotate, color static</name>
-          </range>
-          <range start="192" end="255">
-            <name>Water, color static</name>
-          </range>
-        </ranges>
-      </channel>
-    </channels>
-  </fixture>
+    <author>Robert DeSantis</author>
+    <version>1</version>
+    <fixture type="h2o" channels="2">
+        <manufacturer>Chauvet</manufacturer>
+        <model>Abyss</model>
+        <channels>
+            <channel index="1" type="dimmer" color="false" blackout="true" value="255">
+                <name>Dimmer</name>
+            </channel>
+            <channel index="2" type="control" color="false" blackout="false">
+                <name>Control</name>
+                <ranges>
+                    <range start="0" end="63">
+                        <name>Water, color rotate</name>
+                    </range>
+                    <range start="64" end="127">
+                        <name>Water static, color rotate</name>
+                    </range>
+                    <range start="128" end="191">
+                        <name>Water rotate, color static</name>
+                    </range>
+                    <range start="192" end="255">
+                        <name>Water, color static</name>
+                    </range>
+                </ranges>
+            </channel>
+        </channels>
+    </fixture>
 </fixture_definitions>

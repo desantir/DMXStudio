@@ -1,111 +1,109 @@
-<?xml version="1.0"?>
-
+<?xml version="1.0" ?>
 <fixture_definitions>
-  <author>Robert DeSantis</author>
-  <version>1</version>
-
-  <fixture type="effect" channels="4">
-    <manufacturer>Chauvet</manufacturer>
-    <model>Swarm 4</model>
-    <channels>
-      <channel index="0" type="color macro" color="false" blackout="true">
-        <name>Color Macro</name>
-        <ranges>
-          <range start="0" end="9">
-            <name>Blackout</name>
-          </range>
-          <range start="10" end="14">
-            <name>Red</name>
-          </range>
-          <range start="15" end="19">
-            <name>Green</name>
-          </range>
-          <range start="20" end="24">
-            <name>Blue</name>
-          </range>
-          <range start="25" end="29">
-            <name>Amber</name>
-          </range>
-          <range start="30" end="34">
-            <name>GB</name>
-          </range>
-          <range start="35" end="39">
-            <name>RB</name>
-          </range>
-          <range start="40" end="44">
-            <name>RG</name>
-          </range>
-          <range start="45" end="49">
-            <name>RA</name>
-          </range>
-          <range start="50" end="54">
-            <name>GA</name>
-          </range>
-          <range start="55" end="59">
-            <name>BA</name>
-          </range>
-          <range start="60" end="64">
-            <name>RGB</name>
-          </range>
-          <range start="65" end="69">
-            <name>GBA</name>
-          </range>
-          <range start="70" end="74">
-            <name>RGA</name>
-          </range>
-          <range start="75" end="79">
-            <name>075-079 RGBA</name>
-          </range>
-          <range start="80" end="139">
-            <name>Automatic (1 color)</name>
-          </range>
-          <range start="140" end="199">
-            <name>Automatic (2colors)</name>
-          </range>
-          <range start="200" end="249">
-            <name>Automatic</name>
-          </range>
-          <range start="250" end="255">
-            <name>Sound-active</name>
-          </range>
-        </ranges>
-      </channel>
-      <channel index="1" type="color speed" color="false" blackout="false">
-        <name>Color Speed</name>
-        <ranges>
-          <range start="160" end="255">
-            <name>Speed (CH1 094-255)</name>
-          </range>
-        </ranges>
-      </channel>
-      <channel index="2" type="strobe" color="false" blackout="false">
-        <name>Strobe</name>
-        <ranges>
-          <range start="0" end="4">
-            <name>No Function</name>
-          </range>
-          <range start="5" end="255">
-            <name>Strobe (slow-fast)</name>
-          </range>
-        </ranges>
-      </channel>
-      <channel index="3" type="movement speed" color="false" blackout="false">
-        <name>Movement Speed</name>
-        <ranges>
-          <range start="0" end="4">
-            <name>Stop</name>
-          </range>
-          <range start="5" end="127">
-            <name>Rotate clockwise</name>
-          </range>
-          <range start="128" end="133">
-            <name>Stop</name>
-          </range>
-          <range start="134" end="255">
-            <name>Rotate counter-clockwise</name>
-          </range>
-        </ranges>
-      </channel>
-    </channels>
-  </fixture>
+    <author>Robert DeSantis</author>
+    <version>1</version>
+    <fixture type="effect" channels="4">
+        <manufacturer>Chauvet</manufacturer>
+        <model>Swarm 4</model>
+        <channels>
+            <channel index="1" type="color macro" color="false" blackout="true">
+                <name>Color Macro</name>
+                <ranges>
+                    <range start="0" end="9">
+                        <name>Blackout</name>
+                    </range>
+                    <range start="10" end="14">
+                        <name>Red</name>
+                    </range>
+                    <range start="15" end="19">
+                        <name>Green</name>
+                    </range>
+                    <range start="20" end="24">
+                        <name>Blue</name>
+                    </range>
+                    <range start="25" end="29">
+                        <name>Amber</name>
+                    </range>
+                    <range start="30" end="34">
+                        <name>GB</name>
+                    </range>
+                    <range start="35" end="39">
+                        <name>RB</name>
+                    </range>
+                    <range start="40" end="44">
+                        <name>RG</name>
+                    </range>
+                    <range start="45" end="49">
+                        <name>RA</name>
+                    </range>
+                    <range start="50" end="54">
+                        <name>GA</name>
+                    </range>
+                    <range start="55" end="59">
+                        <name>BA</name>
+                    </range>
+                    <range start="60" end="64">
+                        <name>RGB</name>
+                    </range>
+                    <range start="65" end="69">
+                        <name>GBA</name>
+                    </range>
+                    <range start="70" end="74">
+                        <name>RGA</name>
+                    </range>
+                    <range start="75" end="79">
+                        <name>075-079 RGBA</name>
+                    </range>
+                    <range start="80" end="139">
+                        <name>Automatic (1 color)</name>
+                    </range>
+                    <range start="140" end="199">
+                        <name>Automatic (2colors)</name>
+                    </range>
+                    <range start="200" end="249">
+                        <name>Automatic</name>
+                    </range>
+                    <range start="250" end="255">
+                        <name>Sound-active</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="2" type="color speed" color="false" blackout="false">
+                <name>Color Speed</name>
+                <ranges>
+                    <range start="160" end="255">
+                        <name>Speed (CH1 094-255)</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="3" type="strobe" color="false" blackout="false">
+                <name>Strobe</name>
+                <ranges>
+                    <range start="0" end="4">
+                        <name>No Function</name>
+                    </range>
+                    <range start="5" end="255">
+                        <name>Strobe (slow-fast)</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="4" type="movement speed" color="false" blackout="false">
+                <name>Movement Speed</name>
+                <ranges>
+                    <range start="0" end="4">
+                        <name>Stop</name>
+                    </range>
+                    <range start="5" end="127">
+                        <name>Rotate clockwise</name>
+                    </range>
+                    <range start="128" end="133">
+                        <name>Stop</name>
+                    </range>
+                    <range start="134" end="255">
+                        <name>Rotate counter-clockwise</name>
+                    </range>
+                </ranges>
+            </channel>
+        </channels>
+    </fixture>
 </fixture_definitions>

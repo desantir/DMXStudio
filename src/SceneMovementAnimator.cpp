@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -19,7 +19,6 @@ along with DMX Studio; see the file _COPYING.txt.  If not, write to
 the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
-
 
 #include "SceneMovementAnimator.h"
 
@@ -45,6 +44,7 @@ MA 02111-1307, USA.
 */
 
 const char* SceneMovementAnimator::className = "SceneMovementAnimator";
+const char* SceneMovementAnimator::animationName = "Movement animator";
 
 void compute_fastest_path( UINT pan_current, UINT tilt_current, UINT& pan_target, UINT& tilt_target );
 
@@ -95,14 +95,13 @@ void SceneMovementAnimator::initAnimation( AnimationTask* task, DWORD time_ms, B
     m_channel_animations.clear();
     m_run_once = movement().m_run_once;
 
-    FixturePtrArray participants;
+    UIDArray participants;
 
     // Determine which channels will be participating
-    for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); ++it ) {
-        Fixture* pf = m_animation_task->getFixture( (*it) );
-        STUDIO_ASSERT( pf != NULL, "Missing fixture UID=%lu", (*it) );
-        if ( pf->canMove() )
-            participants.push_back( pf );
+    for ( UID actor_uid : populateActors() ) {
+        Fixture* pf = m_animation_task->getActorRepresentative( actor_uid );
+        if ( pf && pf->canMove() )
+            participants.push_back( actor_uid );
     }
 
     STUDIO_ASSERT( movement().m_group_size >= 1, "Movement group size must be >= 1" );
@@ -153,7 +152,7 @@ void SceneMovementAnimator::initAnimation( AnimationTask* task, DWORD time_ms, B
 
 // ----------------------------------------------------------------------------
 //
-void SceneMovementAnimator::genXcrossMovement( AnimationTask* task, FixturePtrArray& participants )
+void SceneMovementAnimator::genXcrossMovement( AnimationTask* task, UIDArray& participants )
 {
     bool forward = true;				// Channel value population direction for alternate
 
@@ -204,7 +203,7 @@ void SceneMovementAnimator::genXcrossMovement( AnimationTask* task, FixturePtrAr
 
 // ----------------------------------------------------------------------------
 //
-void SceneMovementAnimator::genFanMovement( AnimationTask* task,  FixturePtrArray& participants )
+void SceneMovementAnimator::genFanMovement( AnimationTask* task,  UIDArray& participants )
 {
     UINT pan_start = movement().m_pan_start;
     UINT pan_end = movement().m_pan_end;
@@ -255,7 +254,7 @@ void SceneMovementAnimator::genFanMovement( AnimationTask* task,  FixturePtrArra
 
 // ----------------------------------------------------------------------------
 //
-void SceneMovementAnimator::genNodMovement( AnimationTask* task, FixturePtrArray& participants )
+void SceneMovementAnimator::genNodMovement( AnimationTask* task, UIDArray& participants )
 {
     bool forward = true;				// Channel value population direction for alternate
 
@@ -336,7 +335,7 @@ void SceneMovementAnimator::genNodMovement( AnimationTask* task, FixturePtrArray
 
 // ----------------------------------------------------------------------------
 //
-void SceneMovementAnimator::genCoordinatesMovement( AnimationTask* task, FixturePtrArray& participants )
+void SceneMovementAnimator::genCoordinatesMovement( AnimationTask* task, UIDArray& participants )
 {
     for ( size_t particpant_index=0; particpant_index < participants.size(); ) {
         AngleList pan;
@@ -377,7 +376,7 @@ static UINT random_angle( UINT start_angle, UINT end_angle ) {
     return start_angle + (rand() % (angle_range+1));
 }
 
-void SceneMovementAnimator::genRandomMovement( AnimationTask* task, FixturePtrArray& participants )
+void SceneMovementAnimator::genRandomMovement( AnimationTask* task, UIDArray& participants )
 {
     STUDIO_ASSERT( movement().m_positions > 0 && movement().m_positions < MAX_RANDOM_POSITIONS, 
                 "Random postions should be between 1 and %d", MAX_RANDOM_POSITIONS );
@@ -408,7 +407,7 @@ void SceneMovementAnimator::genRandomMovement( AnimationTask* task, FixturePtrAr
 
 // ----------------------------------------------------------------------------
 //
-void SceneMovementAnimator::genRotateMovement( AnimationTask* task, FixturePtrArray& participants )
+void SceneMovementAnimator::genRotateMovement( AnimationTask* task, UIDArray& participants )
 {
     bool forward = true;				// Channel value population direction for alternate
 
@@ -464,7 +463,7 @@ void SceneMovementAnimator::genRotateMovement( AnimationTask* task, FixturePtrAr
 // no other values
 //
 void SceneMovementAnimator::populateChannelAnimations( AnimationTask* task, 
-                        FixturePtrArray& participants, size_t& particpant_index,
+                        UIDArray& participants, size_t& particpant_index,
                         AngleList& tilt, AngleList& pan, ChannelValueArray& dimmer,
                         ChannelValueArray& speed, size_t group_size )
 {
@@ -476,8 +475,9 @@ void SceneMovementAnimator::populateChannelAnimations( AnimationTask* task,
     }
 
     for ( ; particpant_index < end && particpant_index < participants.size(); particpant_index++ ) {
-
-        Fixture* pf = participants[ particpant_index ];
+        Fixture* pf = m_animation_task->getActorRepresentative( participants[ particpant_index ] );
+        if ( !pf )
+            continue;
 
         channel_t pan_channel = INVALID_CHANNEL;
         channel_t tilt_channel = INVALID_CHANNEL;
@@ -488,19 +488,19 @@ void SceneMovementAnimator::populateChannelAnimations( AnimationTask* task,
 
         if ( tilt_channel != INVALID_CHANNEL && tilt.size() ) {
             m_channel_animations.push_back( 
-                ChannelAnimation( pf->getUID(), tilt_channel, CAM_LIST, 
+                ChannelAnimation( participants[ particpant_index ], tilt_channel, CAM_LIST, 
                                     anglesToValues( pf->getChannel( tilt_channel ), tilt ) ) );
         }
 
         if ( pan_channel != INVALID_CHANNEL && pan.size() ) {
             m_channel_animations.push_back( 
-                ChannelAnimation( pf->getUID(), pan_channel, CAM_LIST, 
+                ChannelAnimation( participants[ particpant_index ], pan_channel, CAM_LIST, 
                                     anglesToValues( pf->getChannel( pan_channel ), pan ) ) );
         }
 
         if ( speed_channel != INVALID_CHANNEL && speed.size() ) {
             m_channel_animations.push_back( 
-                ChannelAnimation( pf->getUID(), speed_channel, CAM_LIST, speed ) );
+                ChannelAnimation( participants[ particpant_index ], speed_channel, CAM_LIST, speed ) );
         }
 
         if ( dimmer_channel != INVALID_CHANNEL && dimmer.size() ) {
@@ -511,7 +511,7 @@ void SceneMovementAnimator::populateChannelAnimations( AnimationTask* task,
             BYTE high = ch->getDimmerHighestIntensity();
 
             // Replace all 255 dimmer high value with the fixture's dimmer value iff the actors value != 0
-            SceneActor* actor = task->getScene()->getActor( pf->getUID() );
+            SceneActor* actor = task->getScene()->getActor( participants[ particpant_index ] );
             if ( actor && actor->getChannelValue( dimmer_channel ) != 0 )
                 high = actor->getChannelValue( dimmer_channel );
 
@@ -521,7 +521,7 @@ void SceneMovementAnimator::populateChannelAnimations( AnimationTask* task,
             }
 
             m_channel_animations.push_back( 
-                ChannelAnimation( pf->getUID(), dimmer_channel, CAM_LIST, dimmer ) );
+                ChannelAnimation( participants[ particpant_index ], dimmer_channel, CAM_LIST, dimmer ) );
         }
     }
 }
@@ -569,7 +569,7 @@ ChannelValueArray SceneMovementAnimator::anglesToValues( Channel* channel, Angle
 
 // ----------------------------------------------------------------------------
 //
-void SceneMovementAnimator::genMoonflowerMovement( AnimationTask* task, FixturePtrArray& participants )
+void SceneMovementAnimator::genMoonflowerMovement( AnimationTask* task, UIDArray& participants )
 {
     STUDIO_ASSERT( movement().m_height > 0, "Height must be a positive integer > 0" );
 

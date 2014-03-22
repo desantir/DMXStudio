@@ -45,6 +45,7 @@ Scene::Scene( Scene& other ) :
 Scene& Scene::operator=( Scene& rhs ) {
     DObject::operator=( rhs ); 
     m_actors = rhs.m_actors;
+    m_acts = rhs.m_acts;
     copy_animations(rhs );
     return *this;
 }
@@ -72,7 +73,7 @@ Scene::~Scene(void)
 void Scene::addActor( SceneActor& actor ) {
     CSingleLock lock( &m_scene_mutex, TRUE );
 
-    m_actors[ actor.getFUID() ] = actor;
+    m_actors[ actor.getActorUID() ] = actor;
 }
 
 // ----------------------------------------------------------------------------

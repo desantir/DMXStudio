@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -20,14 +20,13 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
 #include "IVisitor.h"
 #include "SceneChannelAnimator.h"
 #include "MovementAnimation.h"
 
-class SceneMovementAnimator :public SceneChannelAnimator
+class SceneMovementAnimator : public SceneChannelAnimator
 {
     friend class VenueWriter;
     friend class VenueReader;
@@ -38,6 +37,7 @@ class SceneMovementAnimator :public SceneChannelAnimator
 
 public:
     static const char* className;
+    static const char* animationName;
 
     SceneMovementAnimator() {}
 
@@ -53,7 +53,7 @@ public:
 
     AbstractAnimation* clone();
 
-    const char* getName() { return "Scene Movement Animator"; }
+    const char* getName() { return SceneMovementAnimator::animationName; }
     const char* getClassName() { return SceneMovementAnimator::className; }
 
     void accept( IVisitor* visitor) {
@@ -65,20 +65,20 @@ public:
     virtual CString getSynopsis(void);
 
 private:
-    void genRandomMovement( AnimationTask* task, FixturePtrArray& participants );
-    void genRotateMovement( AnimationTask* task, FixturePtrArray& participants );
-    void genNodMovement( AnimationTask* task, FixturePtrArray& participants );
-    void genFanMovement( AnimationTask* task, FixturePtrArray& participants );
-    void genXcrossMovement( AnimationTask* task, FixturePtrArray& participants );
-    void genMoonflowerMovement( AnimationTask* task, FixturePtrArray& participants );
-    void genCoordinatesMovement( AnimationTask* task, FixturePtrArray& participants );
+    void genRandomMovement( AnimationTask* task, UIDArray& participants );
+    void genRotateMovement( AnimationTask* task, UIDArray& participants );
+    void genNodMovement( AnimationTask* task, UIDArray& participants );
+    void genFanMovement( AnimationTask* task, UIDArray& participants );
+    void genXcrossMovement( AnimationTask* task, UIDArray& participants );
+    void genMoonflowerMovement( AnimationTask* task, UIDArray& participants );
+    void genCoordinatesMovement( AnimationTask* task, UIDArray& participants );
 
     void getFixtureChannels( Fixture* pf, channel_t& speed_channel, channel_t& pan_channel, 
                              channel_t& tilt_channel, channel_t& dimmer_channel );
 
     ChannelValueArray anglesToValues( Channel* channel, AngleList& tilt );
 
-    void populateChannelAnimations( AnimationTask* task, FixturePtrArray& participants, size_t& particpant_index, 
+    void populateChannelAnimations( AnimationTask* task, UIDArray& participants, size_t& particpant_index, 
                                     AngleList& tilt, AngleList& pan, ChannelValueArray& dimmer,
                                     ChannelValueArray& speed, size_t group_size );
 

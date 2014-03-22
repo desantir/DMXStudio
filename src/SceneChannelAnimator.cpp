@@ -1,25 +1,24 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
-hopluvr at gmail dot com
+    Copyright (C) 2011-14 Robert DeSantis
+    hopluvr at gmail dot com
 
-This file is part of DMX Studio.
+    This file is part of DMX Studio.
  
-DMX Studio is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3 of the License, or (at your
-option) any later version.
+    DMX Studio is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or (at your
+    option) any later version.
  
-DMX Studio is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-License for more details.
+    DMX Studio is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+    or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+    License for more details.
  
-You should have received a copy of the GNU General Public License
-along with DMX Studio; see the file _COPYING.txt.  If not, write to
-the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
-MA 02111-1307, USA.
+    You should have received a copy of the GNU General Public License
+    along with DMX Studio; see the file _COPYING.txt.  If not, write to
+    the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+    MA 02111-1307, USA.
 */
-
 
 #include "SceneChannelAnimator.h"
 
@@ -62,6 +61,7 @@ Examples:
 */
 
 const char* SceneChannelAnimator::className = "SceneChannelAnimator";
+const char* SceneChannelAnimator::animationName = "Channel program";
 
 // ----------------------------------------------------------------------------
 //
@@ -90,12 +90,12 @@ SceneChannelAnimator::SceneChannelAnimator( UID animation_uid,
 // ----------------------------------------------------------------------------
 //
 void SceneChannelAnimator::setupActors() {
-    // This is for "cosmetics" in UIs to list the fixtures referenceed by this animation (SHOULD NOT AFFECT SUBCLASSES)
+    // This is for "cosmetics" in UIs to list the fixtures referenced by this animation (SHOULD NOT AFFECT SUBCLASSES)
     if ( m_actors.size() == 0 ) {
         for ( ChannelAnimationArray::iterator it=m_channel_animations.begin();
               it != m_channel_animations.end(); ++it ) {
-            if ( std::find( m_actors.begin(), m_actors.end(), (*it).getActor() ) == m_actors.end() )
-                m_actors.push_back( (*it).getActor() );
+            if ( std::find( m_actors.begin(), m_actors.end(), (*it).getActorUID() ) == m_actors.end() )
+                m_actors.push_back( (*it).getActorUID() );
         }
     }
 }
@@ -131,9 +131,9 @@ AbstractAnimation* SceneChannelAnimator::clone() {
 
 // ----------------------------------------------------------------------------
 //
-void SceneChannelAnimator::removeActor( UID actor ) {
+void SceneChannelAnimator::removeActor( UID actor_uid ) {
     for ( ChannelAnimationArray::iterator it=m_channel_animations.begin(); it != m_channel_animations.end(); ) {
-        if ( (*it).getActor() == actor )
+        if ( (*it).getActorUID() == actor_uid )
             it = m_channel_animations.erase( it );
         else
             it++;
@@ -160,21 +160,19 @@ void SceneChannelAnimator::initAnimation( AnimationTask* task, DWORD time_ms, BY
     m_channel_state.clear();				// This may be restarted
 
     // Setup channel states
-    for ( ChannelAnimationArray::iterator it=m_channel_animations.begin();
-          it != m_channel_animations.end(); ++it ) {
-
-        Fixture* pf = m_animation_task->getFixture( (*it).getActor() );
-        STUDIO_ASSERT( pf != NULL, "Invalid actor UID in animation" );
-        SceneActor* actor = m_animation_task->getScene()->getActor( pf->getUID() );
-        STUDIO_ASSERT( actor != NULL, "Invalid scene actor UID in animation" );
-        channel_t channel = (*it).getChannel();
+    for ( ChannelAnimation& chan_anim : m_channel_animations ) {
+        SceneActor* actor = getActor( chan_anim.getActorUID() );
+        channel_t channel = chan_anim.getChannel();
 
         // Setup state so that the slice animation does not need to gather additional info
-        m_channel_state.push_back( ChannelState( pf,
-                                                 (*it).getChannel(), 
-                                                 actor->getChannelValue( channel ),
-                                                 (*it).getAnimationStyle(),
-                                                 &(*it).valueList() ) );
+        for ( Fixture *pf : m_animation_task->resolveActorFixtures( actor ) ) {
+            if ( channel < pf->getNumChannels() && channel != INVALID_CHANNEL )
+                m_channel_state.push_back( ChannelState( pf,
+                                                         channel, 
+                                                         actor->getChannelValue( channel ),
+                                                         chan_anim.getAnimationStyle(),
+                                                         &chan_anim.valueList() ) );
+        }
     }
 
     m_signal_processor = new AnimationSignalProcessor( m_signal, task );
@@ -257,14 +255,25 @@ bool SceneChannelAnimator::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
 
 // ----------------------------------------------------------------------------
 //
-ChannelAnimation::ChannelAnimation( UID actor, channel_t channel, 
+ChannelAnimation::ChannelAnimation( UID actor_uid, channel_t channel, 
                     ChannelAnimationStyle animation_style,
                     ChannelValueArray& value_list ) :
-    m_actor( actor ),
+    m_actor_uid( actor_uid ),
     m_channel( channel ),
     m_animation_style( animation_style ),
     m_value_list( value_list )
 {
+}
+
+// ----------------------------------------------------------------------------
+//
+ChannelAnimation::ChannelAnimation( UID actor_uid, channel_t channel, 
+                    ChannelAnimationStyle animation_style ) :
+    m_actor_uid( actor_uid ),
+    m_channel( channel ),
+    m_animation_style( animation_style )
+{
+    m_value_list.reserve( 500 );
 }
 
 // ----------------------------------------------------------------------------
@@ -279,7 +288,7 @@ CString ChannelAnimation::getSynopsis(void) {
         case CAM_SCALE:	style = "scale"; break;
     }
 
-    synopsis.Format( "id=%lu channel=%d %s", m_actor, m_channel+1, style );
+    synopsis.Format( "id=%lu channel=%d %s", m_actor_uid, m_channel+1, style );
 
     if ( m_value_list.size() > 0 ) {
         for ( ChannelValueArray::iterator it=m_value_list.begin(); 

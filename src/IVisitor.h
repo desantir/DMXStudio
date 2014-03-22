@@ -34,7 +34,7 @@ class FixtureGroup;
 class SceneStrobeAnimator;
 class ScenePatternDimmer;
 class SceneMovementAnimator;
-class SceneColorSwitcher;
+class SceneColorFader;
 class SceneChannelAnimator;
 class SceneSequence;
 class SceneSoundLevel;
@@ -43,6 +43,7 @@ class ChaseStep;
 class MovementAnimation;
 class ChannelAnimation;
 struct MusicSceneSelector;
+class ScenePixelAnimator;
 
 class IVisitor
 {
@@ -57,10 +58,11 @@ public:
     virtual void visit( SceneStrobeAnimator* animation ) = 0;
     virtual void visit( ScenePatternDimmer* animation ) = 0;
     virtual void visit( SceneMovementAnimator* animation ) = 0;
-    virtual void visit( SceneColorSwitcher* animation ) = 0;
+    virtual void visit( SceneColorFader* animation ) = 0;
     virtual void visit( SceneChannelAnimator* animation ) = 0;
     virtual void visit( SceneSequence* animation ) = 0;    
     virtual void visit( SceneSoundLevel* animation ) = 0;   
+    virtual void visit( ScenePixelAnimator* animation ) = 0;   
 
     virtual void visit( AnimationSignal* signal ) = 0;
     virtual void visit( ChaseStep* chase_step ) = 0;

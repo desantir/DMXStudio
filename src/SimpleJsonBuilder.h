@@ -23,6 +23,7 @@ MA 02111-1307, USA.
 #pragma once
 
 #include "stdafx.h"
+#include "RGBWA.h"
 
 class JsonObject
 {
@@ -169,9 +170,9 @@ public:
         m_buffer.AppendFormat( "\"%s\":\"%s\"", name, JsonObject::encodeJsonString(value) );
     } 
 
-    void addColor( LPCSTR name, unsigned value ) {
+    void add( LPCSTR name, RGBWA value ) {
         addSeparator();
-        m_buffer.AppendFormat( "\"%s\":\"%06lX\"", name, value );
+        m_buffer.AppendFormat( "\"%s\":\"%06lX\"", name, (ULONG)value );
     } 
 
     void add( LPCSTR name, ULONG value ) {

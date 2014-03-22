@@ -21,18 +21,47 @@ MA 02111-1307, USA.
 
 #include "DMXStudio.h"
 #include "SceneActor.h"
+#include "Venue.h"
 
 // ----------------------------------------------------------------------------
 //
 SceneActor::SceneActor( Fixture *pf ) :
-    m_pfuid( pf->getUID() ),
+    m_uid( pf->getUID() ),
+    m_group( false), 
     m_channels( pf->getNumChannels() )
 {
     reset_channel_values();
 
     // Copy channel defaults
-    for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+    for ( channel_t channel=0; channel < m_channels; channel++ ) {
         m_channel_values[ channel ] = pf->getChannel( channel )->getDefaultValue();
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+SceneActor::SceneActor( Venue* venue, FixtureGroup *fg ) :
+    m_uid( fg->getUID() ),
+    m_group( true ),
+    m_channels(0)
+{
+    reset_channel_values();
+
+    if ( fg->getNumChannelValues() > 0 ) {
+        m_channels = fg->getNumChannelValues();
+        fg->getChannelValues( m_channel_values );
+    }
+    else {
+        Fixture* pf = venue->getGroupRepresentative( fg->getUID() );
+
+        if ( pf != NULL ) {         // Make sure this is not an empty group
+            m_channels = pf->getNumChannels();
+
+            // Copy channel defaults
+            for ( channel_t channel=0; channel < m_channels; channel++ ) {
+                m_channel_values[ channel ] = pf->getChannel( channel )->getDefaultValue();
+            }
+        }
     }
 }
 

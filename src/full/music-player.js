@@ -501,7 +501,10 @@ function musicMatchDialog( selectionMap ) {
         }
     });
 
-    setupTrackSelect($("#mmd_playlist_list"), $("#mmd_track_list"));
+    if (music_player_ui_ready)
+        setupTrackSelect($("#mmd_playlist_list"), $("#mmd_track_list"));
+    else
+        $("#mmd_track_div").hide();
 
     $("#mmd_add").button()
     $("#mmd_add_all").button()

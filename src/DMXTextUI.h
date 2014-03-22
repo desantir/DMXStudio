@@ -20,7 +20,6 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
 #include "DMXStudio.h"
@@ -36,9 +35,10 @@ MA 02111-1307, USA.
 #include "SceneSoundLevel.h"
 #include "SceneChannelAnimator.h"
 #include "ScenePatternDimmer.h"
-#include "SceneColorSwitcher.h"
+#include "SceneColorFader.h"
 #include "SceneMovementAnimator.h"
 #include "SceneStrobeAnimator.h"
+#include "ScenePixelAnimator.h"
 #include "Form.h"
 
 class DMXTextUI;
@@ -172,9 +172,10 @@ private:
     bool animSoundLevelEditor( Scene* scene, UID anim_uid );
     bool animPatternDimmerEditor( Scene* scene, UID anim_uid );
     bool animChannelEditor( Scene* scene, UID anim_uid );
-    bool animColorSwitcherEditor( Scene* scene, UID anim_uid );
+    bool animColorFaderEditor( Scene* scene, UID anim_uid );
     bool animMovementEditor( Scene* scene, UID anim_uid );
     bool animStrobeEditor( Scene* scene, UID anim_uid );
+    bool animPixelEditor( Scene* scene, UID anim_uid );
 };
 
 typedef void (DMXTextUI::*HandlerFunc)();
@@ -263,44 +264,15 @@ public:
     }
 };
 
-class FixtureSelectField : public KeyListField
-{
-    Venue*					m_venue;
-    bool					m_include_groups;
-    FixtureGroupPtrArray	m_fixture_groups;
-
-public:
-    FixtureSelectField( LPCSTR label, Venue* venue, bool include_groups=false );
-
-    void getFixtures( FixturePtrArray& targets );
-
-    UID getFixtureUID( ) {
-        FixturePtrArray targets;
-        getFixtures( targets );
-        STUDIO_ASSERT( targets.size() == 1, "Unexpected number of selected fixtures" );
-        return targets[0]->getUID();
-    }
-
-    static bool SortByBaseChannel( const Fixture* pf1, const Fixture* pf2 ) {
-        return pf1->getAddress() < pf2->getAddress();
-    }
-
-    void isReady() {
-        if ( m_selections.size() == 0 )
-            throw FieldException( "There are no fixtures currently defined" );
-    }
-};
-
 class FixtureGroupSelectField : public NumberedListField
 {
-    Venue*					m_venue;
-    FixtureGroupPtrArray	m_fixture_groups;
+    Venue* m_venue;
 
 public:
     FixtureGroupSelectField( LPCSTR label, Venue* venue );
 
     UID getFixtureGroupUID( ) {
-        return m_fixture_groups[getListValue()-1]->getUID();
+       return m_venue->getFixtureGroupByNumber( getListValue() )->getUID();
     }
 
     void isReady() {
@@ -312,11 +284,14 @@ public:
 class ChannelControllerField : public IntegerField
 {
     Venue*				m_venue;
-    FixturePtrArray*	m_fixtures;
+    SceneActor      	m_actor;
     channel_t			m_channel;
+    CString             m_label;
+    CString             m_labelValue;
+    bool                m_live_update;
 
 public:
-    ChannelControllerField( Venue* venue, FixturePtrArray* fixtures, channel_t channel );
+    ChannelControllerField( Venue* venue, SceneActor actor, channel_t channel, bool live_update=true );
 
     bool setValue( LPCSTR value );
     LPCSTR getLabel();
@@ -417,32 +392,7 @@ public:
 
     void isReady() {
         if ( m_selections.size() == 0 )
-            throw FieldException( "There are no fixture definition" );
-    }
-};
-
-class SceneFixtureSelectField : public NumberedListField
-{
-    Venue*				m_venue;
-    UID					m_scene_uid;
-
-public:
-    SceneFixtureSelectField( LPCSTR label, Venue* venue, UID scene_uid, UID default_fixture=0 ) :
-        NumberedListField( label ),
-        m_venue( venue )
-    {
-        selectScene( scene_uid, default_fixture );
-    }
-
-    UID getFixtureUID( ) {
-        return m_venue->getFixtureByNumber( (SceneNumber)getListValue() )->getUID(); 
-    }
-
-    bool selectScene( UID scene_uid, UID default_fixture=0 );
-
-    void isReady() {
-        if ( m_selections.size() == 0 )
-            throw FieldException( "There are no fixtures in this scene" );
+            throw FieldException( "There are no fixture definitions" );
     }
 };
 
@@ -477,48 +427,6 @@ public:
 
     AnimationEditor* getAnimationEditor( ) {
         return &DMXTextUI::animEditors[ getListValue()-1 ]; 
-    }
-};
-
-class FixtureSelect : public InputField
-{
-    typedef std::map<FixtureNumber,CString> FixtureMap;
-    
-    FixtureMap				m_fixtures;
-    UIDArray				m_selected_uids;
-    Venue*					m_venue;
-    FixtureGroupPtrArray	m_fixture_groups;
-
-public:
-    FixtureSelect( LPCSTR label, Venue* venue, UIDArray& fixture_uids, UIDArray& selected_uids );
-
-public:
-    void setDefaultListValue( CString selection ) {
-        m_default_value = m_current_value = selection;
-    }
-
-    bool setValue( LPCSTR value );
-
-    bool isHelp( CString& input ) const {
-        return _stricmp( input, "?" ) == 0;
-    }
-
-    void helpText( CString& help_text) {
-        for ( FixtureMap::iterator it=m_fixtures.begin(); it != m_fixtures.end(); ++it )
-            help_text.AppendFormat( "   %-4lu - %s\n", (*it).first, (*it).second );
-
-        for ( FixtureGroupPtrArray::iterator it=m_fixture_groups.begin(); it != m_fixture_groups.end(); ++it ) {
-            help_text.AppendFormat( "   G%-3lu - Group: %s\n",(*it)->getGroupNumber(), (*it)->getName() );
-        }
-    }
-
-    UIDArray getUIDs( ) const {
-        return UIDArray( m_selected_uids );
-    }
-
-    void isReady() {
-        if ( m_fixtures.size() == 0 )
-            throw FieldException( "There are no fixtures currently defined" );
     }
 };
 
@@ -665,5 +573,158 @@ public:
         }
         
         setDefaultListValue( m_personalities.begin()->first );
+    }
+};
+
+class ActorSelectField : public InputField
+{
+    struct comparitor {
+        bool operator() (const CString& lhs, const CString& rhs) const {
+            if ( lhs.GetLength() != rhs.GetLength() )
+                return lhs.GetLength() < rhs.GetLength();
+
+            return lhs < rhs;
+        }
+    };
+
+    struct entry {
+        CString     m_label;
+        CString     m_id;
+        SceneActor  m_actor;
+
+        entry() {}
+
+        entry( CString& id, CString& label, SceneActor& actor ) :
+           m_id( id ),
+           m_label( label ),
+           m_actor( actor )
+        {}
+    };
+
+    typedef std::map<CString, entry, comparitor> EntryMap;
+
+    EntryMap        m_entries;
+    Venue*			m_venue;
+    bool            m_allow_multiple;
+    ActorList		m_selected_actors;
+
+    void init( ActorPtrArray& actors, UIDArray& selected_actor_uids );
+
+public:
+    ActorSelectField( LPCSTR field_label, Venue* venue, Scene* scene, UIDArray& selected_actor_uids );
+    ActorSelectField( LPCSTR field_label, Venue* venue, bool include_groups );
+    ActorSelectField( LPCSTR field_label, Venue* venue );
+
+    void setDefaultListValue( CString selection ) {
+        m_default_value = m_current_value = selection;
+    }
+
+    bool setValue( LPCSTR value );
+
+    bool isHelp( CString& input ) const {
+        return _stricmp( input, "?" ) == 0;
+    }
+
+    void helpText( CString& help_text);
+
+    UIDArray getActorUIDs( ) {
+        UIDArray selected_uids;
+
+        for ( ActorList::iterator it=m_selected_actors.begin(); it != m_selected_actors.end(); ++it )
+            selected_uids.push_back( (*it).getActorUID() );
+
+        return selected_uids;
+    }
+
+    ActorList getActors() const {
+        return m_selected_actors;
+    }
+
+    UID getActorUID( ) const {
+        return getActor().getActorUID();
+    }
+
+    SceneActor getActor() const {
+        STUDIO_ASSERT( m_selected_actors.size() == 1, "Expected actor array size of 1" );
+        return m_selected_actors[0];
+    }
+
+    void isReady() {
+        if ( m_entries.size() == 0 )
+            throw FieldException( "There are no fixtures currently defined" );
+    }
+
+    void allowMultiple( bool allow_multiple ) {
+        m_allow_multiple = allow_multiple;
+    }
+
+    bool selectScene( UID scene_uid );
+};
+
+class ColorSelectField : public InputField
+{
+    Venue*			m_venue;
+    bool            m_allow_multiple;
+    RGBWAArray      m_colors;
+
+public:
+    ColorSelectField( LPCSTR field_label, RGBWAArray& colors );
+    ColorSelectField( LPCSTR field_label, RGBWA& colors );
+
+    void setDefaultListValue( CString selection ) {
+        m_default_value = m_current_value = selection;
+    }
+
+    bool setValue( LPCSTR value );
+
+    bool isHelp( CString& input ) const {
+        return _stricmp( input, "?" ) == 0;
+    }
+
+    void helpText( CString& help_text);
+
+    RGBWAArray getColors( ) {
+        return m_colors;
+    }
+
+    RGBWA getColor( ) {
+        return ( m_colors.size() == 0 ) ? RGBWA::BLACK : m_colors[0];
+    }
+
+    void isReady() {
+    }
+
+    void allowMultiple( bool allow_multiple ) {
+        m_allow_multiple = allow_multiple;
+    }
+
+private:
+    void init();
+};
+
+class ActsField : public MultiNumberedListField 
+{
+public:
+    ActsField( Acts currentActs = Acts() ) : MultiNumberedListField( "Assigned acts" )
+    {
+        CString act_desc;
+        for ( int act=1; act <= NUM_ACTS; act++ ) {
+            act_desc.Format( "Act #%u", act );
+            addKeyValue( act, act_desc );
+        }
+
+        setActs( currentActs );
+    }
+
+    void setActs( Acts acts ) {
+        std::vector<UINT> default_values( acts.begin(), acts.end() );
+        setDefaultListValue( default_values );
+    }
+
+    Acts getActs( ) const {
+        Acts acts;
+        for ( CString item : getSelections() )
+            acts.insert( (UINT)atol( item ) );
+        return acts;
     }
 };

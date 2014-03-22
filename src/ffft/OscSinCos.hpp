@@ -16,7 +16,7 @@ http://sam.zoy.org/wtfpl/COPYING for more details.
 
 
 #if defined (ffft_OscSinCos_CURRENT_CODEHEADER)
-	#error Recursive inclusion of OscSinCos code header.
+    #error Recursive inclusion of OscSinCos code header.
 #endif
 #define	ffft_OscSinCos_CURRENT_CODEHEADER
 
@@ -49,7 +49,7 @@ OscSinCos <T>::OscSinCos ()
 ,	_step_cos (1)
 ,	_step_sin (0)
 {
-	// Nothing
+    // Nothing
 }
 
 
@@ -57,10 +57,10 @@ OscSinCos <T>::OscSinCos ()
 template <class T>
 void	OscSinCos <T>::set_step (double angle_rad)
 {
-	using namespace std;
+    using namespace std;
 
-	_step_cos = static_cast <DataType> (cos (angle_rad));
-	_step_sin = static_cast <DataType> (sin (angle_rad));
+    _step_cos = static_cast <DataType> (cos (angle_rad));
+    _step_sin = static_cast <DataType> (sin (angle_rad));
 }
 
 
@@ -68,7 +68,7 @@ void	OscSinCos <T>::set_step (double angle_rad)
 template <class T>
 inline typename OscSinCos <T>::DataType	OscSinCos <T>::get_cos () const
 {
-	return (_pos_cos);
+    return (_pos_cos);
 }
 
 
@@ -76,7 +76,7 @@ inline typename OscSinCos <T>::DataType	OscSinCos <T>::get_cos () const
 template <class T>
 typename OscSinCos <T>::DataType	OscSinCos <T>::get_sin () const
 {
-	return (_pos_sin);
+    return (_pos_sin);
 }
 
 
@@ -84,11 +84,11 @@ typename OscSinCos <T>::DataType	OscSinCos <T>::get_sin () const
 template <class T>
 void	OscSinCos <T>::step ()
 {
-	const DataType	old_cos = _pos_cos;
-	const DataType	old_sin = _pos_sin;
+    const DataType	old_cos = _pos_cos;
+    const DataType	old_sin = _pos_sin;
 
-	_pos_cos = old_cos * _step_cos - old_sin * _step_sin;
-	_pos_sin = old_cos * _step_sin + old_sin * _step_cos;
+    _pos_cos = old_cos * _step_cos - old_sin * _step_sin;
+    _pos_sin = old_cos * _step_sin + old_sin * _step_cos;
 }
 
 
@@ -96,8 +96,8 @@ void	OscSinCos <T>::step ()
 template <class T>
 void	OscSinCos <T>::clear_buffers ()
 {
-	_pos_cos = static_cast <DataType> (1);
-	_pos_sin = static_cast <DataType> (0);
+    _pos_cos = static_cast <DataType> (1);
+    _pos_sin = static_cast <DataType> (0);
 }
 
 

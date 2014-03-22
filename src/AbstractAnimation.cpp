@@ -20,14 +20,13 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "AbstractAnimation.h"
 #include "Scene.h"
 #include "SceneSequence.h"
 #include "SceneSoundLevel.h"
 #include "SceneChannelAnimator.h"
 #include "ScenePatternDimmer.h"
-#include "SceneColorSwitcher.h"
+#include "SceneColorFader.h"
 #include "SceneMovementAnimator.h"
 #include "SceneStrobeAnimator.h"
 
@@ -37,8 +36,16 @@ CString AbstractAnimation::getSynopsis(void) {
     CString synopsis;
 
     synopsis.Format( "Fixtures( " );
-    for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); ++it )
-        synopsis.AppendFormat( "%lu ", studio.getVenue()->getFixture( (*it) )->getNumber() );
+    for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); ++it ) {
+        Fixture *pf = studio.getVenue()->getFixture( (*it) );
+        if ( pf != NULL )
+            synopsis.AppendFormat( "F%lu ", pf->getNumber() );
+        else {
+            FixtureGroup* group = studio.getVenue()->getFixtureGroup( (*it) );
+            if ( group != NULL )
+                synopsis.AppendFormat( "G%lu ", group->getNumber() );
+        }
+    }
     synopsis += ")";
 
     return synopsis;
@@ -46,17 +53,13 @@ CString AbstractAnimation::getSynopsis(void) {
 
 // ----------------------------------------------------------------------------
 //
-UIDArray AbstractAnimation::populateActors( Scene* scene ) {
+UIDArray AbstractAnimation::populateActors( ) {
     UIDArray resolved_actors;
 
-    if ( m_actors.size() > 0 ) {
+    if ( m_actors.size() > 0 )              // Resolve preset actor list
         resolved_actors = m_actors;
-    }
-    else {
-        ActorPtrArray actors = scene->getActors();
-        for ( ActorPtrArray::iterator it=actors.begin(); it !=actors.end(); ++it )
-            resolved_actors.push_back( (*it)->getFUID() );
-    }
+    else                               
+        resolved_actors = m_animation_task->getScene()->getActorUIDs();
 
     return resolved_actors;
 }

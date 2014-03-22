@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -25,16 +25,14 @@ MA 02111-1307, USA.
 #include "IVisitor.h"
 #include "DMXStudio.h"
 #include "DObject.h"
+#include "RGBWA.h"
 #include "AnimationSignal.h"
-
-class Scene;
 
 class AbstractAnimation : public DObject
 {
 protected:
     UIDArray			m_actors;
     AnimationSignal		m_signal;
-
     AnimationTask*		m_animation_task;
 
 public:
@@ -50,7 +48,7 @@ public:
     {}
 
     virtual ~AbstractAnimation( void ) {}
-    
+
     AnimationSignal& signal( ) { return m_signal; }	
 
     UIDArray getActors() const { 
@@ -71,7 +69,7 @@ public:
     virtual void stopAnimation( void ) = 0;
     virtual void removeActor( UID actor );
 
-    UIDArray populateActors( Scene* scene );
+    UIDArray populateActors();
 };
 
 typedef std::vector<AbstractAnimation*> AnimationPtrArray;

@@ -97,7 +97,7 @@ class Venue : public DObject
     bool                    m_music_scene_select_enabled;
     MusicSceneSelectMap     m_music_scene_select_map;
 
-    UID                     m_captured_actor;                   // Last actor captured to default
+    UID                     m_captured_actor;                   // Last actor captured to default (can be single or group)
 
     CString                 m_venue_layout;                     // Client venue layout (JSON)
 
@@ -305,18 +305,22 @@ public:
     void addFixture( Fixture& pfixture );
     bool deleteFixture( UID pfuid );
     BYTE getChannelValue( Fixture* pfixture, channel_t channel );
+    BYTE getChannelValue( SceneActor& actor, channel_t channel );
 
     // Default Scene methods
-    void copyDefaultFixturesToScene( UID scene_uid );
     void copySceneFixtureToDefault( UID scene_uid, UID fixture_uid );
-    void moveDefaultFixtureToScene( UID scene_uid, UID actor_uid );
+    void moveDefaultFixturesToScene( UID scene_uid, UIDArray actor_uid, boolean keep_groups, boolean clear_default );
+    void moveDefaultFixturesToScene( UID scene_uid, boolean keep_groups, boolean clear_default );
 
-    SceneActor* captureActor( UID fixture_id );
+    SceneActor* captureFixture( UID fixture_uid );
+    SceneActor* captureFixtureGroup( UID group_uid );
     SceneActor* getCapturedActor();
-    void releaseActor( UID fixture_id );
+    void releaseActor( UID actor_id );
     void clearAllCapturedActors( );
+    FixturePtrArray resolveActorFixtures( SceneActor* actor );
+    Fixture* getGroupRepresentative( UID group_id );
 
-    void captureAndSetChannelValue( Fixture* pfixture, channel_t channel, BYTE value );
+    void captureAndSetChannelValue( SceneActor& actor, channel_t channel, BYTE value );
 
     // Scene methods
     Scene *getScene( UID scene_uid );
@@ -358,7 +362,6 @@ public:
     bool deleteFixtureGroup( UID group_id );
     GroupNumber nextAvailableFixtureGroupNumber( void );
     FixtureGroup* getFixtureGroupByNumber( GroupNumber group_number );
-    bool isGroupCaptured( FixtureGroup* group );
     void deleteAllFixtureGroups();
 
     // Scene chase methods

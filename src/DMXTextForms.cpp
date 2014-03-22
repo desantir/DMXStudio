@@ -55,103 +55,14 @@ ChaseSelectField::ChaseSelectField( LPCSTR label, Venue* venue, ChaseNumber defa
 
 // ----------------------------------------------------------------------------
 //
-SceneSelectField::SceneSelectField( LPCSTR label, Venue* venue, SceneNumber default_scene, bool include_default ) :
-    NumberedListField( label ),
-    m_venue( venue ),
-    m_include_default( include_default )
-{
-    ScenePtrArray scenes = m_venue->getScenes();
-    sort( scenes.begin(), scenes.end(), SceneSelectField::CompareSceneIDs );
-
-    if ( default_scene == 0 )
-        default_scene = m_venue->getScene()->getSceneNumber();
-    if ( !m_include_default && default_scene == DEFAULT_SCENE_NUMBER )
-        default_scene = 0;
-
-    for ( ScenePtrArray::iterator it=scenes.begin(); it != scenes.end(); ++it ) {
-        Scene* scene = (*it);
-        if ( m_include_default || scene->getSceneNumber() != DEFAULT_SCENE_NUMBER ) {
-            addKeyValue( scene->getSceneNumber(), scene->getName() );
-            if ( default_scene == 0 )
-                default_scene = scene->getSceneNumber();
-        }
-    }
-
-    setDefaultListValue( default_scene );
-}
-
-// ----------------------------------------------------------------------------
-//
-FixtureSelectField::FixtureSelectField( LPCSTR field_label, Venue* venue, bool include_groups ) :
-    KeyListField( field_label ),
-    m_venue( venue ),
-    m_include_groups( include_groups )
-{
-    FixturePtrArray fixtures = m_venue->getFixtures();
-    for ( FixturePtrArray::iterator it=fixtures.begin() ; it != fixtures.end(); ++it ) {
-        Fixture* pf = (*it);
-        CString key;
-        key.Format( "%lu", pf->getFixtureNumber() );
-        CString label;
-        label.Format( "%s @ %d", pf->getFullName(), pf->getAddress() );
-        addKeyValue( key, label );
-
-        if ( it == fixtures.begin() )
-            setDefaultListValue( key );
-    }
-        
-    if ( m_include_groups ) {
-        m_fixture_groups = m_venue->getFixtureGroups();
-        for ( FixtureGroupPtrArray:: iterator it=m_fixture_groups.begin(); it != m_fixture_groups.end(); ++it ) {
-            CString key;
-            key.Format( "G%u", (*it)->getGroupNumber() );
-            CString label;
-            label.Format( "Group: %s", (*it)->getName() );
-            addKeyValue( key, label );
-        }
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
-void FixtureSelectField::getFixtures( FixturePtrArray& targets ) {
-    targets.clear();
-
-    if ( m_include_groups && toupper(m_current_value[0]) == 'G' ) {
-        GroupNumber group_number = (GroupNumber)strtoul( &((LPCSTR)m_current_value)[1], NULL, 10 );
-        FixtureGroup* group = m_venue->getFixtureGroupByNumber( group_number );
-        STUDIO_ASSERT( group, "Fixture group %u disappeared", group_number );
-
-        UIDSet list = group->getFixtures();
-        for ( UIDSet::iterator it=list.begin(); it != list.end(); ++it ) {
-            Fixture* pf = m_venue->getFixture( *it );
-            targets.push_back( pf );
-        }
-        std::sort( targets.begin(), targets.end(), FixtureSelectField::SortByBaseChannel );
-    }
-    else {
-        UINT index = strtoul( (LPCSTR)m_current_value, NULL, 10 );
-        Fixture* pf = m_venue->getFixtureByNumber( index );
-        targets.push_back( pf );
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
-ChannelControllerField::ChannelControllerField( Venue* venue, FixturePtrArray* fixtures, channel_t channel ) :
+ChannelControllerField::ChannelControllerField( Venue* venue, SceneActor actor, channel_t channel, bool live_update ) :
         IntegerField( 0, 255 ),
         m_venue( venue ),
-        m_fixtures( fixtures ),
-        m_channel( channel )
+        m_actor( actor ),
+        m_channel( channel ),
+        m_live_update( live_update )
 {
-    BYTE value = 0;
-
-    for ( FixturePtrArray::iterator it=m_fixtures->begin(); it != m_fixtures->end(); ++it ) {
-        Fixture* pf = (*it);
-
-        if ( pf->getNumChannels() > m_channel )
-            value = std::max<channel_t>( value, m_venue->getChannelValue( pf, m_channel ) );
-    }
+    BYTE value = m_venue->getChannelValue( m_actor, m_channel );
 
     setInitialValue( value );
     setFixtureValues( value );
@@ -172,11 +83,10 @@ bool ChannelControllerField::setValue( LPCSTR value ) {
 // Set channel value on all fixtures
 //
 void ChannelControllerField::setFixtureValues( BYTE chnl_value ) {
-    for ( FixturePtrArray::iterator it=m_fixtures->begin(); it != m_fixtures->end(); ++it ) {
-        Fixture * pf = (*it);
-        if ( pf->getNumChannels() > m_channel )
-            m_venue->captureAndSetChannelValue( pf, m_channel, chnl_value );
-    }
+    if ( m_live_update )
+        m_venue->captureAndSetChannelValue( m_actor, m_channel, chnl_value );
+
+    m_labelValue.Format( "%u", chnl_value );
 }
 
 // ----------------------------------------------------------------------------
@@ -187,9 +97,7 @@ LPCSTR ChannelControllerField::getLabel() {
     CString range;
 
     // Figure out which channel text to show
-    for ( FixturePtrArray::iterator it=m_fixtures->begin(); it != m_fixtures->end(); ++it ) {
-        Fixture * pf = (*it);
-
+    for ( Fixture *pf : m_venue->resolveActorFixtures( &m_actor ) ) {
         if ( pf->getNumChannels() > m_channel ) {
             Channel* ch = pf->getChannel(m_channel);
 
@@ -197,10 +105,9 @@ LPCSTR ChannelControllerField::getLabel() {
                 name = ch->getName();
             if ( addresses.GetLength() > 0 )
                 addresses += ",";
-            addresses.AppendFormat( "%d", pf->getChannelAddress(m_channel) );
-            channel_t value = m_venue->getChannelValue( pf, m_channel );
+            addresses.AppendFormat( "%u", pf->getChannelAddress(m_channel) );
 
-            ChannelValueRange* rangep = ch->getRange( value );
+            ChannelValueRange* rangep = ch->getRange( getIntValue() );
             if ( rangep && range.Find( rangep->getName() ) == - 1 ) {
                 if ( range.GetLength() > 0 )
                     range += ",";
@@ -220,16 +127,7 @@ LPCSTR ChannelControllerField::getLabel() {
 // ----------------------------------------------------------------------------
 //
 void ChannelControllerField::getLabelValue( CString& labelValue ) {
-    for ( FixturePtrArray::iterator it=m_fixtures->begin(); it != m_fixtures->end(); ++it ) {
-        Fixture * pf = (*it);
-        if ( pf->getNumChannels() > m_channel ) {
-            Channel* ch = pf->getChannel(m_channel);
-            if ( labelValue.GetLength() > 0 )
-                labelValue += ",";
-            channel_t value = m_venue->getChannelValue( pf, m_channel );
-            labelValue.AppendFormat( "%d", value );
-        }
-    }
+    labelValue = m_labelValue;
 }
 
 // ----------------------------------------------------------------------------
@@ -326,13 +224,16 @@ FixtureGroupSelectField::FixtureGroupSelectField( LPCSTR label, Venue* venue ) :
     NumberedListField( label ),
     m_venue( venue )
 {
-    m_fixture_groups = m_venue->getFixtureGroups();
-    UINT index = 1;
+    bool first = true;
 
-    for ( FixtureGroupPtrArray:: iterator it=m_fixture_groups.begin(); it != m_fixture_groups.end(); it++, index++ )
-        addKeyValue( index, (*it)->getName() );
+    for ( FixtureGroup* group : m_venue->getFixtureGroups() ) {
+        addKeyValue( group->getNumber(), group->getName() );
 
-    setDefaultListValue( 1 );
+        if ( first ) {
+            setDefaultListValue( group->getNumber() );
+            first = false;
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -394,40 +295,6 @@ FixtureDefSelectField::FixtureDefSelectField( LPCSTR field_label ) :
 
 // ----------------------------------------------------------------------------
 //
-bool SceneFixtureSelectField::selectScene( UID scene_uid, UID default_fixture )
-{
-    Scene* scene = m_venue->getScene( scene_uid );
-    if ( scene == NULL )
-        return false;
-
-    m_scene_uid = scene_uid;
-
-    ActorPtrArray actors = scene->getActors();
-
-    FixtureNumber default_fixture_number = 0;
-
-    for ( unsigned index=0; index < actors.size(); index++ ) {
-        Fixture* pf = m_venue->getFixture( actors[index]->getFUID() );
-
-        CString label;
-        label.Format( "%s @ %d", pf->getFullName(), pf->getAddress() );
-
-        addKeyValue( pf->getFixtureNumber(), label );
-
-        if ( default_fixture == pf->getUID() )
-            default_fixture_number = pf->getFixtureNumber();
-    }
-
-    if ( default_fixture_number != 0 )
-        setDefaultListValue( default_fixture_number );
-    else if ( actors.size() > 0 )
-        setDefaultListValue( actors[0]->getFUID() );
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
 void SceneAnimationSelectField::selectAnimations( Scene* scene ) 
 {
     m_animations = scene->animations();
@@ -454,118 +321,6 @@ AnimationSelectField::AnimationSelectField( LPCSTR field_label ) :
     }
 
     setDefaultListValue( 1 );
-}
-
-// ----------------------------------------------------------------------------
-//
-FixtureSelect::FixtureSelect( LPCSTR field_label, Venue* venue, UIDArray& fixture_uids, UIDArray& selected_uids ) :
-        InputField( field_label, "" ),
-        m_venue( venue ),
-        m_selected_uids( selected_uids )
-{
-    if ( fixture_uids.size() == 0 )
-        return;
-
-    std::set<UID> uids;
-    CString default_value;
-
-    for ( UIDArray::iterator it=fixture_uids.begin(); it != fixture_uids.end(); ++it ) {
-        Fixture* pf = m_venue->getFixture((*it) );
-        CString label;
-        label.Format( "%s @ %d", pf->getFullName(), pf->getAddress() );
-        m_fixtures[ pf->getFixtureNumber() ] = label;
-        uids.insert( pf->getUID() );
-        if ( default_value.GetLength() == 0 )
-            default_value.Format( "%lu", pf->getFixtureNumber() );
-    }
-
-    // Add all fixture groups where all the fixtures are in the scene
-    FixtureGroupPtrArray fixture_groups = m_venue->getFixtureGroups();
-    UINT index = 1;
-
-    for ( FixtureGroupPtrArray::iterator it=fixture_groups.begin(); it != fixture_groups.end(); ++it ) {
-        UIDSet list = (*it)->getFixtures();
-        bool missing = false;
-        for ( UIDSet::iterator it2=list.begin(); it2 != list.end(); it2++ ) {
-            if ( uids.find( (*it2) ) == uids.end() ) {
-                missing = true;
-                break;
-            }
-        }
-
-        if ( !missing ) {
-            m_fixture_groups.push_back( *it );
-        }
-    }
-
-    CString values;
-
-    for ( UIDArray::iterator it=m_selected_uids.begin(); it != m_selected_uids.end(); ++it ) {
-        if ( uids.find( (*it) ) != uids.end() ) {
-            if ( values.GetLength() != 0 )
-                values += ",";
-            Fixture* pf = m_venue->getFixture((*it) );
-            values.AppendFormat( "%lu", pf->getFixtureNumber() );
-        }
-    }
-
-    if ( values.GetLength() == 0 )
-        setValue( default_value );
-    else
-        setValue( values );
-}
-
-// ----------------------------------------------------------------------------
-//
-bool FixtureSelect::setValue( LPCSTR value ) {
-    CString key( value );
-    UIDArray uids;
-
-    int curPos = 0;
-    while ( true ) {
-        CString resToken = key.Tokenize( _T(" ,"), curPos );
-        if ( resToken.IsEmpty() )
-            break;
-
-        if ( toupper(resToken[0]) == 'G' ) {
-            GroupNumber group_number = (GroupNumber)strtoul( &((LPCSTR)resToken)[1], NULL, 10 );
-            FixtureGroup* group = m_venue->getFixtureGroupByNumber( group_number );
-
-            if ( !group )
-                throw FieldException( "Invalid group number G%u", group_number );
-
-            // Make sure this group is represented
-
-            bool found = false;
-            for ( FixtureGroupPtrArray::iterator it=m_fixture_groups.begin(); it != m_fixture_groups.end(); ++it ) {
-                if ( group->getUID() == (*it)->getUID() ) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if ( !found )
-                throw FieldException( "Invalid group number G%u", group_number );
-
-            UIDSet list = group->getFixtures();
-            for ( UIDSet::iterator it=list.begin(); it != list.end(); ++it )
-                uids.push_back( *it );
-        }
-        else {	
-            FixtureNumber fixture_number = (FixtureNumber)strtoul( resToken, NULL, 10 );
-            if ( m_fixtures.find( fixture_number ) == m_fixtures.end() )
-                throw FieldException( "Invalid fixture %u", value );
-
-            uids.push_back( m_venue->getFixtureByNumber( fixture_number )->getUID() );
-        }
-    }
-
-    if ( uids.size() == 0 )
-        throw FieldException( "Select at least one fixture" );
-
-    m_selected_uids = uids;
-
-    return InputField::setValue( value );
 }
 
 // ----------------------------------------------------------------------------
@@ -667,6 +422,276 @@ bool CoordinatesField::setValue( LPCSTR value ) {
     }
 
     m_coordinates = coordinates_list;
+
+    return InputField::setValue( value );
+}
+
+// ----------------------------------------------------------------------------
+//
+ActorSelectField::ActorSelectField( LPCSTR field_label, Venue* venue ) :
+    InputField( field_label, "" ),
+    m_venue( venue ),
+    m_allow_multiple( true )
+{
+}
+
+// ----------------------------------------------------------------------------
+//
+ActorSelectField::ActorSelectField( LPCSTR field_label, Venue* venue, Scene* scene, UIDArray& selected_actor_uids ) :
+        InputField( field_label, "" ),
+        m_venue( venue ),
+        m_allow_multiple( true )
+{
+    init( scene->getActors(), selected_actor_uids );
+}
+
+// ----------------------------------------------------------------------------
+//
+ActorSelectField::ActorSelectField( LPCSTR field_label, Venue* venue, bool include_groups ) :
+        InputField( field_label, "" ),
+        m_venue( venue ),
+        m_allow_multiple( true )
+{
+    FixturePtrArray fixtures = venue->getFixtures();
+    ActorList actors;
+
+    for ( FixturePtrArray::iterator it=fixtures.begin(); it != fixtures.end(); ++it )
+        actors.push_back( SceneActor( (*it) ) );
+
+    if ( include_groups ) {
+        FixtureGroupPtrArray fixture_groups = m_venue->getFixtureGroups();
+        for ( FixtureGroupPtrArray:: iterator it=fixture_groups.begin(); it != fixture_groups.end(); ++it )
+            actors.push_back( SceneActor( venue, (*it) ) );
+    }
+
+    ActorPtrArray actor_ptrs;
+
+    for ( size_t i=0; i < actors.size(); i++)
+        actor_ptrs.push_back( &actors[i] );
+
+    init( actor_ptrs, UIDArray() );
+}
+
+// ----------------------------------------------------------------------------
+//
+bool ActorSelectField::selectScene( UID scene_uid )
+{
+    m_entries.clear();
+    m_selected_actors.clear();
+
+    Scene* scene = m_venue->getScene( scene_uid );
+    if ( scene == NULL )
+        return false;
+
+    init( scene->getActors(), UIDArray() );
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+void ActorSelectField::init( ActorPtrArray& actors, UIDArray& selected_actor_uids )
+{
+    if ( actors.size() == 0 )
+        return;
+
+    CString default_value;
+    CString values;
+
+    std::map<UID,CString> actor_to_id;
+
+    for ( SceneActor * actor : actors ) {
+        CString label;
+        CString id;
+
+        if ( actor->isGroup() ) {
+            FixtureGroup* group = m_venue->getFixtureGroup( actor->getActorUID() );
+            label.Format( "%s", group->getName() );
+            id.Format( "G%lu", group->getNumber() );
+        }
+        else {
+            Fixture* pf = m_venue->getFixture( actor->getActorUID() );
+            label.Format( "%s @ %d", pf->getFullName(), pf->getAddress() );
+            id.Format( "%lu", pf->getFixtureNumber() );
+        }
+
+        m_entries[ id ] = ActorSelectField::entry( id, label, *actor );
+        actor_to_id[ actor->getActorUID() ] = id;
+
+        if ( default_value.GetLength() == 0 )
+            default_value = id;
+    }
+
+    // Preseve selected actor order
+    for ( UID selected_uid : selected_actor_uids ) {
+        std::map<UID,CString>::iterator it = actor_to_id.find( selected_uid );
+        if ( it != actor_to_id.end() ) {
+            if ( values.GetLength() != 0 )
+                values += ",";
+            values.Append( (*it).second );
+        }
+    }
+
+    if ( values.GetLength() == 0 )
+        setValue( default_value );
+    else
+        setValue( values );
+}
+
+// ----------------------------------------------------------------------------
+//
+void ActorSelectField::helpText( CString& help_text) {
+    for ( ActorSelectField::EntryMap::iterator it=m_entries.begin(); it != m_entries.end(); ++it )
+        help_text.AppendFormat( " %6s - %s\n", (*it).second.m_id, (*it).second.m_label );
+}
+
+// ----------------------------------------------------------------------------
+//
+bool ActorSelectField::setValue( LPCSTR value ) {
+    CString key( value );
+    ActorList actors;
+
+    int curPos = 0;
+    while ( true ) {
+        CString resToken = key.Tokenize( _T(" ,"), curPos );
+        if ( resToken.IsEmpty() )
+            break;
+
+        resToken.MakeUpper();
+
+        ActorSelectField::EntryMap::iterator it = m_entries.find( resToken );
+        if ( it == m_entries.end() )
+            throw FieldException( "Invalid fixture number %s", (LPCSTR)resToken );
+
+        actors.push_back( (*it).second.m_actor );
+    }
+
+    if ( actors.size() == 0 )
+        throw FieldException( "Select at least one fixture" );
+
+    if ( actors.size() > 1 && !m_allow_multiple )
+        throw FieldException( "Select a single fixture" );
+
+    m_selected_actors = actors;
+
+    return InputField::setValue( value );
+}
+
+// ----------------------------------------------------------------------------
+//
+SceneSelectField::SceneSelectField( LPCSTR label, Venue* venue, SceneNumber default_scene, bool include_default ) :
+    NumberedListField( label ),
+    m_venue( venue ),
+    m_include_default( include_default )
+{
+    ScenePtrArray scenes = m_venue->getScenes();
+    sort( scenes.begin(), scenes.end(), SceneSelectField::CompareSceneIDs );
+
+    if ( default_scene == 0 )
+        default_scene = m_venue->getScene()->getSceneNumber();
+    if ( !m_include_default && default_scene == DEFAULT_SCENE_NUMBER )
+        default_scene = 0;
+
+    for ( ScenePtrArray::iterator it=scenes.begin(); it != scenes.end(); ++it ) {
+        Scene* scene = (*it);
+        if ( m_include_default || scene->getSceneNumber() != DEFAULT_SCENE_NUMBER ) {
+            addKeyValue( scene->getSceneNumber(), scene->getName() );
+            if ( default_scene == 0 )
+                default_scene = scene->getSceneNumber();
+        }
+    }
+
+    setDefaultListValue( default_scene );
+}
+
+// ----------------------------------------------------------------------------
+//
+ColorSelectField::ColorSelectField( LPCSTR field_label, RGBWAArray& colors ) :
+    InputField( field_label, "" ),
+    m_allow_multiple( true ),
+    m_colors( colors )
+{
+    init();
+}
+
+// ----------------------------------------------------------------------------
+//
+ColorSelectField::ColorSelectField( LPCSTR field_label, RGBWA& color ) :
+    InputField( field_label, "" ),
+    m_allow_multiple( false )
+{
+    m_colors.push_back( color );
+    init();
+}
+
+// ----------------------------------------------------------------------------
+//
+void ColorSelectField::init() {
+    CString values;
+
+    for ( RGBWA& rgb : m_colors ) {
+        if ( values.GetLength() > 0 )
+            values += ", ";
+        values += rgb.getColorName();
+    }
+
+    if ( values.GetLength() > 0 )
+        setValue( values );
+}
+
+// ----------------------------------------------------------------------------
+//
+void ColorSelectField::helpText( CString& help_text) {
+    help_text = "Enter one or more of the following colors (comma separated):\n";
+    help_text += "    rgb(r g b)\n";
+    help_text += "    #RRGGBB (where RR, GG, and BB are hex color values)\n";
+
+    for ( CString& name : RGBWA::getAllColorNames() )
+        help_text.AppendFormat( "    %s\n", (LPCSTR)name );
+}
+
+// ----------------------------------------------------------------------------
+//
+bool ColorSelectField::setValue( LPCSTR value ) {
+    CString key( value );
+    RGBWAArray colors;
+
+    int curPos = 0;
+    while ( true ) {
+        CString resToken = key.Tokenize( _T(","), curPos );
+        if ( resToken.IsEmpty() )
+            break;
+
+        resToken.Trim();
+        if ( resToken.GetLength() == 0 )
+            continue;
+
+        bool found = false;
+        RGBWA rgb;
+        ULONG value;
+        unsigned red, green, blue;
+
+        if ( sscanf_s( resToken, "#%lx", &value ) == 1 ) {
+            found = true;
+            rgb = RGBWA( value );
+        }
+        else if ( sscanf_s( resToken, "rgb(%u %u %u)", &red, &green, &blue ) == 3 ) {
+            found = true;
+            rgb = RGBWA( red, green, blue );
+        }
+        else 
+            found = RGBWA::getColorByName( (LPCSTR)resToken, rgb );
+
+        if ( ! found )
+            throw FieldException( "Unknown color value '%s'", (LPCSTR)resToken );
+
+        colors.push_back( rgb );
+    }
+
+    if ( colors.size() > 1 && !m_allow_multiple )
+        throw FieldException( "Select a single color" );
+
+    m_colors = colors;
 
     return InputField::setValue( value );
 }

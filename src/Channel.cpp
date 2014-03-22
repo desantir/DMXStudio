@@ -66,7 +66,8 @@ Channel::Channel( channel_t offset, ChannelType type, const char *name ) :
     m_home_value( 0 ),
     m_is_dimmer( false ),
     m_lowest_intensity( 0 ),
-    m_highest_intensity( 255 )
+    m_highest_intensity( 255 ),
+    m_pixel_index( 0 )
 {
     if ( name == NULL )
         m_name = getTypeName( m_type );

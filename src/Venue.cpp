@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -25,6 +25,7 @@ MA 02111-1307, USA.
 #include "Venue.h"
 #include "AnimationTask.h"
 #include "AbstractAnimation.h"
+#include "FindNextAvailable.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -277,13 +278,11 @@ FixturePtrArray Venue::getFixtures() {
 FixtureNumber Venue::nextAvailableFixtureNumber( void ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    FixtureNumber fixture_number = 1;
-
+    FindNextAvailable<FixtureNumber> finder;
     for ( FixtureMap::iterator it=m_fixtures.begin(); it != m_fixtures.end(); ++it )
-        if ( it->second.getFixtureNumber() >= fixture_number )
-            fixture_number = it->second.getFixtureNumber()+1;
+        finder.insert( it->second.getFixtureNumber() );
 
-    return fixture_number;
+    return (FixtureNumber)finder.nextAvailable();
 }
 
 // ----------------------------------------------------------------------------
@@ -328,6 +327,10 @@ bool  Venue::deleteFixtureGroup( UID group_id ) {
     if ( it == m_fixtureGroups.end() )
         return false;
 
+    // Remove fixture group from all dependant objects
+    for ( SceneMap::iterator it=m_scenes.begin(); it != m_scenes.end(); ++it )
+        it->second.removeActor( group_id );
+
     m_fixtureGroups.erase( it );
     return true;
 }
@@ -337,6 +340,14 @@ bool  Venue::deleteFixtureGroup( UID group_id ) {
 void Venue::deleteAllFixtureGroups()
 {
     CSingleLock lock( &m_venue_mutex, TRUE );
+
+    // Remove all fixture groups from all dependant objects
+    for ( FixtureGroupMap::iterator fgit = m_fixtureGroups.begin(); fgit != m_fixtureGroups.end(); ++fgit ) {
+        UID group_id = (*fgit).first;
+
+        for ( SceneMap::iterator it=m_scenes.begin(); it != m_scenes.end(); ++it )
+            it->second.removeActor( group_id );
+    }
 
     m_fixtureGroups.clear();
 }
@@ -358,13 +369,11 @@ GroupNumber Venue::nextAvailableFixtureGroupNumber( void )
 {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    GroupNumber group_number = 1;
-
+    FindNextAvailable<GroupNumber> finder;
     for ( FixtureGroupMap::iterator it=m_fixtureGroups.begin(); it != m_fixtureGroups.end(); ++it )
-        if ( it->second.getGroupNumber() >= group_number )
-            group_number = it->second.getGroupNumber()+1;
+        finder.insert( it->second.getGroupNumber() );
 
-    return group_number;
+    return (GroupNumber)finder.nextAvailable();
 }
 
 // ----------------------------------------------------------------------------
@@ -429,13 +438,11 @@ Chase* Venue::getChaseByNumber( ChaseNumber chase_number ) {
 ChaseNumber Venue::nextAvailableChaseNumber( void ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    ChaseNumber chase_number = 1;
-
+    FindNextAvailable<ChaseNumber> finder;
     for ( ChaseMap::iterator it=m_chases.begin(); it != m_chases.end(); ++it )
-        if ( it->second.getChaseNumber() >= chase_number )
-            chase_number = it->second.getChaseNumber()+1;
+        finder.insert( it->second.getChaseNumber() );
 
-    return chase_number;
+    return (ChaseNumber)finder.nextAvailable();
 }
 
 // ----------------------------------------------------------------------------
@@ -616,51 +623,61 @@ void Venue:: deleteAllScenes()
 SceneNumber Venue::nextAvailableSceneNumber( void ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    SceneNumber scene_number = 1;
-
+    FindNextAvailable<SceneNumber> finder;
     for ( SceneMap::iterator it=m_scenes.begin(); it != m_scenes.end(); ++it )
-        if ( it->second.getSceneNumber() >= scene_number )
-            scene_number = it->second.getSceneNumber()+1;
+        finder.insert( it->second.getSceneNumber() );
 
-    return scene_number;
+    return (ChaseNumber)finder.nextAvailable();
 }
 
 // ----------------------------------------------------------------------------
 //
-void Venue::copyDefaultFixturesToScene( UID scene_uid ) {
+void Venue::moveDefaultFixturesToScene( UID scene_uid, boolean keep_groups, boolean clear_default ) {
+   moveDefaultFixturesToScene( scene_uid, getDefaultScene()->getActorUIDs(), keep_groups, clear_default );
+}
+
+// ----------------------------------------------------------------------------
+//
+void Venue::moveDefaultFixturesToScene( UID scene_uid, UIDArray actor_uids, boolean keep_groups, boolean clear_default ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
     Scene* scene = getScene( scene_uid );
     if ( scene == NULL )
         return;
 
-    ActorPtrArray actors = getDefaultScene()->getActors();
-    for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); ++it )
-        scene->addActor( *(*it) );
-}
+    for ( UIDArray::iterator it = actor_uids.begin(); it != actor_uids.end(); ++it ) {
+        SceneActor* actor = getDefaultScene()->getActor( *it );
+        if ( actor == NULL )
+            continue;
 
-// ----------------------------------------------------------------------------
-//
-void Venue::moveDefaultFixtureToScene( UID scene_uid, UID actor_uid ) {
-    CSingleLock lock( &m_venue_mutex, TRUE );
+        if ( actor->isGroup() && !keep_groups ) {               // Explode groups - add individual fixtures
+            BYTE channel_values[DMX_PACKET_SIZE];
+            actor->getChannelValues( channel_values );
 
-    Scene* scene = getScene( scene_uid );
-    if ( scene == NULL )
-        return;
+            for ( Fixture* fixture : resolveActorFixtures( actor ) ) {
+                SceneActor new_actor( fixture );
+                new_actor.setChannelValues( fixture->getNumChannels(), channel_values );
+                scene->addActor( new_actor );
+            }
+        }
+        else
+            scene->addActor( *actor );
 
-    SceneActor* actor = getDefaultScene()->getActor( actor_uid );
-    if ( actor != NULL ) {
-        scene->addActor( *actor );
-        getDefaultScene()->removeActor( actor_uid );
+        if ( clear_default )
+            getDefaultScene()->removeActor( actor->getActorUID() );
     }
+
+    // Restart the scene if this is the active scene
+    if ( getCurrentSceneUID() == scene_uid )
+        loadScene();
 }
 
 // ----------------------------------------------------------------------------
 //
-void Venue::copySceneFixtureToDefault( UID scene_uid, UID fixture_uid ) {
+void Venue::copySceneFixtureToDefault( UID scene_uid, UID actor_uid ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    SceneActor* actor = getScene( scene_uid )->getActor( fixture_uid );
+    SceneActor* actor = getScene( scene_uid )->getActor( actor_uid );
     if ( actor )
         getDefaultScene()->addActor( *actor );
 }
@@ -677,44 +694,12 @@ void Venue::clearAllCapturedActors( ) {
 
 // ----------------------------------------------------------------------------
 //
-void Venue::releaseActor( UID fixture_id ) {
+void Venue::releaseActor( UID actor_id ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    getDefaultScene()->removeActor( fixture_id );
-    if ( m_captured_actor == fixture_id )
+    getDefaultScene()->removeActor( actor_id );
+    if ( m_captured_actor == actor_id )
         m_captured_actor = 0;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool Venue::isGroupCaptured( FixtureGroup* group ) {
-    BYTE dmx_channels[DMX_PACKET_SIZE];
-    memset( dmx_channels, 0, DMX_PACKET_SIZE );
-
-    UIDSet fixture_uids = group->getFixtures();
-    bool first = true;
-
-    for ( UIDSet::iterator it=fixture_uids.begin(); it != fixture_uids.end(); it++, first=false ) {
-        SceneActor* actor = getDefaultScene()->getActor( (*it) );
-        if ( actor == NULL ) // Not captured, group not loaded
-            return false;
-
-        Fixture* fixture = getFixture( actor->getFUID() );
-        for ( channel_t ch=0; ch < fixture->getNumChannels(); ch++ ) {
-            channel_t address = fixture->getChannelAddress(ch);
-            BYTE value;
-            m_universe->read( address, false, value );
-
-            if ( !first ) {
-                if ( dmx_channels[ ch ] != value )
-                    return false; // Value is different, fixtures separate
-            }
-            else
-                dmx_channels[ ch ] = value;
-        }
-    }
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
@@ -779,14 +764,15 @@ void Venue::setAnimationSampleRate( DWORD sample_rate_ms ) {
 
 // ----------------------------------------------------------------------------
 //
-SceneActor* Venue::captureActor( UID fixture_id ) {
+SceneActor* Venue::captureFixture( UID fixture_uid ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
     SceneActor * actor = NULL;
 
-    if ( fixture_id > 0 ) {
-        Fixture* fixture = getFixture( fixture_id );
-        STUDIO_ASSERT( fixture, "Invalid fixture UID %ld", fixture_id );
+    if ( fixture_uid > 0 ) {
+        Fixture* fixture = getFixture( fixture_uid );
+        STUDIO_ASSERT( fixture, "Invalid fixture UID %ld", fixture_uid );
+
         actor = getDefaultActor( fixture->getUID() );
         if ( !actor ) {
             getDefaultScene()->addActor( SceneActor( fixture ) );
@@ -795,7 +781,31 @@ SceneActor* Venue::captureActor( UID fixture_id ) {
         }
     }
 
-    m_captured_actor = fixture_id;
+    m_captured_actor = fixture_uid;
+
+    return actor;
+}
+
+// ----------------------------------------------------------------------------
+//
+SceneActor* Venue::captureFixtureGroup( UID group_uid ) {
+    CSingleLock lock( &m_venue_mutex, TRUE );
+
+    SceneActor * actor = NULL;
+
+    if ( group_uid > 0 ) {
+        FixtureGroup* group = getFixtureGroup( group_uid );
+        STUDIO_ASSERT( group, "Invalid fixture group UID %ld", group_uid );
+
+        actor = getDefaultActor( group->getUID() );
+        if ( !actor ) {
+            getDefaultScene()->addActor( SceneActor( this, group ) );
+            actor = getDefaultScene()->getActor( group->getUID() );
+            m_animation_task->updateChannels();     // Latch in the new default values
+        }
+    }
+
+    m_captured_actor = group_uid;
 
     return actor;
 }
@@ -808,10 +818,10 @@ SceneActor* Venue::getCapturedActor() {
 
 // ----------------------------------------------------------------------------
 //
-SceneActor * Venue::getDefaultActor( UID fixture_id ) {
+SceneActor * Venue::getDefaultActor( UID actor_id ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    return getDefaultScene()->getActor( fixture_id );
+    return getDefaultScene()->getActor( actor_id );
 }
 
 // ----------------------------------------------------------------------------
@@ -876,12 +886,13 @@ void Venue::loadSceneChannels( BYTE *dmx_packet, Scene* scene ) {
 
     ActorPtrArray actors = scene->getActors();
     for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
-        Fixture* pf = getFixture( (*it)->getFUID() );
-        STUDIO_ASSERT( pf != NULL, "Invalid fixture %ld in scene %ld", (*it)->getFUID(), scene->getUID() );
+        SceneActor* actor = (*it);
 
-        for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
-            BYTE value = (*it)->getChannelValue( channel );
-            loadChannel( dmx_packet, pf, channel, value );
+        for ( Fixture* pf : resolveActorFixtures( actor ) ) {
+            for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+                BYTE value = actor->getChannelValue( channel );
+                loadChannel( dmx_packet, pf, channel, value );
+            }                
         }
     }
 }
@@ -924,16 +935,34 @@ BYTE Venue::adjustChannelValue( Fixture* pf, channel_t channel, BYTE value )
 
 // ----------------------------------------------------------------------------
 //
-void Venue::captureAndSetChannelValue( Fixture* pf, channel_t channel, BYTE value ) {
-    STUDIO_ASSERT( channel < pf->getNumChannels(), 
-        "Channel %d out of range for fixture %ld", channel, pf->getUID() );
+void Venue::captureAndSetChannelValue( SceneActor& target_actor, channel_t channel, BYTE value ) {
+    if ( target_actor.isGroup() ) {
+        SceneActor* actor = captureFixtureGroup( target_actor.getActorUID() );
+        actor->setChannelValue( channel, value );
 
-    SceneActor * actor = captureActor( pf->getUID() );
-    actor->setChannelValue( channel, value );
+        FixtureGroup* group = getFixtureGroup( target_actor.getActorUID() );
+        UIDSet fixtures = group->getFixtures();
 
-    value = adjustChannelValue( pf, channel, value );
+        for ( UIDSet::iterator it2=fixtures.begin(); it2 != fixtures.end(); ++it2 ) {
+            Fixture* pf = getFixture( *it2 );
+            STUDIO_ASSERT( pf, "Invalid fixture %lu in group %lu", (*it2), target_actor.getActorUID() );
 
-    getUniverse()->write( pf->getChannelAddress( channel ), value, true );
+            if ( pf->getNumChannels() > channel ) {
+                value = adjustChannelValue( pf, channel, value );
+                getUniverse()->write( pf->getChannelAddress( channel ), value, true );
+            }
+        }
+    }
+    else {
+        Fixture* pf = getFixture( target_actor.getActorUID() );
+        STUDIO_ASSERT( channel < pf->getNumChannels(), "Channel %d out of range for fixture %ld", channel, pf->getUID() );
+
+        SceneActor* actor = captureFixture( pf->getUID() );
+        actor->setChannelValue( channel, value );
+
+        value = adjustChannelValue( pf, channel, value );
+        getUniverse()->write( pf->getChannelAddress( channel ), value, true );
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -964,7 +993,7 @@ BYTE Venue::getChannelValue( Fixture* pfixture, channel_t channel ) {
     STUDIO_ASSERT( channel < pfixture->getNumChannels(), 
         "Channel %d out of range for fixture %ld", channel, pfixture->getUID() );
 
-    SceneActor * actor = getDefaultActor( pfixture->getUID() );
+    SceneActor* actor = getDefaultActor( pfixture->getUID() );
     if ( actor )
         return actor->getChannelValue( channel );
 
@@ -975,6 +1004,36 @@ BYTE Venue::getChannelValue( Fixture* pfixture, channel_t channel ) {
     }
 
     return pfixture->getChannel( channel )->getDefaultValue();
+}
+
+// ----------------------------------------------------------------------------
+//
+BYTE Venue::getChannelValue( SceneActor& target_actor, channel_t channel ) {
+    SceneActor* actor = getDefaultActor( target_actor.getActorUID() );
+    if ( actor )
+        return actor->getChannelValue( channel );
+
+    if ( !isDefaultScene() ) {
+        actor = getScene()->getActor( target_actor.getActorUID() );
+        if ( actor )
+            return actor->getChannelValue( channel );
+    }
+
+    if ( channel < target_actor.getNumChannels() )
+        return target_actor.getChannelValue( channel );
+
+    Fixture* pf = NULL;
+
+    if ( target_actor.isGroup() )
+        pf = getGroupRepresentative( target_actor.getActorUID() );
+    else
+        pf = getFixture( target_actor.getActorUID() );
+
+    STUDIO_ASSERT( pf != NULL && pf->getNumChannels() > channel, 
+                   "Attempt to load invalid channel %u from fixture %lu", 
+                   channel, pf->getFUID() );
+
+    return pf->getChannel( channel )->getDefaultValue();
 }
 
 // ----------------------------------------------------------------------------
@@ -1044,4 +1103,49 @@ void Venue::addMusicMappings( std::vector<MusicSceneSelector>& selectors ) {
 
     for ( std::vector<MusicSceneSelector>::iterator it=selectors.begin(); it != selectors.end(); ++it )
         m_music_scene_select_map[ (*it).m_track_full_name ] = (*it);
+}
+
+// ----------------------------------------------------------------------------
+//    
+FixturePtrArray Venue::resolveActorFixtures( SceneActor* actor )
+{
+    FixturePtrArray fixtures;
+
+    if ( actor->isGroup() ) {
+        FixtureGroup* group = getFixtureGroup( actor->getActorUID() );
+        STUDIO_ASSERT( group, "Group %ul in actor not found", actor->getActorUID() );
+
+        for ( UID fixture_uid : group->getFixtures() )
+            fixtures.push_back( getFixture( fixture_uid ) );
+    }
+    else {
+        Fixture* pf = getFixture( actor->getActorUID() );
+        STUDIO_ASSERT( pf, "Fixture %ul in actor not found", actor->getActorUID() );
+        fixtures.push_back( pf );
+    }
+
+    return fixtures;
+}
+
+// ----------------------------------------------------------------------------
+// Fixture groups are allows to contain any fixures - they do not need to be the same
+// type nor have the same number of channels.  However, there are times when groups are
+// treated as a set of similar fixtures.  This method provide a representative for the
+// group to setup channels and get default values.
+
+Fixture*  Venue::getGroupRepresentative( UID group_uid ) {
+    FixtureGroup* group = getFixtureGroup( group_uid );
+    STUDIO_ASSERT( group, "Invalid group id %ul", group_uid );
+
+    Fixture* fixture = NULL;
+
+    for ( UID fixture_uid : group->getFixtures() ) {
+        Fixture* f = getFixture( fixture_uid );
+        STUDIO_ASSERT( f != NULL, "Missing fixture for %lu", fixture_uid );
+
+        if ( fixture == NULL || f->getNumChannels() > fixture->getNumChannels() )
+            fixture = f;
+    }
+
+    return fixture;
 }

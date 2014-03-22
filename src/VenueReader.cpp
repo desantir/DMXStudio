@@ -26,10 +26,11 @@ MA 02111-1307, USA.
 #include "SceneSequence.h"
 #include "SceneChannelAnimator.h"
 #include "ScenePatternDimmer.h"
-#include "SceneColorSwitcher.h"
+#include "SceneColorFader.h"
 #include "SceneMovementAnimator.h"
 #include "SceneStrobeAnimator.h"
 #include "SceneSoundLevel.h"
+#include "ScenePixelAnimator.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -165,7 +166,6 @@ void VenueReader::readDObject( TiXmlElement* self, DObject* dobject, LPCSTR numb
     dobject->m_number = (SceneNumber)read_word_attribute( self, number_name );
     dobject->m_name = read_text_element( self, "name" );
     dobject->m_description = read_text_element( self, "description" );
-    dobject->m_private = read_bool_attribute( self, "private" );
 }
 
 // ----------------------------------------------------------------------------
@@ -184,6 +184,15 @@ Scene* VenueReader::read( TiXmlElement* self, Scene* scene )
         delete (*it);
     }
 
+    TiXmlElement* acts = self->FirstChildElement( "acts" );
+    if ( acts ) {
+        TiXmlElement* element = acts->FirstChildElement( "act" );
+        while ( element ) {
+            scene->m_acts.insert( read_unsigned_attribute( element, "number" ) ) ;
+            element = element->NextSiblingElement();
+        }
+    }
+
     TiXmlElement* container = self->FirstChildElement( "animations" );
     if ( container ) {
         TiXmlElement* element = container->FirstChildElement( "animation" );
@@ -199,12 +208,14 @@ Scene* VenueReader::read( TiXmlElement* self, Scene* scene )
                 animation = read( element, (SceneChannelAnimator*)NULL );
             else if ( !strcmp( class_name, ScenePatternDimmer::className ) )
                 animation = read( element, (ScenePatternDimmer*)NULL );
-            else if ( !strcmp( class_name, SceneColorSwitcher::className ) )
-                animation = read( element, (SceneColorSwitcher*)NULL );
+            else if ( !strcmp( class_name, SceneColorFader::className ) )
+                animation = read( element, (SceneColorFader*)NULL );
             else if ( !strcmp( class_name, SceneMovementAnimator::className ) )
                 animation = read( element, (SceneMovementAnimator*)NULL );
             else if ( !strcmp( class_name, SceneStrobeAnimator::className ) )
                 animation = read( element, (SceneStrobeAnimator*)NULL );
+            else if ( !strcmp( class_name, ScenePixelAnimator::className ) )
+                animation = read( element, (ScenePixelAnimator*)NULL );
             else
                 STUDIO_ASSERT( false, "Unknown animation class '%s'", class_name );
 
@@ -227,13 +238,21 @@ Chase* VenueReader::read( TiXmlElement* self, Chase* chase )
 
     chase->m_delay_ms = (ULONG)read_dword_attribute( self, "delay_ms" );
     chase->m_fade_ms = (ULONG)read_dword_attribute( self, "fade_ms" );
-    chase->m_private = read_bool_attribute( self, "private" );
+
+    TiXmlElement* acts = self->FirstChildElement( "acts" );
+    if ( acts ) {
+        TiXmlElement* element = acts->FirstChildElement( "act" );
+        while ( element ) {
+            chase->m_acts.insert( read_unsigned_attribute( element, "number" ) ) ;
+            element = element->NextSiblingElement();
+        }
+    }
 
     // Add chase steps
-    std::vector<ChaseStep *> actors = 
+    std::vector<ChaseStep *> steps = 
         read_xml_list<ChaseStep>( self->FirstChildElement( "chase_steps" ), "chase_step" );
 
-    for ( std::vector<ChaseStep *>::iterator it=actors.begin(); it != actors.end(); ++it ) {
+    for ( std::vector<ChaseStep *>::iterator it=steps.begin(); it != steps.end(); ++it ) {
         chase->m_chase_steps.push_back( *(*it) );
         delete (*it);
     }
@@ -261,14 +280,33 @@ FixtureGroup* VenueReader::read( TiXmlElement* self, FixtureGroup* fixture_group
 
     readDObject( self, fixture_group, "group_number" );
 
-    TiXmlElement * container = self->FirstChildElement( "pfuids" );
-    if ( container ) {
-        TiXmlElement* element = container->FirstChildElement( "uid" );
+    TiXmlElement * fixture_container = self->FirstChildElement( "pfuids" );
+    if ( fixture_container ) {
+        TiXmlElement* element = fixture_container->FirstChildElement( "uid" );
         while ( element ) {
             fixture_group->m_fixtures.insert( read_dword_attribute( element, "value" ) );
             element = element->NextSiblingElement();
         }
     }
+
+    TiXmlElement * container = self->FirstChildElement( "channels" );
+    channel_t max_channel = 0;
+
+    if ( container ) {
+        TiXmlElement* element = container->FirstChildElement( "channel" );
+        while ( element ) {
+            channel_t channel = read_int_attribute( element, "number" );
+            BYTE value = (BYTE)read_int_attribute( element, "value" );
+
+            fixture_group->m_channel_values[ channel ] = value;
+            if ( channel+1 > max_channel )
+                max_channel = channel+1;
+
+            element = element->NextSiblingElement();
+        }
+    }
+
+    fixture_group->m_channels = (size_t)max_channel;
 
     return fixture_group;
 }
@@ -292,7 +330,8 @@ SceneActor* VenueReader::read( TiXmlElement* self, SceneActor* actor )
 {
     actor = new SceneActor();
 
-    actor->m_pfuid = (UID)read_dword_attribute( self, "fixure_uid" );
+    actor->m_uid = (UID)read_dword_attribute( self, "fixure_uid" );
+    actor->m_group = read_bool_attribute( self, "group", false );
 
     TiXmlElement * container = self->FirstChildElement( "channels" );
     channel_t max_channel = 0;
@@ -351,7 +390,7 @@ SceneStrobeAnimator* VenueReader::read( TiXmlElement* self, SceneStrobeAnimator*
     animation = new SceneStrobeAnimator();
 
     animation->m_uid = (UID)read_dword_attribute( self, "uid" );
-    animation->m_strobe_neg_color = read_unsigned_attribute( self, "strobe_neg_color" );
+    animation->m_strobe_neg_color = read_rgbw_attribute( self, "strobe_neg_color" );
     animation->m_strobe_pos_ms = read_unsigned_attribute( self, "strobe_pos_ms" );
     animation->m_strobe_neg_ms = read_unsigned_attribute( self, "strobe_neg_ms"  );
 
@@ -365,14 +404,7 @@ SceneStrobeAnimator* VenueReader::read( TiXmlElement* self, SceneStrobeAnimator*
         delete signal;
     }
 
-    TiXmlElement * container = self->FirstChildElement( "pfuids" );
-    if ( container ) {
-        TiXmlElement* element = container->FirstChildElement( "uid" );
-        while ( element ) {
-            animation->m_actors.push_back( read_dword_attribute( element, "value" ) );
-            element = element->NextSiblingElement();
-        }
-    }
+    read_uids( self, "pfuids", animation->m_actors );
 
     return animation;
 }
@@ -396,17 +428,11 @@ ScenePatternDimmer* VenueReader::read( TiXmlElement* self, ScenePatternDimmer* a
         delete signal;
     }
 
-    TiXmlElement * container = self->FirstChildElement( "pfuids" );
-    if ( container ) {
-        TiXmlElement* element = container->FirstChildElement( "uid" );
-        while ( element ) {
-            animation->m_actors.push_back( read_dword_attribute( element, "value" ) );
-            element = element->NextSiblingElement();
-        }
-    }
+    read_uids( self, "pfuids", animation->m_actors );
 
     return animation;
 }
+
 // ----------------------------------------------------------------------------
 //
 SceneMovementAnimator* VenueReader::read( TiXmlElement* self, SceneMovementAnimator* animation )
@@ -425,14 +451,7 @@ SceneMovementAnimator* VenueReader::read( TiXmlElement* self, SceneMovementAnima
         delete signal;
     }
 
-    TiXmlElement * container = self->FirstChildElement( "pfuids" );
-    if ( container ) {
-        TiXmlElement* element = container->FirstChildElement( "uid" );
-        while ( element ) {
-            animation->m_actors.push_back( read_dword_attribute( element, "value" ) );
-            element = element->NextSiblingElement();
-        }
-    }
+    read_uids( self, "pfuids", animation->m_actors );
 
     TiXmlElement* movement_element = self->FirstChildElement( "movement" );
     if ( movement_element ) {
@@ -488,12 +507,13 @@ MovementAnimation* VenueReader::read( TiXmlElement* self, MovementAnimation* mov
 
 // ----------------------------------------------------------------------------
 //
-SceneColorSwitcher* VenueReader::read( TiXmlElement* self, SceneColorSwitcher* animation )
+SceneColorFader* VenueReader::read( TiXmlElement* self, SceneColorFader* animation )
 {
-    animation = new SceneColorSwitcher();
+    animation = new SceneColorFader();
 
     animation->m_uid = (UID)read_dword_attribute( self, "uid" );
-    animation->m_strobe_neg_color = read_unsigned_attribute( self, "strobe_neg_color" );
+    animation->m_fader_effect = (FaderEffect)read_unsigned_attribute( self, "fader_effect", FaderEffect::FADER_EFFECT_ALL );
+    animation->m_strobe_neg_color = read_rgbw_attribute( self, "strobe_neg_color" );
     animation->m_strobe_pos_ms = read_unsigned_attribute( self, "strobe_pos_ms" );
     animation->m_strobe_neg_ms = read_unsigned_attribute( self, "strobe_neg_ms"  );
 
@@ -507,23 +527,41 @@ SceneColorSwitcher* VenueReader::read( TiXmlElement* self, SceneColorSwitcher* a
         delete signal;
     }
 
-    TiXmlElement * container = self->FirstChildElement( "pfuids" );
-    if ( container ) {
-        TiXmlElement* element = container->FirstChildElement( "uid" );
-        while ( element ) {
-            animation->m_actors.push_back( read_dword_attribute( element, "value" ) );
-            element = element->NextSiblingElement();
-        }
+    read_uids( self, "pfuids", animation->m_actors );
+
+    read_colors( self, "custom_colors", animation->m_custom_colors );
+
+    return animation;
+}
+
+// ----------------------------------------------------------------------------
+//
+ScenePixelAnimator* VenueReader::read( TiXmlElement* self, ScenePixelAnimator* animation )
+{
+    animation = new ScenePixelAnimator();
+
+    animation->m_uid = (UID)read_dword_attribute( self, "uid" );
+
+    animation->m_name = read_text_element( self, "name" );
+    animation->m_description = read_text_element( self, "description" );
+    animation->m_effect = (PixelEffect)read_unsigned_attribute( self, "pixel_effect", 1 );
+    animation->m_generations = read_unsigned_attribute( self, "generations", 1 );
+    animation->m_num_pixels = read_unsigned_attribute( self, "pixels", 1 );
+    animation->m_increment = read_unsigned_attribute( self, "increment", 1 );
+    animation->m_color_fade = read_bool_attribute( self, "fade", 1 );
+    animation->m_combine_fixtures = read_bool_attribute( self, "combine", 1 );
+    animation->m_empty_color = read_rgbw_attribute( self, "pixel_off_color" );
+
+    TiXmlElement* signal_element = self->FirstChildElement( "signal" );
+    if ( signal_element ) {
+        AnimationSignal* signal = read( signal_element, (AnimationSignal*)NULL );
+        animation->m_signal = *signal;
+        delete signal;
     }
 
-    TiXmlElement * colors_element = self->FirstChildElement( "custom_colors" );
-    if ( colors_element ) {
-        TiXmlElement* element = colors_element->FirstChildElement( "color" );
-        while ( element ) {
-            animation->m_custom_colors.push_back( read_dword_attribute( element, "rgb" ) );
-            element = element->NextSiblingElement();
-        }
-    }
+    read_uids( self, "pfuids", animation->m_actors );
+
+    read_colors( self, "custom_colors", animation->m_custom_colors );
 
     return animation;
 }
@@ -574,14 +612,7 @@ SceneSequence* VenueReader::read( TiXmlElement* self, SceneSequence* animation )
         delete signal;
     }
 
-    TiXmlElement * container = self->FirstChildElement( "pfuids" );
-    if ( container ) {
-        TiXmlElement* element = container->FirstChildElement( "uid" );
-        while ( element ) {
-            animation->m_actors.push_back( read_dword_attribute( element, "value" ) );
-            element = element->NextSiblingElement();
-        }
-    }
+    read_uids( self, "pfuids", animation->m_actors );
 
     return animation;
 }
@@ -604,14 +635,7 @@ SceneSoundLevel* VenueReader::read( TiXmlElement* self, SceneSoundLevel* animati
         delete signal;
     }
 
-    TiXmlElement * container = self->FirstChildElement( "pfuids" );
-    if ( container ) {
-        TiXmlElement* element = container->FirstChildElement( "uid" );
-        while ( element ) {
-            animation->m_actors.push_back( read_dword_attribute( element, "value" ) );
-            element = element->NextSiblingElement();
-        }
-    }
+    read_uids( self, "pfuids", animation->m_actors );
 
     return animation;
 }
@@ -640,7 +664,7 @@ ChannelAnimation* VenueReader::read( TiXmlElement* self, ChannelAnimation* chann
 {
     channel_animation = new ChannelAnimation();
 
-    channel_animation->m_actor = (UID)read_dword_attribute( self, "actor_uid" );
+    channel_animation->m_actor_uid = (UID)read_dword_attribute( self, "actor_uid" );
     channel_animation->m_channel = (channel_t)read_word_attribute( self, "channel"  );
     channel_animation->m_animation_style = (ChannelAnimationStyle)read_int_attribute( self, "style" );
 

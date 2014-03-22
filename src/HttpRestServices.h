@@ -52,9 +52,9 @@ MA 02111-1307, USA.
 #define DMX_URL_CONTROL_FIXTURE_CHANNELS        DMX_URL_REST "control/fixture/channels/"
 #define DMX_URL_CONTROL_FIXTURE                 DMX_URL_REST "control/fixture/"
 #define DMX_URL_CONTROL_FIXTUREGROUP            DMX_URL_REST "control/fixturegroup/"
-#define DMX_URL_CONTROL_FIXTURE_CAPTURE         DMX_URL_REST "control/fixture/select/"
+#define DMX_URL_CONTROL_FIXTURE_CAPTURE         DMX_URL_REST "control/select/"
 #define DMX_URL_CONTROL_FIXTURE_RELEASE         DMX_URL_REST "control/fixture/release/"
-#define DMX_URL_CONTROL_FIXTURE_CHANNEL         DMX_URL_REST "control/fixture/channel/"
+#define DMX_URL_CONTROL_FIXTURE_CHANNEL         DMX_URL_REST "control/channel/"
 
 #define DMX_URL_CONTROL_VENUE_VOLUME_MASTER     DMX_URL_REST "control/venue/volume/master/"
 #define DMX_URL_CONTROL_VENUE_VOLUME_MUTE       DMX_URL_REST "control/venue/volume/mute/"

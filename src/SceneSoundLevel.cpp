@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -20,10 +20,10 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "SceneSoundLevel.h"
 
 const char* SceneSoundLevel::className = "SoundLevel";
+const char* SceneSoundLevel::animationName = "Sound level";
 
 // ----------------------------------------------------------------------------
 //
@@ -72,21 +72,22 @@ void SceneSoundLevel::initAnimation( AnimationTask* task, DWORD time_ms, BYTE* d
     m_animation_task = task;
     m_channel_animations.clear();
 
-    UIDArray actors = populateActors( m_animation_task->getScene() );
     ChannelValueArray unused_value_array;
 
     // Determine which channel will be participating
-    for ( UIDArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
-        Fixture* pf = m_animation_task->getFixture( (*it) );
-        STUDIO_ASSERT( pf != NULL, "Missing fixture UID=%lu", (*it) );
+    for ( UID actor_uid : populateActors() ) {
+        Fixture* pf = m_animation_task->getActorRepresentative( actor_uid );
+        if ( !pf )
+            continue;
 
+        // Determine which channels will be participating
         for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
             Channel* cp = pf->getChannel( channel );
 
             if ( ((m_fade_what & FADE_COLORS) && cp->isColor()) ||
-                 ((m_fade_what & FADE_DIMMERS) && cp->isDimmer()) ) {
+                    ((m_fade_what & FADE_DIMMERS) && cp->isDimmer()) ) {
                 m_channel_animations.push_back( 
-                    ChannelAnimation(  pf->getUID(), channel, CAM_SCALE, unused_value_array ) );
+                    ChannelAnimation(  actor_uid, channel, CAM_SCALE, unused_value_array ) );
             }
         }
     }

@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -20,28 +20,28 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
-#include "SceneColorSwitcher.h"
+#include "SceneColorFader.h"
 
-class SceneStrobeAnimator : public SceneColorSwitcher
+class SceneStrobeAnimator : public SceneColorFader
 {
     friend class VenueWriter;
     friend class VenueReader;
 
 public:
     static const char* className;
+    static const char* animationName;
 
     SceneStrobeAnimator( UID animation_uid, 
                         AnimationSignal signal,
                         UIDArray actors,
-                        unsigned strobe_neg_color,
+                        RGBWA strobe_neg_color,
                         unsigned strobe_pos_ms,
                         unsigned strobe_neg_ms );
 
     SceneStrobeAnimator(void) :
-        SceneColorSwitcher( )
+        SceneColorFader( )
     {}
 
     virtual ~SceneStrobeAnimator(void);
@@ -49,7 +49,7 @@ public:
     AbstractAnimation* clone();
     CString getSynopsis(void);
 
-    const char* getName() { return "Scene Strobe Animator"; }
+    const char* getName() { return SceneStrobeAnimator::animationName; }
     const char* getClassName() { return SceneStrobeAnimator::className; }
 
     void accept( IVisitor* visitor) {

@@ -60,11 +60,6 @@ function Scene(scene_data)
         return this.is_default;
     }
 
-    // method isPrivate
-    this.isPrivate = function () {
-        return this.is_private;
-    }
-
     // method getUserTypeName
     this.getUserTypeName = function () {
         return "Scene";
@@ -88,6 +83,11 @@ function Scene(scene_data)
     // method getActors
     this.getActors = function () {
         return this.actors;
+    }
+
+    // method getActs
+    this.getActs = function () {
+        return this.acts;
     }
 
     // method getActorIds
@@ -148,13 +148,7 @@ function getDefaultSceneId() {
 // ----------------------------------------------------------------------------
 //
 function updateScenes() {
-    highlightSceneFixtures(active_scene_id, false);
-    active_scene_id = 0;
     $("#copy_scene_button").hide();
-
-    scene_tile_panel.empty();
-    scenes = [];
-    loading = true;
 
     $.ajax({
         type: "GET",
@@ -162,21 +156,34 @@ function updateScenes() {
         cache: false,
         success: function (data) {
             //alert(data);
+            scenes = [];
             var json = jQuery.parseJSON(data);
-
             $.map(json, function (scene, index) {
-                var title = escapeForHTML(scene.name);
-                scene_tile_panel.addTile(scene.id, scene.number, title, !scene.is_default);
-                scenes.push( new Scene(scene) );
-                if (scene.is_running)
-                    markActiveScene(scene.id);
+                scenes.push(new Scene(scene));
             });
-
-            setEditMode(edit_mode);         // Refresh editing icons on new tiles
-            setDeleteMode(delete_mode);     // Refresh editing icons on new tiles
+            createSceneTiles();
         },
         error: onAjaxError
     });
+}
+
+// ----------------------------------------------------------------------------
+//
+function createSceneTiles() {
+    highlightSceneFixtures(active_scene_id, false);
+    scene_tile_panel.empty();
+    active_scene_id = 0;
+
+    $.each( scenes, function ( index, scene ) {
+        if (scene.number == 0 || current_act == 0 || scene.acts.indexOf(current_act) != -1) {
+            var title = escapeForHTML(scene.name);
+            scene_tile_panel.addTile(scene.id, scene.number, title, !scene.is_default);
+            if (scene.is_running)
+                markActiveScene(scene.id);
+        }
+    });
+
+    setEditMode(edit_mode);         // Refresh editing icons on new tiles
 }
 
 // ----------------------------------------------------------------------------
@@ -218,8 +225,8 @@ function copyScene(event) {
         name: "Copy of " + scene.getName(),
         description: scene.getDescription(),
         number: new_number,
-        private_scene: scene.isPrivate(),
         animations: scene.getAnimations(),
+        acts: scene.getActs(),
         actors: actors
     });
 }
@@ -230,27 +237,19 @@ function createScene(event) {
     stopEventPropagation(event);
 
     var new_number = getUnusedSceneNumber();
-
-    var actors = [];
-
     var list = getActiveFixtures();
 
-    for (var i = 0; i < list.length; i++) {
-        if (list[i].isGroup()) { // Flatten out groups for now
-            for (var j = 0; j < list[i].getFixtureIds().length; j++)
-                actors.push(list[i].getFixtureIds()[j]);
-        }
-        else
-            actors.push(list[i].getId());
-    }
+    var actors = [];
+    for (var i = 0; i < list.length; i++)
+        actors.push(list[i].getId());
 
     openNewSceneDialog("New Scene", "Create Scene", false, {
         id: 0,
         name: "New Scene " + new_number,
         description: "",
         number: new_number,
-        private_scene: false,
         animations: [],
+        acts: [],
         actors: actors
     } );
 }
@@ -273,9 +272,9 @@ function editScene(event, scene_id) {
         name: scene.getName(),
         description: scene.getDescription(),
         number: scene.getNumber(),
-        private_scene: scene.isPrivate(),
         animations: scene.getAnimations(),
-        actors: actors
+        actors: actors,
+        acts: scene.getActs()
     });
 }
 
@@ -284,13 +283,18 @@ function editScene(event, scene_id) {
 function openNewSceneDialog(dialog_title, action_title, copy, data) {
 
     var send_update = function ( make_copy ) {
+        var acts = $("#nsd_acts").val();
+        if (acts == null)
+            acts = [];
+
         var json = {
             id: data.id,
             name: $("#nsd_name").val(),
             description: $("#nsd_description").val(),
             number: parseInt($("#nsd_number").val()),
-            is_private: $("#nsd_private_scene").is(":checked"),
+            keep_groups: $("#nsd_keep_groups").is(":checked"),
             actors: $("#nsd_fixtures").val(),
+            acts: acts,
             animations: $("#nsd_animations").data("animations")
         };
 
@@ -337,6 +341,11 @@ function openNewSceneDialog(dialog_title, action_title, copy, data) {
         };
     }
 
+    if (data.id != 0)
+        $("#nsd_keep_groups_section").hide();
+    else
+        $("#nsd_keep_groups_section").show();
+
     dialog_buttons[dialog_buttons.length] = {
         text: action_title,
         click: function () { send_update(copy); }
@@ -366,7 +375,6 @@ function openNewSceneDialog(dialog_title, action_title, copy, data) {
     $("#nsd_name").val(data.name);
     $("#nsd_description").val(data.description);
     $("#nsd_copy_captured_fixtures").attr('checked', data.copy_captured_fixtures);
-    $("#nsd_private_scene").attr('checked', data.private_scene);
 
     $("#nsd_animations").data("animations", jQuery.extend(true, [], data.animations));  // Generate a deep copy
     $("#nsd_animations").data("scene", data.id);
@@ -380,7 +388,7 @@ function openNewSceneDialog(dialog_title, action_title, copy, data) {
 
         $("#nsd_fixtures").append($('<option>', {
             value: fixture_id,
-            text: fixture.getNumber() + ": " + fixture.getFullName(),
+            text: fixture.getLabel(),
             selected: true
         }));
     }
@@ -390,6 +398,21 @@ function openNewSceneDialog(dialog_title, action_title, copy, data) {
     // After fixtures are changed, remove any animation actors sthat have been removed
     $("#nsd_fixtures").on("multiselectclose", function (event, ui) {
         verifyAnimationActors();
+    });
+    
+    $("#nsd_acts").empty();
+
+    for (var i=1; i <= 20; i++) {
+        $("#nsd_acts").append($('<option>', {
+            value: i,
+            text: i,
+            selected: data.acts.indexOf( i ) > -1
+        }));
+    }
+
+    $("#nsd_acts").multiselect({
+        minWidth: 300, multiple: true, noneSelectedText: 'None',
+        checkAllText: 'All acts', uncheckAllText: 'Clear acts', selectedList: 8
     });
 
     populate_animations();
@@ -553,8 +576,17 @@ function describeScene(event, scene_id) {
         title: "Scene " + scene.getNumber() + ": " + escapeForHTML(scene.getName())
     });
 
+    var acts = "";
+    if (scene.getActs().length > 0) {
+        for (var i = 0; i < scene.getActs().length; i++)
+            acts += scene.getActs()[i] + " ";
+    }
+    else
+        acts = "None";
+
     $("#describe_scene_number").html(scene.getNumber());
     $("#describe_scene_name").html(escapeForHTML(scene.getName()));
+    $("#describe_scene_acts").html(acts);
     $("#describe_scene_fixture_count").html(scene.getActors().length);
     $("#describe_scene_animation_count").html(scene.getAnimations().length);
     $("#describe_scene_description").html(scene.getDescription() != null ? escapeForHTML(scene.getDescription()) : "");
@@ -568,7 +600,7 @@ function describeScene(event, scene_id) {
         if (channel_data != null)
             html += "onclick=\"controlFixture2( event, " + fixture.getId() + "," + JSON.stringify(channel_data) + ");\" title=\"control fixture\" >";
         else
-            html += "onclick=\"controlFixture( event, " + fixture.getId() + ");\" title=\"control fixture\" >";
+            html += "onclick=\"controlFixture( event, " + fixture.getId() + "null,false);\" title=\"control fixture\" >";
 
         html += "Fixture " + (fixture.isGroup() ? "Group G" : "") + fixture.getNumber() + ": " + escapeForHTML(fixture.getFullName());
 
@@ -650,7 +682,13 @@ function describeScene(event, scene_id) {
                 for (var j = 0; j < animation.actors.length; j++) {
                     if (j > 0)
                         fixtures += ", ";
-                    fixtures += getFixtureById(animation.actors[j]).getNumber();
+
+                    var fixture = getFixtureById(animation.actors[j]);
+
+                    if ( fixture.isGroup() )
+                        fixtures += "G";
+
+                    fixtures += fixture.getNumber();
                 }
             }
             else
@@ -663,7 +701,7 @@ function describeScene(event, scene_id) {
             info += "<div class=\"describe_scene_channels\">";
 
             if (synopsis.length > 0)
-                info += synopsis + "<br />";
+                info += synopsis.replace( /\n/g, "<br />" ) + "<br />";
  
             info += "Fixtures: " + fixtures +  "<br />";
             info += "Signal: " + signal;

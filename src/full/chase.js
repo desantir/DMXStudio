@@ -60,11 +60,6 @@ function Chase(chase_data)
         return "Chase";
     }
 
-    // method isPrivate
-    this.isPrivate = function () {
-        return this.is_private;
-    }
-
     // method getFadeMS
     this.getFadeMS = function () {
         return this.fade_ms;
@@ -83,6 +78,11 @@ function Chase(chase_data)
     // method isActive
     this.isActive = function () {
         return chase_tile_panel.isActive(this.id);
+    }
+
+    // method getActs
+    this.getActs = function () {
+        return this.acts;
     }
 }
 
@@ -119,30 +119,37 @@ function getUnusedChaseNumber() {
 // ----------------------------------------------------------------------------
 //
 function updateChases() {
-    chase_tile_panel.empty();
-    chases = []
-    chases.length = 0;
-    active_chase_id = 0;
-
     $.ajax({
         type: "GET",
         url: "/dmxstudio/rest/query/chases/",
         cache: false,
         success: function (data) {
+            chases = [];
             var json = jQuery.parseJSON(data);
-
             $.map(json, function (chase, index) {
-                chase_tile_panel.addTile(chase.id, chase.number, escapeForHTML(chase.name), true);
-                chases.push( new Chase(chase) );
-                if (chase.is_running)
-                    markActiveChase(chase.id);
+                chases.push(new Chase(chase));
             });
-
-            setEditMode(edit_mode);         // Refresh editing icons on new tiles
-            setDeleteMode(delete_mode);     // Refresh editing icons on new tiles
+            createChaseTiles();
         },
         error: onAjaxError
     });
+}
+
+// ----------------------------------------------------------------------------
+//
+function createChaseTiles() {
+    chase_tile_panel.empty();
+    active_chase_id = 0;
+
+    $.each( chases, function ( index, chase ) {
+        if (current_act == 0 || chase.acts.indexOf(current_act) != -1) {
+            chase_tile_panel.addTile(chase.id, chase.number, escapeForHTML(chase.name), true);
+            if (chase.is_running)
+                markActiveChase(chase.id);
+        }
+    });
+
+    setEditMode(edit_mode);         // Refresh editing icons on new tiles
 }
 
 // ----------------------------------------------------------------------------
@@ -176,10 +183,10 @@ function createChase(event) {
         name: "New Chase " + new_number,
         description: "",
         number: new_number,
-        private_scene: false,
         fade_ms: 0,
         delay_ms: 1000,
-        steps: [ { id:0, delay_ms:0} ]
+        steps: [{ id: 0, delay_ms: 0 }],
+        acts: []
     });
 }
 
@@ -197,10 +204,10 @@ function editChase(event, chase_id) {
         name: chase.getName(),
         description: chase.getDescription(),
         number: chase.getNumber(),
-        private_scene: chase.isPrivate(),
         fade_ms: chase.getFadeMS(),
         delay_ms: chase.getDelayMS(),
-        steps: chase.getSteps().slice()
+        steps: chase.getSteps().slice(),
+        acts: chase.getActs()
     });
 }
 
@@ -221,15 +228,19 @@ function openNewChaseDialog(dialog_title, data) {
             }
         }
 
+        var acts = $("#ncd_acts").val();
+        if (acts == null)
+            acts = [];
+
         var json = {
             id: data.id,
             name: $("#ncd_name").val(),
             description: $("#ncd_description").val(),
             number: parseInt($("#ncd_number").val()),
-            is_private: $("#ncd_private_scene").is(":checked"),
             fade_ms: $("#ncd_fade_ms").val(),
             delay_ms: $("#ncd_delay_ms").val(),
-            steps: steps
+            steps: steps,
+            acts: acts,
         };
 
         if ((make_copy || json.number != data.number) && getChaseByNumber(json.number) != null) {
@@ -297,11 +308,25 @@ function openNewChaseDialog(dialog_title, data) {
     $("#ncd_number").spinner({ min: 1, max: 100000 }).val(data.number);
     $("#ncd_name").val(data.name);
     $("#ncd_description").val(data.description);
-    $("#ncd_private_scene").attr('checked', data.private_scene);
     $("#ncd_fade_ms").spinner({ min: 0, max: 100000 }).val(data.fade_ms);
     $("#ncd_delay_ms").spinner({ min: 0, max: 100000 }).val(data.delay_ms);
 
-    $("#ncd_steps").data("steps", jQuery.extend(true, [], data.steps) );
+    $("#ncd_acts").empty();
+
+    for (var i = 1; i <= 20; i++) {
+        $("#ncd_acts").append($('<option>', {
+            value: i,
+            text: i,
+            selected: data.acts.indexOf(i) > -1
+        }));
+    }
+
+    $("#ncd_acts").multiselect({
+        minWidth: 300, multiple: true, noneSelectedText: 'None',
+        checkAllText: 'All acts', uncheckAllText: 'Clear acts', selectedList: 8
+    });
+
+    $("#ncd_steps").data("steps", jQuery.extend(true, [], data.steps));
 
     populate_chase_steps();
 
@@ -426,8 +451,17 @@ function describeChase(event, chase_id) {
         title: "Chase " + chase.getNumber() + ": " + escapeForHTML(chase.getName())
     });
 
+    var acts = "";
+    if (chase.getActs().length > 0) {
+        for (var i=0; i < chase.getActs().length; i++)
+            acts += chase.getActs()[i] + " ";
+    }
+    else
+        acts = "None";
+
     $("#describe_chase_number").html(chase.getNumber());
     $("#describe_chase_name").html(escapeForHTML(chase.getName()));
+    $("#describe_chase_acts").html(acts);
     $("#describe_chase_delay").html(chase.getDelayMS() + " ms");
     $("#describe_chase_fade").html(chase.getFadeMS() + " ms");
     $("#describe_chase_description").html(chase.getDescription() != null ? escapeForHTML(chase.getDescription()) : "" );

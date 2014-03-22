@@ -44,7 +44,7 @@ public:
     SceneStrobeAnimator* read( TiXmlElement* self, SceneStrobeAnimator* animation );
     ScenePatternDimmer* read( TiXmlElement* self, ScenePatternDimmer* animation );
     SceneMovementAnimator* read( TiXmlElement* self, SceneMovementAnimator* animation );
-    SceneColorSwitcher* read( TiXmlElement* self, SceneColorSwitcher* animation );
+    SceneColorFader* read( TiXmlElement* self, SceneColorFader* animation );
     SceneChannelAnimator* read( TiXmlElement* self, SceneChannelAnimator* animation );
     SceneSequence* read( TiXmlElement* self, SceneSequence* animation );  
     SceneSoundLevel* read( TiXmlElement* self, SceneSoundLevel* animation );  
@@ -53,6 +53,7 @@ public:
     MovementAnimation* read( TiXmlElement* self, MovementAnimation* movement );
     ChannelAnimation* read( TiXmlElement* self, ChannelAnimation* channel_animation );
     MusicSceneSelector* read( TiXmlElement* self, MusicSceneSelector* music_scene_selection );
+    ScenePixelAnimator* read( TiXmlElement* self, ScenePixelAnimator* animation );
 
     template <class T>
     std::vector<T *> read_xml_list( TiXmlElement *container, const char *element_name ) {

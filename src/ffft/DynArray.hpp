@@ -16,7 +16,7 @@ http://sam.zoy.org/wtfpl/COPYING for more details.
 
 
 #if defined (ffft_DynArray_CURRENT_CODEHEADER)
-	#error Recursive inclusion of DynArray code header.
+    #error Recursive inclusion of DynArray code header.
 #endif
 #define	ffft_DynArray_CURRENT_CODEHEADER
 
@@ -45,7 +45,7 @@ DynArray <T>::DynArray ()
 :	_data_ptr (0)
 ,	_len (0)
 {
-	// Nothing
+    // Nothing
 }
 
 
@@ -55,12 +55,12 @@ DynArray <T>::DynArray (long size)
 :	_data_ptr (0)
 ,	_len (0)
 {
-	assert (size >= 0);
-	if (size > 0)
-	{
-		_data_ptr = new DataType [size];
-		_len = size;
-	}
+    assert (size >= 0);
+    if (size > 0)
+    {
+        _data_ptr = new DataType [size];
+        _len = size;
+    }
 }
 
 
@@ -68,9 +68,9 @@ DynArray <T>::DynArray (long size)
 template <class T>
 DynArray <T>::~DynArray ()
 {
-	delete [] _data_ptr;
-	_data_ptr = 0;
-	_len = 0;
+    delete [] _data_ptr;
+    _data_ptr = 0;
+    _len = 0;
 }
 
 
@@ -78,7 +78,7 @@ DynArray <T>::~DynArray ()
 template <class T>
 long	DynArray <T>::size () const
 {
-	return (_len);
+    return (_len);
 }
 
 
@@ -86,17 +86,17 @@ long	DynArray <T>::size () const
 template <class T>
 void	DynArray <T>::resize (long size)
 {
-	assert (size >= 0);
-	if (size > 0)
-	{
-		DataType *		old_data_ptr = _data_ptr;
-		DataType *		tmp_data_ptr = new DataType [size];
+    assert (size >= 0);
+    if (size > 0)
+    {
+        DataType *		old_data_ptr = _data_ptr;
+        DataType *		tmp_data_ptr = new DataType [size];
 
-		_data_ptr = tmp_data_ptr;
-		_len = size;
+        _data_ptr = tmp_data_ptr;
+        _len = size;
 
-		delete [] old_data_ptr;
-	}
+        delete [] old_data_ptr;
+    }
 }
 
 
@@ -104,10 +104,10 @@ void	DynArray <T>::resize (long size)
 template <class T>
 const typename DynArray <T>::DataType &	DynArray <T>::operator [] (long pos) const
 {
-	assert (pos >= 0);
-	assert (pos < _len);
+    assert (pos >= 0);
+    assert (pos < _len);
 
-	return (_data_ptr [pos]);
+    return (_data_ptr [pos]);
 }
 
 
@@ -115,10 +115,10 @@ const typename DynArray <T>::DataType &	DynArray <T>::operator [] (long pos) con
 template <class T>
 typename DynArray <T>::DataType &	DynArray <T>::operator [] (long pos)
 {
-	assert (pos >= 0);
-	assert (pos < _len);
+    assert (pos >= 0);
+    assert (pos < _len);
 
-	return (_data_ptr [pos]);
+    return (_data_ptr [pos]);
 }
 
 

@@ -1,33 +1,31 @@
-<?xml version="1.0"?>
-
+<?xml version="1.0" ?>
 <fixture_definitions>
     <author>Robert DeSantis</author>
     <version>1</version>
-  
     <fixture type="par" channels="9">
         <manufacturer>Blizzard</manufacturer>
         <model>Rocker Panel</model>
         <channels>
-            <channel index="0" type="red" color="true" blackout="true">
+            <channel index="1" type="red" color="true" blackout="true">
                 <name>Red</name>
             </channel>
-            <channel index="1" type="green" color="true" blackout="true">
+            <channel index="2" type="green" color="true" blackout="true">
                 <name>Green</name>
             </channel>
-            <channel index="2" type="blue" color="true" blackout="true">
+            <channel index="3" type="blue" color="true" blackout="true">
                 <name>Blue</name>
             </channel>
-            <channel index="3" type="amber" color="true" blackout="true">
+            <channel index="4" type="amber" color="true" blackout="true">
                 <name>Amber</name>
             </channel>
-            <channel index="4" type="white" color="true" blackout="true">
+            <channel index="5" type="white" color="true" blackout="true">
                 <name>White</name>
             </channel>
-            <channel index="5" type="dimmer" color="false" blackout="true" value="0">
-              <dimmer lowest_intensity="255" highest_intensity="0" />
-              <name>Dimmer</name>
+            <channel index="6" type="dimmer" color="false" blackout="true">
+                <dimmer lowest_intensity="255" highest_intensity="0" />
+                <name>Dimmer</name>
             </channel>
-            <channel index="6" type="color macro" color="false" blackout="true">
+            <channel index="7" type="color macro" color="false" blackout="true">
                 <name>Color Macro</name>
                 <ranges>
                     <range start="0" end="9">
@@ -107,10 +105,10 @@
                     </range>
                 </ranges>
             </channel>
-            <channel index="7" type="strobe" color="false" blackout="false">
+            <channel index="8" type="strobe" color="false" blackout="false">
                 <name>Strobe</name>
             </channel>
-            <channel index="8" type="auto program" color="false" blackout="false">
+            <channel index="9" type="auto program" color="false" blackout="false">
                 <name>Auto Program</name>
             </channel>
         </channels>

@@ -161,11 +161,17 @@ void DMXTextUI::run()
 
             Scene* workspace = getVenue()->getDefaultScene();
             if ( workspace->getNumActors() > 0 ) {
-                light_status.AppendFormat( "Workspace Fixtures: " );
+                light_status.AppendFormat( "Workspace: " );
                 ActorPtrArray actors = workspace->getActors();
                 for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
-                    Fixture* pf = getVenue()->getFixture( (*it)->getFUID() );
-                    light_status.AppendFormat( "%u ", pf->getFixtureNumber() );
+                    if ( (*it)->isGroup() ) {
+                        FixtureGroup* group = getVenue()->getFixtureGroup( (*it)->getActorUID() );
+                        light_status.AppendFormat( "G%u ", group->getNumber() );
+                    }
+                    else {
+                        Fixture* pf = getVenue()->getFixture( (*it)->getActorUID() );
+                        light_status.AppendFormat( "F%u ", pf->getFixtureNumber() );
+                    }
                 }
                 light_status.AppendFormat( "| " );
             }
@@ -689,7 +695,7 @@ void DMXTextUI::createChase(void) {
     UniqueChaseNumberField chase_number_field( "Create chase number", getVenue() );
     InputField name_field( "Chase name", "New chase" );
     InputField description_field( "Chase description", "" );
-    BooleanField private_field( "Private chase", false );
+    ActsField acts_field;
     IntegerField chase_delay( "Chase delay (ms)", 0, 0 );
     IntegerField chase_fade( "Chase fade (ms)", 0, 0 );
 
@@ -697,7 +703,7 @@ void DMXTextUI::createChase(void) {
     form.add( chase_number_field );
     form.add( name_field );
     form.add( description_field );
-    form.add( private_field );
+    form.add( acts_field );
     form.add( chase_delay );
     form.add( chase_fade );
 
@@ -710,7 +716,7 @@ void DMXTextUI::createChase(void) {
                  chase_fade.getLongValue(),
                  name_field.getValue(),
                  description_field.getValue() );
-    chase.setPrivate( private_field.isSet() );
+    chase.setActs( acts_field.getActs() );
 
     m_text_io.printf( "\nAdd chase scene steps (select scene 0 to finish)\n\n" );
 
@@ -728,14 +734,14 @@ void DMXTextUI::updateChase(void) {
         InputField			m_description_field;
         IntegerField		m_chase_delay;
         IntegerField		m_chase_fade;
-        BooleanField        m_private_field;
+        ActsField           m_acts_field;
         
         void fieldLeaveNotify( size_t field_num ) {
             if ( field_num == 0 ) {
                 Chase* chase = getChase();
                 m_name_field.setValue( chase->getName() );
                 m_description_field.setValue( chase->getDescription() );
-                m_private_field.setInitialValue( chase->isPrivate() );
+                m_acts_field.setActs( chase->getActs() );
                 m_chase_delay.setValue( chase->getDelayMS() );
                 m_chase_fade.setValue( chase->getFadeMS() );
 
@@ -752,7 +758,7 @@ void DMXTextUI::updateChase(void) {
             Chase* chase = getChase();
             chase->setName( m_name_field.getValue() );
             chase->setDescription( m_description_field.getValue() );
-            chase->setPrivate( m_private_field.isSet() );
+            chase->setActs( m_acts_field.getActs() );
             chase->setDelayMS( m_chase_delay.getLongValue() );
             chase->setFadeMS( m_chase_fade.getLongValue() );
         }
@@ -764,14 +770,13 @@ void DMXTextUI::updateChase(void) {
             m_chase_field( "Select chase to update", m_venue ),
             m_name_field( "Chase name", "" ),
             m_description_field( "Chase description", "" ),
-            m_private_field( "Private chase", false ),
             m_chase_delay( "Chase delay (ms)", 0, 0 ),
             m_chase_fade( "Chase fade (ms)", 0, 0  )
         {
             add( m_chase_field );
             add( m_name_field );
             add( m_description_field );
-            add( m_private_field );
+            add( m_acts_field );
             add( m_chase_delay );
             add( m_chase_fade );
         }
@@ -958,9 +963,16 @@ void DMXTextUI::describeChase(void) {
         return;
 
     Chase *chase = getVenue()->getChase( chase_field.getChaseUID() );
-    m_text_io.printf( "\nChase #%d: %s delay %lums fade=%lums %s\n\n", 
-        chase->getChaseNumber(), chase->getName(), chase->getDelayMS(), chase->getFadeMS(),
-        chase->isPrivate() ? " [private]" : "" );
+    m_text_io.printf( "\nChase #%d: %s Delay=%lums Fade=%lums\n\n  Acts: ", 
+        chase->getChaseNumber(), chase->getName(), chase->getDelayMS(), chase->getFadeMS() );
+
+    if ( !chase->getActs().empty() ) {
+        for ( ActNumber act : chase->getActs() )
+            m_text_io.printf( "%u ", act );
+    }
+    else
+        m_text_io.printf( "None" );
+    m_text_io.printf( "\n\n" );
 
     for ( unsigned index=0; index < chase->getNumSteps(); index++ ) {
         ChaseStep* step = chase->getStep( index );
@@ -1093,18 +1105,17 @@ void DMXTextUI::masterDimmer(void) {
 // ----------------------------------------------------------------------------
 //
 void DMXTextUI::describeFixture(void) {
-    FixtureSelectField fixture_field( "Fixture to describe", getVenue() );
+    ActorSelectField fixture_field( "Fixture to describe", getVenue(), false );
+    fixture_field.allowMultiple( false );
 
     Form form( &m_text_io );
     form.add( fixture_field );
     if ( !form.play() )
         return;
 
-    FixturePtrArray targets;
-    fixture_field.getFixtures( targets );
-
-    for ( FixturePtrArray::iterator it = targets.begin(); it != targets.end(); ++it ) {
-        Fixture * pf = (*it);
+    SceneActor actor = fixture_field.getActor( );
+    if ( !actor.isGroup() ) { 
+        Fixture* pf = getVenue()->getFixture( actor.getActorUID() );
         m_text_io.printf( "%2d: %s @ %d\n", pf->getFixtureNumber(), pf->getFullName(), pf->getAddress() );
 
         for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
@@ -1118,28 +1129,28 @@ void DMXTextUI::describeFixture(void) {
             }
         }
     }
+    else
+        throw FieldException( "Unexpected group in fixture list" );
 }
 
 // ----------------------------------------------------------------------------
 //
 void DMXTextUI::controlFixture( ) {
-    FixtureSelectField fixture_field( "Fixture to control", getVenue(), true );
+    ActorSelectField fixture_field( "Fixture to control", getVenue(), true );
+    fixture_field.allowMultiple( false );
 
     Form form( &m_text_io );
     form.add( fixture_field );
     if ( !form.play() )
         return;
 
-    FixturePtrArray targets;
     channel_t channel = 0;
     size_t num_channels = 0;
 
-    fixture_field.getFixtures( targets );
-
+    SceneActor actor = fixture_field.getActor();
     CString title;
-
-    for ( FixturePtrArray::iterator it = targets.begin(); it != targets.end(); it++, channel++ ) {
-        Fixture* pf = (*it);
+    
+    for ( Fixture* pf : getVenue()->resolveActorFixtures( &actor ) ) {
         if ( title.GetLength() != 0 )
             title.Append( "\n" );
         title.AppendFormat( "Channels: %s @ %d", pf->getFullName(), pf->getAddress() );
@@ -1153,7 +1164,7 @@ void DMXTextUI::controlFixture( ) {
 
     // Generate channel control fields
     for ( channel=0; channel < num_channels; channel++ )
-        form.addAuto( new ChannelControllerField( getVenue(), &targets, channel ) );
+        form.addAuto( new ChannelControllerField( getVenue(), actor, channel ) );
 
     form.play();
 }
@@ -1191,7 +1202,7 @@ void DMXTextUI::describeScene( ) {
     if ( form.play() ) {
         Scene* scene = getVenue()->getScene( scene_field.getSceneUID() );
 
-        m_text_io.printf( "\nScene #%lu - %s %s\n", scene->getSceneNumber(), scene->getName(), scene->isPrivate() ? " [private]" : "" );
+        m_text_io.printf( "\nScene #%lu - %s\n", scene->getSceneNumber(), scene->getName() );
         if ( scene->getNumActors() == 0 )
             m_text_io.printf( "\n   NO FIXTURES\n" );
 
@@ -1199,18 +1210,39 @@ void DMXTextUI::describeScene( ) {
 
         for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
             SceneActor* actor = (*it);
-            Fixture* fixture = getVenue()->getFixture( actor->getFUID() );
+            Fixture* fixture = NULL;
 
-            m_text_io.printf( " %3d %s @ %u UID=%lu\n", fixture->getFixtureNumber(), fixture->getFullName(), 
-                                                       fixture->getChannelAddress(0), fixture->getUID() );
+            if ( (*it)->isGroup() ) {
+                FixtureGroup * group = getVenue()->getFixtureGroup( actor->getActorUID() );
 
-            for ( channel_t channel=0; channel < fixture->getNumChannels(); channel++ ) {
-                m_text_io.printf( "      %2u - %s [%d]\n", 
-                    channel+1,
-                    fixture->getChannel( channel )->getName(),
-                    actor->getChannelValue( fixture->mapChannel( channel ) ) );
+                m_text_io.printf( " Group %d %s UID=%lu\n", group->getNumber(), group->getName(), group->getUID() );
+                fixture = getVenue()->getGroupRepresentative( group->getUID() );
+            }
+            else {
+                fixture = getVenue()->getFixture( actor->getActorUID() );
+
+                m_text_io.printf( " %3d %s @ %u UID=%lu\n", fixture->getFixtureNumber(), fixture->getFullName(), 
+                                                           fixture->getChannelAddress(0), fixture->getUID() );
+            }
+
+            if ( fixture != NULL ) {
+                for ( channel_t channel=0; channel < fixture->getNumChannels(); channel++ ) {
+                    m_text_io.printf( "      %2u - %s [%d]\n", 
+                        channel+1,
+                        fixture->getChannel( channel )->getName(),
+                        actor->getChannelValue( fixture->mapChannel( channel ) ) );
+                }
             }
         }
+
+        m_text_io.printf( "  Acts:\n      " );
+        if ( !scene->getActs().empty() ) {
+            for ( ActNumber act : scene->getActs() )
+                m_text_io.printf( "%u ", act );
+        }
+        else
+            m_text_io.printf( "NONE" );
+        m_text_io.printf( "\n" );
 
         for ( size_t i=0; i < scene->getNumAnimations(); i++ ) {
             AbstractAnimation* animation = scene->getAnimation(i);
@@ -1238,17 +1270,17 @@ void DMXTextUI::updateScene( ) {
         if ( scene->getSceneNumber() != DEFAULT_SCENE_NUMBER ) {
             InputField name_field( "Scene name", scene->getName() );
             InputField description_field( "Scene description", scene->getDescription() );
-            BooleanField private_field( "Private scene", scene->isPrivate() );
+            ActsField acts_field( scene->getActs() );
 
             form.clear();
             form.add( name_field );
             form.add( description_field );
-            form.add( private_field );
+            form.add( acts_field );
 
             if ( form.play() ) {
                 scene->setName( name_field.getValue() );
                 scene->setDescription( description_field.getValue() );
-                scene->setPrivate( private_field.isSet() );
+                scene->setActs( acts_field.getActs() );
             }
         }
     }
@@ -1263,30 +1295,19 @@ void DMXTextUI::copyWorkspaceToScene()
         return;
     }
 
-    UIDArray default_actors = getVenue()->getDefaultScene()->getActorUIDs();
-
     SceneSelectField scene_field( "Copy workspace fixtures to scene", getVenue() );
-    FixtureSelect fixtures_field( "Select fixture(s) to copy", getVenue(), default_actors, default_actors );
     BooleanField remove_from_ws_field( "Remove from workspace", true );
+    BooleanField keep_groups( "Preserve fixture groups", true );
 
     Form form( &m_text_io );
     form.add( scene_field );
-    form.add( fixtures_field );
+    form.add( keep_groups );
     form.add( remove_from_ws_field );
 
     if ( form.play() ) {
-        Scene* scene = getVenue()->getScene( scene_field.getSceneUID() );
-        Scene* default_scene = getVenue()->getDefaultScene();
-
-        UIDArray selected = fixtures_field.getUIDs();
-        for ( UIDArray::iterator it=selected.begin(); it != selected.end(); ++it ) {
-            scene->addActor( *default_scene->getActor( (*it) ) );
-            if ( remove_from_ws_field.isSet() )
-                default_scene->removeActor( (*it) );
-        }
-
-        if ( getVenue()->getCurrentSceneUID() == scene->getUID() )
-            getVenue()->loadScene();
+        getVenue()->moveDefaultFixturesToScene( scene_field.getSceneUID(), 
+                                                keep_groups.isSet(),
+                                                remove_from_ws_field.isSet() );
     }
 }
 
@@ -1296,27 +1317,29 @@ void DMXTextUI::createScene( ) {
     UniqueSceneNumberField scene_number_field( "Create scene number", getVenue() );
     InputField name_field( "Scene name", "New scene" );
     InputField description_field( "Scene description", "" );
-    BooleanField private_field( "Private scene", false );
     BooleanField copy_field( "Copy current fixtures", true );
+    ActsField acts_field;
+    BooleanField keep_groups( "Preserve fixture groups", true );
 
     Form form( &m_text_io );
     form.add( scene_number_field );
     form.add( name_field );
     form.add( description_field );
-    form.add( private_field );
     form.add( copy_field );
+    form.add( acts_field );
+    form.add( keep_groups );
 
     if ( !form.play() )
         return;
 
     Scene scene( getVenue()->allocUID(), scene_number_field.getSceneNumber(),
                  name_field.getValue(), description_field.getValue() );
-    scene.setPrivate( private_field.isSet() );
+    scene.setActs( acts_field.getActs() );
 
     getVenue()->addScene( scene );
 
     if ( copy_field.isSet() )
-        getVenue()->copyDefaultFixturesToScene( scene.getUID() );
+        getVenue()->moveDefaultFixturesToScene( scene.getUID(), keep_groups.isSet(), true );
 
     getVenue()->clearAllCapturedActors();
     getVenue()->selectScene( scene.getUID() );
@@ -1358,7 +1381,7 @@ void DMXTextUI::copyFixture(void) {
         void fieldLeaveNotify( size_t field_num ) {
             if ( field_num == 0 ) {
                 SceneSelectField* scene_field = getField<SceneSelectField>( field_num );
-                SceneFixtureSelectField* scene_fixture_field = getField<SceneFixtureSelectField>( 1 );
+                ActorSelectField* scene_fixture_field = getField<ActorSelectField>( 1 );
                 scene_fixture_field->selectScene( scene_field->getSceneUID() );
             }
         }
@@ -1368,7 +1391,8 @@ void DMXTextUI::copyFixture(void) {
     };
 
     SceneSelectField scene_select_field( "Scene to copy from", getVenue(), 0, true );
-    SceneFixtureSelectField scene_fixture_field( "Scene fixture to copy", getVenue(), 0 );
+    ActorSelectField scene_fixture_field( "Scene fixture to copy", getVenue() );
+    scene_fixture_field.allowMultiple( false );
 
     MyForm form( &m_text_io );
     form.add( scene_select_field );
@@ -1377,7 +1401,7 @@ void DMXTextUI::copyFixture(void) {
         return;
 
     getVenue()->copySceneFixtureToDefault( scene_select_field.getSceneUID(),
-                                        scene_fixture_field.getFixtureUID() );
+                                        scene_fixture_field.getActorUID() );
     getVenue()->loadScene();
 }
 
@@ -1390,7 +1414,7 @@ void DMXTextUI::deleteFixtureFromScene(void) {
         void fieldLeaveNotify( size_t field_num ) {
             if ( field_num == 0 ) {
                 SceneSelectField* scene_field = getField<SceneSelectField>( field_num );
-                SceneFixtureSelectField* scene_fixture_field = getField<SceneFixtureSelectField>( 1 );
+                ActorSelectField* scene_fixture_field = getField<ActorSelectField>( 1 );
                 scene_fixture_field->selectScene( scene_field->getSceneUID() );
             }
         }
@@ -1400,8 +1424,9 @@ void DMXTextUI::deleteFixtureFromScene(void) {
     };
 
     SceneSelectField scene_select_field( "Delete fixture from scene", getVenue(), 0, true );
-    SceneFixtureSelectField scene_fixture_field( "Delete scene fixture", getVenue(), 0 );
-    
+    ActorSelectField scene_fixture_field( "Delete scene fixture", getVenue() );
+    scene_fixture_field.allowMultiple( false );
+
     MyForm form( &m_text_io );
     form.add( scene_select_field );
     form.add( scene_fixture_field );
@@ -1409,7 +1434,7 @@ void DMXTextUI::deleteFixtureFromScene(void) {
         return;
 
     Scene* scene = getVenue()->getScene( scene_select_field.getSceneUID() );
-    scene->removeActor( scene_fixture_field.getFixtureUID() );
+    scene->removeActor( scene_fixture_field.getActorUID() );
 
     if ( scene->getUID() == getVenue()->getCurrentSceneUID() )
         getVenue()->loadScene();
@@ -1498,6 +1523,21 @@ void DMXTextUI::describeFixtureGroup( ) {
 
         m_text_io.printf( "%s @ %d\n", pf->getFullName(), pf->getAddress() );
     }
+
+    if ( group->getNumChannelValues() > 0 ) {
+        Fixture* pf = getVenue()->getGroupRepresentative( group->getUID() );
+        if ( pf ) {
+            m_text_io.printf( "\nDefault channel values:\n" );
+
+            for ( size_t i=0; i < pf->getNumChannels(); i++ ) {
+                Channel* ch = pf->getChannel( i );
+                BYTE value = group->getChannelValue( i );
+                ChannelValueRange* range = ch->getRange( value );
+
+                m_text_io.printf( "%3u - %s [%u] %s\n", i, ch->getName(), value, (range != NULL) ? range->getName() : "" );
+            }
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -1514,20 +1554,21 @@ void DMXTextUI::deleteFixtureGroup( ) {
 // ----------------------------------------------------------------------------
 //
 void DMXTextUI::deleteFixture(void) {
-
-    FixtureSelectField fixture_select_field( "Fixture to delete", getVenue() );
+    ActorSelectField fixture_select_field( "Fixture to delete", getVenue(), false );
+    fixture_select_field.allowMultiple( false );
 
     ConfirmForm form( &m_text_io );
     form.add( fixture_select_field );
     if ( form.play() ) {
-            getVenue()->deleteFixture( fixture_select_field.getFixtureUID() );
+            getVenue()->deleteFixture( fixture_select_field.getActorUID() );
     }
 }
 
 // ----------------------------------------------------------------------------
 //
 void DMXTextUI::updateFixture(void) {
-    FixtureSelectField fixture_select_field( "Fixture to update", getVenue() );
+    ActorSelectField fixture_select_field( "Fixture to update", getVenue(), false );
+    fixture_select_field.allowMultiple( false );
 
     Form form( &m_text_io );
     form.add( fixture_select_field );
@@ -1535,7 +1576,7 @@ void DMXTextUI::updateFixture(void) {
     if ( !form.play() )
         return;
 
-    Fixture* pf = getVenue()->getFixture( fixture_select_field.getFixtureUID() );
+    Fixture* pf = getVenue()->getFixture( fixture_select_field.getActorUID() );
 
     InputField name_field( "Fixture location", pf->getName() );
     InputField description_field( "Fixture description", pf->getDescription() );
@@ -1634,29 +1675,108 @@ void DMXTextUI::createFixture(void)
 // ----------------------------------------------------------------------------
 //
 void DMXTextUI::createFixtureGroup( ) {
-    FixturePtrArray fixtures = getVenue()->getFixtures();
-    UIDArray fixture_uids;
-    for ( FixturePtrArray::iterator it=fixtures.begin(); it != fixtures.end(); ++it )
-        fixture_uids.push_back( (*it)->getUID() );
-        
-    UniqueGroupNumberField group_number_field( "Create group number", getVenue() );
-    InputField name_field( "Group name", "New group" );
-    InputField description_field( "Group description", "" );
-    FixtureSelect fixture_select( "Fixtures (comma separated)", getVenue(), fixture_uids, UIDArray() );
+    class MyForm : public Form
+    {
+        enum { BASE_FIELD_COUNT = 5 };
 
-    Form form( &m_text_io );
-    form.add( group_number_field );
-    form.add( name_field );
-    form.add( description_field );
-    form.add( fixture_select );
+    public:
+        std::vector<ChannelControllerField> m_channel_fields;
+
+        UniqueGroupNumberField group_number_field;
+        InputField name_field;
+        InputField description_field;
+        ActorSelectField actor_select;
+        BooleanField load_channel_defaults;
+
+        Venue*	m_venue;
+
+        void fieldLeaveNotify( size_t field_num ) {
+            if ( getField<Field>(field_num) == &load_channel_defaults ) {
+                if ( load_channel_defaults.isSet() ) {
+                    if ( size() == BASE_FIELD_COUNT ) {
+                        Fixture* pf = getGroupRepresentative();
+                        if ( pf == NULL )
+                            return;
+
+                        SceneActor actor( pf );
+
+                        for ( size_t channel=0; channel < pf->getNumChannels(); channel++ )
+                            m_channel_fields.push_back( ChannelControllerField( m_venue, actor, channel, false ) );
+
+                        for ( size_t channel=0; channel < pf->getNumChannels(); channel++ )
+                            add( m_channel_fields[channel] );
+                    }
+                }
+                else
+                    resetChannels();
+            }
+        }
+
+        void fieldChangeNotify( size_t field_num ) {
+            if ( getField<Field>(field_num) == &actor_select )
+                resetChannels();
+        }
+
+        void resetChannels() {
+            m_channel_fields.clear();
+            setFieldCount( BASE_FIELD_COUNT );
+        }
+
+        size_t getChannelValues( BYTE * channel_values ) {
+            size_t num_channels = 0;
+            for ( ChannelControllerField& chan : m_channel_fields )
+                channel_values[num_channels++] = chan.getIntValue();
+            return num_channels;
+        }
+
+        Fixture*  getGroupRepresentative( ) {
+            Fixture* fixture = NULL;
+
+            for ( UID fixture_uid : actor_select.getActorUIDs() ) {
+                Fixture* f = m_venue->getFixture( fixture_uid );
+                STUDIO_ASSERT( f != NULL, "Missing fixture for %lu", fixture_uid );
+
+                if ( fixture == NULL || f->getNumChannels() > fixture->getNumChannels() )
+                    fixture = f;
+            }
+
+            return fixture;
+        }
+
+    public:
+        MyForm( TextIO* input_stream, Venue* venue ) :
+            Form( input_stream, "Create Fixture Group" ),
+            m_venue(venue),
+            group_number_field( "Create group number", venue ),
+            name_field( "Group name", "New group" ),
+            description_field( "Group description", "" ),
+            actor_select( "Fixtures (comma separated)", venue, false ),
+            load_channel_defaults( "Set default channel values", false )
+
+        {
+            add( group_number_field );
+            add( name_field );
+            add( description_field );
+            add( actor_select );
+            add( load_channel_defaults );
+        }
+    };
+
+    MyForm form( &m_text_io, getVenue() );
     if ( !form.play() )
         return;
 
     FixtureGroup group( getVenue()->allocUID(), 
-                        group_number_field.getGroupNumber(),
-                        name_field.getValue(), 
-                        description_field.getValue() );
+                        form.group_number_field.getGroupNumber(),
+                        form.name_field.getValue(), 
+                        form.description_field.getValue() );
 
-    group.setFixtures( UIDArrayToSet( fixture_select.getUIDs() ) );
+    group.setFixtures( UIDArrayToSet( form.actor_select.getActorUIDs() ) );
+
+    BYTE channel_values[DMX_PACKET_SIZE];
+    size_t num_channels = form.getChannelValues( channel_values );
+    if ( num_channels > 0 )
+        group.setChannelValues( num_channels, channel_values );
+
     getVenue()->addFixtureGroup( group );
 }

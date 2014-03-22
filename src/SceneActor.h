@@ -25,13 +25,16 @@ MA 02111-1307, USA.
 #include "IVisitor.h"
 #include "DMXStudio.h"
 #include "Fixture.h"
+#include "FixtureGroup.h"
 
 class SceneActor
 {
     friend class VenueWriter;
     friend class VenueReader;
 
-    UID			m_pfuid;									// Physical fixture UID
+    UID			m_uid;									    // Fixture/group UID
+    bool        m_group;                                    // Actor is a group
+
     size_t      m_channels;
 
     // m_channel_values always contains unmapped fixture channel values. For
@@ -43,10 +46,12 @@ class SceneActor
 
 public:
     SceneActor(void) :
-        m_pfuid(0),
+        m_uid(0),
+        m_group(false),
         m_channels(0) { reset_channel_values(); }
 
     SceneActor( Fixture * );
+    SceneActor(  Venue* venue, FixtureGroup * );
     ~SceneActor(void);
 
     void reset_channel_values( void ) {
@@ -57,8 +62,12 @@ public:
         visitor->visit(this);
     }
 
-    inline UID getFUID() const {
-        return m_pfuid;
+    inline UID getActorUID() const {
+        return m_uid;
+    }
+
+    inline bool isGroup() const {
+        return m_group;
     }
 
     inline size_t getNumChannels() const {
@@ -75,11 +84,18 @@ public:
         m_channel_values[ channel ] = value;
     }
 
+    inline void setChannelValues( size_t channels, BYTE* values ) {
+        STUDIO_ASSERT( channels <= m_channels, "Channel count out of range" );
+        reset_channel_values();
+        memcpy( m_channel_values, values, channels );
+    }
+
     inline size_t getChannelValues( BYTE * destination ) const {
         memcpy( destination, m_channel_values, m_channels );
         return m_channels;
     }
 };
 
-typedef std::map< UID, SceneActor > ActorMap;	
+typedef std::map< UID, SceneActor > ActorMap;
+typedef std::vector< SceneActor > ActorList;		
 typedef std::vector< SceneActor * > ActorPtrArray;	

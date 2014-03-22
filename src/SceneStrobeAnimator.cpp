@@ -24,16 +24,17 @@ MA 02111-1307, USA.
 #include "SceneStrobeAnimator.h"
 
 const char* SceneStrobeAnimator::className = "SceneStrobeAnimator";
+const char* SceneStrobeAnimator::animationName = "Strobe";
 
 // ----------------------------------------------------------------------------
 //
 SceneStrobeAnimator::SceneStrobeAnimator( UID animation_uid, 
                                           AnimationSignal signal,
                                           UIDArray actors,
-                                          unsigned strobe_neg_color,
+                                          RGBWA strobe_neg_color,
                                           unsigned strobe_pos_ms,
                                           unsigned strobe_neg_ms ) :
-    SceneColorSwitcher( animation_uid, signal, actors, strobe_neg_color, strobe_pos_ms, strobe_neg_ms, ColorProgression() )
+    SceneColorFader( animation_uid, signal, actors, strobe_neg_color, strobe_pos_ms, strobe_neg_ms, RGBWAArray(), FaderEffect::FADER_EFFECT_STROBE )
 {
 }
 
@@ -55,7 +56,7 @@ AbstractAnimation* SceneStrobeAnimator::clone() {
 CString SceneStrobeAnimator::getSynopsis(void) {
     CString synopsis;
 
-    synopsis.AppendFormat( "Strobe( -color=%s +ms=%u -ms=%u )\n%s", color_names[m_strobe_neg_color],
+    synopsis.AppendFormat( "Strobe( -color=%s +ms=%u -ms=%u )\n%s", m_strobe_neg_color.getColorName(),
         m_strobe_pos_ms, m_strobe_neg_ms, 
         AbstractAnimation::getSynopsis() );
 
@@ -65,7 +66,7 @@ CString SceneStrobeAnimator::getSynopsis(void) {
 // ----------------------------------------------------------------------------
 //
 void SceneStrobeAnimator::initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet ) {
-    SceneColorSwitcher::initAnimation( task, time_ms, dmx_packet );
+    SceneColorFader::initAnimation( task, time_ms, dmx_packet );
 
     m_strobe.start( time_ms, m_strobe_pos_ms, m_strobe_neg_ms );
 }
@@ -75,11 +76,8 @@ void SceneStrobeAnimator::initAnimation( AnimationTask* task, DWORD time_ms, BYT
 bool SceneStrobeAnimator::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
 {
     if ( m_strobe.strobe( time_ms ) ) {
-        for ( SwitcherFixtureArray::iterator it=m_fixtures.begin(); it != m_fixtures.end(); ++it ) {
-            SwitcherFixture& sfixture = (*it);
-            loadColorChannels( dmx_packet, sfixture, m_strobe.isOn() ? m_strobe.rgbwa() : sfixture.m_channel_values );
-        }
-
+        for ( FaderFixture& f : m_fixtures )
+            loadColorChannels( dmx_packet, f, m_strobe.isOn() ? m_strobe.rgbwa() : f.m_color );
         return true;
     }
 

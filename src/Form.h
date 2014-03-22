@@ -92,6 +92,9 @@ public:
     virtual LPCSTR getLabel(void) {
         return m_label;
     }
+    void setLabel( LPCSTR label ) {
+        m_label = label;
+    }
 
     virtual void getLabelValue( CString& labelValue ) {
         labelValue = getValue();
@@ -170,6 +173,12 @@ public:
         STUDIO_ASSERT( !m_auto_delete, "Non-delete field added, but auto deleting" );
 
         m_fields.push_back( &field );
+    }
+
+    void setFieldCount( size_t num_fields ) {
+        STUDIO_ASSERT( num_fields <= size(), "Attempting to set field count < current size" );
+
+        m_fields.resize( num_fields );
     }
 
     void addAuto( Field* fieldp ) {
@@ -790,11 +799,10 @@ public:
     }
 
     std::vector<UINT> getIntSelections( ) const {
-        std::vector<CString> selections = getSelections( );
         std::vector<UINT> int_selections;
 
-        for ( std::vector<CString>::iterator it=selections.begin(); it != selections.end(); ++it )
-            int_selections.push_back( (UINT)atol( *it ) );
+        for ( CString item : getSelections() )
+            int_selections.push_back( (UINT)atol( item ) );
 
         return int_selections;
     }

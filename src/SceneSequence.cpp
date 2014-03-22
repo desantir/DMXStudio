@@ -20,10 +20,10 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "SceneSequence.h"
 
 const char* SceneSequence::className = "FixtureSequencer";
+const char* SceneSequence::animationName = "Fixture sequencer";
 
 // ----------------------------------------------------------------------------
 //
@@ -56,8 +56,7 @@ void SceneSequence::stopAnimation( )
 void SceneSequence::initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet )
 {
     m_animation_task = task;
-
-    m_running_actors = populateActors( m_animation_task->getScene() );
+    m_running_actors = populateActors();
 
     for ( unsigned i=0; i < m_running_actors.size(); i++ )
         unselectActor( i, dmx_packet );
@@ -90,27 +89,31 @@ bool SceneSequence::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
 
 // ----------------------------------------------------------------------------
 //
-void SceneSequence::unselectActor( unsigned actor, BYTE* dmx_packet )
-{
-    Fixture* pf = m_animation_task->getFixture( m_running_actors[actor] );
+void SceneSequence::unselectActor( unsigned actor_num, BYTE* dmx_packet ) {
+    SceneActor* actor = m_animation_task->getScene()->getActor( m_running_actors[actor_num] );
+    STUDIO_ASSERT( actor != NULL, "Missing scene actor for fixture %lu", m_running_actors[actor_num] );
 
-    for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
-        if ( pf->getChannel( channel )->canBlackout() )
-            m_animation_task->loadChannel( dmx_packet, pf, channel, 0 );
+    for ( Fixture *pf : m_animation_task->resolveActorFixtures( actor ) ) {
+        for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+            if ( pf->getChannel( channel )->canBlackout() )
+                m_animation_task->loadChannel( dmx_packet, pf, channel, 0 );
+        }
     }
 }
 
 // ----------------------------------------------------------------------------
 //
-void SceneSequence::selectActor( unsigned actor, BYTE* dmx_packet )
+void SceneSequence::selectActor( unsigned actor_num, BYTE* dmx_packet )
 {
-    Fixture* pf = m_animation_task->getFixture( m_running_actors[actor] );
-    SceneActor* ap = m_animation_task->getScene()->getActor( m_running_actors[actor] );
+    SceneActor* actor = m_animation_task->getScene()->getActor( m_running_actors[actor_num] );
+    STUDIO_ASSERT( actor != NULL, "Missing scene actor for fixture %lu", m_running_actors[actor_num] );
 
-    for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
-        if ( pf->getChannel( channel )->canBlackout() ) {
-            BYTE value = ap->getChannelValue( channel );
-            m_animation_task->loadChannel( dmx_packet, pf, channel, value );
+    for ( Fixture *pf : m_animation_task->resolveActorFixtures( actor ) ) {
+        for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+            if ( pf->getChannel( channel )->canBlackout() ) {
+                BYTE value = actor->getChannelValue( channel );
+                m_animation_task->loadChannel( dmx_packet, pf, channel, value );
+            }
         }
     }
 }

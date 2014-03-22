@@ -20,11 +20,11 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
 #include "IVisitor.h"
 #include "ChaseStep.h"
+#include "Act.h"
 
 #define DEFAULT_CHASE_DELAY		5000
 
@@ -44,6 +44,7 @@ class Chase : public DObject
     ULONG			m_delay_ms;						// Scene delay in milliseconds
     ULONG			m_fade_ms;						// Fade time - transition between scenes
     ChaseStepArray	m_chase_steps;
+    Acts            m_acts;                         // List of acts this object belongs to
 
 public:
     Chase(void) : 
@@ -123,6 +124,13 @@ public:
     }
     void setSteps( ChaseStepArray& steps ) {
         m_chase_steps = steps;
+    }
+
+    inline Acts getActs() const {
+        return m_acts;
+    }
+    inline void setActs( Acts& acts ) {
+        m_acts = acts;
     }
 };
 

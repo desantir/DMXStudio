@@ -1,29 +1,27 @@
-<?xml version="1.0"?>
-
+<?xml version="1.0" ?>
 <fixture_definitions>
     <author>Robert DeSantis</author>
     <version>1</version>
-  
     <fixture type="par" channels="6">
         <manufacturer>Blizzard</manufacturer>
         <model>Puck</model>
         <channels>
-            <channel index="0" type="red" color="true" blackout="true">
+            <channel index="1" type="red" color="true" blackout="true">
                 <name>Red</name>
             </channel>
-            <channel index="1" type="green" color="true" blackout="true">
+            <channel index="2" type="green" color="true" blackout="true">
                 <name>Green</name>
             </channel>
-            <channel index="2" type="blue" color="true" blackout="true">
+            <channel index="3" type="blue" color="true" blackout="true">
                 <name>Blue</name>
             </channel>
-            <channel index="3" type="auto program" color="false" blackout="false">
+            <channel index="4" type="auto program" color="false" blackout="false">
                 <name>Auto Program</name>
             </channel>
-            <channel index="4" type="strobe" color="false" blackout="false">
+            <channel index="5" type="strobe" color="false" blackout="false">
                 <name>Strobe</name>
             </channel>
-            <channel index="5" type="dimmer" color="false" blackout="true" value="255">
+            <channel index="6" type="dimmer" color="false" blackout="true" value="255">
                 <name>Dimmer</name>
             </channel>
         </channels>

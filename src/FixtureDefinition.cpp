@@ -50,6 +50,7 @@ static int populateFixtureTypes() {
     fixtureTypeToNameMap[FIXT_DOTS] = "Dots";
     fixtureTypeToNameMap[FIXT_H2O] = "H2O";
     fixtureTypeToNameMap[FIXT_SCANNER] = "Scanner";
+    fixtureTypeToNameMap[FIXT_PIXEL] = "Pixel";
 
     return 0;
 }
@@ -98,6 +99,25 @@ void FixtureDefinition::chooseCapabilities()
         }
     }
 
+    // Load pixels for pixel fixtures - insures consecutive pixels 1-n
+    if ( getType() == FIXT_PIXEL ) {
+        for ( size_t index=1; true; index++ ) {
+            Pixel pixel;
+            if ( findPixel( index, pixel ) )
+                m_pixels.push_back( pixel );
+            else
+                break;
+        }
+    }
+    else {
+        // All other fixtures, get the main RGB[WA] channels as the "pixel". Currently ignoring
+        // situations such as non-pixel fixtures with multiple colors or multiple single colors
+
+        Pixel pixel;
+        if ( findPixel( 0, pixel ) )
+            m_pixels.push_back( pixel );
+    }
+
     // Set whiteout support
     switch ( getType() ) {
         case FIXT_DIMMER:
@@ -106,12 +126,35 @@ void FixtureDefinition::chooseCapabilities()
             break;
 
         case FIXT_SCANNER:
+        case FIXT_PIXEL:
         case FIXT_PAR:
         case FIXT_SPOT:
         case FIXT_WASH:
             m_can_whiteout = (white || (red && blue && green));
             break;
     }
+}
+
+// ----------------------------------------------------------------------------
+//
+bool FixtureDefinition::findPixel( size_t pixel_index, Pixel &pixel ) {
+    bool found = false;
+
+    pixel.reset();
+
+    for ( Channel& channel : m_channels ) {
+        if ( channel.getPixelIndex() == pixel_index ) {
+            switch ( channel.getType() ) {
+                case CHNLT_AMBER:   pixel.amber( channel.getOffset() );         found = true; break;
+                case CHNLT_RED:     pixel.red( channel.getOffset() );           found = true; break;
+                case CHNLT_BLUE:    pixel.blue( channel.getOffset() );          found = true; break;
+                case CHNLT_GREEN:   pixel.green( channel.getOffset() );         found = true; break;
+                case CHNLT_WHITE:   pixel.white( channel.getOffset() );         found = true; break;
+            }
+        }
+    }
+
+    return found;
 }
 
 // ----------------------------------------------------------------------------
@@ -252,8 +295,6 @@ void FixtureDefinition::readFixtureDefinitions()
 {
     DefinitionReader reader;
     reader.readFixtureDefinitions();
-
-    // FixtureDefinition::writeFixtureDefinitions( );
 }
 
 // ----------------------------------------------------------------------------

@@ -23,6 +23,7 @@ MA 02111-1307, USA.
 #pragma once
 
 #include "stdafx.h"
+#include "AbstractAnimation.h"
 
 // This is the simplest of JSON parsers - handles a single level of various typed objects
 
@@ -87,6 +88,23 @@ public:
         }
          
         return converted_array;
+    }
+
+    template <class T>
+    std::set<T> getSet( LPCSTR key ) {
+        std::set<T> converted_set;
+
+        // Array items will be quote delimited
+        std::vector<CString> array_items = get<std::vector<CString>>(key);
+        SimpleJsonParser parser;
+
+        for ( CString item : array_items ) {
+            parser.parse( strip_quotes(item) );
+            T converted_value = parser.get<T>( "" );
+            converted_set.insert( converted_value );
+        }
+         
+        return converted_set;
     }
 
     template <class T>
@@ -206,8 +224,24 @@ private:
         }
     }
 
+    template <class T>
+    void convert( LPCSTR value, std::set<T>& result ) {
+        std::vector<CString> tokens = tokenize( value );
+        for ( std::vector<CString>::iterator it=tokens.begin(); it != tokens.end(); ++it ) {
+            T lvalue;
+            convert( (LPCSTR)(*it), lvalue );
+            result.insert( lvalue );
+        }
+    }
+
     void convertHex( LPCSTR value, unsigned long& result ) {
         sscanf_s( value, "%lX", &result );
+    }
+
+    void convertHex( LPCSTR value, RGBWA& result ) {
+        ULONG rgbwa;
+        sscanf_s( value, "%lX", &rgbwa );
+        result = RGBWA(rgbwa);
     }
 
     template <class T>

@@ -19,8 +19,8 @@ http://sam.zoy.org/wtfpl/COPYING for more details.
 #define	ffft_def_HEADER_INCLUDED
 
 #if defined (_MSC_VER)
-	#pragma once
-	#pragma warning (4 : 4250) // "Inherits via dominance."
+    #pragma once
+    #pragma warning (4 : 4250) // "Inherits via dominance."
 #endif
 
 
@@ -39,11 +39,11 @@ const double	SQRT2	= 1.41421356237309514547462185873883;
 
 #if defined (_MSC_VER)
 
-	#define	ffft_FORCEINLINE	__forceinline
+    #define	ffft_FORCEINLINE	__forceinline
 
 #else
 
-	#define	ffft_FORCEINLINE	inline
+    #define	ffft_FORCEINLINE	inline
 
 #endif
 

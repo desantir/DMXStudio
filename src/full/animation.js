@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2013 Robert DeSantis
+Copyright (C) 2013-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -24,7 +24,9 @@ var ApplySignal = ["Channel Values", "Sample Speed", "Values and Speed", "Sample
 var AnimationSignalInput = ["Timer", "Sound Level", "Avg. Sound Level", "Frequency Beat", "Frequency Level", "Random"];
 var FadeWhat = ["Color channels", "Dimmer channels", "Color and Dimmer channels"];
 var PatternDimmer = [ "Simple sequence", "Cylon", "Pairs", "Toward center", "Alternate", "All" ];
-var AnimationStyle = [ "Value List", "Value Range", "Scale Scene Value" ];
+var AnimationStyle = ["Value List", "Value Range", "Scale Scene Value"];
+var FaderEffect = [ "Color Change", "Strobe", "Color Blend", "All" ];
+var PixelEffect = [ "Scrolling", "Stacked", "Stacked Left", "Stacked Right", "Beam", "Random", "Chase" ];
 
 var MOVEMENT_ANIMATOR_ROOT = "SceneMovementAnimator";
 
@@ -37,7 +39,7 @@ var Animations = [
       description: "Light fixtures based on a pattern sequence." },
     { name: "Channel program", class_name: "SceneChannelAnimator", editor: editSceneChannelAnimator, synopsis: getSceneChannelAnimatorSynopsis,
       description: "Animate channel values based on signal input." },
-    { name: "Color sequencer", class_name: "SceneColorSwitcher", editor: editSceneColorSwitcher, synopsis: getSceneColorSwitcherSynopsis,
+    { name: "Color fader", class_name: "SceneColorSwitcher", editor: editSceneColorSwitcher, synopsis: getSceneColorSwitcherSynopsis,
       description: "Change fixture colors using color progression and signal input trigger. Randomly chooses color switch, blend or strobe effects." },
     {name: "Strobe", class_name: "SceneStrobeAnimator", editor: editSceneStrobeAnimator, synopsis: getSceneStrobeAnimatorSynopsis,
       description: "Strobe fixtures with selectable negative color." },
@@ -54,8 +56,30 @@ var Animations = [
     { name: "Programmed movement", class_name: "SceneMovementAnimator.6", editor: editSceneMovementAnimator6, synopsis: getSceneMovementAnimator6Synopsis,
       description: "Move to specific pan/tilt locations for pan/tilt fixtures" },
     { name: "Moonflower movement", class_name: "SceneMovementAnimator.7", editor: editSceneMovementAnimator7, synopsis: getSceneMovementAnimator7Synopsis,
-      description: "Moonflower effect for pan/tilt fixtures" }
+      description: "Moonflower effect for pan/tilt fixtures" },
+    { name: "Pixel animator", class_name: "ScenePixelAnimator", editor: editPixelAnimator, synopsis: getPixelAnimatorSynopsis,
+      description: "Simple dot animations for single depth pixel devices" },
 ];
+
+// ----------------------------------------------------------------------------
+//
+function colorName(rgb) {
+    switch (rgb) {
+        case "000000":
+            return "Black";
+        case "FF0000":
+            return "Red";
+        case "00FF00":
+            return "Green";
+        case "0000FF":
+            return "Blue";
+        case "FFFFFF":
+            return "White";
+    }
+
+    return "#" + rgb;
+}
+
 
 // ----------------------------------------------------------------------------
 //
@@ -176,7 +200,7 @@ function populateSceneFixtures(multiselect, animation) {
 
             multiselect.append($('<option>', {
                 value: fixture_id,
-                text: fixture.getNumber() + ": " + fixture.getFullName(),
+                text: fixture.getLabel(),
                 selected: is_selected
             }));
         }
@@ -192,7 +216,9 @@ function generateFixtureTiles(order_div, animation) {
     var ul = $("<ul class='sortable_fixtures'>");
     for (var i = 0; i < animation.actors.length; i++) {
         var fixture = getFixtureById(animation.actors[i]);
-        var li = $("<li class='ui-state-default sortable_fixture'>" + fixture.getNumber() + "</li>");
+        var label = (fixture.isGroup()) ? "G" : "F";
+
+        var li = $("<li class='ui-state-default sortable_fixture'>" + label + fixture.getNumber() + "</li>");
         li.attr('title', fixture.getFullName());
         li.data('fixture_id', fixture.getId());
         ul.append(li);
@@ -643,8 +669,8 @@ function editSceneStrobeAnimator(anim_info, animation, success_callback) {
 
 function getSceneStrobeAnimatorSynopsis(animation) {
     return "Strobe: on " + animation.SceneStrobeAnimator.strobe_pos_ms + "ms off " +
-           animation.SceneStrobeAnimator.strobe_neg_ms + "ms color #" +
-           animation.SceneStrobeAnimator.strobe_neg_color;
+           animation.SceneStrobeAnimator.strobe_neg_ms + "ms color " +
+           colorName( animation.SceneStrobeAnimator.strobe_neg_color );
 }
 
 // ----------------------------------------------------------------------------
@@ -664,7 +690,7 @@ function editSceneColorSwitcher(anim_info, animation, success_callback) {
     edit_dialog.dialog({
         autoOpen: false,
         width: 780,
-        height: 710,
+        height: 750,
         modal: true,
         resizable: false,
         title: "Edit " + anim_info.name,
@@ -673,6 +699,7 @@ function editSceneColorSwitcher(anim_info, animation, success_callback) {
                 if (!updateSignal(prefix, animation.signal))
                     return;
 
+                animation.SceneColorSwitcher.fader_effect = $("#escs_fader_effect").val();
                 animation.SceneColorSwitcher.strobe_pos_ms = $("#escs_strobe_pos_ms").val();
                 animation.SceneColorSwitcher.strobe_neg_ms = $("#escs_strobe_neg_ms").val();
                 animation.SceneColorSwitcher.strobe_neg_color = $("#escs_colorpicker").attr('value');
@@ -755,19 +782,30 @@ function editSceneColorSwitcher(anim_info, animation, success_callback) {
 
     $("#escs_color_progression").expandableContainer("set_values", animation.SceneColorSwitcher.color_progression);
 
+    $("#escs_fader_effect").empty();
+    for (var i = 0; i < FaderEffect.length; i++) {
+        $("#escs_fader_effect").append($('<option>', {
+            value: i + 1,
+            text: FaderEffect[i],
+            selected: i + 1 == animation.SceneColorSwitcher.fader_effect
+        }));
+    }
+    $("#escs_fader_effect").multiselect({ minWidth: 200, multiple: false, selectedList: 1, header: false, height: "auto" });
+
     edit_dialog.dialog("open");
 }
 
 function getSceneColorSwitcherSynopsis(animation) {
-    var synopsis = "Strobe: on " + animation.SceneColorSwitcher.strobe_pos_ms + "ms, off " +
-           animation.SceneColorSwitcher.strobe_neg_ms + "ms, off color #" + animation.SceneColorSwitcher.strobe_neg_color;
+    var synopsis = "Fade: " + FaderEffect[animation.SceneColorSwitcher.fader_effect-1] +
+                   "\nStrobe: on " + animation.SceneColorSwitcher.strobe_pos_ms + "ms, off " +
+                    animation.SceneColorSwitcher.strobe_neg_ms + "ms, off color " + colorName( animation.SceneColorSwitcher.strobe_neg_color );
 
     if (animation.SceneColorSwitcher.color_progression != null && animation.SceneColorSwitcher.color_progression.length > 0) {
-        synopsis += ", colors ";
+        synopsis += "\nColors: ";
         for ( var i=0; i < animation.SceneColorSwitcher.color_progression.length; i++ ) {
             if ( i > 0 )
                 synopsis += ", ";
-            synopsis += "#" + animation.SceneColorSwitcher.color_progression[i];
+            synopsis += colorName( animation.SceneColorSwitcher.color_progression[i] );
         }
     }
 
@@ -1326,7 +1364,7 @@ function new_channel_animation(item, channel_animation) {
 
             esca_fixture.append($('<option>', {
                 value: fixture_id,
-                text: fixture.getNumber() + ": " + fixture.getFullName(),
+                text: fixture.getLabel(),
                 selected: channel_animation.actor_uid == fixture_id
             }));
         }
@@ -1406,9 +1444,12 @@ function getSceneChannelAnimatorSynopsis(animation) {
         if (i > 0)
             synopsis += " \n";
 
-        var channel_animation = animation.SceneChannelAnimator.channel_animations[i]; 
+        var channel_animation = animation.SceneChannelAnimator.channel_animations[i];
+        var fixture = getFixtureById(channel_animation.actor_uid);
 
-        synopsis += "Fixture " + getFixtureById(channel_animation.actor_uid).getNumber() + ": " +
+        var label = (fixture.isGroup()) ? "Fixture G" : "Fixture ";
+
+        synopsis += label + fixture.getNumber() + ": " + 
                     "Channel " + (channel_animation.channel + 1) + ", " + AnimationStyle[channel_animation.style - 1];
 
         if (channel_animation.style == 1) {
@@ -1416,6 +1457,230 @@ function getSceneChannelAnimatorSynopsis(animation) {
         }
         else if (channel_animation.style == 2) {
             synopsis += " " + channel_animation.values[0] + "-" + channel_animation.values[1];
+        }
+    }
+
+    return synopsis;
+}
+
+// ----------------------------------------------------------------------------
+//
+function editPixelAnimator(anim_info, animation, success_callback) {
+    var edit_dialog = $("#edit_" + anim_info.class_name + "_dialog");
+    var prefix = "espa";
+
+    if (animation.ScenePixelAnimator == null)
+        animation.ScenePixelAnimator = {
+            pixel_effect: 1,
+            pixel_off_color: "#000000",
+            generations: 1,
+            pixels: 1,
+            increment: 1,
+            fade: false,
+            combine: false,
+            color_progression: []
+        };
+
+    edit_dialog.dialog({
+        autoOpen: false,
+        width: 780,
+        height: 750,
+        modal: true,
+        resizable: false,
+        title: "Edit " + anim_info.name,
+        buttons: {
+            OK: function () {
+                if (!updateSignal(prefix, animation.signal))
+                    return;
+
+                animation.ScenePixelAnimator.pixel_effect = $("#espa_pixel_effect").val();
+                animation.ScenePixelAnimator.pixel_off_color = $("#espa_pixel_off_color").attr('value');
+                animation.ScenePixelAnimator.generations = $("#espa_generations").val();
+                animation.ScenePixelAnimator.pixels = $("#espa_pixels").val();
+                animation.ScenePixelAnimator.increment = $("#espa_increment").val();
+                animation.ScenePixelAnimator.fade = $("#espa_fade").is(':checked');
+                animation.ScenePixelAnimator.combine = $("#espa_combine").is(':checked');
+                animation.ScenePixelAnimator.color_progression = $("#espa_color_progression").expandableContainer("values");
+
+                updateSceneFixtures($("#" + prefix + "_fixtures"), animation);
+                success_callback(animation);
+
+                edit_dialog.dialog("close");
+            },
+            Cancel: function () {
+                edit_dialog.dialog("close");
+            }
+        }
+    });
+
+    populateSceneFixtures($("#" + prefix + "_fixtures"), animation);
+    populateSignal(prefix, animation.signal);
+    $("#" + prefix + "_description").text(anim_info.description);
+
+    $("#espa_generations").spinner({ min: 1, max: 500 }).val(animation.ScenePixelAnimator.generations);
+    $("#espa_pixels").spinner({ min: 1, max: 1024 }).val(animation.ScenePixelAnimator.pixels);
+    $("#espa_increment").spinner({ min: 1, max: 1024 }).val(animation.ScenePixelAnimator.increment);
+    $("#espa_fade").attr('checked', animation.ScenePixelAnimator.fade);
+    $("#espa_combine").attr('checked', animation.ScenePixelAnimator.combine);
+
+    $("#espa_pixel_off_color").css("background-color", "#" + animation.ScenePixelAnimator.pixel_off_color);
+    $("#espa_pixel_off_color").attr('value', animation.ScenePixelAnimator.pixel_off_color);
+
+    $("#espa_pixel_off_color").ColorPicker({
+        color: "#000000",
+        livePreview: true,
+
+        onShow: function (picker) {
+            $(picker).fadeIn(500);
+            return false;
+        },
+
+        onHide: function (picker) {
+            $(picker).fadeOut(500);
+            return false;
+        },
+
+        onSubmit: function (hsb, hex, rgb) {
+            $("#espa_pixel_off_color").css("background-color", "#" + hex);
+            $("#espa_pixel_off_color").attr('value', hex);
+        }
+    });
+    $("#espa_pixel_off_color").ColorPickerSetColor(animation.ScenePixelAnimator.pixel_off_color);
+
+    $("#espa_color_progression").expandableContainer({
+        item_template: '<div class="container_input" style="height:30px; width:30px; border: 1px solid #808080; border-radius: 6pt 6pt; cursor: pointer;"></div>',
+        new_item_callback: function (item, value) {
+            if (value == null)
+                value = '#000000';
+
+            var chip = item.find(".container_input");
+            chip.attr('value', value);
+            chip.css('background-color', "#" + value);
+
+            chip.ColorPicker({
+                color: value,
+                livePreview: true,
+                autoClose: true,
+
+                onShow: function (picker) {
+                    $(picker).fadeIn(500);
+                    return false;
+                },
+
+                onHide: function (picker) {
+                    $(picker).fadeOut(500);
+                    return false;
+                },
+
+                onSubmit: function (hsb, hex, rgb) {
+                    chip.css("background-color", "#" + hex);
+                    chip.attr('value', hex);
+                }
+            });
+            chip.ColorPickerSetColor(value);
+        }
+    });
+    $("#espa_color_progression").expandableContainer("set_values", animation.ScenePixelAnimator.color_progression);
+
+    $("#espa_pixel_effect").empty();
+    for (var i = 0; i < PixelEffect.length; i++) {
+        $("#espa_pixel_effect").append($('<option>', {
+            value: i + 1,
+            text: PixelEffect[i],
+            selected: i + 1 == animation.ScenePixelAnimator.pixel_effect
+        }));
+    }
+    $("#espa_pixel_effect").multiselect({ minWidth: 200, multiple: false, selectedList: 1, header: false, height: "auto" });
+
+    var generations_div = $("#espa_generations_div");
+    var pixels_div = $("#espa_pixels_div");
+    var increment_div = $("#espa_increment_div");
+    var fade_div = $("#espa_fade_div");
+
+    var update_effect = function (effect) {
+        generations_div.show();
+        pixels_div.show();
+        increment_div.show();
+        fade_div.show();
+
+        switch ( parseInt(effect) ) {
+            case 2:
+            case 3:
+            case 4:
+                generations_div.hide();
+                pixels_div.hide();
+                increment_div.hide();
+                fade_div.hide();
+                break;
+        
+            case 5:
+                generations_div.hide();
+                pixels_div.hide();
+                increment_div.hide();
+                break;
+
+            case 6:
+                increment_div.hide();
+                fade_div.hide();
+                break;
+
+            case 7:
+                increment_div.hide();
+                break;
+        }
+    }
+
+    $("#espa_pixel_effect").bind("multiselectclick", function (event, ui) {
+        stopEventPropagation(event);
+        update_effect(ui.value);
+    });
+
+    update_effect(animation.ScenePixelAnimator.pixel_effect);
+
+    edit_dialog.dialog("open");
+}
+
+function getPixelAnimatorSynopsis(animation) {
+    var synopsis = PixelEffect[animation.ScenePixelAnimator.pixel_effect - 1] + ": ";
+
+    switch ( animation.ScenePixelAnimator.pixel_effect ) {
+        case 1:
+            synopsis += "generations " + animation.ScenePixelAnimator.generations +
+                        ", pixels " + animation.ScenePixelAnimator.pixels +
+                        ", increment " + animation.ScenePixelAnimator.increment + 
+                        ", fade " + ((animation.ScenePixelAnimator.fade) ? "yes" : "no") +
+                        ", ";
+            break;
+
+        case 5:
+            synopsis += "pixels " + animation.ScenePixelAnimator.pixels +
+                        ", fade " + ((animation.ScenePixelAnimator.fade) ? "yes" : "no") +
+                        ", ";
+            break;
+
+        case 6:
+            synopsis += ", generations " + animation.ScenePixelAnimator.generations +
+                        ", pixels " + animation.ScenePixelAnimator.pixels +
+                        ", ";
+            break;
+
+        case 7:
+            synopsis += "generations " + animation.ScenePixelAnimator.generations +
+                        ", pixels " + animation.ScenePixelAnimator.pixels +
+                        ", increment " + animation.ScenePixelAnimator.increment +
+                        ", ";
+            break;
+    }
+
+    synopsis += "pixel off color " + colorName( animation.ScenePixelAnimator.pixel_off_color ) +
+                ", combine " + ((animation.ScenePixelAnimator.combine) ? "yes" : "no" );
+
+    if (animation.ScenePixelAnimator.color_progression != null && animation.ScenePixelAnimator.color_progression.length > 0) {
+        synopsis += "\nColors: ";
+        for (var i = 0; i < animation.ScenePixelAnimator.color_progression.length; i++) {
+            if (i > 0)
+                synopsis += ", ";
+            synopsis += colorName(animation.ScenePixelAnimator.color_progression[i]);
         }
     }
 

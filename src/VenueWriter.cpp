@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -20,16 +20,7 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "VenueWriter.h"
-#include "Venue.h"
-#include "SceneSequence.h"
-#include "SceneChannelAnimator.h"
-#include "ScenePatternDimmer.h"
-#include "SceneColorSwitcher.h"
-#include "SceneMovementAnimator.h"
-#include "SceneStrobeAnimator.h"
-#include "SceneSoundLevel.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -196,6 +187,14 @@ void VenueWriter::visit( Scene* scene )
     visit_map<ActorMap>( actors, scene->m_actors );
     element.InsertEndChild( actors );
 
+    TiXmlElement acts( "acts" );
+    for ( ActNumber act_number : scene->m_acts ) {
+        TiXmlElement uidElement( "act" );
+        add_attribute( uidElement, "number", act_number );
+        acts.InsertEndChild( uidElement );
+    }
+    element.InsertEndChild( acts );
+
     if ( scene->m_animations.size() > 0 ) {
         TiXmlElement animations( "animations" );
         visit_ptr_array<AnimationPtrArray>( animations, scene->m_animations );
@@ -211,7 +210,8 @@ void VenueWriter::visit( SceneActor* actor )
 {
     TiXmlElement element( "actor" );
 
-    add_attribute( element, "fixure_uid", actor->m_pfuid );
+    add_attribute( element, "fixure_uid", actor->m_uid );
+    add_attribute( element, "group", actor->m_group );
 
     TiXmlElement channels( "channels" );
 
@@ -242,8 +242,15 @@ void VenueWriter::visit( Chase* chase )
 
     TiXmlElement steps( "chase_steps" );
     visit_array<ChaseStepArray>( steps, chase->m_chase_steps );
-
     chase_element.InsertEndChild( steps );
+
+    TiXmlElement acts( "acts" );
+    for ( ActNumber act_number : chase->m_acts ) {
+        TiXmlElement uidElement( "act" );
+        add_attribute( uidElement, "number", act_number );
+        acts.InsertEndChild( uidElement );
+    }
+    chase_element.InsertEndChild( acts );
 
     getParent().InsertEndChild( chase_element );
 }
@@ -257,6 +264,19 @@ void VenueWriter::visit( FixtureGroup* fixture_group )
     writeDObject( element, fixture_group, "group_number" );
 
     add_pfuids_element<UIDSet>( element, fixture_group->m_fixtures );
+
+    TiXmlElement channels( "channels" );
+
+    for ( channel_t channel=0; channel < fixture_group->m_channels; channel++ ) {
+        TiXmlElement channelElement( "channel" );
+
+        add_attribute( channelElement, "number", (int)channel );
+        add_attribute( channelElement, "value", (int)fixture_group->m_channel_values[channel] );
+
+        channels.InsertEndChild( channelElement );
+    }
+
+    element.InsertEndChild( channels );
 
     getParent().InsertEndChild( element );
 }
@@ -333,13 +353,14 @@ void VenueWriter::visit( SceneMovementAnimator* animation )
 
 // ----------------------------------------------------------------------------
 //
-void VenueWriter::visit( SceneColorSwitcher* animation )
+void VenueWriter::visit( SceneColorFader* animation )
 {
     TiXmlElement element( "animation" );
 
     writeDObject( element, animation, "number" );
 
     add_attribute( element, "class", animation->getClassName() );
+    add_attribute( element, "fader_effect", (unsigned)animation->m_fader_effect );
     add_attribute( element, "strobe_neg_color", animation->m_strobe_neg_color );
     add_attribute( element, "strobe_pos_ms", animation->m_strobe_pos_ms );
     add_attribute( element, "strobe_neg_ms", animation->m_strobe_neg_ms );
@@ -348,18 +369,35 @@ void VenueWriter::visit( SceneColorSwitcher* animation )
 
     add_pfuids_element<UIDArray>( element, animation->m_actors );
 
-    if ( animation->m_custom_colors.size() ) {
-        TiXmlElement colors_element( "custom_colors" );
+    if ( animation->m_custom_colors.size() )
+        add_colors_element( element, "custom_colors", animation->m_custom_colors );
 
-        for ( ColorProgression::iterator it=animation->m_custom_colors.begin(); 
-              it !=animation-> m_custom_colors.end(); ++it ) {
-            TiXmlElement color_index_element( "color" );
-            add_attribute( color_index_element, "rgb", *it );
-            colors_element.InsertEndChild( color_index_element );
-        }
+    getParent().InsertEndChild( element );
+}
 
-        element.InsertEndChild( colors_element );
-    }
+// ----------------------------------------------------------------------------
+//
+void VenueWriter::visit( ScenePixelAnimator* animation )
+{
+    TiXmlElement element( "animation" );
+
+    writeDObject( element, animation, "number" );
+
+    add_attribute( element, "class", animation->getClassName() );
+    add_attribute( element, "pixel_effect", animation->m_effect );
+    add_attribute( element, "generations", animation->m_generations );
+    add_attribute( element, "pixels", animation->m_num_pixels );
+    add_attribute( element, "increment", animation->m_increment );
+    add_attribute( element, "fade", animation->m_color_fade );
+    add_attribute( element, "combine", animation->m_combine_fixtures );
+    add_attribute( element, "pixel_off_color", animation->m_empty_color );
+
+    visit_object<AnimationSignal>( element, animation->m_signal );
+
+    add_pfuids_element<UIDArray>( element, animation->m_actors );
+
+    if ( animation->m_custom_colors.size() )
+        add_colors_element( element, "custom_colors", animation->m_custom_colors );
 
     getParent().InsertEndChild( element );
 }
@@ -500,7 +538,7 @@ void VenueWriter::visit( ChannelAnimation* channel_animation )
 {
     TiXmlElement element( "channel_animation" );
 
-    add_attribute( element, "actor_uid", channel_animation->m_actor );
+    add_attribute( element, "actor_uid", channel_animation->m_actor_uid );
     add_attribute( element, "channel", (int)channel_animation->m_channel );
     add_attribute( element, "style", (int)channel_animation->m_animation_style );
 

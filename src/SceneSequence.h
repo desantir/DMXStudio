@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -20,7 +20,6 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
 #include "AnimationTask.h"
@@ -40,6 +39,7 @@ class SceneSequence : public AbstractAnimation
 
 public:
     static const char* className;
+    static const char* animationName;
 
     SceneSequence( void ) {};
     SceneSequence( UID animation_uid, AnimationSignal signal, UIDArray actors );
@@ -47,7 +47,7 @@ public:
 
     AbstractAnimation* clone();
 
-    const char* getName() { return "Fixture Sequencer"; }
+    const char* getName() { return SceneSequence::animationName; }
     const char* getClassName() { return SceneSequence::className; }
 
     void accept( IVisitor* visitor) {

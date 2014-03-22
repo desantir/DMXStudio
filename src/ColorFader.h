@@ -20,65 +20,88 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
 #include "DMXStudio.h"
 
 class ColorFader
 {
-    BYTE		m_current_color[COLOR_CHANNELS];			// Current RGBWA
-    BYTE		m_target_color[COLOR_CHANNELS];				// Blend RGBWA targets
+    bool        m_tick_mode;                                // Time is sequenial ticks (i.e. 1,2,3,4,...)
+    RGBWA		m_current_color;			                // Current RGBWA
+    RGBWA		m_target_color;				                // Blend RGBWA targets
     int			m_blend_delta[COLOR_CHANNELS];				// Channel value blending deltas
     DWORD		m_blend_next_ms[COLOR_CHANNELS];
+    DWORD       m_current_time;                             // Current fader time
 
 public:
-    ColorFader( void ) {
-        for ( int i=0; i < COLOR_CHANNELS; i++ )
-            m_current_color[i] = m_target_color[i] = 0;
-    }
+    ColorFader( bool tick_mode=false ) :
+        m_tick_mode( tick_mode )
+    {}
 
     ~ColorFader(void) {}
 
-    inline void setTargets( const BYTE rgbw[COLOR_CHANNELS] ) {
-        for ( int i=0; i < COLOR_CHANNELS; i++ )
-            m_target_color[i] = rgbw[i];
+    inline void setCurrent( const RGBWA& rgbw ) {
+        m_current_color = rgbw;
     }
 
-    inline void setCurrent( const BYTE rgbw[COLOR_CHANNELS] ) {
-        for ( int i=0; i < COLOR_CHANNELS; i++ )
-            m_current_color[i] = rgbw[i];
-    }
+    inline RGBWA rgbwa() { return m_current_color; }
 
-    inline BYTE red() const { return m_current_color[0]; }
-    inline BYTE green() const { return m_current_color[1]; }
-    inline BYTE blue() const { return m_current_color[2]; }
-    inline BYTE white() const { return m_current_color[3]; }
-    inline BYTE amber() const { return m_current_color[4]; }
+    void start( DWORD current_time, int fade_time, const RGBWA& rgbw ) {
+        m_target_color = rgbw;
+        m_current_time = current_time;
 
-    inline BYTE* rgbwa() { return m_current_color; }
-
-    void start( DWORD time_ms, int fade_time ) {
         for ( int i=0; i < COLOR_CHANNELS; i++ ) {
-            int delta = m_target_color[i]-m_current_color[i];
+            int delta = (int)m_target_color[i]-(int)m_current_color[i];
             if ( delta != 0 ) {
-                m_blend_delta[i] = fade_time / delta;
-                m_blend_next_ms[i] = time_ms;
+                if ( m_tick_mode ) {
+                    m_blend_delta[i] = (fade_time != 0 ) ? delta/fade_time : 255;
+                    m_blend_next_ms[i] = 0;
+                }
+                else {
+                    m_blend_delta[i] = fade_time/delta;
+                    m_blend_next_ms[i] = current_time;
+                } 
             }
             else {
-                m_blend_delta[i] = 0;
+                m_blend_delta[i] = m_blend_next_ms[i] = 0;
             }
         }
     }
 
+    // Fade time is divided into a specific number of increments
+    inline bool tick( ) {
+        bool changed = false;
+
+        for ( int i=0; i < COLOR_CHANNELS; i++ ) {
+            if ( m_target_color[i] == m_current_color[i] || m_blend_delta[i] == 0 )
+                continue;
+
+            if ( m_blend_delta[i] > 0 && m_current_color[i] < m_target_color[i] ) {
+                m_current_color[i] = 
+                    std::min<int>( m_current_color[i] + m_blend_delta[i], m_target_color[i] );
+                changed = true;
+            }
+            else if ( m_blend_delta[i] < 0 && m_current_color[i] > m_target_color[i] ) {
+                m_current_color[i] = 
+                    std::max<int>( (int)m_current_color[i] + m_blend_delta[i], m_target_color[i] );
+                changed = true;
+            }
+        }
+
+        m_current_time++;
+
+        return changed;
+    }
+
+    // Fade time is based on the clock
     bool fade( DWORD time_ms ) {
         bool changed = false;
 
         for ( int i=0; i < COLOR_CHANNELS; i++ ) {
-            if ( m_target_color[i] == m_current_color[i] )
+            if ( m_target_color[i] == m_current_color[i] || m_blend_delta[i] == 0 )
                 continue;
 
-            while ( m_blend_next_ms[i] < time_ms && m_blend_delta[i] != 0 ) {
+            while ( m_blend_next_ms[i] < time_ms ) {
                 if ( m_blend_delta[i] > 0 ) {
                     if ( m_current_color[i] < 255 ) {
                         m_current_color[i]++;
@@ -95,6 +118,8 @@ public:
                 }
             }
         }
+
+        m_current_time = time_ms;
 
         return changed;
     }

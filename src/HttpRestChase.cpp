@@ -45,10 +45,10 @@ bool HttpRestServices::query_chases( CString& response, LPCSTR data )
         json.add( "number", chase->getChaseNumber() );
         json.add( "name", chase->getName() );
         json.add( "description", chase->getDescription() );
-        json.add( "is_private", chase->isPrivate() );
         json.add( "is_running", (chase->getUID() == studio.getVenue()->getRunningChase()) );
         json.add( "delay_ms", chase->getDelayMS() );
         json.add( "fade_ms", chase->getFadeMS() );
+        json.addArray<Acts>( "acts", chase->getActs() );
 
         // Add chase steps
         ChaseStepArray steps = chase->getSteps();
@@ -93,11 +93,11 @@ bool HttpRestServices::edit_chase( CString& response, LPCSTR data, EditMode mode
     UID chase_id;
     CString name, description;
     SceneNumber number;
-    bool is_private;
     ULONG delay_ms;
     ULONG fade_ms;
     ChaseStepArray steps;
     Chase* chase = NULL;
+    Acts acts;
 
     try {
         parser.parse( data );
@@ -106,9 +106,9 @@ bool HttpRestServices::edit_chase( CString& response, LPCSTR data, EditMode mode
         name = parser.get<CString>( "name" );
         description = parser.get<CString>( "description" );
         number = parser.get<ULONG>( "number" );
-        is_private = parser.get<bool>( "is_private" );
         delay_ms = parser.get<ULONG>( "delay_ms" );
         fade_ms = parser.get<ULONG>( "fade_ms" );
+        acts = parser.get<Acts>( "acts" );
 
         PARSER_LIST step_parsers = parser.get<PARSER_LIST>( "steps" );
 
@@ -159,10 +159,10 @@ bool HttpRestServices::edit_chase( CString& response, LPCSTR data, EditMode mode
     chase->setName( name );
     chase->setChaseNumber( number );
     chase->setDescription( description );
-    chase->setPrivate( is_private );
     chase->setDelayMS( delay_ms );
     chase->setFadeMS( fade_ms );
     chase->setSteps( steps );
+    chase->setActs( acts );
 
     if ( running_chase_id == chase->getUID() )
         studio.getVenue()->startChase( chase->getUID() );

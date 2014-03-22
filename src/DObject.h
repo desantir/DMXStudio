@@ -41,7 +41,6 @@ protected:
     ULONG			m_number;						// User selected friendly number
     CString		    m_name;
     CString		    m_description;
-    bool            m_private;                      // Object visibility suggestion (optional)
 
     virtual inline void setNumber( ULONG number ) {
         m_number = number;
@@ -50,8 +49,7 @@ protected:
 public:
     DObject(void) :
         m_uid(0),
-        m_number(0),
-        m_private(false)
+        m_number(0)
     {}
 
     DObject( UID uid, ULONG number, const char* name, const char *description ) :
@@ -97,12 +95,5 @@ public:
     }
     virtual void setDescription( const char * description ) {
         m_description = description;
-    }
-
-    virtual inline bool isPrivate() const {
-        return m_private;
-    }
-    virtual void setPrivate( bool is_private ) {
-        m_private = is_private;
     }
 };

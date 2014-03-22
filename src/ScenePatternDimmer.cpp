@@ -20,10 +20,10 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "ScenePatternDimmer.h"
 
 const char* ScenePatternDimmer::className = "ScenePatternDimmer";
+const char* ScenePatternDimmer::animationName = "Pattern sequencer";
 
 // ----------------------------------------------------------------------------
 //
@@ -95,16 +95,18 @@ void ScenePatternDimmer::initAnimation( AnimationTask* task, DWORD time_ms, BYTE
     std::vector<DimmerValue> dimmer_values_array;
 
     // Determine which channels will be participating
-    for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); ++it ) {
-        Fixture* pf = m_animation_task->getFixture( (*it) );
-        STUDIO_ASSERT( pf != NULL, "Missing fixture UID=%lu", (*it) );
+    for ( UID actor_uid : populateActors() ) {
+        Fixture* pf = m_animation_task->getActorRepresentative( actor_uid );
+        if ( !pf )
+            continue;
 
+        // Determine which channels will be participating
         for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
             Channel* cp = pf->getChannel( channel );
 
             if ( cp->isDimmer() ) {
                 m_channel_animations.push_back( 
-                    ChannelAnimation( pf->getUID(), channel, CAM_LIST, value_array ) );
+                    ChannelAnimation( actor_uid, channel, CAM_LIST, value_array ) );
                 dimmer_values_array.push_back( DimmerValue( cp ) );
             }
         }
@@ -143,12 +145,13 @@ void ScenePatternDimmer::initAnimation( AnimationTask* task, DWORD time_ms, BYTE
 
         case DP_PAIRS: { // X X - - -> - - X X 
             int target = 0;
-            for ( size_t i=0; i < m_channel_animations.size(); i++ ) {
-                ChannelAnimation& chan_anim = m_channel_animations[i];
-                DimmerValue& dimmer_values = dimmer_values_array[i];
 
-                for ( int index=0; index < num_channels; index++ )
-                    chan_anim.valueList().push_back( dimmer_values.getValue( target == index || target+1 == index ) );
+            for ( int index=0; index < (num_channels+1)/2; index++ ) {
+                for ( size_t i=0; i < m_channel_animations.size(); i++ ) {
+                    ChannelAnimation& chan_anim = m_channel_animations[i];
+                    DimmerValue& dimmer_values = dimmer_values_array[i];
+                    chan_anim.valueList().push_back( dimmer_values.getValue( target == i || target+1 == i ) );
+                }
                 target += 2;
             }
             break;

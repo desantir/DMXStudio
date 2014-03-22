@@ -25,6 +25,15 @@ MA 02111-1307, USA.
 #include "IVisitor.h"
 #include "ISerializable.h"
 #include "DObject.h"
+#include "Venue.h"
+#include "SceneSequence.h"
+#include "SceneChannelAnimator.h"
+#include "ScenePatternDimmer.h"
+#include "SceneColorFader.h"
+#include "SceneMovementAnimator.h"
+#include "SceneStrobeAnimator.h"
+#include "SceneSoundLevel.h"
+#include "ScenePixelAnimator.h"
 
 class VenueWriter : public IVisitor, ISerializable
 {
@@ -46,15 +55,17 @@ public:
     void visit( SceneStrobeAnimator* animation );
     void visit( ScenePatternDimmer* animation );
     void visit( SceneMovementAnimator* animation );
-    void visit( SceneColorSwitcher* animation );
+    void visit( SceneColorFader* animation );
     void visit( SceneChannelAnimator* animation );
     void visit( SceneSequence* animation );  
     void visit( SceneSoundLevel* animation );  
     void visit( AnimationSignal* signal );
     void visit( ChaseStep* chase_step );
     void visit( MovementAnimation* movement );
+    void visit( ScenePixelAnimator* animation );
     void visit( ChannelAnimation* channel_animation );
     void visit( MusicSceneSelector* music_scene_selection );
+    // Reminder: Add a virtual entry to IVisitor for all new visit methods
 
     template <class T>
     void visit_object( TiXmlElement& parent, T& object ) {

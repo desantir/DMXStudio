@@ -60,8 +60,32 @@ public:
         return m_venue->getFixture( pfuid );
     }
 
+    inline FixtureGroup* getFixtureGroup( UID uid ) const {
+        return m_venue->getFixtureGroup( uid );
+    }
+
     inline void loadChannel( BYTE *dmx_packet, Fixture* pf, channel_t channel, BYTE value ) {
         m_venue->loadChannel( dmx_packet, pf, channel, value );
+    }
+    
+    inline FixturePtrArray convertActorToFixtures( UID actor_uid ) {
+        SceneActor* actor = getScene()->getActor( actor_uid );
+        STUDIO_ASSERT( actor, "Actor %ul missing from scene", actor_uid );
+        return resolveActorFixtures( actor );
+    }
+
+    inline FixturePtrArray resolveActorFixtures( SceneActor* actor ) {
+        return m_venue->resolveActorFixtures( actor );
+    }
+
+    inline Fixture* getActorRepresentative( UID actor_uid ) {
+        SceneActor* actor = getScene()->getActor( actor_uid );
+        STUDIO_ASSERT( actor != NULL, "Missing scene actor %lu", actor_uid );
+
+        if ( actor->isGroup() )
+            return m_venue->getGroupRepresentative( actor->getActorUID() );
+
+        return m_venue->getFixture( actor->getActorUID() );
     }
 
     inline AudioInputStream* getAudio( ) {

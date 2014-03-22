@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-2013 Robert DeSantis
+Copyright (C) 2011-2014 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -28,6 +28,7 @@ MA 02111-1307, USA.
 #include "SceneSoundLevel.h"
 #include "SceneMovementAnimator.h"
 #include "SceneSequence.h"
+#include "ScenePixelAnimator.h"
 
 typedef AbstractAnimation* (*ANIMATION_PARSER_FUNC)(SimpleJsonParser, AnimationSignal, UIDArray );
 typedef std::map<CString, ANIMATION_PARSER_FUNC> PARSER_MAP;
@@ -36,9 +37,10 @@ AbstractAnimation* SceneSequenceParser( SimpleJsonParser parser, AnimationSignal
 AbstractAnimation* SoundLevelParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
 AbstractAnimation* ScenePatternDimmerParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
 AbstractAnimation* SceneChannelAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
-AbstractAnimation* SceneColorSwitcherParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
+AbstractAnimation* SceneColorFaderParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
 AbstractAnimation* SceneMovementAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
 AbstractAnimation* SceneStrobeAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
+AbstractAnimation* ScenePixelAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
 
 AnimationSignal parseAnimationSignal( SimpleJsonParser parser );
 AbstractAnimation* parseAnimation( SimpleJsonParser parser );
@@ -49,9 +51,10 @@ static PARSER_MAP init_animation_parsers() {
     animation_parsers[ "SoundLevel" ] = &SoundLevelParser;
     animation_parsers[ "ScenePatternDimmer" ] = &ScenePatternDimmerParser;
     animation_parsers[ "SceneChannelAnimator" ] = &SceneChannelAnimatorParser;
-    animation_parsers[ "SceneColorSwitcher" ] = &SceneColorSwitcherParser;
+    animation_parsers[ "SceneColorSwitcher" ] = &SceneColorFaderParser;
     animation_parsers[ "SceneMovementAnimator" ] = &SceneMovementAnimatorParser;
     animation_parsers[ "SceneStrobeAnimator" ] = &SceneStrobeAnimatorParser;
+    animation_parsers[ "ScenePixelAnimator" ] = &ScenePixelAnimatorParser;
 
     return animation_parsers;
 }
@@ -85,33 +88,43 @@ bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
         json.add( "name", scene->getName() );
         json.add( "description", scene->getDescription() );
         json.add( "is_default", (scene == default_scene) );
-        json.add( "is_private", scene->isPrivate() );
         json.add( "is_running", (active_uid == scene->getUID()) );
+        json.addArray<Acts>( "acts", scene->getActs() );
 
         json.startArray( "actors" );
 
         ActorPtrArray actors = scene->getActors();
 
         for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
-            Fixture* fixture = studio.getVenue()->getFixture( (*it)->getFUID() );
+            Fixture* fixture = NULL;
 
             json.startObject();
-            json.add( "id", fixture->getUID() );
-            json.add( "address", (int)fixture->getAddress() );
+            json.add( "id", (*it)->getActorUID() );
+            json.add( "is_group", (*it)->isGroup() );
+
+            if ( (*it)->isGroup() ) {
+                fixture = studio.getVenue()->getGroupRepresentative( (*it)->getActorUID() );
+            }
+            else {
+                fixture = studio.getVenue()->getFixture( (*it)->getActorUID() );
+                json.add( "address", (int)fixture->getAddress() );
+            }
 
             json.startArray( "channels" );
-            for ( channel_t channel=0; channel < fixture->getNumChannels(); channel++ ) {
-                Channel* ch = fixture->getChannel( channel );
-                BYTE value = (*it)->getChannelValue( fixture->mapChannel( channel ) );
-                ChannelValueRange* range = ch->getRange( value );
-                LPCSTR range_name = range ? range->getName() : "";
+            if ( fixture != NULL ) {
+                for ( channel_t channel=0; channel < fixture->getNumChannels(); channel++ ) {
+                    Channel* ch = fixture->getChannel( channel );
+                    BYTE value = (*it)->getChannelValue( fixture->mapChannel( channel ) );
+                    ChannelValueRange* range = ch->getRange( value );
+                    LPCSTR range_name = range ? range->getName() : "";
 
-                json.startObject();
-                json.add( "channel", (int)channel );
-                json.add( "name", ch->getName() );
-                json.add( "value", value );
-                json.add( "range_name", range_name );
-                json.endObject();
+                    json.startObject();
+                    json.add( "channel", (int)channel );
+                    json.add( "name", ch->getName() );
+                    json.add( "value", value );
+                    json.add( "range_name", range_name );
+                    json.endObject();
+                }
             }
             json.endArray( "channels" );
 
@@ -150,7 +163,7 @@ bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
 
             if ( !strcmp( animation->getClassName(), SceneStrobeAnimator::className ) ) {
                 SceneStrobeAnimator* ssa = (SceneStrobeAnimator*)animation;
-                json.addColor( "strobe_neg_color", ssa->getStrobeNegColor() );
+                json.add( "strobe_neg_color", ssa->getStrobeNegColor() );
                 json.add( "strobe_pos_ms", ssa->getStrobePosMS() );
                 json.add( "strobe_neg_ms", ssa->getStrobeNegMS() );
             }
@@ -162,12 +175,24 @@ bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
                 SceneSoundLevel* ssl = (SceneSoundLevel*)animation;
                 json.add( "fade_what", ssl->getFadeWhat() );
             }
-            else if ( !strcmp( animation->getClassName(), SceneColorSwitcher::className ) ) {
-                SceneColorSwitcher* scs = (SceneColorSwitcher*)animation;
-                json.addColor( "strobe_neg_color", scs->getStrobeNegColor() );
+            else if ( !strcmp( animation->getClassName(), SceneColorFader::className ) ) {
+                SceneColorFader* scs = (SceneColorFader*)animation;
+                json.add( "fader_effect", scs->getFaderEffect() );
+                json.add( "strobe_neg_color", scs->getStrobeNegColor() );
                 json.add( "strobe_pos_ms", scs->getStrobePosMS() );
                 json.add( "strobe_neg_ms", scs->getStrobeNegMS() );
-                json.addColorArray<ColorProgression>( "color_progression", scs->getCustomColors() );
+                json.addColorArray<RGBWAArray>( "color_progression", scs->getCustomColors() );
+            }
+            else if ( !strcmp( animation->getClassName(), ScenePixelAnimator::className ) ) {
+                ScenePixelAnimator* spa = (ScenePixelAnimator*)animation;
+                json.add( "pixel_effect", spa->getEffect() );
+                json.add( "generations", spa->getGenerations() );
+                json.add( "pixels", spa->getPixels() );
+                json.add( "increment", spa->getIncrement() );
+                json.add( "fade", spa->isFadeColors() );
+                json.add( "combine", spa->getCombineFixtures() );
+                json.add( "pixel_off_color", spa->getEmptyColor() );
+                json.addColorArray<RGBWAArray>( "color_progression", spa->getCustomColors() );
             }
             else if ( !strcmp( animation->getClassName(), SceneMovementAnimator::className ) ) {
                 SceneMovementAnimator* sma = (SceneMovementAnimator*)animation;
@@ -210,7 +235,7 @@ bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
 
                 for ( ChannelAnimationArray::iterator it=chan_anims.begin(); it != chan_anims.end(); ++it ) {
                     json.startObject();
-                    json.add( "actor_uid", (*it).getActor() );
+                    json.add( "actor_uid", (*it).getActorUID() );
                     json.add( "channel", (*it).getChannel() );
                     json.add( "style", (*it).getAnimationStyle() );
                     json.addArray<ChannelValueArray>( "values", (*it).getChannelValues() );
@@ -218,6 +243,12 @@ bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
                 }
 
                 json.endArray( "channel_animations" );
+            }
+            else if ( !strcmp( animation->getClassName(), ScenePixelAnimator::className ) ) {
+                ScenePixelAnimator* sca = (ScenePixelAnimator*)animation;
+
+                // TODO
+
             }
 
             json.endObject( json_anim_name );
@@ -256,60 +287,24 @@ bool HttpRestServices::edit_scene_copy_fixtures( CString& response, LPCSTR data,
 
     SimpleJsonParser parser;
     bool clear;
+    bool keep_groups;
     ULONG scene_id;
-    std::vector<ULONG> fixtures;
-    UIDSet uids;
+    UIDArray actors;
 
     try {
         parser.parse( data );
 
         clear = parser.get<bool>( "clear" );
         scene_id = parser.get<unsigned long>( "scene_id" );
-        fixtures = parser.get<std::vector<ULONG>>( "fixture_ids" );
+        keep_groups = parser.get<bool>( "keep_groups" );
+        actors = parser.get<UIDArray>( "fixture_ids" );
     }
     catch ( std::exception& e ) {
         DMXStudio::log( StudioException( "JSON parser error (%s) data (%s)", e.what(), data ) );
         return false;
     }
 
-    Scene* scene = studio.getVenue()->getScene( scene_id );
-    if ( !scene )
-        return false;
-
-    Scene* default_scene = studio.getVenue()->getDefaultScene();
-
-    for ( std::vector<ULONG>::iterator it=fixtures.begin(); it != fixtures.end(); ++it ) {
-        Fixture* fixture = studio.getVenue()->getFixture( (UID)(*it) );
-        if ( fixture ) {
-            uids.insert( fixture->getUID() );
-            continue;
-        }
-
-        FixtureGroup* group = studio.getVenue()->getFixtureGroup( (UID)(*it) );
-        if ( group ) {
-            UIDSet group_fixtures = group->getFixtures();
-            uids.insert( group_fixtures.begin(), group_fixtures.end() );
-            continue;
-        }
-
-        // Bad ID
-        return false;
-    }  
-
-    // Add the fixtures to the scene
-    for ( UIDSet::iterator it=uids.begin(); it != uids.end(); ++it ) {
-        SceneActor *actor = default_scene->getActor( (*it) );
-        if ( !actor )
-            return false;
-
-        scene->addActor( *actor );
-        if ( clear )
-            default_scene->removeActor( (*it) );
-    }
-
-    // Restart the scene if this is the active scene
-    if ( studio.getVenue()->getCurrentSceneUID() == scene_id )
-        studio.getVenue()->loadScene();
+    studio.getVenue()->moveDefaultFixturesToScene(scene_id, actors, keep_groups, clear );
 
     return true;
 }
@@ -324,11 +319,12 @@ bool HttpRestServices::edit_scene( CString& response, LPCSTR data, EditMode mode
     UID scene_id;
     CString name, description;
     SceneNumber number;
-    bool is_private;
+    bool keep_groups;
     Scene* scene = NULL;
     UIDArray actors;
     PARSER_LIST animationParsers;
     std::vector<AbstractAnimation*> animations;
+    Acts acts;
      
     try {
         parser.parse( data );
@@ -337,9 +333,10 @@ bool HttpRestServices::edit_scene( CString& response, LPCSTR data, EditMode mode
         name = parser.get<CString>( "name" );
         description = parser.get<CString>( "description" );
         number = parser.get<ULONG>( "number" );
-        is_private = parser.get<bool>( "is_private" );
+        keep_groups = parser.get<bool>( "keep_groups" );
         actors = parser.get<UIDArray>( "actors" );
         animationParsers = parser.get<PARSER_LIST>("animations");
+        acts = parser.get<Acts>( "acts" );
 
         for ( PARSER_LIST::iterator it=animationParsers.begin(); it != animationParsers.end(); ++it ) {
             CString class_name = (*it).get<CString>( "class_name" );
@@ -350,7 +347,7 @@ bool HttpRestServices::edit_scene( CString& response, LPCSTR data, EditMode mode
 
             ANIMATION_PARSER_FUNC anim_parser_func = animation_parsers[ class_name ];
             if ( anim_parser_func == NULL )
-                throw new std::exception( "Unknown animation class name from client" );
+                throw std::exception( "Unknown animation class name from client" );
 
             animations.push_back( anim_parser_func( animationParser, signal, animation_actors ) );
         }
@@ -378,10 +375,7 @@ bool HttpRestServices::edit_scene( CString& response, LPCSTR data, EditMode mode
             new_scene.setUID( scene_id );
             studio.getVenue()->addScene( new_scene );
             scene = studio.getVenue()->getScene( scene_id );
-
-            for ( std::vector<ULONG>::iterator it = actors.begin(); it != actors.end(); ++it )
-                studio.getVenue()->moveDefaultFixtureToScene( scene_id, (*it) );
-
+            studio.getVenue()->moveDefaultFixturesToScene( scene_id, actors, keep_groups, true );
             break;
         }
 
@@ -408,7 +402,7 @@ bool HttpRestServices::edit_scene( CString& response, LPCSTR data, EditMode mode
     scene->setName( name );
     scene->setSceneNumber( number );
     scene->setDescription( description );
-    scene->setPrivate( is_private );
+    scene->setActs( acts );
 
     scene->clearAnimations();
     for ( std::vector<AbstractAnimation*>::iterator it=animations.begin(); it != animations.end(); ++it )
@@ -458,7 +452,7 @@ AbstractAnimation* ScenePatternDimmerParser( SimpleJsonParser parser, AnimationS
 // ----------------------------------------------------------------------------
 //
 AbstractAnimation* SceneStrobeAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
-    unsigned long strobe_neg_color = parser.getHex<unsigned long>( "strobe_neg_color" );
+    RGBWA strobe_neg_color = parser.getHex<RGBWA>( "strobe_neg_color" );
     unsigned long strobe_pos_ms = parser.get<unsigned long>( "strobe_pos_ms" );
     unsigned long strobe_neg_ms = parser.get<unsigned long>( "strobe_neg_ms" );
 
@@ -467,13 +461,16 @@ AbstractAnimation* SceneStrobeAnimatorParser( SimpleJsonParser parser, Animation
 
 // ----------------------------------------------------------------------------
 //
-AbstractAnimation* SceneColorSwitcherParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
-    unsigned long strobe_neg_color = parser.getHex<unsigned long>( "strobe_neg_color" );
+AbstractAnimation* SceneColorFaderParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
+    FaderEffect fader_effect = (FaderEffect)parser.get<unsigned>( "fader_effect" );
+    RGBWA strobe_neg_color = parser.getHex<RGBWA>( "strobe_neg_color" );
     unsigned long strobe_pos_ms = parser.get<unsigned long>( "strobe_pos_ms" );
     unsigned long strobe_neg_ms = parser.get<unsigned long>( "strobe_neg_ms" );
-    ColorProgression color_progression = parser.getHex<ColorProgression>( "color_progression" );
 
-    return new SceneColorSwitcher( studio.getVenue()->allocUID(), signal, actors, strobe_neg_color, strobe_pos_ms, strobe_neg_ms, color_progression );
+    RGBWAArray color_progression = parser.getHex<RGBWAArray>( "color_progression" );
+
+    return new SceneColorFader( studio.getVenue()->allocUID(), signal, actors, strobe_neg_color, 
+                                strobe_pos_ms, strobe_neg_ms, color_progression, fader_effect );
 }
 
 // ----------------------------------------------------------------------------
@@ -534,4 +531,18 @@ AbstractAnimation* SceneChannelAnimatorParser( SimpleJsonParser parser, Animatio
     return new SceneChannelAnimator( studio.getVenue()->allocUID(), signal, channel_animations );
 }
 
+// ----------------------------------------------------------------------------
+//
+AbstractAnimation* ScenePixelAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
+    PixelEffect pixel_effect = (PixelEffect)parser.get<unsigned>( "pixel_effect" );
+    RGBWA empty_color = parser.getHex<RGBWA>( "pixel_off_color" );
+    bool combine = parser.get<bool>( "combine" );
+    bool fade = parser.get<bool>( "fade" );
+    unsigned generations = parser.get<unsigned>( "generations" );
+    unsigned pixels = parser.get<unsigned>( "pixels" );
+    unsigned increment= parser.get<unsigned>( "increment" );
+    RGBWAArray color_progression = parser.getHex<RGBWAArray>( "color_progression" );
 
+    return new ScenePixelAnimator( studio.getVenue()->allocUID(), signal, actors, pixel_effect, 
+                    color_progression, empty_color, generations, pixels, fade, increment, combine );
+}
