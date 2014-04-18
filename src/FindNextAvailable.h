@@ -50,7 +50,7 @@ public:
        
         BYTE mask = 0x80;
         BYTE *ptr = m_bitmap;
-        T fence = m_capacity * 2;
+        T fence = m_capacity * 8;
 
         for ( ; next < fence; next++ ) {
             if ( !(*ptr & mask) )

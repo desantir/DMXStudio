@@ -47,7 +47,7 @@ public:
 
     void set( size_t bit ) {
         unsigned byte_num = bit / 8;
-        unsigned bit_num = bit % 8;
+        unsigned bit_num = 7-(bit % 8);
 
         if ( byte_num >= m_capacity ) {
             m_bitmap = (BYTE *)realloc( m_bitmap, m_capacity*2 );
@@ -60,7 +60,7 @@ public:
 
     bool isSet( size_t bit ) {
         unsigned byte_num = bit / 8;
-        unsigned bit_num = bit % 8;
+        unsigned bit_num = 7-(bit % 8);
 
         if ( byte_num >= m_capacity )
             return false;
