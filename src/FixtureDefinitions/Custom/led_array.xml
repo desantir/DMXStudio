@@ -133,10 +133,10 @@
                     </range>
                 </ranges>
             </channel>
-            <channel index="3" type="red" color="true" blackout="true">
+            <channel index="4" type="red" color="true" blackout="true">
                 <name>Red</name>
             </channel>
-            <channel index="4" type="green" color="true" blackout="true">
+            <channel index="5" type="green" color="true" blackout="true">
                 <name>Green</name>
             </channel>
             <channel index="6" type="blue" color="true" blackout="true">

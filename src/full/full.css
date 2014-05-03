@@ -116,7 +116,7 @@
 
 .describe_number { float:left; font-family:sans-serif; font-weight:normal; font-size: 50pt; margin: 0px 30px 2px 0px; }
 .describe_title { color: #2e7db2; width:110px; text-align:right; float:left;  clear:both; margin-right: 6px; font-size: 12pt; }
-.describe_data { color:white; text-align:left; float:left; font-size: 12pt; max-width: 320px;}
+.describe_data { color:white; text-align:left; float:left; font-size: 12pt; max-width: 500px;}
 .describe_fixture_range { color:#2e7db2; clear:both; float:left;margin:6px 6px 6px 30px; display: none; font-size:8pt;}         
 .describe_fixture_channels { margin:0px; overflow-y:auto; overflow-x:hidden; height:280px; font-size: smaller; }
 .describe_chase_step { color:#2e7db2; } 

@@ -7,17 +7,17 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		H 5 Positional "map" of fixtures (with icons showing type and direction) for easy capture
 		M 5 Workspace channel management (re-arrange channels, hidden channels, save channel sets)
 		M 5 Simplify animations (must be easier to create animations from the UI)
-		M 1 Log into music player
 		L 5 Alternative to dialogs
 		L 1 Improved error responses (e.g. "<item> not found")
 		L 1 Animated running GIFs for chases
 		L 1 Handle disconnected server state (disable UI)
 		L 2 Authentication & session control
-		L 2 Chase beat (follows music) and tap (follows user)
+		L 2 Chase beat (follows music)
 		L 3 Track pan/tilt with mouse
 		L 4 Album artwork
 		H 4 Music search
 		L 2 Support group channel defaults in web UI (and in scene too?)
+		L 1 Fixture group channel defaults
 
 	L Scene Animations:
 		L Movement animation travel time

@@ -162,15 +162,15 @@ MA 02111-1307, USA.
                 <div id="track_forward_info" class="ui-icon ui-icon-blank" style="float:left; margin-top: 20px; width: 14px;" title="show queued tracks"></div>
             </div>
         </div>
-        <div id="track_select" style="float:left; margin:3px 0px 0px 36px; display:none; max-width: 500px;">
+        <div id="track_select" style="float:left; margin:3px 0px 0px 36px; display:none;">
             <div>
-                <select id="playlist_list"></select>
-                <button id="playlist_play" class="playlist_button">play</button>
+                <select id="playlist_list" style="max-width: 400px;"></select>
+                <button id="playlist_play" class="playlist_button" style="margin-left: 6px;">play</button>
                 <button id="playlist_queue" class="playlist_button">queue</button>
             </div>
             <div style="clear: both; float:left; margin-top: 8px;">
-                <select id="track_list"></select>
-                <button id="track_list_play" class="playlist_button">play</button>
+                <select id="track_list" style="max-width: 400px;"></select>
+                <button id="track_list_play" class="playlist_button" style="margin-left: 6px;">play</button>
                 <button id="track_list_queue" class="playlist_button">queue</button>
             </div>
         </div>
@@ -351,7 +351,8 @@ MA 02111-1307, USA.
     </div>
     <hr style="clear: both;"/>
     <div id="describe_scene_fixtures" class="describe_data"></div>
-    <div id="describe_scene_animations" class="describe_data" style="width:100%;"></div>
+    <hr id="describe_scene_hr" style="margin-top: 10px; width: 320px; float:left; clear:both;" />
+    <div id="describe_scene_animations" class="describe_data" style="width:100%; clear:both;"></div>
 </div>
 
 <div id="copy_workspace_fixtures_dialog" style="display:none;" title="Copy Active Fixtures To Scene">
@@ -464,10 +465,10 @@ MA 02111-1307, USA.
                 </div>
 
                 <div id="nsd_new_animation_button" class="ui-state-default ui-corner-all" 
-                    style="padding: 4px; clear: both; float:left; width: 99%; cursor: pointer;" >
-                    <div style="float:left; padding:3px; margin-top:4px;"><span class="ui-icon ui-icon-circle-plus" ></span></div>
+                    style="padding: 4px; clear: both; float:left; width: 664px; cursor: pointer;" >
                     <span style="float:left; margin:2px 10px 0px 6px;">add animation</span>
                     <select id="nsd_new_animation_type" style="float:left;"><option>random</option></select>
+                    <div style="float:right; padding:3px; margin-top:4px;"><span class="ui-icon ui-icon-circle-plus" ></span></div>
                     <div id="nsd_new_animation_description" style="clear:both; float:left;  margin: 4px 0px 0px 4px;" class="animation_description"></div>
                 </div>
 
@@ -719,7 +720,7 @@ MA 02111-1307, USA.
 <div id="edit_FixtureSequencer_dialog" style="display:none;">
     <form style="height:300px;">
         <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset"></legend>
+            <legend class="animation_fieldset">animation</legend>
                 <div id="essd_description" class="animation_description"></div>
 
                 <label for="essd_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
@@ -736,7 +737,7 @@ MA 02111-1307, USA.
 <div id="edit_SoundLevel_dialog" style="display:none;">
     <form style="height:300px;">
         <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset"></legend>
+            <legend class="animation_fieldset">animation</legend>
             <div id="essl_description" class="animation_description"></div>
 
             <label for="essl_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
@@ -753,7 +754,7 @@ MA 02111-1307, USA.
 <div id="edit_ScenePatternDimmer_dialog" style="display:none;">
     <form style="height:300px;">
         <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset"></legend>
+            <legend class="animation_fieldset">animation</legend>
             <div id="espd_description" class="animation_description"></div>
         
             <label for="espd_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
@@ -773,7 +774,7 @@ MA 02111-1307, USA.
 <div id="edit_SceneStrobeAnimator_dialog" style="display:none;">
     <form style="height:300px;">
         <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset"></legend>
+            <legend class="animation_fieldset">animation</legend>
             <div id="essa_description" class="animation_description"></div>
         
             <div style="clear:both; float:left;">
@@ -801,7 +802,7 @@ MA 02111-1307, USA.
 <div id="edit_SceneColorSwitcher_dialog" style="display:none;">
     <form style="height:360px;">
         <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset"></legend>
+            <legend class="animation_fieldset">animation</legend>
             <div id="escs_description" class="animation_description"></div>
         
             <div style="clear:both; float:left;">
@@ -837,7 +838,7 @@ MA 02111-1307, USA.
 <div id="edit_SceneMovementAnimator_dialog" style="display:none;">
     <form style="height:300px;">
         <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset"></legend>
+            <legend class="animation_fieldset">animation</legend>
             <div id="esma_description" class="animation_description"></div>
         
             <div>
@@ -1072,7 +1073,7 @@ MA 02111-1307, USA.
 <div id="edit_SceneChannelAnimator_dialog" style="display:none;">
     <form style="height:300px;">
         <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset"></legend>
+            <legend class="animation_fieldset">animation</legend>
             <div id="esca_description" class="animation_description"></div>
 
             <div style="margin: 10px 0px 4px 0px;">channel animations</div>
@@ -1201,6 +1202,20 @@ MA 02111-1307, USA.
 
         </fieldset>
         <div id="espa_signal" style="clear:both;" ></div>
+    </form>
+</div>
+
+<div id="music_player_login_dialog" style="display:none;">
+    <form>
+        <div style="margin: 10px 0px 12px 0px;">Login to the music player to access playlists and tracks.</div>
+
+        <label for="mpl_username" style="display:block; margin: 8px 0px 4px 0px;">username</label>
+        <input id="mpl_username" style="display:block;width: 400px;" />
+
+        <label for="mpl_password" style="display:block; margin: 12px 0px 4px 0px;">password</label>
+        <input id="mpl_password" style="display:block;width: 400px;" type="password"/>
+
+        <div id="mpl_error" class="player_error" style="margin: 12px 0px 10px 0px;"></div>
     </form>
 </div>
 

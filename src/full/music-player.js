@@ -28,6 +28,8 @@ var cache_track_remaining = null;
 var cache_track_length = null;
 var cache_track_status = null;
 
+var show_login_dialog = true;
+
 // ----------------------------------------------------------------------------
 //
 function update_player_status(music_player_status) {
@@ -83,8 +85,9 @@ function update_player_status(music_player_status) {
         enable_info_button('track_back_info', music_player_status.played != 0);
         enable_info_button('track_forward_info', music_player_status.queued != 0);
     }
-    else {
-        alert("MUSIC PLAYER LOGIN NOT IMPLEMENTED");
+    else if (show_login_dialog) {
+        show_login_dialog = false;  // Only once
+        player_login(music_player_status.player_name, music_player_status.username);
     }
 
     if (music_player_status.player_error != null) {
@@ -93,6 +96,64 @@ function update_player_status(music_player_status) {
     else {
         $('#player_error').text("");
     }
+}
+
+// ----------------------------------------------------------------------------
+//
+function player_login( player_name, username ) {
+
+    $("#music_player_login_dialog").dialog({
+        autoOpen: false,
+        width: 540,
+        height: 360,
+        modal: true,
+        resizable: false,
+        title: player_name + " Login",
+        buttons: {
+            "Login": function () {
+                var json = {
+                    username: $("#mpl_username").val(),
+                    password: $("#mpl_password").val(),
+                };
+
+                $("#mpl_error").empty();
+
+                var ice_dialog = put_user_on_ice("Working ... Please wait");
+
+                $.ajax({
+                    type: "POST",
+                    url: "/dmxstudio/rest/control/music/player/login/",
+                    data: JSON.stringify(json),
+                    contentType: 'application/json',
+                    cache: false,
+                    async: true,
+                    success: function (data) {
+                        ice_dialog.dialog("close");
+
+                        var json = jQuery.parseJSON(data);
+                        if (json.logged_in) {
+                            $("#music_player_login_dialog").dialog("close");
+                            return;
+                        }
+
+                        $("#mpl_error").text(json.login_error);
+                        $("#mpl_password").val("");
+                    },
+
+                    error: onAjaxError
+                });
+            },
+            Cancel: function () {
+                $(this).dialog("close");
+            }
+        }
+    });
+
+    $("#mpl_error").empty();
+    $("#mpl_password").empty();
+    $("#mpl_username").val(username);
+
+    $("#music_player_login_dialog").dialog("open");
 }
 
 // ----------------------------------------------------------------------------

@@ -104,6 +104,7 @@ MA 02111-1307, USA.
 #define DMX_URL_QUERY_MUSIC_PLAYED              DMX_URL_REST "query/music/played/"
 #define DMX_URL_CONTROL_MUSIC_PLAY_TRACK        DMX_URL_REST "control/music/play/track/"
 #define DMX_URL_CONTROL_MUSIC_PLAY_PLAYLIST     DMX_URL_REST "control/music/play/playlist/"
+#define DMX_URL_CONTROL_MUSIC_PLAYER_LOGIN      DMX_URL_REST "control/music/player/login/"
 #define DMX_URL_QUERY_MUSIC_MATCHER             DMX_URL_REST "query/music/matcher/"
 #define DMX_URL_EDIT_MUSIC_MATCHER              DMX_URL_REST "edit/music/matcher/"
 
@@ -267,6 +268,7 @@ protected:
     bool edit_venue_layout_save( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
 
     bool edit_music_matcher( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool player_login( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
 
     bool venue_upload( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
 };

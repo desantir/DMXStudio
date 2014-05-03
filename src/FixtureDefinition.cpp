@@ -24,6 +24,7 @@ MA 02111-1307, USA.
 #include "FixtureDefinition.h"
 #include "DefinitionReader.h"
 #include "DefinitionWriter.h"
+#include "Bitmap.h"
 
 bool caseInsensitiveCompare( LPCSTR left, LPCSTR right ) {
     return _stricmp( left, right ) < 0;
@@ -210,6 +211,17 @@ void FixtureDefinition::addFixtureDefinition( FixtureDefinition *fd )
                 fd->getManufacturer(), fd->getModel(), fd->getNumChannels(), 
                 it_fd->second.getManufacturer(), it_fd->second.getModel(), 
                 it_fd->second.getNumChannels(), fd->getFUID() );
+
+    // Verify all channels are unique
+    Bitmap channel_map(64);
+    for ( Channel channel : fd->m_channels ) {
+        if ( channel_map.isSet( channel.getOffset() ) )
+            DMXStudio::log_status( "WARNING %s %s personality %d redefines channel %d", 
+                    fd->getManufacturer(), fd->getModel(), fd->getNumChannels(), 
+                    channel.getOffset()+1 );
+
+        channel_map.set( channel.getOffset() );
+    }
 
     FixtureDefinition::FixtureDefinitions[ fd->getFUID() ] = *fd;
     

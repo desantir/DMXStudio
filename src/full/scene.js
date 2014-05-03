@@ -573,7 +573,13 @@ function describeScene(event, scene_id) {
         modal: false,
         draggable: true,
         resizable: true,
-        title: "Scene " + scene.getNumber() + ": " + escapeForHTML(scene.getName())
+        title: "Scene " + scene.getNumber() + ": " + escapeForHTML(scene.getName()),
+        open: function () { // Stop main body scroll
+            $("body").css("overflow", "hidden");
+        },
+        close: function () {
+            $("body").css("overflow", "auto");
+        }
     });
 
     var acts = "";
@@ -669,8 +675,6 @@ function describeScene(event, scene_id) {
     info = "";
 
     if (scene.getAnimations().length > 0) {
-        info += "<hr style=\"clear: both; margin-top: 10px;\"/>";
-
         for (var i = 0; i < scene.getAnimations().length; i++) {
             var animation = scene.getAnimations()[i];
 
@@ -707,7 +711,11 @@ function describeScene(event, scene_id) {
             info += "Signal: " + signal;
             info += "</div>";
         }
+
+        $("#describe_scene_hr").show();
     }
+    else
+        $("#describe_scene_hr").hide();
 
     $("#describe_scene_animations").html(info);
 

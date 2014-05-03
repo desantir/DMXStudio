@@ -26,6 +26,47 @@
 
 // ----------------------------------------------------------------------------
 //
+bool HttpRestServices::player_login( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+{
+   if ( !studio.getVenue() )
+        return false;
+
+    SimpleJsonParser parser;
+    CString username;
+    CString password;
+
+    try {
+        parser.parse( data );
+
+        username = parser.get<CString>( "username" );
+        password = parser.get<CString>( "password" );
+    }
+    catch ( std::exception& e ) {
+        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
+    }
+
+    JsonBuilder json( response );
+    json.startObject();
+
+    if ( studio.getMusicPlayer()->signon( username, password ) ) {
+        json.add( "logged_in", true );
+    }
+    else {
+        CString login_error = studio.getMusicPlayer()->getLastPlayerError();
+
+        if ( login_error.IsEmpty() )
+            login_error = "Login failed";
+
+        json.add( "logged_in", false );
+        json.add( "login_error", login_error );
+    }
+
+    json.endObject();
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
 bool HttpRestServices::control_master_volume( CString& response, LPCSTR data )
 {
     UINT master_volume;

@@ -101,6 +101,8 @@ bool HttpRestServices::query_venue_status( CString& response, LPCSTR data )
     // If we have a music player, return player status
     if ( studio.hasMusicPlayer() ) {
         json.startObject( "music_player" );
+        json.add( "player_name", studio.getMusicPlayer()->getPlayerName() );
+        json.add( "username", studio.getMusicPlayer()->getUsername() );
 
         if ( studio.getMusicPlayer()->isLoggedIn() ) {
             DWORD length, remaining;

@@ -101,8 +101,7 @@ void DefinitionReader::readFixtureDefinitions( LPCSTR directory )
             //DefinitionWriter writer;
             //writer.writeFixtureDefinition( file_name, author, version, fixture_definitions );
 
-            for ( std::vector<FixtureDefinition *>::iterator it=fixture_definitions.begin(); it != fixture_definitions.end(); ++it ) {
-                FixtureDefinition* definition = (*it);
+            for ( FixtureDefinition* definition : fixture_definitions ) {
                 definition->setSourceFile( file_name );
                 definition->m_author = author;
                 definition->m_version = version;

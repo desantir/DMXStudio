@@ -912,7 +912,13 @@ function describeFixture(event, fixture_id) {
         modal: false,
         draggable: true,
         resizable: false,
-        title: "Fixture " + fixture.getNumber() + ": " + escapeForHTML(fixture.getManufacturer()) + " " + escapeForHTML(fixture.getModel())
+        title: "Fixture " + fixture.getNumber() + ": " + escapeForHTML(fixture.getManufacturer()) + " " + escapeForHTML(fixture.getModel()),
+        open: function () { // Stop main body scroll
+            $("body").css("overflow", "hidden");
+        },
+        close: function () {
+            $("body").css("overflow", "auto");
+        }
     });
 
     $("#describe_fixture_number").html(escapeForHTML(fixture.getNumber()));

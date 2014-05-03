@@ -170,7 +170,7 @@
                     </range>
                 </ranges>
             </channel>
-            <channel index="1" type="color macro" color="false" blackout="false">
+            <channel index="5" type="color macro" color="false" blackout="false">
                 <name>Color Chase</name>
                 <ranges>
                     <range start="0" end="7">

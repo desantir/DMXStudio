@@ -103,6 +103,8 @@ HttpRestServices::HttpRestServices(void) :
     m_rest_post_handlers[ DMX_URL_VENUE_UPLOAD ] = &HttpRestServices::venue_upload;
 
     m_rest_post_handlers[ DMX_URL_CONTROL_BEATSAMPLER_START ] = &HttpRestServices::control_beatsampler_start;
+
+    m_rest_post_handlers[ DMX_URL_CONTROL_MUSIC_PLAYER_LOGIN ] = &HttpRestServices::player_login;
 }
 
 // ----------------------------------------------------------------------------
