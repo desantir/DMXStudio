@@ -1,5 +1,5 @@
 /* 
-    Copyright (C) 2011,2012 Robert DeSantis
+    Copyright (C) 2011-14 Robert DeSantis
     hopluvr at gmail dot com
 
     This file is part of DMX Studio.
@@ -99,6 +99,28 @@ public:
 
 typedef std::vector<Pixel> PixelArray;
 
+struct Head {
+    UINT        m_head_number;        // Head number
+    channel_t   m_pan;                // Pan channel
+    channel_t   m_tilt;               // Tilt channel
+    channel_t   m_speed;              // Movement speed channel
+    channel_t   m_dimmer;             // Dimmer channel ( may be for entire fixture)
+
+    Head() :
+        m_head_number( 0 ),
+        m_pan( INVALID_CHANNEL ),
+        m_tilt( INVALID_CHANNEL ),
+        m_speed( INVALID_CHANNEL ),
+        m_dimmer( INVALID_CHANNEL )
+    {}
+
+    inline bool isValid() const {
+        m_pan != INVALID_CHANNEL || m_tilt != INVALID_CHANNEL;
+    }
+};
+
+typedef std::map<UINT,Head> HeadMap;
+
 class FixtureDefinition
 {
     friend class DefinitionReader;
@@ -119,6 +141,7 @@ class FixtureDefinition
     ChannelArray	m_channels;				// Ordered list of channels
 
     PixelArray      m_pixels;               // Pixels for all devices (non-pixel devices will have maximim of one)
+    HeadMap         m_heads;                // Movement heads for this fixture
 
 public:
     static void readFixtureDefinitions();
@@ -143,39 +166,39 @@ public:
         m_source_filename = source_filename;
     }
 
-    FUID getFUID( ) const {
+    inline FUID getFUID( ) const {
         return m_fuid;
     }
 
-    const char * getManufacturer( ) const {
+    inline const char * getManufacturer( ) const {
         return m_manufacturer;
     }
 
-    const char * getModel( ) const {
+    inline const char * getModel( ) const {
         return m_model;
     }
 
-    FixtureType getType() const {
+    inline FixtureType getType() const {
         return m_type;
     }
 
-    LPCSTR getTypeName() const {
+    inline LPCSTR getTypeName() const {
         return convertFixtureTypeToText( m_type );
     }
 
-    bool canPan() const {
+    inline bool canPan() const {
         return m_can_pan;
     }
 
-    bool canTilt() const {
+    inline bool canTilt() const {
         return m_can_tilt;
     }
 
-    bool canWhiteout() const { 
+    inline bool canWhiteout() const { 
         return m_can_whiteout;
     }
 
-    size_t getNumChannels() const {
+    inline size_t getNumChannels() const {
         return m_channels.size();
     }
 
@@ -185,12 +208,24 @@ public:
         return &m_channels[offset];
     }
 
-    size_t getNumPixels( ) const {
+    inline size_t getNumPixels( ) const {
         return m_pixels.size();
     }
 
     PixelArray* getPixels() {
         return &m_pixels;
+    }
+
+    inline size_t getNumHeads( ) const {
+        return m_heads.size();
+    }
+
+    bool getHead( UINT head_number, Head& head) {
+        HeadMap::iterator it = m_heads.find( head_number );
+        if ( it == m_heads.end() )
+            return false;
+        head = (*it).second;
+        return true;
     }
 
     void print() {
@@ -209,6 +244,7 @@ private:
     void chooseCapabilities( void );
     FUID generateFUID( void );
     bool findPixel( size_t pixel_index, Pixel &pixel );
+    Head findHead( UINT head_number );
 
     static FixtureType convertTextToFixtureType( LPCSTR text_type );
     static LPCSTR convertFixtureTypeToText( FixtureType type );

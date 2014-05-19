@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -67,7 +67,8 @@ Channel::Channel( channel_t offset, ChannelType type, const char *name ) :
     m_is_dimmer( false ),
     m_lowest_intensity( 0 ),
     m_highest_intensity( 255 ),
-    m_pixel_index( 0 )
+    m_pixel_index( 0 ),
+    m_head_number( 1 )
 {
     if ( name == NULL )
         m_name = getTypeName( m_type );
@@ -184,7 +185,7 @@ void Channel::generateAngleTable(void) {
         CString range_name;
         for ( size_t i=0; i < ranges.size(); i++ ) {
             range_name.Format( "%d degrees", ranges[i].range_angle);
-            m_ranges.push_back( ChannelValueRange( ranges[i].range_low, ranges[i].range_high, range_name ) );
+            m_ranges.push_back( ChannelValueRange( ranges[i].range_low, ranges[i].range_high, range_name, ranges[i].range_angle ) );
         }
     }
 }

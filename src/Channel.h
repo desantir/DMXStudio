@@ -78,6 +78,7 @@ class Channel
     ChannelValueRangeArray	m_ranges;				// Describes channel value ranges
     ChannelAngleMap			m_angles;				// Angles for pan/tilt
 
+    UINT                    m_head_number;          // For multiple pan/tilt heads
     AngleTable				m_angle_table;			// Table of angle -> DMX value
 
     void generateAngleTable(void);
@@ -140,6 +141,10 @@ public:
 
     inline BYTE getPixelIndex() const {
         return m_pixel_index;
+    }
+
+    inline UINT getHeadNumber() const {
+        return m_head_number;
     }
 
     ChannelValueRangeArray getRanges() const {

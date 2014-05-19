@@ -12,13 +12,9 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L 1 Animated running GIFs for chases
 		L 1 Handle disconnected server state (disable UI)
 		L 2 Authentication & session control
-		L 2 Chase beat (follows music)
-		L 3 Track pan/tilt with mouse
 		L 4 Album artwork
 		H 4 Music search
-		L 2 Support group channel defaults in web UI (and in scene too?)
-		L 1 Fixture group channel defaults
-
+		
 	L Scene Animations:
 		L Movement animation travel time
 		L Programs should control travel time rather than fixed signal input
@@ -46,7 +42,6 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 	M Code Maintainence
 		M Bullet proof error detection and automatic restart
 		L Introduce studio fault to kill and restart program (vs error based execeptions)
-		M Unit tests
 
 	L Scene / Chase / Act Improvements
 		L Scene selection based on the music beat (BPM)
@@ -64,6 +59,7 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		? Need real color transforms
 	
  	M Test Targets
+		Unit tests
 		Verify channel remapping works across UI, ACTORS, and ANIMATIONS 
 			Seems possible to double map or not map scene actor channels
 			Check UI->SceneChannelAnimator and SceneMovementAnimator->SceneChannelAnimator

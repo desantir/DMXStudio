@@ -49,6 +49,7 @@ static void append_channel_json( JsonBuilder& json, ChannelPtrArray& channels, B
             json.add( "start", (*it).getStart() );
             json.add( "end", (*it).getEnd() );
             json.add( "name", (*it).getName() );
+            json.add( "extra", (*it).getExtra() );
             json.endObject();
         }
         json.endArray( "ranges" );
@@ -130,7 +131,11 @@ bool HttpRestServices::query_fixtures( CString& response, LPCSTR data )
 
             for ( UINT ch=channels.size(); ch < pf->getNumChannels(); ch++ ) {
                 channels.push_back( pf->getChannel( ch ) );
-                channel_values[ch] = studio.getVenue()->getChannelValue( actor, ch );
+
+                if ( group->getNumChannelValues() > ch )
+                    channel_values[ch] = group->getChannelValue( ch );
+                else
+                    channel_values[ch] = studio.getVenue()->getChannelValue( actor, ch );
             } 
         }
 
@@ -145,6 +150,7 @@ bool HttpRestServices::query_fixtures( CString& response, LPCSTR data )
         json.add( "description", group->getDescription() );
         json.addArray<UIDSet>( "fixture_ids", fixtures );
         json.add( "is_active", is_active );
+        json.add( "has_channel_values", group->getNumChannelValues() > 0 );
 
         append_channel_json( json, channels, channel_values );
 
@@ -242,6 +248,7 @@ bool HttpRestServices::edit_fixturegroup( CString& response, LPCSTR data, EditMo
     CString name, description;
     GroupNumber number;
     std::vector<ULONG> fixture_ids;
+    std::vector<BYTE> channel_values;
 
     try {
         parser.parse( data );
@@ -251,6 +258,7 @@ bool HttpRestServices::edit_fixturegroup( CString& response, LPCSTR data, EditMo
         description = parser.get<CString>( "description" );
         number = parser.get<ULONG>( "number" );
         fixture_ids = parser.get<std::vector<ULONG>>( "fixture_ids" );
+        channel_values = parser.get<std::vector<BYTE>>( "channel_values" );
     }
     catch ( std::exception& e ) {
         throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
@@ -278,6 +286,7 @@ bool HttpRestServices::edit_fixturegroup( CString& response, LPCSTR data, EditMo
             group->setName( name );
             group->setDescription( description );
             group->setFixtures( UIDArrayToSet( fixture_ids ) );
+            group->setChannelValues( channel_values.size(), (channel_values.size() == 0) ? NULL : &channel_values[0] );
             break;
         }
     }
@@ -402,12 +411,16 @@ bool HttpRestServices::control_fixture_group( CString& response, LPCSTR data, DW
     SimpleJsonParser parser;
     UID group_uid;
     bool is_capture;
+    std::vector<BYTE> channel_values;
 
     try {
         parser.parse( data );
 
         group_uid = parser.get<ULONG>( "id" );
         is_capture = parser.get<bool>( "is_capture" );
+
+        if ( parser.has_key( "channel_values" ) )
+            channel_values = parser.get<std::vector<BYTE>>( "channel_values" );
     }
     catch ( std::exception& e ) {
         throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
@@ -417,6 +430,12 @@ bool HttpRestServices::control_fixture_group( CString& response, LPCSTR data, DW
         SceneActor* actor = studio.getVenue()->captureFixtureGroup( group_uid );
         if ( !actor )
             return false;
+
+        // Pre-set channel values (optional)
+        if ( channel_values.size() == actor->getNumChannels() ) {
+            for ( channel_t channel=0; channel < channel_values.size(); channel++ )
+                actor->setChannelValue( channel, channel_values[channel] );
+        }
 
         // Return current channel values 
         JsonBuilder json( response );

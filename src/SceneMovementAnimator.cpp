@@ -95,13 +95,25 @@ void SceneMovementAnimator::initAnimation( AnimationTask* task, DWORD time_ms, B
     m_channel_animations.clear();
     m_run_once = movement().m_run_once;
 
-    UIDArray participants;
+    ParticipantArray participants;
+    Head head;
 
-    // Determine which channels will be participating
+    // Determine which actors will be participating
     for ( UID actor_uid : populateActors() ) {
         Fixture* pf = m_animation_task->getActorRepresentative( actor_uid );
-        if ( pf && pf->canMove() )
-            participants.push_back( actor_uid );
+        if ( !pf || !pf->canMove() )
+            continue;
+
+        if ( movement().m_head_number == 0 ) { // All heads on fixture(s)
+            for ( UINT head_number=1; head_number <= pf->getNumHeads(); head_number++ ) {
+                if ( pf->getHead( head_number, head ) )
+                    participants.push_back( Participant( actor_uid, head ) );                    
+            }
+        }
+        else {                                 // Single head on fixture(s)
+            if ( pf->getHead( movement().m_head_number, head ) )
+                participants.push_back( Participant( actor_uid, head ) ); 
+        }
     }
 
     STUDIO_ASSERT( movement().m_group_size >= 1, "Movement group size must be >= 1" );
@@ -152,7 +164,7 @@ void SceneMovementAnimator::initAnimation( AnimationTask* task, DWORD time_ms, B
 
 // ----------------------------------------------------------------------------
 //
-void SceneMovementAnimator::genXcrossMovement( AnimationTask* task, UIDArray& participants )
+void SceneMovementAnimator::genXcrossMovement( AnimationTask* task, ParticipantArray& participants )
 {
     bool forward = true;				// Channel value population direction for alternate
 
@@ -203,7 +215,7 @@ void SceneMovementAnimator::genXcrossMovement( AnimationTask* task, UIDArray& pa
 
 // ----------------------------------------------------------------------------
 //
-void SceneMovementAnimator::genFanMovement( AnimationTask* task,  UIDArray& participants )
+void SceneMovementAnimator::genFanMovement( AnimationTask* task,  ParticipantArray& participants )
 {
     UINT pan_start = movement().m_pan_start;
     UINT pan_end = movement().m_pan_end;
@@ -254,7 +266,7 @@ void SceneMovementAnimator::genFanMovement( AnimationTask* task,  UIDArray& part
 
 // ----------------------------------------------------------------------------
 //
-void SceneMovementAnimator::genNodMovement( AnimationTask* task, UIDArray& participants )
+void SceneMovementAnimator::genNodMovement( AnimationTask* task, ParticipantArray& participants )
 {
     bool forward = true;				// Channel value population direction for alternate
 
@@ -335,7 +347,7 @@ void SceneMovementAnimator::genNodMovement( AnimationTask* task, UIDArray& parti
 
 // ----------------------------------------------------------------------------
 //
-void SceneMovementAnimator::genCoordinatesMovement( AnimationTask* task, UIDArray& participants )
+void SceneMovementAnimator::genCoordinatesMovement( AnimationTask* task, ParticipantArray& participants )
 {
     for ( size_t particpant_index=0; particpant_index < participants.size(); ) {
         AngleList pan;
@@ -376,7 +388,7 @@ static UINT random_angle( UINT start_angle, UINT end_angle ) {
     return start_angle + (rand() % (angle_range+1));
 }
 
-void SceneMovementAnimator::genRandomMovement( AnimationTask* task, UIDArray& participants )
+void SceneMovementAnimator::genRandomMovement( AnimationTask* task, ParticipantArray& participants )
 {
     STUDIO_ASSERT( movement().m_positions > 0 && movement().m_positions < MAX_RANDOM_POSITIONS, 
                 "Random postions should be between 1 and %d", MAX_RANDOM_POSITIONS );
@@ -407,7 +419,7 @@ void SceneMovementAnimator::genRandomMovement( AnimationTask* task, UIDArray& pa
 
 // ----------------------------------------------------------------------------
 //
-void SceneMovementAnimator::genRotateMovement( AnimationTask* task, UIDArray& participants )
+void SceneMovementAnimator::genRotateMovement( AnimationTask* task, ParticipantArray& participants )
 {
     bool forward = true;				// Channel value population direction for alternate
 
@@ -459,117 +471,8 @@ void SceneMovementAnimator::genRotateMovement( AnimationTask* task, UIDArray& pa
 }
 
 // ----------------------------------------------------------------------------
-// NOTE: Dimmer channel should contain 0 for full off and 255 for full on and
-// no other values
 //
-void SceneMovementAnimator::populateChannelAnimations( AnimationTask* task, 
-                        UIDArray& participants, size_t& particpant_index,
-                        AngleList& tilt, AngleList& pan, ChannelValueArray& dimmer,
-                        ChannelValueArray& speed, size_t group_size )
-{
-    size_t end = particpant_index + group_size;
-
-    // If run once, add last entry to shut down the lights
-    if ( m_run_once && dimmer.size() > 0 ) {
-        dimmer.push_back( 0 );
-    }
-
-    for ( ; particpant_index < end && particpant_index < participants.size(); particpant_index++ ) {
-        Fixture* pf = m_animation_task->getActorRepresentative( participants[ particpant_index ] );
-        if ( !pf )
-            continue;
-
-        channel_t pan_channel = INVALID_CHANNEL;
-        channel_t tilt_channel = INVALID_CHANNEL;
-        channel_t dimmer_channel = INVALID_CHANNEL;
-        channel_t speed_channel = INVALID_CHANNEL;
-
-        getFixtureChannels( pf, speed_channel, pan_channel, tilt_channel, dimmer_channel );
-
-        if ( tilt_channel != INVALID_CHANNEL && tilt.size() ) {
-            m_channel_animations.push_back( 
-                ChannelAnimation( participants[ particpant_index ], tilt_channel, CAM_LIST, 
-                                    anglesToValues( pf->getChannel( tilt_channel ), tilt ) ) );
-        }
-
-        if ( pan_channel != INVALID_CHANNEL && pan.size() ) {
-            m_channel_animations.push_back( 
-                ChannelAnimation( participants[ particpant_index ], pan_channel, CAM_LIST, 
-                                    anglesToValues( pf->getChannel( pan_channel ), pan ) ) );
-        }
-
-        if ( speed_channel != INVALID_CHANNEL && speed.size() ) {
-            m_channel_animations.push_back( 
-                ChannelAnimation( participants[ particpant_index ], speed_channel, CAM_LIST, speed ) );
-        }
-
-        if ( dimmer_channel != INVALID_CHANNEL && dimmer.size() ) {
-            Channel* ch = pf->getChannel( dimmer_channel );
-            STUDIO_ASSERT( ch, "Can't access dimmer channel %d on fixture %s", dimmer_channel, pf->getFullName() );
-
-            BYTE low = ch->getDimmerLowestIntensity();
-            BYTE high = ch->getDimmerHighestIntensity();
-
-            // Replace all 255 dimmer high value with the fixture's dimmer value iff the actors value != 0
-            SceneActor* actor = task->getScene()->getActor( participants[ particpant_index ] );
-            if ( actor && actor->getChannelValue( dimmer_channel ) != 0 )
-                high = actor->getChannelValue( dimmer_channel );
-
-            if ( low != 0 || high != 255 ) {                // Special case odd dimmer values
-                for ( size_t i=0; i < dimmer.size(); i++ )
-                    dimmer[i] = ( dimmer[i] == 255 ) ? high : low;
-            }
-
-            m_channel_animations.push_back( 
-                ChannelAnimation( participants[ particpant_index ], dimmer_channel, CAM_LIST, dimmer ) );
-        }
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
-void SceneMovementAnimator::getFixtureChannels( Fixture* pf, channel_t& speed_channel, channel_t& pan_channel, 
-                                                channel_t& tilt_channel, channel_t& dimmer_channel )
-{
-    pan_channel = INVALID_CHANNEL;
-    tilt_channel = INVALID_CHANNEL;
-    dimmer_channel = INVALID_CHANNEL;
-    speed_channel = INVALID_CHANNEL;
-
-    for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
-        Channel* cp = pf->getChannel( channel );
-
-        if ( cp->getType() == CHNLT_MOVEMENT_SPEED && speed_channel == INVALID_CHANNEL ) {
-            speed_channel = channel;
-        }
-        if ( cp->getType() == CHNLT_TILT && tilt_channel == INVALID_CHANNEL ) {
-            tilt_channel = channel;
-        }
-        else if ( cp->getType() == CHNLT_PAN && pan_channel == INVALID_CHANNEL  ) {
-            pan_channel = channel;
-        }
-        else if ( cp->isDimmer() && dimmer_channel == INVALID_CHANNEL ) {
-            dimmer_channel = channel;
-        }
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
-ChannelValueArray SceneMovementAnimator::anglesToValues( Channel* channel, AngleList& angles )
-{
-    ChannelValueArray values;
-
-    for ( AngleList::iterator it=angles.begin(); it != angles.end(); ++it )
-        values.push_back( channel->convertAngleToValue( (*it) ) );
-
-    STUDIO_ASSERT( values.size() > 0, "Invalid angles array size" );
-    return values;
-}
-
-// ----------------------------------------------------------------------------
-//
-void SceneMovementAnimator::genMoonflowerMovement( AnimationTask* task, UIDArray& participants )
+void SceneMovementAnimator::genMoonflowerMovement( AnimationTask* task, ParticipantArray& participants )
 {
     STUDIO_ASSERT( movement().m_height > 0, "Height must be a positive integer > 0" );
 
@@ -725,4 +628,86 @@ void compute_pan_tilt( UINT fixture_number, double height, double fixture_spacin
     pan = static_cast<UINT>(pan_angle+0.5);
     tilt = static_cast<UINT>(tilt_angle+0.5);
 }
+
+
+// ----------------------------------------------------------------------------
+// NOTE: Dimmer channel should contain 0 for full off and 255 for full on and
+// no other values
+//
+void SceneMovementAnimator::populateChannelAnimations( AnimationTask* task, 
+                        ParticipantArray& participants, size_t& particpant_index,
+                        AngleList& tilt, AngleList& pan, ChannelValueArray& dimmer,
+                        ChannelValueArray& speed, size_t group_size )
+{
+    size_t end = particpant_index + group_size;
+
+    // If run once, add last entry to shut down the lights
+    if ( m_run_once && dimmer.size() > 0 ) {
+        dimmer.push_back( 0 );
+    }
+
+    for ( ; particpant_index < end && particpant_index < participants.size(); particpant_index++ ) {
+        channel_t pan_channel = participants[ particpant_index ].m_head.m_pan;
+        channel_t tilt_channel = participants[ particpant_index ].m_head.m_tilt;
+        channel_t dimmer_channel = participants[ particpant_index ].m_head.m_dimmer;
+        channel_t speed_channel = participants[ particpant_index ].m_head.m_speed;
+        UID actor_uid = participants[ particpant_index ].m_actor_uid;
+
+        Fixture* pf = m_animation_task->getActorRepresentative( actor_uid );
+        if ( !pf )
+            continue;
+
+        if ( tilt_channel != INVALID_CHANNEL && tilt.size() ) {
+            m_channel_animations.push_back( 
+                ChannelAnimation( actor_uid, tilt_channel, CAM_LIST, 
+                                    anglesToValues( pf->getChannel( tilt_channel ), tilt ) ) );
+        }
+
+        if ( pan_channel != INVALID_CHANNEL && pan.size() ) {
+            m_channel_animations.push_back( 
+                ChannelAnimation( actor_uid, pan_channel, CAM_LIST, 
+                                    anglesToValues( pf->getChannel( pan_channel ), pan ) ) );
+        }
+
+        if ( speed_channel != INVALID_CHANNEL && speed.size() ) {
+            m_channel_animations.push_back( 
+                ChannelAnimation( actor_uid, speed_channel, CAM_LIST, speed ) );
+        }
+
+        if ( dimmer_channel != INVALID_CHANNEL && dimmer.size() ) {
+            Channel* ch = pf->getChannel( dimmer_channel );
+            STUDIO_ASSERT( ch, "Can't access dimmer channel %d on fixture %s", dimmer_channel, pf->getFullName() );
+
+            BYTE low = ch->getDimmerLowestIntensity();
+            BYTE high = ch->getDimmerHighestIntensity();
+
+            // Replace all 255 dimmer high value with the fixture's dimmer value iff the actors value != 0
+            SceneActor* actor = task->getScene()->getActor( actor_uid );
+            if ( actor && actor->getChannelValue( dimmer_channel ) != 0 )
+                high = actor->getChannelValue( dimmer_channel );
+
+            if ( low != 0 || high != 255 ) {                // Special case odd dimmer values
+                for ( size_t i=0; i < dimmer.size(); i++ )
+                    dimmer[i] = ( dimmer[i] == 255 ) ? high : low;
+            }
+
+            m_channel_animations.push_back( 
+                ChannelAnimation( actor_uid, dimmer_channel, CAM_LIST, dimmer ) );
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+ChannelValueArray SceneMovementAnimator::anglesToValues( Channel* channel, AngleList& angles )
+{
+    ChannelValueArray values;
+
+    for ( AngleList::iterator it=angles.begin(); it != angles.end(); ++it )
+        values.push_back( channel->convertAngleToValue( (*it) ) );
+
+    STUDIO_ASSERT( values.size() > 0, "Invalid angles array size" );
+    return values;
+}
+
 

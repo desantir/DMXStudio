@@ -33,6 +33,18 @@ class SceneMovementAnimator : public SceneChannelAnimator
 
     typedef std::vector<UINT> AngleList;
 
+    struct Participant {
+        UID         m_actor_uid;
+        Head        m_head;
+
+        Participant( UID actor_uid, Head& head ) :
+            m_actor_uid( actor_uid ),
+            m_head( head )
+        {}
+    };
+
+    typedef std::vector<Participant> ParticipantArray;
+
     MovementAnimation		m_movement;			// Movement animation description
 
 public:
@@ -65,20 +77,17 @@ public:
     virtual CString getSynopsis(void);
 
 private:
-    void genRandomMovement( AnimationTask* task, UIDArray& participants );
-    void genRotateMovement( AnimationTask* task, UIDArray& participants );
-    void genNodMovement( AnimationTask* task, UIDArray& participants );
-    void genFanMovement( AnimationTask* task, UIDArray& participants );
-    void genXcrossMovement( AnimationTask* task, UIDArray& participants );
-    void genMoonflowerMovement( AnimationTask* task, UIDArray& participants );
-    void genCoordinatesMovement( AnimationTask* task, UIDArray& participants );
-
-    void getFixtureChannels( Fixture* pf, channel_t& speed_channel, channel_t& pan_channel, 
-                             channel_t& tilt_channel, channel_t& dimmer_channel );
+    void genRandomMovement( AnimationTask* task, ParticipantArray& participants );
+    void genRotateMovement( AnimationTask* task, ParticipantArray& participants );
+    void genNodMovement( AnimationTask* task, ParticipantArray& participants );
+    void genFanMovement( AnimationTask* task, ParticipantArray& participants );
+    void genXcrossMovement( AnimationTask* task, ParticipantArray& participants );
+    void genMoonflowerMovement( AnimationTask* task, ParticipantArray& participants );
+    void genCoordinatesMovement( AnimationTask* task, ParticipantArray& participants );
 
     ChannelValueArray anglesToValues( Channel* channel, AngleList& tilt );
 
-    void populateChannelAnimations( AnimationTask* task, UIDArray& participants, size_t& particpant_index, 
+    void populateChannelAnimations( AnimationTask* task, ParticipantArray& participants, size_t& particpant_index, 
                                     AngleList& tilt, AngleList& pan, ChannelValueArray& dimmer,
                                     ChannelValueArray& speed, size_t group_size );
 

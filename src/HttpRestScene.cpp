@@ -217,6 +217,7 @@ bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
                 json.add( "height", movement.m_height );
                 json.add( "fixture_spacing", movement.m_fixture_spacing );
                 json.add( "radius", movement.m_radius );
+                json.add( "head_number", movement.m_head_number );
 
                 json.startArray( "coordinates" );
                 for ( size_t index=0; index <  movement.m_coordinates.size(); index++ ) {
@@ -243,12 +244,6 @@ bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
                 }
 
                 json.endArray( "channel_animations" );
-            }
-            else if ( !strcmp( animation->getClassName(), ScenePixelAnimator::className ) ) {
-                ScenePixelAnimator* sca = (ScenePixelAnimator*)animation;
-
-                // TODO
-
             }
 
             json.endObject( json_anim_name );
@@ -497,6 +492,7 @@ AbstractAnimation* SceneMovementAnimatorParser( SimpleJsonParser parser, Animati
     movement.m_height = parser.get<float>( "height" );
     movement.m_fixture_spacing = parser.get<float>( "fixture_spacing" );
     movement.m_radius = parser.get<float>( "radius" );
+    movement.m_head_number = parser.get<unsigned>( "head_number" );
 
     PARSER_LIST coordinates = parser.get<PARSER_LIST>("coordinates");
 

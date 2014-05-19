@@ -289,12 +289,14 @@ class AnimationMovementForm : public SignalForm
     FloatField          m_height_field;
     FloatField          m_fixture_spacing_field;
     FloatField          m_radius_field;
+    IntegerField		m_head_number_field;
 
 public:
     AnimationMovementForm( TextIO* text_io, Venue* venue, Scene* scene, SceneMovementAnimator* anim ) :
         SignalForm( text_io, anim->signal() ),
         m_actor_select( "Fixtures (comma separated)", venue, scene, anim->getActors() ),
         m_movement_field( "Movement" ),
+        m_head_number_field( "Movement number (0=all)", anim->movement().m_head_number, 0, 32 ),
         m_movement_speed_field( "Movement speed (0=fastest)",  anim->movement().m_speed, 0, 255 ),
         m_tilt_start_field( "Start tilt angle (degrees)", anim->movement().m_tilt_start, 0, 360 ),
         m_tilt_end_field( "End tilt angle (degrees)", anim->movement().m_tilt_end, 0, 360 ),
@@ -325,6 +327,7 @@ public:
         m_movement_field.setDefaultListValue( anim->movement().m_movement_type );
 
         add( m_movement_field );
+        add( m_head_number_field );
         add( m_movement_speed_field );
         add( m_home_x_field );
         add( m_home_y_field );
@@ -371,6 +374,7 @@ public:
         anim->movement().m_height = m_height_field.getFloatValue();
         anim->movement().m_fixture_spacing = m_fixture_spacing_field.getFloatValue();
         anim->movement().m_radius = m_radius_field.getFloatValue();
+        anim->movement().m_head_number = m_head_number_field.getIntValue();
     }
 
 protected:
@@ -399,6 +403,7 @@ protected:
         m_dest_wait_field.setHidden( false );
         m_run_once_field.setHidden( false );
         m_movement_speed_field.setHidden( false );
+        m_head_number_field.setHidden( false );
 
         switch ( (MovementAnimationType)m_movement_field.getListValue() ) {
             case MOVEMENT_COORDINATES:

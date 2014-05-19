@@ -169,6 +169,15 @@ Channel* DefinitionReader::read( TiXmlElement* self, Channel* channel )
         channel->m_default_value = (BYTE)read_int_attribute( self, "value" );
         channel->m_home_value = (BYTE)read_int_attribute( self, "home_value" );
         channel->m_pixel_index = (BYTE)read_int_attribute( self, "pixel" );
+        channel->m_head_number = (BYTE)read_int_attribute( self, "head" );
+
+        // If head number is not set on tilt or pan, default to 1
+        if ( channel->m_head_number == 0 && 
+             (channel->m_type == CHNLT_TILT
+              || channel->m_type == CHNLT_PAN
+              || channel->m_type == CHNLT_PAN_FINE
+              || channel->m_type == CHNLT_TILT_FINE) )
+            channel->m_head_number = 1;
 
         STUDIO_ASSERT( channel->m_channel_offset > 0, "Channel '%s' index < 1", channel->m_name );
 

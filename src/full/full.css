@@ -122,7 +122,8 @@
 .describe_chase_step { color:#2e7db2; } 
 .describe_scene_channels { color:#2e7db2; clear:both; float:left; margin:3px 0px 8px 30px; font-size:8pt;}             
 .describe_scene_dmx { color:#2e7db2; font-size:8pt; margin-left:4px; } 
-         
+.describe_fixture_group_channels { color:#2e7db2; clear:both; float:left; margin:10px 0px 4px 0px; font-size:10pt;}            
+
 .dialog_note_text { color:#2e7db2; font-size:8pt; margin-left:4px; } 
 
 .mm_panel_button { font-size: 10pt; font-family: sans-serif; }         
@@ -165,3 +166,8 @@
 .track_list { font-family: sans-serif; font-size: 10pt; height: 95%; width: 99%; }
 .player_error { float:left; font-family: sans-serif; font-size: 10pt; margin-left: 10px; color: red; }
 
+.act_status { float: right; font-family: sans-serif; color: #0972a5; font-size: 8pt; margin-right: 8px;  }
+
+.titlelessDialog { }
+
+.titlelessDialog > .ui-dialog-titlebar { display: none; }

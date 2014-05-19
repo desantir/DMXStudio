@@ -514,6 +514,7 @@ void VenueWriter::visit( MovementAnimation* movement )
     add_attribute( element, "height", movement->m_height );
     add_attribute( element, "fixture_spacing", movement->m_fixture_spacing );
     add_attribute( element, "radius", movement->m_radius );
+    add_attribute( element, "head_number",  movement->m_head_number );
 
     if ( movement->m_coordinates.size() > 0 ) {
         TiXmlElement coordinates_element( "coordinate_list" );

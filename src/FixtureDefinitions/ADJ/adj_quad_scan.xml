@@ -277,25 +277,37 @@
         <manufacturer>ADJ</manufacturer>
         <model>Quad Scan LED</model>
         <channels>
-            <channel index="1" type="pan" color="false" blackout="true">
-                <name>Mirror 1 Pan</name>
+            <channel index="1" type="pan" color="false" blackout="true" head="1">
+              <name>Mirror 1 Pan</name>
+              <angles>
+                <angle degrees="45" value="0" />
+                <angle degrees="90" value="29" />
+                <angle degrees="180" value="139" />
+                <angle degrees="270" value="255" />
+              </angles>
             </channel>
-            <channel index="2" type="tilt" color="false" blackout="true">
-                <name>Mirror 1 Tilt</name>
+            <channel index="2" type="tilt" color="false" blackout="true" head="1">
+              <name>Mirror 1 Tilt</name>
+              <angles>
+                <angle degrees="45" value="0" />
+                <angle degrees="90" value="29" />
+                <angle degrees="180" value="139" />
+                <angle degrees="270" value="255" />
+              </angles>
             </channel>
-            <channel index="3" type="red" color="true" blackout="true">
+            <channel index="3" type="red" color="true" blackout="true" head="1">
                 <name>Mirror 1 Red</name>
             </channel>
-            <channel index="4" type="green" color="true" blackout="true">
+            <channel index="4" type="green" color="true" blackout="true" head="1">
                 <name>Mirror 1 Green</name>
             </channel>
-            <channel index="5" type="blue" color="true" blackout="true">
+            <channel index="5" type="blue" color="true" blackout="true" head="1">
                 <name>Mirror 1 Blue</name>
             </channel>
-            <channel index="6" type="dimmer" color="false" blackout="true" value="255">
+            <channel index="6" type="dimmer" color="false" blackout="true" value="255" head="1">
                 <name>Mirror 1 Dimmer</name>
             </channel>
-            <channel index="7" type="strobe" color="false" blackout="true">
+            <channel index="7" type="strobe" color="false" blackout="true" head="1">
                 <name>Mirror 1 Strobe</name>
                 <ranges>
                     <range start="0" end="8">
@@ -324,25 +336,37 @@
                     </range>
                 </ranges>
             </channel>
-            <channel index="8" type="pan" color="false" blackout="true">
-                <name>Mirror 2 Pan</name>
+            <channel index="8" type="pan" color="false" blackout="true" head="2">
+              <name>Mirror 2 Pan</name>
+              <angles>
+                <angle degrees="45" value="0" />
+                <angle degrees="90" value="29" />
+                <angle degrees="180" value="139" />
+                <angle degrees="270" value="255" />
+              </angles>
             </channel>
-            <channel index="9" type="tilt" color="false" blackout="true">
-                <name>Mirror 2 Tilt</name>
+            <channel index="9" type="tilt" color="false" blackout="true" head="2">
+              <name>Mirror 2 Tilt</name>
+              <angles>
+                <angle degrees="45" value="0" />
+                <angle degrees="90" value="29" />
+                <angle degrees="180" value="139" />
+                <angle degrees="270" value="255" />
+              </angles>
             </channel>
-            <channel index="10" type="red" color="true" blackout="true">
+            <channel index="10" type="red" color="true" blackout="true" head="2">
                 <name>Mirror 2 Red</name>
             </channel>
-            <channel index="11" type="green" color="true" blackout="true">
+            <channel index="11" type="green" color="true" blackout="true" head="2">
                 <name>Mirror 2 Green</name>
             </channel>
-            <channel index="12" type="blue" color="true" blackout="true">
+            <channel index="12" type="blue" color="true" blackout="true" head="2">
                 <name>Mirror 2 Blue</name>
             </channel>
-            <channel index="13" type="dimmer" color="false" blackout="true" value="255">
+            <channel index="13" type="dimmer" color="false" blackout="true" value="255" head="2">
                 <name>Mirror 2 Dimmer</name>
             </channel>
-            <channel index="14" type="strobe" color="false" blackout="false">
+            <channel index="14" type="strobe" color="false" blackout="false" head="2">
                 <name>Mirror 2 Strobe</name>
                 <ranges>
                     <range start="0" end="8">
@@ -371,25 +395,37 @@
                     </range>
                 </ranges>
             </channel>
-            <channel index="15" type="pan" color="false" blackout="true">
-                <name>Mirror 3 Pan</name>
+            <channel index="15" type="pan" color="false" blackout="true" head="3">
+              <name>Mirror 3 Pan</name>
+              <angles>
+                <angle degrees="45" value="0" />
+                <angle degrees="90" value="29" />
+                <angle degrees="180" value="139" />
+                <angle degrees="270" value="255" />
+              </angles>
             </channel>
-            <channel index="16" type="tilt" color="false" blackout="true">
-                <name>Mirror 3 Tilt</name>
+            <channel index="16" type="tilt" color="false" blackout="true" head="3">
+              <name>Mirror 3 Tilt</name>
+              <angles>
+                <angle degrees="45" value="0" />
+                <angle degrees="90" value="29" />
+                <angle degrees="180" value="139" />
+                <angle degrees="270" value="255" />
+              </angles>
             </channel>
-            <channel index="17" type="red" color="true" blackout="true">
+            <channel index="17" type="red" color="true" blackout="true" head="3">
                 <name>Mirror 3 Red</name>
             </channel>
-            <channel index="18" type="green" color="true" blackout="true">
+            <channel index="18" type="green" color="true" blackout="true" head="3">
                 <name>Mirror 3 Green</name>
             </channel>
-            <channel index="19" type="blue" color="true" blackout="true">
+            <channel index="19" type="blue" color="true" blackout="true" head="3">
                 <name>Mirror 3 Blue</name>
             </channel>
-            <channel index="20" type="dimmer" color="false" blackout="true" value="255">
+            <channel index="20" type="dimmer" color="false" blackout="true" value="255" head="3">
                 <name>Mirror 3 Dimmer</name>
             </channel>
-            <channel index="21" type="strobe" color="false" blackout="false">
+            <channel index="21" type="strobe" color="false" blackout="false" head="3">
                 <name>Mirror 3 Strobe</name>
                 <ranges>
                     <range start="0" end="8">
@@ -418,25 +454,37 @@
                     </range>
                 </ranges>
             </channel>
-            <channel index="22" type="pan" color="false" blackout="true">
-                <name>Mirror 4 Pan</name>
+            <channel index="22" type="pan" color="false" blackout="true" head="4">
+              <name>Mirror 4 Pan</name>
+              <angles>
+                <angle degrees="45" value="0" />
+                <angle degrees="90" value="29" />
+                <angle degrees="180" value="139" />
+                <angle degrees="270" value="255" />
+              </angles>
             </channel>
-            <channel index="23" type="tilt" color="false" blackout="true">
-                <name>Mirror 4 Tilt</name>
+            <channel index="23" type="tilt" color="false" blackout="true" head="4">
+              <name>Mirror 4 Tilt</name>
+              <angles>
+                <angle degrees="45" value="0" />
+                <angle degrees="90" value="29" />
+                <angle degrees="180" value="139" />
+                <angle degrees="270" value="255" />
+              </angles>
             </channel>
-            <channel index="24" type="red" color="true" blackout="true">
+            <channel index="24" type="red" color="true" blackout="true" head="4">
                 <name>Mirror 4 Red</name>
             </channel>
-            <channel index="25" type="green" color="true" blackout="true">
+            <channel index="25" type="green" color="true" blackout="true" head="4">
                 <name>Mirror 4 Green</name>
             </channel>
-            <channel index="26" type="blue" color="true" blackout="true">
+            <channel index="26" type="blue" color="true" blackout="true" head="4">
                 <name>Mirror 4 Blue</name>
             </channel>
-            <channel index="27" type="dimmer" color="false" blackout="true" value="255">
+            <channel index="27" type="dimmer" color="false" blackout="true" value="255" head="4">
                 <name>Mirror 4 Dimmer</name>
             </channel>
-            <channel index="28" type="strobe" color="false" blackout="false">
+            <channel index="28" type="strobe" color="false" blackout="false" head="4">
                 <name>Mirror 4 Strobe</name>
                 <ranges>
                     <range start="0" end="8">

@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -83,16 +83,30 @@ void FixtureDefinition::chooseCapabilities()
 {
     // Set fixture capabilities (we do this once since definitions are immutable)
     bool red=false, blue=false, green=false, white=false, dimmer=false;
+    size_t heads=0;
+    channel_t default_dimmer_channel = INVALID_CHANNEL;     // For head movement (may have seperate dimmers per head)
 
     for ( ChannelArray::iterator it=m_channels.begin(); it != m_channels.end(); ++it ) {
         Channel& channel = *it;
 
-        if ( channel.isDimmer() )
+        if ( channel.isDimmer() ) {
             dimmer = true;
 
+            if ( default_dimmer_channel == INVALID_CHANNEL )
+                default_dimmer_channel = channel.getOffset();
+        }
+
         switch ( channel.getType() ) {
-            case CHNLT_TILT:    m_can_tilt = true;     break;
-            case CHNLT_PAN:	    m_can_pan = true;      break;
+            case CHNLT_TILT:    
+                m_can_tilt = true;
+                heads = std::max<size_t>( channel.getHeadNumber(), heads );
+                break;
+
+            case CHNLT_PAN:
+           	    m_can_pan = true;
+                heads = std::max<size_t>( channel.getHeadNumber(), heads );
+                break;
+
             case CHNLT_RED:     red = true;            break;
             case CHNLT_BLUE:    blue = true;           break;
             case CHNLT_GREEN:   green = true;          break;
@@ -117,6 +131,30 @@ void FixtureDefinition::chooseCapabilities()
         Pixel pixel;
         if ( findPixel( 0, pixel ) )
             m_pixels.push_back( pixel );
+    }
+
+    if ( heads > 0 ) {
+        for ( size_t head_number=0; head_number++ < heads; ) {
+            Head head;
+            bool found = false;
+            head.m_head_number = head_number;
+            head.m_dimmer = default_dimmer_channel;
+
+            for ( Channel& channel : m_channels ) {
+                if ( channel.getHeadNumber() == head_number ) {
+                    switch ( channel.getType() ) {
+                        case CHNLT_PAN:     head.m_pan = channel.getOffset();       found = true; break;
+                        case CHNLT_TILT:    head.m_tilt = channel.getOffset();      found = true; break;
+                        case CHNLT_DIMMER:  head.m_dimmer = channel.getOffset();    break;
+                    }
+                }
+                else if ( channel.getType() == CHNLT_MOVEMENT_SPEED ) 
+                    head.m_speed = channel.getOffset();
+            }
+
+            if ( found ) 
+                m_heads[head_number] = head;
+        }
     }
 
     // Set whiteout support

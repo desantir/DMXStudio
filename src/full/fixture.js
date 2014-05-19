@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2012,2013 Robert DeSantis
+Copyright (C) 2012-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -79,6 +79,11 @@ function Fixture(fixture_data)
     // method getChannels
     this.getChannels = function () {
         return this.channels;
+    }
+
+    // method getChannelValues (may be empty)
+    this.hasChannelValues = function () {
+        return this.has_channel_values;
     }
 
     // method getUserTypeName
@@ -233,6 +238,9 @@ function updateFixtures() {
             arrangeSliders(null);          // Reset sliders, add colors and other static channels
 
             $.map(json, function (fixture, index) {
+                for (var i = 0; i < fixture.channels.length; i++)
+                    fixture.channels[i].default_value = fixture.channels[i].value;
+
                 fixtures.push(new Fixture(fixture));
 
                 var tile;
@@ -984,7 +992,8 @@ function createFixtureGroup(event) {
         name: "New Fixture group " + new_number,
         description: "",
         number: new_number,
-        fixture_ids: default_fixtures
+        fixture_ids: default_fixtures,
+        channel_data: null
     });
 }
 
@@ -1002,21 +1011,29 @@ function editFixtureGroup(event, fixture_group_id) {
         name: group.getName(),
         description: group.getDescription(),
         number: group.getNumber(),
-        fixture_ids: group.getFixtureIds()
+        fixture_ids: group.getFixtureIds(),
+        channel_data: $.extend( true, [], group.getChannels() )
     });
 }
 
 // ----------------------------------------------------------------------------
 //
 function openNewFixtureGroupDialog(dialog_title, data) {
+    var sliders = new Array();
 
-    var send_update = function ( ) {
+    var send_update = function () {
+        var channel_data = new Array();
+        for (var i = 0; i < sliders.length; i++)
+            channel_data[i] = sliders[i].getValue();
+        $("#nfgd_sliders").empty();
+
         var json = {
             id: data.id,
             name: $("#nfgd_name").val(),
             description: $("#nfgd_description").val(),
             number: parseInt($("#nfgd_number").val()),
-            fixture_ids: $("#nfgd_fixtures").val()
+            fixture_ids: $("#nfgd_fixtures").val(),
+            channel_values: channel_data
         };
 
         if (json.number != data.number && getFixtureGroupByNumber(json.number) != null) {
@@ -1062,14 +1079,16 @@ function openNewFixtureGroupDialog(dialog_title, data) {
 
     $("#new_fixture_group_dialog").dialog({
         autoOpen: false,
-        width: 540,
-        height: 550,
+        width: 620,
+        height: 600,
         modal: true,
         resizable: false,
         buttons: dialog_buttons
     });
 
     $("#new_fixture_group_dialog").dialog("option", "title", dialog_title + " " + data.number);
+
+    $("#nfgd_accordion").accordion({ heightStyle: "fill" });
 
     $("#nfgd_number").spinner({ min: 1, max: 100000 }).val(data.number);
     $("#nfgd_name").val(data.name);
@@ -1094,6 +1113,23 @@ function openNewFixtureGroupDialog(dialog_title, data) {
         noneSelectedText: "Select Fixture(s) in group",
         checkAllText: "Select all fixtures"
     });
+
+    var proxy = new PanelProxy();
+
+    if (data.channel_data != null) {
+        var channel_sliders = $("#nfgd_sliders");
+        $("#nfgd_sliders").css("width", data.channel_data.length * 45 + 50);
+        channel_sliders.empty();
+
+        for (var i = 0; i < data.channel_data.length; i++) {
+            var slider_frame = $(slider_template.innerHTML);
+            channel_sliders.append(slider_frame);
+            data.channel_data[i].value = data.channel_data[i].default_value;
+            sliders[i] = new Slider(proxy, i, slider_frame);
+            data.channel_data[i].label = "CH " + (i + 1);
+            sliders[i].allocate(1, "test", data.channel_data[i], proxy.fixture_slider_callback );
+        }
+    }
 
     $("#new_fixture_group_dialog").dialog("open");
 }
@@ -1243,6 +1279,12 @@ function describeFixtureGroup(event, fixture_group_id) {
                 escapeForHTML(fixture.getFullName()) + "</div>";
     }
 
+    var channel_data = "";
+    if ( group.hasChannelValues() ) {
+        channel_data = makeChannelInfoLine(group.getChannels(), "describe_fixture_group_channels");
+    }
+
+    $("#describe_fixture_group_channels").html(channel_data);
     $("#describe_fixture_group_info").html(info);
     $("#describe_fixture_groups_dialog").dialog("open");
 }
@@ -1311,4 +1353,164 @@ function setColorChannelRGB(hsb, hex, rgb) {
                 break;
         }
     });
+}
+
+// ----------------------------------------------------------------------------
+//
+function setPanTiltChannels(pan, tilt) {
+
+    function getValue(slider, target_degrees) {
+        var ranges = slider.getRanges();
+        if (ranges != null) {
+            var i;
+
+            for (i = 0; i < ranges.length; i++) {
+                var range = ranges[i];
+                var degrees = range.extra;
+                if (target_degrees < degrees) {
+                    if (i > 0)
+                        i--;
+                    return ranges[i].start;
+                }
+            }
+        }
+
+        return slider.getValue();
+    }
+
+    slider_panel.iterateChannels(function (slider) {
+        switch (slider.getType()) {
+            case 9: // pan
+                slider.setValue(getValue(slider,pan));
+                break;
+            case 10: //tilt
+                slider.setValue(getValue(slider, tilt));
+                break;
+        }
+    });
+}
+
+// ----------------------------------------------------------------------------
+//
+function PanelProxy() {
+    this.isBusy = function () { return false; }
+    this.isTrackSlider = function () { return false; }
+    this.fixture_slider_callback = function (fixture_id, channel, value) {}
+    this.setSliderTitle = function (title) { }
+}
+
+// ----------------------------------------------------------------------------
+//
+var panTiltInit = true;
+var panTimer = null;
+
+function panTilt(event) {
+    stopEventPropagation(event);
+
+    if (panTiltInit) {
+        $("#pan_tilt_popup").dialog({
+            autoOpen: false,
+            show: { effect: 'fade', speed: 500 },
+            hide: { effect: 'fade', speed: 500 },
+            width: 340,
+            height: 210,
+            modal: false,
+            resizable: false,
+            closeOnEscape: true,
+            dialogClass: "titlelessDialog",
+            position: { my: "right top", at: "left bottom", of: channel_pan_tilt },
+            open: function (event, ui) {
+                $(this).parent().css('height', '190px');
+                $(document).bind('mousedown', function (event) {
+                    stopEventPropagation(event);
+                    $("#pan_tilt_popup").dialog('close').data('hide_ms', new Date().getTime());
+                });
+
+                $(this).bind('mousedown', function (event) {
+                    stopEventPropagation(event);    // Don't close on dialog mouse down
+                });
+
+                $("#channel_pan_tilt").removeClass('ui-icon').addClass('ui-icon-white');
+
+                $("body").css("overflow", "hidden");
+            },
+            close: function (event, ui) {
+                $(document).unbind('mousedown');
+                $("#channel_pan_tilt").removeClass('ui-icon-white').addClass('ui-icon');
+                $("body").css("overflow", "auto");
+            }
+        });
+
+        $("#ptp_control").pan_tilt_control({
+            pan_start: 0,
+            pan_end: 540,
+            tilt_start: 0,
+            tilt_end: 360,
+            pan: 180,
+            tilt: 180,
+            width: 320,
+            background_color: "black",
+            pan_color: "#444444",
+            tilt_color: "#808080",
+            text_color: "black",
+            marker_color: "red",
+            onchange: function (location) {
+                $("#ptp_pan").val(location.pan);
+                $("#ptp_tilt").val(location.tilt);
+
+                if (panTimer)
+                    clearTimeout(panTimer);
+
+                panTimer = setTimeout(function () { setPanTiltChannels(location.pan, location.tilt) }, 250);
+            }
+        });
+
+        function set_degrees(event, ui) {
+            stopEventPropagation(event);
+
+            var pan_degrees = parseInt($("#ptp_pan").spinner('value'));
+            var tilt_degrees = parseInt($("#ptp_tilt").spinner('value'));
+
+            $("#ptp_control").pan_tilt_control('set_location', { pan: pan_degrees, tilt: tilt_degrees });
+
+            setPanTiltChannels(pan_degrees, tilt_degrees);
+        }
+
+        $("#ptp_pan").spinner({
+            min: $("#ptp_control").pan_tilt_control('option', 'pan_start'),
+            max: $("#ptp_control").pan_tilt_control('option', 'pan_end'),
+            spin: set_degrees,
+            change: set_degrees
+        }).val($("#ptp_control").pan_tilt_control('option','pan'));
+
+
+        $("#ptp_tilt").spinner({
+            min: $("#ptp_control").pan_tilt_control('option', 'tilt_start'),
+            max: $("#ptp_control").pan_tilt_control('option', 'tilt_end'),
+            spin: set_degrees,
+            change: set_degrees
+        }).val($("#ptp_control").pan_tilt_control('option', 'tilt'));
+
+        panTiltInit = false;
+    }
+
+    var hide_ms = $("#pan_tilt_popup").data('hide_ms');
+    if (hide_ms != null) {
+        var now = new Date().getTime() - 250;
+        // Stop the "bounce" when closing the dialog
+        if (hide_ms > now)
+            return;   // Stops any addition jQuery event handlers
+    }
+
+    if ($("#pan_tilt_popup").dialog("isOpen")) {
+        $("#pan_tilt_popup").dialog("close");
+        return;
+    }
+
+    $("#pan_tilt_popup").dialog("open");
+
+    var pan_degrees = parseInt($("#ptp_pan").spinner('value'));
+    var tilt_degrees = parseInt($("#ptp_tilt").spinner('value'));
+
+    setPanTiltChannels(pan_degrees, tilt_degrees);
 }

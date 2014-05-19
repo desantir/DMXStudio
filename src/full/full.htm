@@ -39,6 +39,7 @@ MA 02111-1307, USA.
     <link rel="stylesheet" media="screen" type="text/css" href="colorpicker/css/colorpicker.css" />
     <script type="text/javascript" src="colorpicker/js/colorpicker.js"></script>
     <script src="jquery.container.js"></script>
+    <script src="jquery.pan-tilt.js"></script>
 
     <script src="slider-panel.js"></script>
     <script src="tile-scroll-panel.js"></script>
@@ -60,7 +61,7 @@ MA 02111-1307, USA.
     </script>
 </head> 
 
-<body style="background-color:black;">
+<body style="background-color:black;" oncontextmenu="return false;">
 
 <div id="venue_pane" class="ui-widget-content ui-corner-all collapsable_section">
     <div class="section_title_container">
@@ -70,10 +71,6 @@ MA 02111-1307, USA.
         <span id="system_blackout_icon" class="ui-icon-red ui-icon-lightbulb" title="auto blackout" style="float:right; display: none; margin-right: 5px;"></span>
     </div>
     <div class="collapsable_content" style="margin-top: 8px; margin-bottom: 10px; height: 80px;">
-        <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
-            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; width:100%; margin: 0px 0px 4px 0px;" >Act</p>
-            <select id="master_act" style="display:block;"></select>
-        </div>
         <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
             <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; width:100%; margin: 0px 0px 4px 0px;" >Blackout</p>
             <div id="blackout_buttons">
@@ -182,6 +179,39 @@ MA 02111-1307, USA.
     </div>
 </div>
 
+<div id="act_pane" class="ui-widget-content ui-corner-all collapsable_section">
+    <div class="section_title_container">
+        <span class="section_title">ACTS</span>
+        <span class="collapsable_icon"></span>
+        <span id="current_act" class="act_status" title="current act"></span>
+    </div>
+    <div class="collapsable_content" style="margin-top: 8px; margin-bottom: 10px; height: 40px;">
+        <div id="act_buttons">
+            <input type="radio" id="act_0" name="act" value="0" checked="checked" /><label for="act_0">--</label>
+            <input type="radio" id="act_1" name="act" value="1" /><label for="act_1">1</label>
+            <input type="radio" id="act_2" name="act" value="2" /><label for="act_2">2</label>
+            <input type="radio" id="act_3" name="act" value="3" /><label for="act_3">3</label>
+            <input type="radio" id="act_4" name="act" value="4" /><label for="act_4">4</label>
+            <input type="radio" id="act_5" name="act" value="5" /><label for="act_5">5</label>
+            <input type="radio" id="act_6" name="act" value="6" /><label for="act_6">6</label>
+            <input type="radio" id="act_7" name="act" value="7" /><label for="act_7">7</label>
+            <input type="radio" id="act_8" name="act" value="8" /><label for="act_8">8</label>
+            <input type="radio" id="act_9" name="act" value="9" /><label for="act_9">9</label>
+            <input type="radio" id="act_10" name="act" value="10" /><label for="act_10">10</label>
+            <input type="radio" id="act_11" name="act" value="11" /><label for="act_11">11</label>
+            <input type="radio" id="act_12" name="act" value="12" /><label for="act_12">12</label>
+            <input type="radio" id="act_13" name="act" value="13" /><label for="act_13">13</label>
+            <input type="radio" id="act_14" name="act" value="14" /><label for="act_14">14</label>
+            <input type="radio" id="act_15" name="act" value="15" /><label for="act_15">15</label>
+            <input type="radio" id="act_16" name="act" value="16" /><label for="act_16">16</label>
+            <input type="radio" id="act_17" name="act" value="17" /><label for="act_17">17</label>
+            <input type="radio" id="act_18" name="act" value="18" /><label for="act_18">18</label>
+            <input type="radio" id="act_19" name="act" value="19" /><label for="act_19">19</label>
+            <input type="radio" id="act_20" name="act" value="20" /><label for="act_20">20</label>
+        </div>
+    </div>
+</div>
+
 <div id="scene_tiles_pane" class="scroll-pane ui-widget-content ui-corner-all collapsable_section">
     <div class="section_title_container">
         <span class="section_title">SCENES</span>
@@ -239,6 +269,7 @@ MA 02111-1307, USA.
         <span class="scroll_or_grid_icon"  style="margin-right: 5px;"></span>
         <span class="track_slider_icon" style="margin-right: 5px;"></span>
         <span id="channel_panel_colorpicker" class="ui-icon ui-icon-lightbulb" title="show color palette" style="float:right; cursor:pointer; margin-right: 5px;"></span>
+        <span id="channel_pan_tilt" class="ui-icon ui-icon-arrow-4" title="show pan tilt" style="float:right; cursor:pointer; margin-right: 5px;" onclick="panTilt(event);"></span>
         <span id="channel_panel_groupcolors" class="ui-icon ui-icon-pin-s" title="group color channels" style="float:right; cursor:pointer; margin-right: 5px;" onclick="groupFixtureSliderColors(event);"></span>
         <span id="channel_panel_rearrange" class="ui-icon ui-icon-grip-solid-vertical" title="arrange channels" style="float:right; cursor:pointer; margin-right: 5px;" onclick="arrangeSliders(event);"></span>
         <span id="slider_pane_title" class="slider_pane_title"></span>
@@ -309,6 +340,7 @@ MA 02111-1307, USA.
     </div>
     <hr style="clear: both;"/>
     <div id="describe_fixture_group_info" class="describe_data"></div>
+    <div id="describe_fixture_group_channels"></div>
 </div>
 
 <div id="describe_chase_dialog" style="display:none;">
@@ -488,18 +520,29 @@ MA 02111-1307, USA.
 </div>
 
 <div id="new_fixture_group_dialog" style="display:none;">
-    <form style="height:314px;"> 
-        <label for="nfgd_number" style="display:block; margin: 8px 0px 4px 0px;">number</label>
-        <input id="nfgd_number" style="display:block; width:80px;"/>
+    <form style="height:390px;">
+        <div id="nfgd_accordion">
+            <h3>General</h3>
+            <div>
+                <label for="nfgd_number" style="display:block; margin: 8px 0px 4px 0px;">number</label>
+                <input id="nfgd_number" style="display:block; width:80px;"/>
 
-        <label for="nfgd_name" style="display:block; margin: 8px 0px 4px 0px;">name</label>
-        <input id="nfgd_name" style="display:block;width: 400px;" />
+                <label for="nfgd_name" style="display:block; margin: 8px 0px 4px 0px;">name</label>
+                <input id="nfgd_name" style="display:block;width: 400px;" />
 
-        <label for="nfgd_description" style="display:block; margin: 8px 0px 4px 0px;">description</label>
-        <input id="nfgd_description" style="display:block; width: 400px;" />
+                <label for="nfgd_description" style="display:block; margin: 8px 0px 4px 0px;">description</label>
+                <input id="nfgd_description" style="display:block; width: 400px;" />
 
-        <label for="nfgd_fixtures" style="display:block; margin: 12px 0px 8px 0px;">fixtures</label>
-        <select id="nfgd_fixtures" style="display:block;" multiple="multiple"></select>
+                <label for="nfgd_fixtures" style="display:block; margin: 12px 0px 8px 0px;">fixtures</label>
+                <select id="nfgd_fixtures" style="display:block;" multiple="multiple"></select>
+            </div>
+
+            <h3>Channel Defaults</h3>
+            <div style="height: 200px; width: 500px; overflow-x: auto; overflow-y: hidden;">
+                <div id="nfgd_sliders" style="min-width: 450px;" >
+                </div>
+            </div>
+        </div>
     </form>
 </div>
 
@@ -852,6 +895,11 @@ MA 02111-1307, USA.
             </div>
 
             <div style="clear:both; float:left; margin-right: 20px; margin-top: 10px;">
+                <label for="esma_head" style="display:block;">head</label>
+                <input id="esma_head" style="display:block; width:60px;" title="head number for fixures with multiple movements (0=all)"/>
+            </div>
+
+            <div style="float:left; margin-right: 20px; margin-top: 10px;">
                 <label for="esma_speed" style="display:block;">speed</label>
                 <input id="esma_speed" style="display:block; width:60px;" />
             </div>
@@ -1216,6 +1264,22 @@ MA 02111-1307, USA.
         <input id="mpl_password" style="display:block;width: 400px;" type="password"/>
 
         <div id="mpl_error" class="player_error" style="margin: 12px 0px 10px 0px;"></div>
+    </form>
+</div>
+
+<div id="pan_tilt_popup" style="display:none;">
+    <form>
+        <div style="float: left; margin-top: -10px; height:200px;">
+            <div id="ptp_control" ></div>
+        </div>
+
+        <div style="float: left; margin: 20px 0px 0px 0px; position: absolute; left: 220px;">
+            <label for="ptp_pan" style="display:block; margin: 8px 0px 4px 0px; font-size:8pt;">pan °</label>
+            <input id="ptp_pan" style="width: 60px; font-size:8pt;"/>
+
+            <label for="ptp_tilt" style="display:block; margin: 12px 0px 4px 0px; font-size:8pt;">tilt °</label>
+            <input id="ptp_tilt" style="width: 60px; font-size:8pt;"/>
+        </div>
     </form>
 </div>
 

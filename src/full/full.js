@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2012,2013 Robert DeSantis
+Copyright (C) 2012-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -52,6 +52,7 @@ var client_config = null;
         "sections": {
             "venue_pane": { collapsed: false },
             "music_pane": { collapsed: true },
+            "act_pane": { collapsed: false },
             "scene_tiles_pane": { collapsed: false, scroll: false },
             "chase_tiles_pane": { collapsed: true, scroll: true },
             "fixture_tiles_pane": { collapsed: false, scroll: false },
@@ -86,21 +87,26 @@ function initializeUI() {
             selected: false
         }));
     }
-
-    $("#master_act").multiselect({ minWidth: 80, multiple: false, noneSelectedText: 'All', header: false, height: 300, selectedList: 1, classes: "master-act-button" });
-
-    $("#master_act").on("change", function () {
-        current_act = parseInt($(this).val());
-        createSceneTiles();
-        createChaseTiles();
-    });
-
     // setup master volume
     initializeHorizontalSlider("master_volume", 0, 100, 0);
 
     $("#blackout_buttons").buttonset();
     $("#whiteout_buttons").buttonset();
     $("#music_match_buttons").buttonset();
+    $("#act_buttons").buttonset();
+
+    function update_current_act() {
+        $("#current_act").text(current_act == 0 ? "all acts" : ("act " + current_act));
+    }
+
+    $("#act_buttons").on("change", function () {
+        current_act = parseInt($('input[name=act]:checked').val());
+        createSceneTiles();
+        createChaseTiles();
+        update_current_act();
+    });
+
+    update_current_act();
 
     for (var i = 0; i < whiteout_ms.length; i++) {
         $("#whiteout_custom_value").append($('<option>', {
@@ -908,7 +914,10 @@ function updateVenueLayout() {
                 setEditMode(client_config.edit_mode);
             else if (prop == "sections") {
                 for (section in client_config.sections) {
-                    if (section == "scene_tiles_pane") {
+                    if (section == "act_pane") {
+                        setSectionCollapsed("act_pane", client_config.sections.act_pane.collapsed);
+                    }
+                    else if (section == "scene_tiles_pane") {
                         scene_tile_panel.setScrollContent(client_config.sections.scene_tiles_pane.scroll);
                         setSectionCollapsed("scene_tiles_pane", client_config.sections.scene_tiles_pane.collapsed);
                     }
@@ -948,6 +957,9 @@ function saveVenueLayout() {
         },
         "music_pane": {
             "collapsed": isSectionCollapsed("music_pane")
+        },
+        "act_pane": {
+            "collapsed": isSectionCollapsed("act_pane")
         },
         "scene_tiles_pane": {
             "scroll": scene_tile_panel.isScrollContent(),

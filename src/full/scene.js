@@ -557,6 +557,39 @@ function deleteScene(event, scene_id) {
 
 // ----------------------------------------------------------------------------
 //
+function makeChannelInfoLine(channels,css_class) {
+    if (!channels.length)
+        return "";
+
+    var html = "<div class=\"" + css_class  + "\">";
+
+    for (var j = 0; j < channels.length; j++) {
+        var channel = channels[j];
+
+        html += "<div>";
+        html += "Channel " + (channel.channel + 1) + ": " + escapeForHTML(channel.name) + " = " + channel.value;
+
+        if (channel.range_name != null && channel.range_name.length > 0) {
+            html += " (" + escapeForHTML(channel.range_name) + ")";
+        }
+        else if (channel.ranges != null) {
+            for (var k = 0; k < channel.ranges.length; k++) {
+                var range = channel.ranges[k];
+                if (channel.value >= range.start && channel.value <= range.end) {
+                    html += " (" + escapeForHTML(range.name) + ")";
+                    break;
+                }
+            }
+        }
+        html += " </div>";
+    }
+    html += " </div>";
+
+    return html;
+}
+
+// ----------------------------------------------------------------------------
+//
 function describeScene(event, scene_id) {
     stopEventPropagation(event);
 
@@ -617,37 +650,6 @@ function describeScene(event, scene_id) {
         return html;
     }
 
-    function makeChannelInfoLine(channels) {
-        if (!channels.length)
-            return "";
-
-        var html = "<div class=\"describe_scene_channels\">";
-
-        for (var j = 0; j < channels.length; j++) {
-            var channel = channels[j];
-
-            html += "<div>";
-            html += "Channel " + (channel.channel + 1) + ": " + escapeForHTML(channel.name) + " = " + channel.value;
-
-            if (channel.range_name != null && channel.range_name.length > 0) {
-                html += " (" + escapeForHTML(channel.range_name) + ")";
-            }
-            else if (channel.ranges != null) {
-                for (var k = 0; k < channel.ranges.length; k++) {
-                    var range = channel.ranges[k];
-                    if (channel.value >= range.start && channel.value <= range.end) {
-                        html += " (" + escapeForHTML(range.name) + ")";
-                        break;
-                    }
-                }
-            }
-            html += " </div>";
-        }
-        html += " </div>";
-
-        return html;
-    }
-
     if (!scene.isDefault()) {
         for (var i = 0; i < scene.getActors().length; i++) {
             var actor = scene.getActors()[i];
@@ -658,7 +660,7 @@ function describeScene(event, scene_id) {
                 channel_data.push(actor.channels[j].value);
 
             info += makeFixtureTitleLine(fixture, channel_data);
-            info += makeChannelInfoLine(actor.channels);
+            info += makeChannelInfoLine(actor.channels,"describe_scene_channels");
         }
     }
     else {
@@ -666,7 +668,7 @@ function describeScene(event, scene_id) {
         for (var i = 0; i < fixtures.length; i++) {
             var fixture = fixtures[i];
             info += makeFixtureTitleLine(fixture,false);
-            info += makeChannelInfoLine(fixture.getChannels());
+            info += makeChannelInfoLine(fixture.getChannels(),"describe_scene_channels");
         }
     }
 

@@ -488,6 +488,7 @@ MovementAnimation* VenueReader::read( TiXmlElement* self, MovementAnimation* mov
     movement->m_height = read_float_attribute( self, "height" );
     movement->m_fixture_spacing = read_float_attribute( self, "fixture_spacing" );
     movement->m_radius = read_float_attribute( self, "radius" );
+    movement->m_head_number = read_unsigned_attribute( self, "head_number" );
 
     TiXmlElement* coordinates_element = self->FirstChildElement( "coordinate_list" );
     if ( coordinates_element ) {

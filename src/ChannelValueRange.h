@@ -33,11 +33,12 @@ class ChannelValueRange
     BYTE		m_start;						// Start value (inclusive)
     BYTE		m_end;							// End value (inclusive)
     CString		m_name;							// Range name
+    int         m_extra;                        // Extra informations such as pan/tilt angle
 
     ChannelValueRange() {}
 
 public:
-    ChannelValueRange( BYTE start, BYTE end, const char *name );
+    ChannelValueRange( BYTE start, BYTE end, const char *name, int extra=0 );
     ~ChannelValueRange(void);
 
     void accept( IDefinitionVisitor* visitor) {
@@ -54,6 +55,10 @@ public:
 
     const char * getName() const {
         return m_name;
+    }
+
+    int getExtra() const {
+        return m_extra;
     }
 };
 

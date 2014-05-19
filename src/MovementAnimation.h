@@ -70,7 +70,8 @@ public:
     bool					m_alternate_groups;		// Alternate home and destination for each group
     BYTE					m_speed;				// Directly sets movement speed (0=fastest)
     CoordinateArray         m_coordinates;          // Movement coordinates
-    bool                    m_run_once;             // Run animatation once on scene start
+    bool                    m_run_once;             // Run animation once on scene start
+    UINT                    m_head_number;          // Fixture pan/tilt head index (0=all, 1-n is specific pair)
 
     float                   m_home_x;               // Moonflower cartesian plane coordinates
     float                   m_home_y;               //
@@ -97,7 +98,8 @@ public:
                        float fixture_spacing = 2,
                        float radius = 5,
                        CoordinateArray coordinates = CoordinateArray(),
-                       bool run_once = false );
+                       bool run_once = false,
+                       UINT head_number = 0 );
 
     MovementAnimation( const MovementAnimation& other );
 

@@ -229,10 +229,22 @@ function setupTrackSelect(playlist_select, tracklist_select, value_is_id) {
     }).bind("multiselectclick", function (event, ui) {
         stopEventPropagation(event);
         selectPlaylist(tracklist_select, ui.value, value_is_id);
+    }).bind("multiselectbeforeopen", function () {
+        $("body").css("overflow", "hidden");
+        return true;
+    }).bind("multiselectbeforeclose", function () {
+        $("body").css("overflow", "auto");
+        return true;
     });
 
     tracklist_select.multiselect({
         minWidth: 300, multiple: false, selectedList: 1, header: "Playlist Tracks", noneSelectedText: 'select track', classes: 'player_multilist', height: 500
+    }).bind("multiselectbeforeopen", function () {
+        $("body").css("overflow", "hidden");
+        return true;
+    }).bind("multiselectbeforeclose", function () {
+        $("body").css("overflow", "auto");
+        return true;
     });
 
     // Populate playlists

@@ -104,6 +104,8 @@ void DefinitionWriter::visit( Channel* channel )
         add_attribute( channel_element, "pixel", channel->m_pixel_index );
     if ( channel->m_home_value )
         add_attribute( channel_element, "home_value", channel->m_home_value );
+    if ( channel->m_head_number )
+        add_attribute( channel_element, "head", channel->m_head_number );
 
     // Add dimmer
     if ( channel->isDimmer() && 

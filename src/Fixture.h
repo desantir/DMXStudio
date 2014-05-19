@@ -119,6 +119,8 @@ public:
     inline size_t getNumChannels() { return getFixtureDefinition()->getNumChannels(); }
     inline size_t getNumPixels() { return getFixtureDefinition()->getNumPixels(); }
     inline PixelArray* getPixels() { return getFixtureDefinition()->getPixels(); }
+    inline size_t getNumHeads( ) { return getFixtureDefinition()->getNumHeads(); }
+    inline bool getHead( UINT head_number, Head& head) { return getFixtureDefinition()->getHead(head_number, head); }
 
     inline channel_t getChannelByType( ChannelType channel_type ) {
         for ( channel_t channel=0; channel < getNumChannels(); channel++ ) {

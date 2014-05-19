@@ -43,7 +43,8 @@ MovementAnimation::MovementAnimation( MovementAnimationType movement_type,
                                        float fixture_spacing,
                                        float radius,
                                        CoordinateArray coordinates,
-                                       bool run_once ) :
+                                       bool run_once,
+                                       UINT head_number ) :
         m_movement_type( movement_type ),
         m_tilt_start( tilt_start ),
         m_tilt_end( tile_end ),
@@ -63,7 +64,8 @@ MovementAnimation::MovementAnimation( MovementAnimationType movement_type,
         m_fixture_spacing( fixture_spacing ),
         m_radius( radius ),
         m_coordinates( coordinates ),
-        m_run_once( run_once )
+        m_run_once( run_once ),
+        m_head_number( head_number )
 {
 }
 
@@ -77,6 +79,7 @@ MovementAnimation::MovementAnimation( const MovementAnimation& other ) {
 //
 MovementAnimation& MovementAnimation::operator=( const MovementAnimation& other ) {
     m_movement_type = other.m_movement_type;
+    m_head_number = other.m_head_number;
     m_tilt_start = other.m_tilt_start;
     m_tilt_end = other.m_tilt_end;
     m_pan_start = other.m_pan_start;
@@ -116,7 +119,13 @@ CString MovementAnimation::getSynopsis(void) {
         case MOVEMENT_COORDINATES:  movement = "Coordinates"; break;
     }
 
-    synopsis.Format( "%s Movement( speed=%d )\n", movement, m_speed );
+    CString head;
+    if ( m_head_number == 0 )
+        head = "all";
+    else
+        head.Format( "%d", m_head_number );
+
+    synopsis.Format( "%s Movement( speed=%d head=%s )\n", movement, m_speed, (LPCSTR)head );
          
     if ( m_movement_type == MOVEMENT_COORDINATES ) {
         synopsis.AppendFormat( "Coordinates( " );
@@ -125,11 +134,11 @@ CString MovementAnimation::getSynopsis(void) {
         synopsis.AppendFormat( ")\n" );
     }
     else if ( m_movement_type == MOVEMENT_MOONFLOWER ) {
-        synopsis.Format( "Grid( home=%.1f,%.1f height=%.1f spacing=%.1f radius=%.1f pan_incr=%d )\n",
+        synopsis.AppendFormat( "Grid( home=%.1f,%.1f height=%.1f spacing=%.1f radius=%.1f pan_incr=%d )\n",
             m_home_x, m_home_y, m_height, m_fixture_spacing, m_radius, m_pan_increment );
     }
     else {
-        synopsis.Format( "Degrees( tilt=%d-%d pan=%d-%d pan_incr=%d )\n",
+        synopsis.AppendFormat( "Degrees( tilt=%d-%d pan=%d-%d pan_incr=%d )\n",
             m_tilt_start, m_tilt_end, m_pan_start, m_pan_end, m_pan_increment );
     }
 

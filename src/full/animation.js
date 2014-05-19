@@ -861,7 +861,8 @@ function add_new_animation(class_name, success_callback) {
             home_y: 0,
             height: 8,
             fixture_spacing: 1.5,
-            radius: 6
+            radius: 6,
+            head_number: 0
         }
     }
 
@@ -900,6 +901,7 @@ function editSceneMovementAnimator(anim_info, animation, success_callback, setup
                 updateOrderedSceneFixtures($("#" + prefix + "_fixture_order"), animation);
 
                 animation.SceneMovementAnimator.speed = $("#esma_speed").spinner("value");
+                animation.SceneMovementAnimator.head_number = $("#esma_head").spinner("value");
                 animation.SceneMovementAnimator.dest_wait_periods = $("#esma_dest_wait_periods").spinner("value");
                 animation.SceneMovementAnimator.home_wait_periods = $("#esma_home_wait_periods").spinner("value");
                 animation.SceneMovementAnimator.group_size = $("#esma_group_size").spinner("value");
@@ -927,6 +929,7 @@ function editSceneMovementAnimator(anim_info, animation, success_callback, setup
     $("#" + prefix + "_description").text(anim_info.description);
 
     $("#esma_speed").spinner({ min: 0, max: 255 }).val(animation.SceneMovementAnimator.speed);
+    $("#esma_head").spinner({ min: 0, max: 32 }).val(animation.SceneMovementAnimator.head_number);
     $("#esma_dest_wait_periods").spinner({ min: 1, max: 10000 }).val(animation.SceneMovementAnimator.dest_wait_periods);
     $("#esma_run_once").attr('checked', animation.SceneMovementAnimator.run_once);
     $("#esma_home_wait_periods").spinner({ min: 1, max: 100 }).val(animation.SceneMovementAnimator.home_wait_periods);
@@ -951,6 +954,16 @@ function editSceneMovementAnimator(anim_info, animation, success_callback, setup
     setupFunc(edit_dialog);
 
     edit_dialog.dialog("open");
+}
+
+// ----------------------------------------------------------------------------
+// Movement synopsis
+//
+function movementSynopsis(movement) {
+    return "Speed: " + movement.speed +
+           ", Head: " + (movement.head_number == 0 ? "all" : movement.head_number) +
+           ", Once: " + (movement.run_once) +
+           ", Target wait: " + movement.dest_wait_periods;
 }
 
 // ----------------------------------------------------------------------------
@@ -980,9 +993,7 @@ function editSceneMovementAnimator1(anim_info, animation, success_callback) {
 }
 
 function getSceneMovementAnimator1Synopsis(animation) {
-    var synopsis = "Speed: " + animation.SceneMovementAnimator.speed +
-                   ", Once: " + (animation.SceneMovementAnimator.run_once) +
-                   ", Target wait: " + animation.SceneMovementAnimator.dest_wait_periods +
+    var synopsis = movementSynopsis(animation.SceneMovementAnimator) +
                    ", Pan: " + animation.SceneMovementAnimator.pan_start_angle + "-" + animation.SceneMovementAnimator.pan_end_angle +
                    ", Tilt: " + animation.SceneMovementAnimator.tilt_start_angle + "-" + animation.SceneMovementAnimator.tilt_end_angle +
                    ", Group size: " + animation.SceneMovementAnimator.group_size + ", Positions: " + animation.SceneMovementAnimator.positions;
@@ -1018,9 +1029,7 @@ function editSceneMovementAnimator2(anim_info, animation, success_callback) {
 }
 
 function getSceneMovementAnimator2Synopsis(animation) {
-    var synopsis = "Speed: " + animation.SceneMovementAnimator.speed +
-                   ", Once: " + (animation.SceneMovementAnimator.run_once) +
-                   ", Target wait: " + animation.SceneMovementAnimator.dest_wait_periods +
+    var synopsis = movementSynopsis(animation.SceneMovementAnimator) +
                    ", Pan: " + animation.SceneMovementAnimator.pan_start_angle + "-" + animation.SceneMovementAnimator.pan_end_angle +
                    ", Increment: " + animation.SceneMovementAnimator.pan_increment +
                    ", Tilt: " + animation.SceneMovementAnimator.tilt_start_angle + "-" + animation.SceneMovementAnimator.tilt_end_angle +
@@ -1057,9 +1066,7 @@ function editSceneMovementAnimator3(anim_info, animation, success_callback) {
 }
     
 function getSceneMovementAnimator3Synopsis(animation) {
-    var synopsis = "Speed: " + animation.SceneMovementAnimator.speed +
-                   ", Once: " + (animation.SceneMovementAnimator.run_once) +
-                   ", Target wait: " + animation.SceneMovementAnimator.dest_wait_periods +
+    var synopsis = movementSynopsis(animation.SceneMovementAnimator) +
                    ", Pan: " + animation.SceneMovementAnimator.pan_start_angle + "-" + animation.SceneMovementAnimator.pan_end_angle +
                    ", Tilt: " + animation.SceneMovementAnimator.tilt_start_angle + "-" + animation.SceneMovementAnimator.tilt_end_angle +
                    "," + (animation.SceneMovementAnimator.alternate_groups ? " Alternate" : "") + " Groups: " + animation.SceneMovementAnimator.group_size +
@@ -1098,9 +1105,7 @@ function editSceneMovementAnimator4(anim_info, animation, success_callback) {
 }
 
 function getSceneMovementAnimator4Synopsis(animation) {
-    var synopsis = "Speed: " + animation.SceneMovementAnimator.speed +
-                   ", Once: " + (animation.SceneMovementAnimator.run_once) +
-                   ", Target wait: " + animation.SceneMovementAnimator.dest_wait_periods +
+    var synopsis = movementSynopsis(animation.SceneMovementAnimator) +
                    ", Pan: " + animation.SceneMovementAnimator.pan_start_angle + "-" + animation.SceneMovementAnimator.pan_end_angle +
                    ", Increment: " + animation.SceneMovementAnimator.pan_increment +
                    ", Tilt: " + animation.SceneMovementAnimator.tilt_start_angle + "-" + animation.SceneMovementAnimator.tilt_end_angle +
@@ -1180,9 +1185,7 @@ function editSceneMovementAnimator6(anim_info, animation, success_callback) {
 }
 
 function getSceneMovementAnimator6Synopsis(animation) {
-    var synopsis = "Speed: " + animation.SceneMovementAnimator.speed +
-                   ", Once: " + (animation.SceneMovementAnimator.run_once) +
-                   ", Target wait: " + animation.SceneMovementAnimator.dest_wait_periods +
+    var synopsis = movementSynopsis(animation.SceneMovementAnimator) +
                    ", Coordinates: ";
 
     for (var i = 0; i < animation.SceneMovementAnimator.coordinates.length; i++) {
@@ -1226,9 +1229,7 @@ function editSceneMovementAnimator7(anim_info, animation, success_callback) {
 }
         
 function getSceneMovementAnimator7Synopsis(animation) {
-    var synopsis = "Speed: " + animation.SceneMovementAnimator.speed +
-                   ", Once: " + (animation.SceneMovementAnimator.run_once) +
-                   ", Target wait: " + animation.SceneMovementAnimator.dest_wait_periods +
+    var synopsis = movementSynopsis(animation.SceneMovementAnimator) +
                    ", Height: " + animation.SceneMovementAnimator.height + "'" +
                    ", Spacing: " + animation.SceneMovementAnimator.fixture_spacing + "'" +
                    ", Radius: " + animation.SceneMovementAnimator.radius + "'" +

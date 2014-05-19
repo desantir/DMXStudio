@@ -208,9 +208,8 @@ var ui_expandableContainer_id = 0;
         },
 
         _setOption: function (key, value) {
+            this.options[key] = value;
             $.Widget.prototype._setOption.apply(this, arguments);
-
-            this.options[ key ] = value;
         }
     });
 

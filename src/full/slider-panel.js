@@ -161,7 +161,7 @@ function Slider(panel, number, slider_frame) {
 
     // method allocate: channel data { channel, label, name, value, max_value, ranges }
 
-    this.allocate = function (owner, header_tip, slider_data, callback) {
+    this.allocate = function (owner, header_tip, slider_data, callback ) {
         this.owner = owner;
         this.in_use = true;
         this.ranges = slider_data.ranges;
@@ -181,7 +181,6 @@ function Slider(panel, number, slider_frame) {
         this.getLabel().text(slider_data.name);
         this.getFooter().text(slider_data.value);
 
-
         var slider = this.getSlider();
         slider.slider("value", slider_data.value);
         slider.attr("title", this.getRangeDescription(slider_data.value));
@@ -195,12 +194,12 @@ function Slider(panel, number, slider_frame) {
                 slider_object.highlight(true);
 
                 if ( !slider_object.panel.isBusy() )
-                    $("#slider_pane_title").text(slider_object.tooltip);
+                    slider_object.panel.setSliderTitle(slider_object.tooltip);
             },
             function () {
                 var slider_object = $(this).get(0).slider_object;
                 slider_object.highlight(false);
-                $("#slider_pane_title").text("");
+                slider_object.panel.setSliderTitle("");
             }
         );
     }
@@ -246,7 +245,7 @@ function Slider(panel, number, slider_frame) {
 
     // Add sidecar for range information
     var ui_handle = slider.find('.ui-slider-handle');
-    ui_handle.append('<div class="slider_sidecar" style="display:none;"></div>');
+    ui_handle.append('<div class="slider_sidecar" style="display:none; max-width: 140px;"></div>');
 
     // Setup event handlers
     var channel_hint = null;
@@ -351,6 +350,11 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
         for (var i = 0; i < num_channels; i++ ) {
             this.sliders[i + channel_start].allocate(owner, owner_name, channel_data[i], callback);
         }
+    }
+
+    // method setSliderTitle
+    this.setSliderTitle = function (title) {
+        $("#slider_pane_title").text(title);
     }
 
     // method releaseChannels
