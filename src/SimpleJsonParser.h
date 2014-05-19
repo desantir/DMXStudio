@@ -235,12 +235,22 @@ private:
     }
 
     void convertHex( LPCSTR value, unsigned long& result ) {
-        sscanf_s( value, "%lX", &result );
+        if ( sscanf_s( value, "%lx", &result ) != 1 ) {
+            CString error;
+            error.Format( "Value '%s' is not a hex value", value );
+            throw std::exception( (LPCSTR)error );
+        };
     }
 
     void convertHex( LPCSTR value, RGBWA& result ) {
         ULONG rgbwa;
-        sscanf_s( value, "%lX", &rgbwa );
+        if ( value && value[0] == '#' )
+            value++;
+        if ( sscanf_s( value, "%lx", &rgbwa ) != 1 ) {
+            CString error;
+            error.Format( "Value '%s' is not a hex value", value );
+            throw std::exception( (LPCSTR)error );
+        }
         result = RGBWA(rgbwa);
     }
 

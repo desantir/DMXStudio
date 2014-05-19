@@ -104,6 +104,7 @@ function initializeUI() {
         createSceneTiles();
         createChaseTiles();
         update_current_act();
+        client_config_update = true;
     });
 
     update_current_act();
@@ -912,6 +913,13 @@ function updateVenueLayout() {
         for (var prop in client_config) {
             if (prop == "edit_mode")
                 setEditMode(client_config.edit_mode);
+            else if (prop == "act") {
+                current_act = client_config.act;
+                $("#act_" + current_act).prop("checked", true).button("refresh");
+                createSceneTiles();
+                createChaseTiles();
+                update_current_act();
+            }
             else if (prop == "sections") {
                 for (section in client_config.sections) {
                     if (section == "act_pane") {
@@ -950,6 +958,7 @@ function updateVenueLayout() {
 function saveVenueLayout() {
     client_config = {};
     client_config.edit_mode = edit_mode;
+    client_config.act = current_act;
 
     client_config.sections = {
         "venue_pane": {
