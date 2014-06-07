@@ -182,6 +182,9 @@ void SceneChannelAnimator::initAnimation( AnimationTask* task, DWORD time_ms, BY
 //
 bool SceneChannelAnimator::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
 {
+    if ( m_channel_state.size() == 0 )
+        return false;
+
     bool tick = m_signal_processor->tick( time_ms );
 
     if ( !tick ) {

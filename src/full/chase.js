@@ -186,7 +186,7 @@ function createChase(event) {
         fade_ms: 0,
         delay_ms: 1000,
         steps: [{ id: 0, delay_ms: 0 }],
-        acts: []
+        acts: current_act == 0 ? [] : [current_act]
     });
 }
 
@@ -304,6 +304,9 @@ function openNewChaseDialog(dialog_title, data) {
     $("#new_chase_dialog").dialog("option", "title", dialog_title + " " + data.number );
 
     $("#ncd_accordion").accordion({ heightStyle: "fill" });
+
+    if (data.id == 0)
+        $("#ncd_accordion").accordion({ active: 0 });
 
     $("#ncd_number").spinner({ min: 1, max: 100000 }).val(data.number);
     $("#ncd_name").val(data.name);

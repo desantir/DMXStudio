@@ -82,7 +82,7 @@ FixtureDefinition::~FixtureDefinition(void)
 void FixtureDefinition::chooseCapabilities()
 {
     // Set fixture capabilities (we do this once since definitions are immutable)
-    bool red=false, blue=false, green=false, white=false, dimmer=false;
+    bool red=false, blue=false, green=false, white=false, dimmer=false, amber=false;
     size_t heads=0;
     channel_t default_dimmer_channel = INVALID_CHANNEL;     // For head movement (may have seperate dimmers per head)
 
@@ -111,26 +111,17 @@ void FixtureDefinition::chooseCapabilities()
             case CHNLT_BLUE:    blue = true;           break;
             case CHNLT_GREEN:   green = true;          break;
             case CHNLT_WHITE:   white = true;          break;
+            case CHNLT_AMBER:   amber = true;          break;
         }
     }
 
-    // Load pixels for pixel fixtures - insures consecutive pixels 1-n
-    if ( getType() == FIXT_PIXEL ) {
-        for ( size_t index=1; true; index++ ) {
-            Pixel pixel;
-            if ( findPixel( index, pixel ) )
-                m_pixels.push_back( pixel );
-            else
-                break;
-        }
-    }
-    else {
-        // All other fixtures, get the main RGB[WA] channels as the "pixel". Currently ignoring
-        // situations such as non-pixel fixtures with multiple colors or multiple single colors
-
+    // Find all pixels - two cases: no RGB with pixel > 1 = single light fixture, else lights 1-n
+    for ( size_t index=0; true; index++ ) {
         Pixel pixel;
-        if ( findPixel( 0, pixel ) )
+        if ( findPixel( index, pixel ) )
             m_pixels.push_back( pixel );
+        else if ( index > 0 )
+            break;
     }
 
     if ( heads > 0 ) {

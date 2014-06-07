@@ -95,10 +95,6 @@ function initializeUI() {
     $("#music_match_buttons").buttonset();
     $("#act_buttons").buttonset();
 
-    function update_current_act() {
-        $("#current_act").text(current_act == 0 ? "all acts" : ("act " + current_act));
-    }
-
     $("#act_buttons").on("change", function () {
         current_act = parseInt($('input[name=act]:checked').val());
         createSceneTiles();
@@ -233,6 +229,10 @@ function initializeUI() {
 
     // Start background updates, but allow all data loads to finish
     setTimeout( updateUI(), 100 );
+}
+
+function update_current_act() {
+    $("#current_act").text(current_act == 0 ? "all acts" : ("act " + current_act));
 }
 
 function messageBox(message) {
@@ -402,7 +402,7 @@ function updateUI() {
 
             updateCapturedFixtures(json.captured_fixtures);
 
-            setTimeout(updateUI(), 500);
+            setTimeout(updateUI, 500);
         },
         error: function () {
             if (system_status) {
@@ -412,7 +412,7 @@ function updateUI() {
                 system_status = false;
             }
 
-            setTimeout(updateUI(), 500);
+            setTimeout(updateUI, 500);
         }
     });
 }

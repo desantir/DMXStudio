@@ -1485,7 +1485,7 @@ function editPixelAnimator(anim_info, animation, success_callback) {
     edit_dialog.dialog({
         autoOpen: false,
         width: 780,
-        height: 750,
+        height: 780,
         modal: true,
         resizable: false,
         title: "Edit " + anim_info.name,
@@ -1503,7 +1503,7 @@ function editPixelAnimator(anim_info, animation, success_callback) {
                 animation.ScenePixelAnimator.combine = $("#espa_combine").is(':checked');
                 animation.ScenePixelAnimator.color_progression = $("#espa_color_progression").expandableContainer("values");
 
-                updateSceneFixtures($("#" + prefix + "_fixtures"), animation);
+                updateOrderedSceneFixtures($("#" + prefix + "_fixture_order"), animation);
                 success_callback(animation);
 
                 edit_dialog.dialog("close");
@@ -1515,6 +1515,8 @@ function editPixelAnimator(anim_info, animation, success_callback) {
     });
 
     populateSceneFixtures($("#" + prefix + "_fixtures"), animation);
+    populateFixtureOrder($("#" + prefix + "_fixtures"), $("#" + prefix + "_fixture_order"), animation);
+
     populateSignal(prefix, animation.signal);
     $("#" + prefix + "_description").text(anim_info.description);
 

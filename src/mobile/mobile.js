@@ -113,7 +113,7 @@ function initializeUI() {
 
         track_remaining = 0;
         track_paused = false;
-        track_timer = setTimeout('track_timeout()', 500);
+        track_timer = setTimeout(track_timeout, 500);
     });
 
     $("#track_forward_id").click(function () {
@@ -128,7 +128,7 @@ function initializeUI() {
 
         track_remaining = 0;
         track_paused = false;
-        track_timer = setTimeout('track_timeout()', 500);
+        track_timer = setTimeout(track_timeout, 500);
     });
 
     $("#track_pause_id").click(function () {
@@ -147,7 +147,7 @@ function initializeUI() {
         track_pause_id.style.display = "none";
         track_play_id.style.display = "";
 
-        track_timer = setTimeout('track_timeout()', 500);
+        track_timer = setTimeout(track_timeout, 500);
     });
 
     $("#track_play_id").click(function () {
@@ -256,7 +256,7 @@ function change_dimmer(dimmer_value) {
 
     document.timer_url = "/dmxstudio/rest/control/venue/masterdimmer/" + dimmer_value
 
-    timeout = setTimeout('timeout_send_ajax_request()', SLIDER_TIMEOUT);
+    timeout = setTimeout(timeout_send_ajax_request, SLIDER_TIMEOUT);
 }
 
 // ----------------------------------------------------------------------------
@@ -266,7 +266,7 @@ function change_strobe(strobe_value) {
 
     document.timer_url = "/dmxstudio/rest/control/venue/strobe/" + strobe_value
 
-    timeout = setTimeout('timeout_send_ajax_request()', SLIDER_TIMEOUT);
+    timeout = setTimeout(timeout_send_ajax_request, SLIDER_TIMEOUT);
 }
 
 // ----------------------------------------------------------------------------
@@ -276,7 +276,7 @@ function change_animation_speed(speed) {
 
     document.timer_url = "/dmxstudio/rest/control/venue/animation_speed/" + speed
 
-    timeout = setTimeout('timeout_send_ajax_request()', SLIDER_TIMEOUT);
+    timeout = setTimeout(timeout_send_ajax_request, SLIDER_TIMEOUT);
 }
 
 // ----------------------------------------------------------------------------
@@ -292,7 +292,7 @@ function change_volume(volume_value) {
 
     document.timer_url = "/dmxstudio/rest/control/venue/volume/master/" + volume_value
 
-    timeout = setTimeout('timeout_send_ajax_request()', 50);
+    timeout = setTimeout(timeout_send_ajax_request, 50);
 }
 
 // ----------------------------------------------------------------------------
@@ -362,7 +362,7 @@ function updateMusicPlayer(update_selections) {
             tracks_queued = music_player.queued;
             id_tracks_queued.innerHTML = tracks_queued + " in queue";
 
-            track_timer = setTimeout('track_timeout()', 1000);
+            track_timer = setTimeout(track_timeout, 1000);
             server_track_sync_ms = 0;
 
             if (update_selections) {
@@ -418,7 +418,7 @@ function track_timeout() {
     if (!track_paused && track_remaining > 1000 && server_track_sync_ms < 5000) {
         track_remaining -= 1000;
         id_track_remaining.innerHTML = "Remaining: " + trackTime(track_remaining);
-        track_timer = setTimeout('track_timeout()', 1000);
+        track_timer = setTimeout(track_timeout, 1000);
         server_track_sync_ms += 1000;
         return;
     }
@@ -435,7 +435,7 @@ function change_volume_mute(mute) {
 
     document.timer_url = "/dmxstudio/rest/control/venue/mute_volume/" + (mute ? 1 : 0);
 
-    timeout = setTimeout('timeout_send_ajax_request()', 100);
+    timeout = setTimeout(timeout_send_ajax_request, 100);
 }
 
 // ----------------------------------------------------------------------------
@@ -737,7 +737,7 @@ function change_fixture_channel(fixture_id, channel, channel_value) {
 
     fixture.channels[channel].value = channel_value;
 
-    timeout = setTimeout('timeout_send_ajax_request()', SLIDER_TIMEOUT);
+    timeout = setTimeout(timeout_send_ajax_request, SLIDER_TIMEOUT);
 }
 
 // ----------------------------------------------------------------------------

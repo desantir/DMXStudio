@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -20,15 +20,24 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
 #include "DMXStudio.h"
+#include "RGBWA.h"
+
+struct StrobeTime {
+    UINT m_on_ms;
+    UINT m_off_ms;
+
+    StrobeTime( UINT on_ms=0, UINT off_ms=0 ) :
+        m_on_ms( on_ms ),
+        m_off_ms( off_ms )
+    {}
+};
 
 class ColorStrobe
 {
-    RGBWA			m_current_color;			// Current RGBWA
-    RGBWA			m_target_color;			    // RGBWA targets
+    RGBWA			m_strobe_positive;
     RGBWA			m_strobe_negative;
 
     StrobeTime      m_timing;
@@ -42,14 +51,18 @@ public:
 
     inline bool isOn() const { return m_strobe_on; }
 
-    inline RGBWA rgbwa() { return m_current_color; }
+    inline RGBWA rgbwa() { return m_strobe_on ? m_strobe_positive : m_strobe_negative; }
 
-    inline void setColor( const RGBWA& rgbwa ) {
-        m_target_color = rgbwa;
+    inline void setPositive( const RGBWA& rgbwa ) {
+        m_strobe_positive = rgbwa;
     }
 
     inline void setNegative( const RGBWA& rgbwa ) {
         m_strobe_negative = rgbwa;
+    }
+
+    inline RGBWA getNegative( ) const {
+        return m_strobe_negative;
     }
 
     void start( DWORD time_ms, UINT light_ms, UINT dark_ms ) {
@@ -69,8 +82,6 @@ public:
     bool strobe( DWORD time_ms ) {
         if ( time_ms <= m_strobe_next_ms )
             return false;
-
-        m_current_color = ( m_strobe_on ) ? m_target_color : m_strobe_negative;
 
         m_strobe_on = !m_strobe_on;
 

@@ -485,7 +485,7 @@ MA 02111-1307, USA.
                     <select id="nsd_acts" style="display:block;" multiple="multiple" ></select>
                 </div>
 
-                <div id="nsd_keep_groups_section" style="margin-top: 12px; float:left; margin-left: 40px;">
+                <div id="nsd_keep_groups_section" style="margin-top: 12px;">
                     <input type="checkbox" id="nsd_keep_groups" checked="checked" />
                     <label for="nsd_keep_groups">keep fixtures in groups</label>
                 </div>
@@ -1202,13 +1202,16 @@ MA 02111-1307, USA.
 </div>
 
 <div id="edit_ScenePixelAnimator_dialog" style="display:none;">
-    <form style="height:360px;">
+    <form style="height:390px;">
         <fieldset style="padding:8px; margin-top:10px;">
             <legend class="animation_fieldset">pixel animator</legend>
             <div id="espa_description" class="animation_description"></div>
             <div style="clear:both; float:left;">
                 <label for="espa_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
                 <select id="espa_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
+
+                <div style="display:block; margin: 10px 0px 4px 0px;">fixture order</div>
+                <div id="espa_fixture_order" style="display:block; margin-bottom:10px; width:500px;"></div>
             </div>
             <div style="clear:both; float:left; margin-top: 10px;">
                 <input id="espa_combine" type="checkbox" />

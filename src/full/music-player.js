@@ -29,6 +29,7 @@ var cache_track_length = null;
 var cache_track_status = null;
 
 var show_login_dialog = true;
+var last_player_error = null;
 
 // ----------------------------------------------------------------------------
 //
@@ -90,12 +91,25 @@ function update_player_status(music_player_status) {
         player_login(music_player_status.player_name, music_player_status.username);
     }
 
-    if (music_player_status.player_error != null) {
-        $('#player_error').text(music_player_status.player_error);
+    if ( last_player_error != music_player_status.player_error ) {
+        last_player_error = music_player_status.player_error;
+        $('#player_error').text( (last_player_error != null) ? last_player_error : "" );
     }
-    else {
-        $('#player_error').text("");
-    }
+}
+
+// ----------------------------------------------------------------------------
+//
+function updateMusicUI() {
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/query/venue/status/",
+        cache: false,
+        success: function (data) {
+            var json = jQuery.parseJSON(data);
+            update_player_status(json.music_player);
+        },
+        error: onAjaxError
+    });
 }
 
 // ----------------------------------------------------------------------------
@@ -310,6 +324,7 @@ function track_back(event) {
         type: "GET",
         url: "/dmxstudio/rest/control/music/track/back/",
         cache: false,
+        success: updateMusicUI,
         error: onAjaxError
     });
 }
@@ -323,6 +338,7 @@ function track_stop(event) {
         type: "GET",
         url: "/dmxstudio/rest/control/music/track/stop/",
         cache: false,
+        success: updateMusicUI,
         error: onAjaxError
     });
 }
@@ -336,6 +352,7 @@ function track_play(event) {
         type: "GET",
         url: "/dmxstudio/rest/control/music/track/play/",
         cache: false,
+        success: updateMusicUI,
         error: onAjaxError
     });
 }
@@ -349,6 +366,7 @@ function track_pause(event) {
         type: "GET",
         url: "/dmxstudio/rest/control/music/track/pause/",
         cache: false,
+        success: updateMusicUI,
         error: onAjaxError
     });
 }
@@ -362,6 +380,7 @@ function track_forward(event) {
         type: "GET",
         url: "/dmxstudio/rest/control/music/track/forward/",
         cache: false,
+        success: updateMusicUI,
         error: onAjaxError
     });
 }
@@ -378,6 +397,7 @@ function playlistPlay(event) {
             type: "GET",
             url: "/dmxstudio/rest/control/music/play/playlist/" + playlist_id + "/0",
             cache: false,
+            success: updateMusicUI,
             error: onAjaxError
         });
     }
@@ -395,6 +415,7 @@ function playlistQueue(event) {
             type: "GET",
             url: "/dmxstudio/rest/control/music/play/playlist/" + playlist_id + "/1",
             cache: false,
+            success: updateMusicUI,
             error: onAjaxError
         });
     }
@@ -413,6 +434,7 @@ function tracklistPlay(event) {
             type: "GET",
             url: "/dmxstudio/rest/control/music/play/track/" + playlist_id + "/" + track_id + "/0",
             cache: false,
+            success: updateMusicUI,
             error: onAjaxError
         });
     }
@@ -433,6 +455,7 @@ function tracklistQueue(event) {
             type: "GET",
             url: "/dmxstudio/rest/control/music/play/track/" + playlist_id + "/" + track_id + "/1",
             cache: false,
+            success: updateMusicUI,
             error: onAjaxError
         });
     }
@@ -533,7 +556,6 @@ function showMusicMatch(event) {
         cache: false,
         success: function (data) {
             var json = jQuery.parseJSON(data);
-
             musicMatchDialog(json);
         },
         error: onAjaxError

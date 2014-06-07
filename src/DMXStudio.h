@@ -24,19 +24,10 @@ MA 02111-1307, USA.
 
 #include "stdafx.h"
 #include "StudioException.h"
+#include "ColorStrobe.h"
 
 #define DMX_PACKET_SIZE     512
 #define INVALID_CHANNEL     0xFFFF
-
-struct StrobeTime {
-    UINT m_on_ms;
-    UINT m_off_ms;
-
-    StrobeTime( UINT on_ms=0, UINT off_ms=0 ) :
-        m_on_ms( on_ms ),
-        m_off_ms( off_ms )
-    {}
-};
 
 #define SAFE_RELEASE(punk)  \
               if ((punk) != NULL)  \

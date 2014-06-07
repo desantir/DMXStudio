@@ -249,7 +249,7 @@ function createScene(event) {
         description: "",
         number: new_number,
         animations: [],
-        acts: [],
+        acts: current_act == 0 ? [] : [ current_act ],
         actors: actors
     } );
 }
@@ -370,6 +370,9 @@ function openNewSceneDialog(dialog_title, action_title, copy, data) {
     $("#new_scene_dialog").dialog( "option", "title", dialog_title );
 
     $("#nsd_accordion").accordion({ heightStyle: "fill" });
+
+    if (data.id == 0)
+        $("#nsd_accordion").accordion({ active: 0 });
 
     $("#nsd_number").spinner({ min: 1, max: 100000 }).val (data.number );
     $("#nsd_name").val(data.name);

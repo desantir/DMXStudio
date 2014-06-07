@@ -10,10 +10,12 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L 5 Alternative to dialogs
 		L 1 Improved error responses (e.g. "<item> not found")
 		L 1 Animated running GIFs for chases
-		L 1 Handle disconnected server state (disable UI)
+		L 1 Handle disconnected server state (disable UI, startup errors out if no COM)
 		L 2 Authentication & session control
 		L 4 Album artwork
 		H 4 Music search
+		  4 Editor to map scenes to ponts in the track - automatically generate chase with times (aka soundcloud for lighting)
+		    http://www.smartjava.org/content/exploring-html5-web-audio-visualizing-sound
 		
 	L Scene Animations:
 		L Movement animation travel time

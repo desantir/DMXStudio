@@ -163,6 +163,9 @@ void SceneColorFader::initAnimation( AnimationTask* task, DWORD time_ms, BYTE* d
 //
 bool SceneColorFader::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
 {
+   if ( m_fixtures.size() == 0 )
+    return false;
+
     bool tick = m_signal_processor->tick( time_ms );
     bool changed = false;
 
@@ -199,7 +202,7 @@ bool SceneColorFader::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
             m_current_effect = m_fader_effect;
 
         if ( m_current_effect == FADER_EFFECT_STROBE ) {
-            m_strobe.setColor( rgbwa );
+            m_strobe.setPositive( rgbwa );
 
             if ( m_start_strobe ) {
                 m_strobe.start( time_ms, m_strobe_pos_ms * (110-level) / 100, m_strobe_neg_ms );
