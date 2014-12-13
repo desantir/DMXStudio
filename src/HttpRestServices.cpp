@@ -42,6 +42,7 @@ HttpRestServices::HttpRestServices(void) :
     m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_MUSIC_MATCH ] = &HttpRestServices::control_venue_music_match;
     m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_MASTERDIMMER ] = &HttpRestServices::control_venue_masterdimmer;
     m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_STROBE ] = &HttpRestServices::control_venue_strobe;
+    m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_WHITEOUT_COLOR ] = &HttpRestServices::control_venue_whiteout_color;
     m_rest_get_handlers[ DMX_URL_CONTROL_SCENE_SHOW ] = &HttpRestServices::control_scene_show;
     m_rest_get_handlers[ DMX_URL_CONTROL_CHASE_SHOW ] = &HttpRestServices::control_chase_show;
     m_rest_get_handlers[ DMX_URL_CONTROL_FIXTURE_CAPTURE ] = &HttpRestServices::control_fixture_capture;

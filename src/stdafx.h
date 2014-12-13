@@ -33,6 +33,7 @@ MA 02111-1307, USA.
 #include <afxwin.h>
 #include <stdio.h>
 #include <tchar.h>
+#include <stdint.h>
 #include <iostream>
 #include <conio.h>
 #include <atlstr.h>

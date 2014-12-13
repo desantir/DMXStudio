@@ -14,7 +14,37 @@
 			charMin = 65,
 			visible,
             hide_ms = null,
-			tpl = '<div class="colorpicker"><div class="colorpicker_color"><div><div></div></div></div><div class="colorpicker_hue"><div></div></div><div class="colorpicker_new_color"></div><div class="colorpicker_current_color"></div><div class="colorpicker_hex"><input type="text" maxlength="6" size="6" /></div><div class="colorpicker_rgb_r colorpicker_field"><input type="text" maxlength="3" size="3" /><span></span></div><div class="colorpicker_rgb_g colorpicker_field"><input type="text" maxlength="3" size="3" /><span></span></div><div class="colorpicker_rgb_b colorpicker_field"><input type="text" maxlength="3" size="3" /><span></span></div><div class="colorpicker_hsb_h colorpicker_field"><input type="text" maxlength="3" size="3" /><span></span></div><div class="colorpicker_hsb_s colorpicker_field"><input type="text" maxlength="3" size="3" /><span></span></div><div class="colorpicker_hsb_b colorpicker_field"><input type="text" maxlength="3" size="3" /><span></span></div><div class="colorpicker_submit"></div></div>',
+			tpl = '<div class="colorpicker">' +
+                  '<div class="colorpicker_color"><div><div></div></div></div>' +
+                  '<div class="colorpicker_hue"><div></div></div>' +
+                  '<div class="colorpicker_new_color"></div>' +
+                  '<div class="colorpicker_current_color"></div>' +
+                  '<div class="colorpicker_hex"><input type="text" maxlength="6" size="6" /></div>' +
+                  '<div class="colorpicker_rgb_r colorpicker_field"><input type="text" maxlength="3" size="3" /><span></span></div>' +
+                  '<div class="colorpicker_rgb_g colorpicker_field"><input type="text" maxlength="3" size="3" /><span></span></div>' +
+                  '<div class="colorpicker_rgb_b colorpicker_field"><input type="text" maxlength="3" size="3" /><span></span></div>' +
+                  '<div class="colorpicker_hsb_h colorpicker_field"><input type="text" maxlength="3" size="3" /><span></span></div>' +
+                  '<div class="colorpicker_hsb_s colorpicker_field"><input type="text" maxlength="3" size="3" /><span></span></div>' +
+                  '<div class="colorpicker_hsb_b colorpicker_field"><input type="text" maxlength="3" size="3" /><span></span></div>' +
+                  '<div class="colorpicker_submit"></div>' +
+
+                  '<div class="colorpicker_chip1 colorpicker_chip"></div>' +
+                  '<div class="colorpicker_chip2 colorpicker_chip"></div>' +
+                  '<div class="colorpicker_chip3 colorpicker_chip"></div>' +
+                  '<div class="colorpicker_chip4 colorpicker_chip"></div>' +
+                  '<div class="colorpicker_chip5 colorpicker_chip"></div>' +
+                  '<div class="colorpicker_chip6 colorpicker_chip"></div>' +
+                  '<div class="colorpicker_chip7 colorpicker_chip"></div>' +
+                  '<div class="colorpicker_chip8 colorpicker_chip"></div>' +
+                  '<div class="colorpicker_chip9 colorpicker_chip"></div>' +
+                  '<div class="colorpicker_chip10 colorpicker_chip"></div>' +
+                  '<div class="colorpicker_chip11 colorpicker_chip"></div>' +
+                  '<div class="colorpicker_chip12 colorpicker_chip"></div>' +
+                  '<div class="colorpicker_chip13 colorpicker_chip"></div>' +
+                  '<div class="colorpicker_chip14 colorpicker_chip"></div>' +
+                  '<div class="colorpicker_chip15 colorpicker_chip" title="special effect 1"></div>' +
+
+                  '</div>',
 			defaults = {
 				eventName: 'click',
 				onShow: function () {},
@@ -69,16 +99,32 @@
 					change.apply(this);
 				}
 			},
+            chipClick = function (ev) {
+                var cal = $(this).parent(), color;
+                cal.data('colorpicker').color = col = HexToHSB(fixHex(this.currentStyle.backgroundColor));
+
+                if (ev) {
+                    fillRGBFields(col, cal.get(0));
+                    fillHexFields(col, cal.get(0));
+                    fillHSBFields(col, cal.get(0));
+                }
+                setSelector(col, cal.get(0));
+                setHue(col, cal.get(0));
+                setNewColor(col, cal.get(0));
+                cal.data('colorpicker').onChange.apply(cal, [col, HSBToHex(col), HSBToRGB(col)]);
+
+                return false;
+            },
 			change = function (ev) {
 				var cal = $(this).parent().parent(), col;
 				if (this.parentNode.className.indexOf('_hex') > 0) {
 					cal.data('colorpicker').color = col = HexToHSB(fixHex(this.value));
 				} else if (this.parentNode.className.indexOf('_hsb') > 0) {
-					cal.data('colorpicker').color = col = fixHSB({
-						h: parseInt(cal.data('colorpicker').fields.eq(4).val(), 10),
-						s: parseInt(cal.data('colorpicker').fields.eq(5).val(), 10),
-						b: parseInt(cal.data('colorpicker').fields.eq(6).val(), 10)
-					});
+				    cal.data('colorpicker').color = col = fixHSB({
+				        h: parseInt(cal.data('colorpicker').fields.eq(4).val(), 10),
+				        s: parseInt(cal.data('colorpicker').fields.eq(5).val(), 10),
+				        b: parseInt(cal.data('colorpicker').fields.eq(6).val(), 10)
+				    });
 				} else {
 					cal.data('colorpicker').color = col = RGBToHSB(fixRGB({
 						r: parseInt(cal.data('colorpicker').fields.eq(1).val(), 10),
@@ -420,6 +466,9 @@
 						cal
 							.find('span').bind('mousedown', downIncrement).end()
 							.find('>div.colorpicker_current_color').bind('click', restoreOriginal);
+
+						cal.find('.colorpicker_chip').bind('click', chipClick).bind('contextmenu', chipClick);
+
 						options.selector = cal.find('div.colorpicker_color').bind('mousedown', downSelector);
 						options.selectorIndic = options.selector.find('div div');
 						options.el = this;

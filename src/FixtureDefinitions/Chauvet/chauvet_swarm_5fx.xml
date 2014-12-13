@@ -1,0 +1,309 @@
+<?xml version="1.0" ?>
+<fixture_definitions>
+    <author>Robert DeSantis</author>
+    <version>1</version>
+    <fixture type="effect" channels="9">
+        <manufacturer>Chauvet</manufacturer>
+        <model>Swarm 5FX</model>
+        <channels>
+         <channel index="1" type="auto program" color="false" blackout="true" value="255">
+                <name>Automatic Programs</name>
+                <ranges>
+                    <range start="0" end="9">
+                        <name>Blackout</name>
+                    </range>
+                    <range start="10" end="24">
+                        <name>Auto Program 1</name>
+                    </range>
+                    <range start="25" end="39">
+                        <name>Auto Program 2</name>
+                    </range>
+                    <range start="40" end="54">
+                        <name>Auto Program 3</name>
+                    </range>
+                    <range start="55" end="69">
+                        <name>Auto Program 4</name>
+                    </range>
+                    <range start="70" end="84">
+                        <name>Auto Program 5</name>
+                    </range>
+                    <range start="85" end="99">
+                        <name>Auto Program 6</name>
+                    </range>
+                    <range start="100" end="114">
+                        <name>Auto Program 7</name>
+                    </range>
+                    <range start="115" end="129">
+                        <name>Sound Activated mode 1</name>
+                    </range>
+                    <range start="130" end="144">
+                        <name>Sound Activated mode 2</name>
+                    </range>
+                    <range start="145" end="159">
+                        <name>Sound Activated mode 3</name>
+                    </range>
+                    <range start="160" end="174">
+                        <name>Sound Activated mode 4</name>
+                    </range>
+                    <range start="175" end="189">
+                        <name>Sound Activated mode 5</name>
+                    </range>
+                    <range start="190" end="204">
+                        <name>Sound Activated mode 6</name>
+                    </range>
+                    <range start="205" end="219">
+                        <name>Sound Activated mode 7</name>
+                    </range>  
+                    <range start="220" end="255">
+                        <name>DMX mode</name>
+                    </range> 
+                </ranges>
+            </channel>
+            <channel index="2" type="color macro" color="false" blackout="true">
+                <name>Color Macro</name>
+                <ranges>
+                    <range start="0" end="9">
+                        <name>Blackout</name>
+                    </range>
+                    <range start="10" end="14">
+                        <name>Red</name>
+                    </range>
+                    <range start="15" end="19">
+                        <name>Green</name>
+                    </range>
+                    <range start="20" end="24">
+                        <name>Blue</name>
+                    </range>
+                    <range start="25" end="29">
+                        <name>Amber</name>
+                    </range>
+                    <range start="30" end="34">
+                        <name>White</name>
+                    </range>
+                    <range start="35" end="39">
+                        <name>White &amp; Red</name>
+                    </range>
+                    <range start="40" end="44">
+                        <name>Red &amp; Green</name>
+                    </range>
+                    <range start="45" end="49">
+                        <name>Green &amp; Blue</name>
+                    </range>
+                    <range start="50" end="54">
+                        <name>Blue &amp; Amber</name>
+                    </range>
+                    <range start="55" end="59">
+                        <name>Amber &amp; White</name>
+                    </range>
+                    <range start="60" end="64">
+                        <name>White &amp; Green</name>
+                    </range>
+                    <range start="65" end="69">
+                        <name>Green &amp; Amber</name>
+                    </range>
+                    <range start="70" end="74">
+                        <name>Amber &amp; Red</name>
+                    </range>
+                    <range start="75" end="79">
+                        <name>Red &amp; Blue</name>
+                    </range>
+                    <range start="80" end="84">
+                        <name>Blue &amp; White</name>
+                    </range>
+                    <range start="85" end="89">
+                        <name>Red &amp; Green &amp; Blue</name>
+                    </range>
+                    <range start="90" end="94">
+                        <name>Red &amp; Green &amp; Amber</name>
+                    </range>
+                    <range start="95" end="99">
+                        <name>Red &amp; Green &amp; White</name>
+                    </range>
+                    <range start="100" end="104">
+                        <name>Red &amp; Amber &amp; Blue</name>
+                    </range>
+                    <range start="105" end="109">
+                        <name>Red &amp; White &amp; Blue</name>
+                    </range>
+                    <range start="110" end="114">
+                        <name>Red &amp; Amber &amp; White</name>
+                    </range>
+                    <range start="115" end="119">
+                        <name>Amber &amp; Green &amp; Blue</name>
+                    </range>
+                    <range start="120" end="124">
+                        <name>Blue &amp; Green &amp; White</name>
+                    </range>
+                    <range start="125" end="129">
+                        <name>Amber &amp; Green &amp; White</name>
+                    </range>
+                    <range start="130" end="134">
+                        <name>Amber &amp; White &amp; Blue</name>
+                    </range>
+                    <range start="135" end="139">
+                        <name>Red &amp; Green &amp; Blue &amp; Amber</name>
+                    </range>
+                    <range start="140" end="144">
+                        <name>Red &amp; Green &amp; Blue &amp; White</name>
+                    </range>
+                    <range start="145" end="149">
+                        <name>Green &amp; Blue &amp; Amber &amp; White</name>
+                    </range>
+                    <range start="150" end="154">
+                        <name>Red &amp; Green &amp; Amber &amp; White</name>
+                    </range>
+                    <range start="155" end="159">
+                        <name>Red &amp; Blue &amp; Amber &amp; White</name>
+                    </range>
+                    <range start="160" end="164">
+                        <name>Red &amp; Green &amp; Blue &amp; Amber &amp; White</name>
+                    </range>
+                    <range start="165" end="209">
+                        <name>Automatic (1 color)</name>
+                    </range>
+                    <range start="210" end="255">
+                        <name>Automatic (2 colors)</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="3" type="program speed" color="false" blackout="false">
+                <name>Program Speed (ch2 165-255)</name>
+                <ranges>
+                    <range start="0" end="255">
+                        <name>Automatic Speed, slow to fast (colors only)</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="4" type="strobe" color="false" blackout="true">
+                <name>LED Strobe (ch2 10-255)</name>
+                <ranges>
+                    <range start="0" end="4">
+                        <name>No Function</name>
+                    </range>
+                    <range start="5" end="254">
+                        <name>Strobe (fast-slow)</name>
+                    </range>
+                    <range start="255" end="255">
+                        <name>Sound-active strobe</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="5" type="auto program" color="false" blackout="true">
+                <name>White LED</name>
+                <ranges>
+                    <range start="0" end="9">
+                        <name>Blackout</name>
+                    </range>
+                    <range start="10" end="19">
+                        <name>Auto Program 1 (fast to slow)</name>
+                    </range>
+                    <range start="20" end="29">
+                        <name>Auto Program 2 (fast to slow)</name>
+                    </range>
+                    <range start="30" end="39">
+                        <name>Auto Program 3 (fast to slow)</name>
+                    </range>
+                    <range start="40" end="49">
+                        <name>Auto Program 4 (fast to slow)</name>
+                    </range>
+                    <range start="50" end="59">
+                        <name>Auto Program 5 (fast to slow)</name>
+                    </range>
+                    <range start="60" end="69">
+                        <name>Auto Program 6 (fast to slow)</name>
+                    </range>
+                    <range start="70" end="79">
+                        <name>Auto Program 7 (fast to slow)</name>
+                    </range>
+                    <range start="80" end="89">
+                        <name>Auto Program 8 (fast to slow)</name>
+                    </range>
+                    <range start="90" end="99">
+                        <name>Auto Program 9 (fast to slow)</name>
+                    </range>
+                    <range start="100" end="109">
+                        <name>Auto Program 10 (fast to slow)</name>
+                    </range>
+                    <range start="110" end="255">
+                        <name>On</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="6" type="laser" color="false" blackout="true">
+                <name>Lasers</name>
+                <ranges>
+                    <range start="0" end="9">
+                        <name>Blackout</name>
+                    </range>
+                    <range start="10" end="49">
+                        <name>Red On</name>
+                    </range>
+                    <range start="50" end="89">
+                        <name>Green on</name>
+                    </range>
+                    <range start="90" end="129">
+                        <name>Red &amp; Green, alternate strobe</name>
+                    </range>
+                    <range start="130" end="169">
+                        <name>Red on + Green strobe</name>
+                    </range>
+                    <range start="170" end="209">
+                        <name>Green on + Red strobe</name>
+                    </range>
+                    <range start="210" end="255">
+                        <name>Red &amp; Green strobe</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="7" type="strobe" color="false" blackout="true">
+                <name>Laser Strobe (ch6 10-255)</name>
+                <ranges>
+                    <range start="0" end="4">
+                        <name>No Function</name>
+                    </range>
+                    <range start="5" end="254">
+                        <name>Strobe (fast-slow)</name>
+                    </range>
+                    <range start="255" end="255">
+                        <name>Sound-active strobe</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="8" type="movement speed" color="false" blackout="false">
+                <name>LED Movement</name>
+                <ranges>
+                    <range start="0" end="4">
+                        <name>Stop</name>
+                    </range>
+                    <range start="5" end="127">
+                        <name>Rotate clockwise</name>
+                    </range>
+                    <range start="128" end="133">
+                        <name>Stop</name>
+                    </range>
+                    <range start="134" end="255">
+                        <name>Rotate counter-clockwise</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="9" type="movement speed" color="false" blackout="false">
+                <name>Laser Movement</name>
+                <ranges>
+                    <range start="0" end="4">
+                        <name>Stop</name>
+                    </range>
+                    <range start="5" end="127">
+                        <name>Rotate clockwise</name>
+                    </range>
+                    <range start="128" end="133">
+                        <name>Stop</name>
+                    </range>
+                    <range start="134" end="255">
+                        <name>Rotate counter-clockwise</name>
+                    </range>
+                </ranges>
+            </channel>
+
+        </channels>
+    </fixture>
+</fixture_definitions>

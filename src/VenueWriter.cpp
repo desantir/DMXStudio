@@ -102,6 +102,7 @@ void VenueWriter::visit( Venue* venue ) {
     add_attribute( dimmer, "master_dimmer", (int)venue->m_master_dimmer );
     add_attribute( dimmer, "auto_blackout", venue->m_auto_backout_ms );
     add_attribute( dimmer, "whiteout_strobe", venue->m_whiteout_strobe_ms );
+    add_attribute( dimmer, "whiteout_color", venue->m_whiteout_color );
     venueElement.InsertEndChild( dimmer );
     
     // Add audio

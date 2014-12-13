@@ -45,6 +45,7 @@ Venue::Venue(void) :
     m_captured_actor( 0 ),
     m_whiteout( WHITEOUT_OFF ),
     m_whiteout_strobe_ms( 100 ),
+    m_whiteout_color( RGBWA::WHITE ),
     m_music_scene_select_enabled( false ),
     m_music_watcher( NULL ),
     m_audio_sample_size( 1024 )
@@ -848,6 +849,9 @@ void Venue::whiteoutChannels( LPBYTE dmx_packet ) {
         if ( !pf->canWhiteout() )
             continue;
 
+        RGBWA&color = (m_whiteout == WHITEOUT_ON || m_whiteout_strobe.isOn()) ?
+            getWhiteoutColor() : RGBWA::BLACK;
+
         for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
             Channel* cp = pf->getChannel(channel);
             if ( !cp->canWhiteout() )       // Do not modify this channel during whiteout
@@ -855,11 +859,19 @@ void Venue::whiteoutChannels( LPBYTE dmx_packet ) {
 
             switch ( cp->getType() ) {
                 case CHNLT_RED:
+                    loadChannel( dmx_packet, pf, channel, color.red() );
+                    break;
+
                 case CHNLT_BLUE:
+                    loadChannel( dmx_packet, pf, channel, color.blue() );
+                    break;
+
                 case CHNLT_GREEN:
+                    loadChannel( dmx_packet, pf, channel, color.green() );
+                    break;
+
                 case CHNLT_WHITE:
-                    loadChannel( dmx_packet, pf, channel,
-                        (m_whiteout == WHITEOUT_ON || m_whiteout_strobe.isOn()) ? 255 : 0 );
+                    loadChannel( dmx_packet, pf, channel, color.white() );
                     break;
 
                 case CHNLT_AUTOPROG:

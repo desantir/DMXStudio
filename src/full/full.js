@@ -29,6 +29,7 @@ var active_chase_id = 0;                            // UID of currently active c
 var auto_blackout = false;                          // Venue is in auto backout mode
 var client_config_update = false;                   // Client layou has changed -  update server
 var current_act = 0;                                // All acts
+var whiteout_color = '#FFFFFF';                     // Whiteout color
 
 var scene_tile_panel;
 var chase_tile_panel;
@@ -218,7 +219,38 @@ function initializeUI() {
 
         onSubmit: function (hsb, hex, rgb) {
             setColorChannelRGB(hsb, hex, rgb);
+        },
+
+        onChange: function (hsb, hex, rgb) {
+            setColorChannelRGB(hsb, hex, rgb);
         }
+    });
+
+    $("#whiteout_colorpicker").ColorPicker({
+        color: "#FFFFFF",
+        livePreview: true,
+
+        onShow: function (picker) {
+            $("#whiteout_colorpicker").ColorPickerSetColor( whiteout_color );
+            $("#whiteout_colorpicker").removeClass('ui-icon').addClass('ui-icon-white');
+            $(picker).fadeIn(500);
+            return false;
+        },
+
+        onHide: function (picker) {
+            $("#whiteout_colorpicker").removeClass('ui-icon-white').addClass('ui-icon');
+            $(picker).fadeOut(500);
+            return false;
+        },
+
+        onSubmit: function (hsb, hex, rgb) {
+            setWhiteoutColor(rgb);
+        },
+
+        onChange: function (hsb, hex, rgb) {
+            setWhiteoutColor(rgb);
+        }
+
     });
 
     // Update the UI from server's current state
@@ -342,6 +374,8 @@ function updateUI() {
                 $("#whiteout_custom_value").multiselect("refresh");
             }
 
+            whiteout_color = json.whiteout_color;
+
             var blackout_id = json.blackout ? "#blackout_1" : "#blackout_0";
             if (!$("#blackout_buttons").is(":focus") && !$(blackout_id).prop("checked"))
                 $(blackout_id).prop("checked", true).button("refresh");
@@ -414,6 +448,19 @@ function updateUI() {
 
             setTimeout(updateUI, 500);
         }
+    });
+}
+
+// ----------------------------------------------------------------------------
+//
+function setWhiteoutColor(rgb) {
+    var color = (rgb.r << 16) | (rgb.g << 8) | rgb.b;
+
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/control/venue/whiteout/color/" + color.toString(16),
+        cache: false,
+        error: onAjaxError
     });
 }
 

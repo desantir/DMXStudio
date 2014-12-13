@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2012,2013 Robert DeSantis
+Copyright (C) 2012-,2014 Robert DeSantistimeout_send_ajax_request
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -39,19 +39,11 @@ var current_act = 0;
 // ----------------------------------------------------------------------------
 //
 function initializeUI() {
-    $("#blackout").change(function () {
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/rest/control/venue/blackout/" + $('input[name=select_blackout]:checked').val(),
-            cache: false,
-            error: onError
-        });
-    });
 
-    $("#dimmer").click(function () {
+    $("#select_blackout").change(function () {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/rest/control/venue/masterdimmer/" + slider_dimmer_id.value,
+            url: "/dmxstudio/rest/control/venue/blackout/" + this.value,
             cache: false,
             error: onError
         });
@@ -64,6 +56,24 @@ function initializeUI() {
             cache: false,
             error: onError
         });
+    });
+
+    $("#whiteoutColor").minicolors({
+        animationSpeed: 50,
+        animationEasing: 'swing',
+        change: change_whiteout_color,
+        changeDelay: 0,
+        control: 'hue',
+        defaultValue: '',
+        hide: null,
+        hideSpeed: 100,
+        inline: true,
+        letterCase: 'lowercase',
+        opacity: false,
+        position: 'bottom left',
+        show: null,
+        showSpeed: 100,
+        theme: 'bootstrap'
     });
 
     $("#sceneChange").change(function () {
@@ -87,8 +97,8 @@ function initializeUI() {
     $("#control_fixture").click( capture_fixture );
 
     $("#venue").on("pageshow", show_venue );
-    $("#scene").on("pageshow", show_scene );
-    $("#chase").on("pageshow", show_chase );
+    $("#scene").on("pageshow", show_scene);
+    $("#chase").on("pageshow", show_chase);
     $("#fixture").on("pageshow", show_fixtures);
     $("#sound").on("pageshow", show_sound);
 
@@ -252,9 +262,20 @@ function timeout_send_ajax_request() {
 // ----------------------------------------------------------------------------
 //
 function change_dimmer(dimmer_value) {
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/control/venue/masterdimmer/" + dimmer_value,
+        cache: false,
+        error: onError
+    });
+}
+
+// ----------------------------------------------------------------------------
+//
+function change_whiteout_color( rgb, opacity ) {
     clearTimeout(timeout);
 
-    document.timer_url = "/dmxstudio/rest/control/venue/masterdimmer/" + dimmer_value
+    document.timer_url = "/dmxstudio/rest/control/venue/whiteout/color/" + rgb.substr(1)
 
     timeout = setTimeout(timeout_send_ajax_request, SLIDER_TIMEOUT);
 }
@@ -272,11 +293,12 @@ function change_strobe(strobe_value) {
 // ----------------------------------------------------------------------------
 //
 function change_animation_speed(speed) {
-    clearTimeout(timeout);
-
-    document.timer_url = "/dmxstudio/rest/control/venue/animation_speed/" + speed
-
-    timeout = setTimeout(timeout_send_ajax_request, SLIDER_TIMEOUT);
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/control/venue/animation_speed/" + speed,
+        cache: false,
+        error: onError
+    });
 }
 
 // ----------------------------------------------------------------------------
@@ -479,18 +501,29 @@ function show_venue() {
 
             var json = jQuery.parseJSON(data);
 
-            if (json.blackout)
-                $("#blackout_1").prop("checked", true).checkboxradio("refresh");
-            else
-                $("#blackout_0").prop("checked", true).checkboxradio("refresh");
+            $('#select_blackout option').eq(json.blackout ? "1" : "0").attr("selected", true);
+            $('#select_blackout').slider('refresh');
 
             $("#whiteout_" + json.whiteout).prop("checked", true).checkboxradio("refresh");
+            $("#whiteoutColor").minicolors('value', "#" + json.whiteout_color);
 
-            $('#slider_whiteout_strobe_id').val(json.whiteout_strobe);
-            $('#slider_whiteout_strobe_id').slider("refresh");
+            $("#slider_whiteout_strobe").on("slidestop", function (event, ui) {
+                change_strobe(this.value);
+                return false;
+            });
 
-            $('#slider_dimmer_id').val(json.dimmer);
-            $('#slider_dimmer_id').slider("refresh");
+            $('#slider_whiteout_strobe').val(json.whiteout_strobe);
+            $('#slider_whiteout_strobe').slider("refresh");
+
+            $("#master_dimmer").slider({
+                stop: function (event, ui) {
+                    change_dimmer(this.value);
+                    return false;
+                }
+            });
+
+            $('#master_dimmer').val(json.dimmer);
+            $('#master_dimmer').slider("refresh");
 
             var o = $("#animations_speed_id option[value='" + json.animation_speed + "']");
             var index = 0;
@@ -528,26 +561,21 @@ function show_scene() {
             var scene_container = $("#sceneChange");
             scene_container.empty();
 
+            var scene_html = "";
+
             $.map(json, function (scene, index) {
                 if (scene.number == 0 || current_act == 0 || scene.acts.indexOf(current_act) != -1) {
                     var id = 'scene_' + scene.id;
 
-                    scene_container.append($('<input>', {
-                        'type': 'radio',
-                        'name': 'select_scene',
-                        'id': id,
-                        'value': scene.id,
-                        'data-theme': 'c'
-                    })
-                    ).append($('<label>', {
-                        'for': id
-                    }).text(scene.name)
-                    );
-
-                    if (scene.is_running)
-                        $("#" + id).attr('checked', 'checked');
+                    scene_html += "<input type='radio' name='select_scene' id='" + id + "' value='" + scene.id + "' data-theme='c' ";
+                    if ( scene.is_running )
+                        scene_html += " checked=checked";
+                    scene_html += "/>";
+                    scene_html += "<label for='" + id + "'>" + scene.name + "</label>";
                 }
             });
+
+            scene_container.append(scene_html);
 
             scene_container.trigger('create');      // Apply styles
         },
@@ -568,38 +596,22 @@ function show_chase() {
             var chase_container = $("#chaseChange");
             chase_container.empty();
 
-            chase_container.append($('<input>', {
-                'type': 'radio',
-                'name': 'select_chase',
-                'id': 'chase_0',
-                'value': 0,
-                'data-theme': 'a',
-                'checked': 'checked'
-            })
-            ).append($('<label>', {
-                'for': 'chase_0'
-            }).text( 'Chase Stopped' )
-            );
+            var chase_html = "<input type='radio' name='select_chase' id='chase_0' value=0 data-theme='c' checked=checked/>";
+            chase_html += "<label for='chase_0'>Chase Stopped</label>";
 
             $.map(json, function (chase, index) {
                 if (current_act == 0 || chase.acts.indexOf(current_act) != -1) {
                     var id = 'chase_' + chase.id;
-                    chase_container.append($('<input>', {
-                        'type': 'radio',
-                        'name': 'select_chase',
-                        'id': id,
-                        'value': chase.id,
-                        'data-theme': 'c'
-                    })
-                    ).append($('<label>', {
-                        'for': id
-                    }).text(chase.name)
-                    );
 
+                    chase_html += "<input type='radio' name='select_chase' id='" + id + "' value='" + chase.id + "' data-theme='c' ";
                     if (chase.is_running)
-                        $("#" + id).attr('checked', 'checked');
+                        chase_html += " checked=checked";
+                    chase_html += "/>";
+                    chase_html += "<label for='" + id + "'>" + chase.name + "</label>";
                 }
             });
+
+            chase_container.append(chase_html);
 
             chase_container.trigger('create');      // Apply styles
         },
@@ -661,7 +673,7 @@ function updateFixtures() {
 
         // Add sliders
         if (fixture.is_active) {
-            var slider_div = $('<div>');
+            var slider_div = $('<div class="ui-field-contain">');
             var title = "";
             if (fixture.is_group)
                 title = "Group ";
@@ -679,13 +691,13 @@ function updateFixtures() {
                     }).text(channel.name))
                     .append( $('<input>', {
                         'type': 'range',
+                        'class' : 'channel_slider',
                         'name': id,
                         'id': id,
                         'data-highlight': true,
                         'value': channel.value,
                         'min': 0,
-                        'max': 255,
-                        'onchange': 'change_fixture_channel('+fixture.id+','+channel.channel+',this.value); return false;'
+                        'max': 255
                     })
                 );
             });
@@ -720,24 +732,33 @@ function updateFixtures() {
     fixture_select.selectmenu("refresh");
 
     $('#fixture_content').trigger('create');      // Apply styles
+
+    // Add handlers (this is better then onchange as we get a single event)
+    $('#fixtureSliders .channel_slider').slider({
+        stop: function (event, ui) {
+            var data = this.id.split('_');
+            change_fixture_channel( parseInt(data[1]), parseInt(data[2]), this.value);
+        }
+    });
 }
 
 // ----------------------------------------------------------------------------
 //
 function change_fixture_channel(fixture_id, channel, channel_value) {
-    clearTimeout(timeout);
-
     var fixture = getFixtureById(fixture_id);
     if (fixture == null)
         return;
 
     var what = (fixture.is_group) ? "group" : "fixture";
 
-    document.timer_url = "/dmxstudio/rest/control/channel/" + what + "/" + fixture_id + "/" + channel + "/" + channel_value;
-
     fixture.channels[channel].value = channel_value;
 
-    timeout = setTimeout(timeout_send_ajax_request, SLIDER_TIMEOUT);
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/control/channel/" + what + "/" + fixture_id + "/" + channel + "/" + channel_value,
+        cache: false,
+        error: onError
+    });
 }
 
 // ----------------------------------------------------------------------------

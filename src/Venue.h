@@ -84,11 +84,13 @@ class Venue : public DObject
     float                   m_audio_boost;                      // Scales incoming audio signal
     float                   m_audio_boost_floor;                // Minimum signal sample value (used when scaling)
     UINT                    m_audio_sample_size;                // Audio sample size (1024 defaut)
+
     StrobeTime              m_whiteout_strobe_slow;
     StrobeTime              m_whiteout_strobe_fast;
     WhiteoutMode            m_whiteout;                         // Whiteout color channels
     ColorStrobe             m_whiteout_strobe;                  // Whiteout strobe control
     UINT                    m_whiteout_strobe_ms;               // Manual strobe time MS
+    RGBWA                   m_whiteout_color;                   // Whiteout "color"
 
     AudioInputStream*	    m_audio;
     SoundDetector*		    m_sound_detector;
@@ -181,6 +183,15 @@ public:
     }
     UINT getWhiteoutStrobeMS() const {
         return m_whiteout_strobe_ms;
+    }
+
+    RGBWA getWhiteoutColor() const {
+        return m_whiteout_color;
+    }
+    void setWhiteoutColor( RGBWA& color ) {
+        m_whiteout_color = color;
+        if ( color.red() == 0xFF && color.blue() == 0xFF && color.green() == 0xFF )
+            m_whiteout_color.white( 0xFF );             // For fixtures with white channel
     }
 
     void setAudioBoostFloor( float boost_floor ) {

@@ -77,7 +77,7 @@ bool SceneStrobeAnimator::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
 {
     if ( m_strobe.strobe( time_ms ) ) {
         for ( FaderFixture& f : m_fixtures )
-            loadColorChannels( dmx_packet, f, m_strobe.isOn() ? m_strobe.getNegative() : f.m_color );
+            loadColorChannels( dmx_packet, f, m_strobe.isOn() ? f.m_color : m_strobe.getNegative() );
         return true;
     }
 

@@ -25,34 +25,34 @@
                         <name>Amber</name>
                     </range>
                     <range start="30" end="34">
-                        <name>GB</name>
+                        <name>Green &amp; Blue</name>
                     </range>
                     <range start="35" end="39">
-                        <name>RB</name>
+                        <name>Red &amp; Blue</name>
                     </range>
                     <range start="40" end="44">
-                        <name>RG</name>
+                        <name>Red &amp; Green</name>
                     </range>
                     <range start="45" end="49">
-                        <name>RA</name>
+                        <name>Red &amp; Amber</name>
                     </range>
                     <range start="50" end="54">
-                        <name>GA</name>
+                        <name>Green &amp; Amber</name>
                     </range>
                     <range start="55" end="59">
-                        <name>BA</name>
+                        <name>Blue &amp; Amber</name>
                     </range>
                     <range start="60" end="64">
-                        <name>RGB</name>
+                        <name>Red &amp; Green &amp; Blue</name>
                     </range>
                     <range start="65" end="69">
-                        <name>GBA</name>
+                        <name>Green &amp; Blue &amp; Amber</name>
                     </range>
                     <range start="70" end="74">
-                        <name>RGA</name>
+                        <name>Red &amp; Green &amp; Amber</name>
                     </range>
                     <range start="75" end="79">
-                        <name>075-079 RGBA</name>
+                        <name>Red &amp; Green &amp; Blue &amp; Amber</name>
                     </range>
                     <range start="80" end="139">
                         <name>Automatic (1 color)</name>

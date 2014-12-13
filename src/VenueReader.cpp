@@ -94,6 +94,7 @@ Venue * VenueReader::read( TiXmlElement* self, Venue* venue ) {
         venue->m_master_dimmer = (BYTE)read_int_attribute( dimmer, "master_dimmer" );
         venue->m_auto_backout_ms = read_dword_attribute( dimmer, "auto_blackout" );
         venue->m_whiteout_strobe_ms = read_unsigned_attribute( dimmer, "whiteout_strobe", venue->getWhiteoutStrobeMS() );
+        venue->m_whiteout_color = read_rgbw_attribute( dimmer, "whiteout_color", RGBWA::WHITE );
         }
 
     TiXmlElement *audio = self->FirstChildElement( "audio" );

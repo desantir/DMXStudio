@@ -53,7 +53,9 @@ ScenePixelAnimator::ScenePixelAnimator( UID animation_uid,
     m_actors = actors;
 
     // Setup the color progression for the animation
-    if ( m_custom_colors.size() )
+    if ( m_custom_colors.size() == 1 && m_custom_colors[1] == RGBWA(1,1,1) )
+        RGBWA::getRainbowColors( m_colors );
+    else if ( m_custom_colors.size() )
         m_colors.assign( m_custom_colors.begin(), m_custom_colors.end() );
     else
         RGBWA::getAllPredefinedColors( m_colors );

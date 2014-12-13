@@ -9,15 +9,15 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		M 5 Simplify animations (must be easier to create animations from the UI)
 		L 5 Alternative to dialogs
 		L 1 Improved error responses (e.g. "<item> not found")
-		L 1 Animated running GIFs for chases
 		L 1 Handle disconnected server state (disable UI, startup errors out if no COM)
 		L 2 Authentication & session control
 		L 4 Album artwork
 		H 4 Music search
-		  4 Editor to map scenes to ponts in the track - automatically generate chase with times (aka soundcloud for lighting)
+		  4 Editor to map scenes to points in the track - automatically generate chase with times (aka soundcloud for lighting)
 		    http://www.smartjava.org/content/exploring-html5-web-audio-visualizing-sound
 		
 	L Scene Animations:
+		M Incorporate track info to music match scene selection
 		L Movement animation travel time
 		L Programs should control travel time rather than fixed signal input
 		L Global animations or attached to a fixture
@@ -33,6 +33,8 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		H Improved sound animation affects (currently they are not very exact and are hard to setup)
 		L Song blending / beat matching
 		M Handle music format changes and other formats
+		M Map song mood / tempo to scenes in music matcher
+			http://developer.echonest.com/docs/v4
 
 	M Fixtures / Fixture Definitions
 		L Simple angle->value options (angle*xx) == DMX code
@@ -46,7 +48,7 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L Introduce studio fault to kill and restart program (vs error based execeptions)
 
 	L Scene / Chase / Act Improvements
-		L Scene selection based on the music beat (BPM)
+		L Scene selection based on the music beat (BPM) or mood
 		L Chase changed based on beat, time or track transition
 		L Chase random scene from all/pool
 		L Chase crossfade = % of time cues fading into each other (kill fade time change to crossfade model)?
@@ -59,12 +61,6 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L Fixture duty cycle support?
 		L Video support
 		? Need real color transforms
-	
- 	M Test Targets
-		Unit tests
-		Verify channel remapping works across UI, ACTORS, and ANIMATIONS 
-			Seems possible to double map or not map scene actor channels
-			Check UI->SceneChannelAnimator and SceneMovementAnimator->SceneChannelAnimator
 
 TODO ------------------------------------------------------------------------ TODO
 

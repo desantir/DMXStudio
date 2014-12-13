@@ -44,6 +44,7 @@ MA 02111-1307, USA.
 #define DMX_URL_CONTROL_VENUE_WHITEOUT          DMX_URL_REST "control/venue/whiteout/"
 #define DMX_URL_CONTROL_VENUE_MASTERDIMMER      DMX_URL_REST "control/venue/masterdimmer/" 
 #define DMX_URL_CONTROL_VENUE_STROBE            DMX_URL_REST "control/venue/strobe/" 
+#define DMX_URL_CONTROL_VENUE_WHITEOUT_COLOR    DMX_URL_REST "control/venue/whiteout/color/" 
 #define DMX_URL_CONTROL_SCENE_SHOW              DMX_URL_REST "control/scene/show/" 
 #define DMX_URL_CONTROL_CHASE_SHOW              DMX_URL_REST "control/chase/show/" 
 #define DMX_URL_CONTROL_VENUE_MUSIC_MATCH       DMX_URL_REST "control/venue/music_match/"
@@ -195,6 +196,7 @@ protected:
     bool control_scene_show( CString& response, LPCSTR data );
     bool control_chase_show( CString& response, LPCSTR data );
     bool control_venue_strobe( CString& response, LPCSTR data );
+    bool control_venue_whiteout_color( CString& response, LPCSTR data );
     bool control_fixture_release( CString& response, LPCSTR data );
     bool control_fixture_channel( CString& response, LPCSTR data );
     bool control_master_volume( CString& response, LPCSTR data );

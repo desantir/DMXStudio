@@ -87,7 +87,7 @@ DMXTextUI::DMXTextUI(void)
     function_map[ "b" ] = HandlerInfo( &DMXTextUI::blackout,                    true,   "Blackout" );
     function_map[ "ba" ] = HandlerInfo( &DMXTextUI::autoBlackout,               true,   "Set venue auto blackout" );
     function_map[ "w" ] = HandlerInfo( &DMXTextUI::whiteout,                    true,   "Whiteout" );
-    function_map[ "ws" ] = HandlerInfo( &DMXTextUI::whiteoutStrobe,             true,   "Whiteout Strobe " );
+    function_map[ "wo" ] = HandlerInfo( &DMXTextUI::whiteout_options,           true,   "Whiteout options" );
 
     function_map[ "a" ] = HandlerInfo( &DMXTextUI::animationSpeed,              true,   "Animation Speed" );
 
@@ -143,14 +143,24 @@ void DMXTextUI::run()
             light_status.AppendFormat( "Dimmer %d%% | ", getVenue()->getMasterDimmer() );
             if ( getVenue()->getUniverse()->isBlackout() )
                 light_status.AppendFormat( "Blackout ON | " );
-            else if ( getVenue()->getWhiteout() == WHITEOUT_ON )
-                light_status.AppendFormat( "Whiteout ON | " );
-            else if ( getVenue()->getWhiteout() == WHITEOUT_STROBE_SLOW )
-                light_status.AppendFormat( "Whiteout STROBE SLOW | " );
-            else if ( getVenue()->getWhiteout() == WHITEOUT_STROBE_FAST )
-                light_status.AppendFormat( "Whiteout STROBE FAST | " );
-            else if ( getVenue()->getWhiteout() == WHITEOUT_STROBE_MANUAL )
-                light_status.AppendFormat( "Whiteout STROBE %dms | ", getVenue()->getWhiteoutStrobeMS() );
+            else if ( getVenue()->getWhiteout() != WHITEOUT_OFF ) {
+                light_status.Append( "Whiteout " );
+
+                if ( getVenue()->getWhiteout() == WHITEOUT_ON )
+                    light_status.Append( "ON " );
+                else if ( getVenue()->getWhiteout() == WHITEOUT_STROBE_SLOW )
+                    light_status.Append( "STROBE SLOW " );
+                else if ( getVenue()->getWhiteout() == WHITEOUT_STROBE_FAST )
+                    light_status.Append( "STROBE FAST " );
+                else if ( getVenue()->getWhiteout() == WHITEOUT_STROBE_MANUAL )
+                    light_status.AppendFormat( "STROBE %dms ", getVenue()->getWhiteoutStrobeMS() );
+
+                if ( getVenue()->getWhiteoutColor() != RGBWA::WHITE )
+                    light_status.AppendFormat( "COLOR %s ", getVenue()->getWhiteoutColor().getColorName().MakeUpper() ); 
+
+                light_status.Append( "| " );
+            }
+
             if ( getVenue()->getAutoBlackout() != 0 )
                 light_status.AppendFormat( "Blackout %lums | ", getVenue()->getAutoBlackout() );
             if ( getVenue()->isChaseRunning() ) {
@@ -341,20 +351,31 @@ void DMXTextUI::whiteout(void)
 
 // ----------------------------------------------------------------------------
 //
-void DMXTextUI::whiteoutStrobe(void)
+void DMXTextUI::whiteout_options()
 {
+    NumberedListField whiteout_field( "Whiteout" );
     IntegerField whiteout_ms_field( "Strobe MS", getVenue()->getWhiteoutStrobeMS(), 25, 10000 );
+    ColorSelectField whiteout_color_field( "Whiteout Color", getVenue()->getWhiteoutColor() );
+
+    whiteout_field.addKeyValue( 0, "Off" );
+    whiteout_field.addKeyValue( 1, "Strobe Slow" );
+    whiteout_field.addKeyValue( 2, "Strobe Fast" );
+    whiteout_field.addKeyValue( 3, "Strobe Manual" );
+    whiteout_field.addKeyValue( 4, "On" );
+    whiteout_field.setDefaultListValue( getVenue()->getWhiteout() );
 
     Form form( &m_text_io );
+    form.add( whiteout_field );
     form.add( whiteout_ms_field );
+    form.add( whiteout_color_field );
 
-    if ( form.play() ) {
-        getVenue()->setWhiteout( WHITEOUT_STROBE_MANUAL );
+    if ( form.play() && form.isChanged() ) {
+        getVenue()->setWhiteout( (WhiteoutMode)(whiteout_field.getListValue()) );
         getVenue()->setWhiteoutStrobeMS( whiteout_ms_field.getIntValue() );
+        getVenue()->setWhiteoutColor( whiteout_color_field.getColor() );
         getVenue()->loadScene();
     }
 }
-
 // ----------------------------------------------------------------------------
 //
 void DMXTextUI::animationSpeed(void)

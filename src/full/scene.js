@@ -611,10 +611,10 @@ function describeScene(event, scene_id) {
         resizable: true,
         title: "Scene " + scene.getNumber() + ": " + escapeForHTML(scene.getName()),
         open: function () { // Stop main body scroll
-            $("body").css("overflow", "hidden");
+            // $("body").css("overflow", "hidden");
         },
         close: function () {
-            $("body").css("overflow", "auto");
+            // $("body").css("overflow", "auto");
         }
     });
 
@@ -637,17 +637,24 @@ function describeScene(event, scene_id) {
     var clazz = fixture_tile_panel.actions[0].tile_class;
 
     function makeFixtureTitleLine(fixture, channel_data) {
-        var html = "<div style=\"clear:both; float: left; font-size: 10pt; cursor: pointer;\" ";
+        var html = "<div style='clear:both; float: left; font-size: 10pt;'>";
 
-        if (channel_data != null)
-            html += "onclick=\"controlFixture2( event, " + fixture.getId() + "," + JSON.stringify(channel_data) + ");\" title=\"control fixture\" >";
-        else
-            html += "onclick=\"controlFixture( event, " + fixture.getId() + "null,false);\" title=\"control fixture\" >";
+        var data = (channel_data != null) ? JSON.stringify(channel_data) : null;
+        var icon_class = 'ui-icon-pin-s';
+        var icon_title = 'control fixture';
 
-        html += "Fixture " + (fixture.isGroup() ? "Group G" : "") + fixture.getNumber() + ": " + escapeForHTML(fixture.getFullName());
+        if (fixture.isActive()) {
+            icon_class = 'ui-icon-close';
+            icon_title = 'release fixture';
+        }
+
+        html += "<div class='ui-icon " + icon_class + "' title='" + icon_title + "' style='margin-right: 5px; cursor: pointer; float: left;' ";
+        html += "onclick='sceneDescribeSelect(event," + fixture.getId() + ",\"" + data + "\");'></div>";
+
+        html += "<div style='float: left;'>Fixture " + (fixture.isGroup() ? "Group G" : "") + fixture.getNumber() + ": " + escapeForHTML(fixture.getFullName()) + "</div>";
 
         if (!fixture.isGroup())
-            html += "<span class=\"describe_scene_dmx\">DMX " + fixture.getDMXAddress() + "</span>";
+            html += "<div class='describe_scene_dmx' style='float: left; margin-top: 2px;'>DMX " + fixture.getDMXAddress() + "</div>";
         html += "</div>";
 
         return html;
@@ -725,6 +732,21 @@ function describeScene(event, scene_id) {
     $("#describe_scene_animations").html(info);
 
     $("#describe_scene_dialog").dialog("open");
+}
+
+function sceneDescribeSelect(event, fixture_id, channel_data) {
+    controlFixture2(event, fixture_id, channel_data, true);
+
+    var icon = $(event.srcElement);
+
+    if (getFixtureById( fixture_id ).isActive()) {
+        icon.removeClass("ui-icon-close").addClass("ui-icon-pin-s");
+        icon.attr('title', 'control fixture');
+    }
+    else {
+        icon.removeClass("ui-icon-pin-s").addClass("ui-icon-close");
+        icon.attr('title', 'release fixture');
+    }
 }
 
 // ----------------------------------------------------------------------------

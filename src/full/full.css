@@ -24,9 +24,22 @@
 .scroll-content { clear:both; width: 100%; float: left; margin-top: 10px; margin-bottom: 5px; }   /* Tile container */
 .scroll-content-item { width: 92px; height: 92px; float: left; margin: 0px 2px 6px 2px; font-family: sans-serif; text-align: left; }
 .scroll-content-header { margin: 1px 1px 2px 2px; border-bottom: 1px solid white; font-size: 16pt; font-weight: normal; }        
-.scroll-content-interior { margin: 1px 2px 1px 2px; font-size: 8pt; font-weight:normal; padding: 0px; overflow: hidden; height: 60px; }
+.scroll-content-interior { margin: 2px 2px 1px 2px; font-size: 8pt; font-weight:normal; padding: 0px; overflow: hidden; height: 60px; }
 .highlight-scroll-item { border: 1px solid #808080;  }
-.active_scroll_item {  border: 1px solid #0972a5;  background: #444444 url(css/dark-hive-custom/images/ui-bg_loop_25_000000_21x21.png); }
+
+@keyframes active_tile_animation {
+    from {border-color: white;}
+    25% {border-color: #0972a5; }
+    50% {border-color: blue; }
+    75% {border-color: #0972a5; }
+    to {border-color: white;}
+}
+
+.active_scroll_item {
+    animation: active_tile_animation 8s infinite;  
+    border: 1px solid #0972a5;
+    background: #444444 url(css/dark-hive-custom/images/ui-bg_loop_25_000000_21x21.png);
+}
 
 .scroll-bar-wrap { clear: left; padding: 0 4px 0 2px; margin: 0 -1px -1px -1px; }
 .scroll-bar-wrap .ui-slider { background: none; border:0;  margin: 0 auto;  }

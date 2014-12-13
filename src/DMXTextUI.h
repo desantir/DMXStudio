@@ -101,7 +101,7 @@ private:
     void soundBeat(void);
     void soundDb();
     void whiteout(void);
-    void whiteoutStrobe(void);
+    void whiteout_options(void);
     void animationSpeed(void);
 
     // Fixture control

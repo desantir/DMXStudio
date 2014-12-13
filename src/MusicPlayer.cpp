@@ -65,6 +65,8 @@ void MusicPlayer::initialize( )
     m_GetPlaylistName = getAddress<GetPlaylistName>( "GetPlaylistName" );
     m_GetTracks = getAddress<GetTracks>( "GetTracks" );
     m_PlayTrack = getAddress<PlayTrack>( "PlayTrack" );
+    m_CacheTrack = getAddress<CacheTrack>( "CacheTrack" );
+    m_GetCachedTrack = getAddress<GetCachedTrack>( "GetCachedTrack" );
     m_PlayAllTracks = getAddress<PlayAllTracks>( "PlayAllTracks" );
     m_ForwardTrack = getAddress<ForwardTrack>( "ForwardTrack" );
     m_BackTrack = getAddress<BackTrack>( "BackTrack" );
@@ -74,6 +76,7 @@ void MusicPlayer::initialize( )
     m_IsTrackPaused = getAddress<IsTrackPaused>( "IsTrackPaused" );
     m_IsLoggedIn = getAddress<IsLoggedIn>( "IsLoggedIn" );
     m_GetTrackInfo = getAddress<GetTrackInfo>( "GetTrackInfo" );
+    m_GetTrackAudioInfo = getAddress<GetTrackAudioInfo>( "GetTrackAudioInfo" );
     m_GetQueuedTracks = getAddress<GetQueuedTracks>( "GetQueuedTracks" );
     m_GetPlayedTracks = getAddress<GetPlayedTracks>( "GetPlayedTracks" );
     m_GetLastPlayerError = getAddress<GetLastPlayerError>( "GetLastPlayerError" );
@@ -198,7 +201,7 @@ bool MusicPlayer::getPlayedTracks( PlayerItems& played_tracks )
     played_tracks.clear();
 
     bool results = (*m_GetPlayedTracks)( &num_tracks, track_ids, sizeof(track_ids) );
-    std::reverse_copy( track_ids, track_ids+num_tracks, std::inserter( played_tracks, played_tracks.begin() ) );
+    std::copy( track_ids, track_ids+num_tracks, std::inserter( played_tracks, played_tracks.begin() ) );
     return results;
 }
 
@@ -231,7 +234,7 @@ CString MusicPlayer::getTrackFullName( DWORD track_id )
 
 // ----------------------------------------------------------------------------
 //
-bool MusicPlayer::getTrackInfo( DWORD track_id, CString* track_name, CString* artist_name, CString* album_name, DWORD* track_duration_ms, bool* starred )
+bool MusicPlayer::getTrackInfo( DWORD track_id, CString* track_name, CString* artist_name, CString* album_name, DWORD* track_duration_ms, bool* starred, CString* track_link )
 {
     VERIFY_LIBRARY_LOADED;
     VERIFY_PLAYER_LOGGED_IN;
@@ -239,8 +242,9 @@ bool MusicPlayer::getTrackInfo( DWORD track_id, CString* track_name, CString* ar
     LPSTR track_name_ptr = track_name ? track_name->GetBufferSetLength(256) : NULL;
     LPSTR artist_name_ptr = artist_name ? artist_name->GetBufferSetLength(256) : NULL;
     LPSTR album_name_ptr = album_name ? album_name->GetBufferSetLength(256) : NULL;
+    LPSTR track_link_ptr = track_link ? track_link->GetBufferSetLength(256) : NULL;
 
-    bool result = (*m_GetTrackInfo)( track_id, track_name_ptr, 256, artist_name_ptr, 256, album_name_ptr, 256, track_duration_ms, starred );
+    bool result = (*m_GetTrackInfo)( track_id, track_name_ptr, 256, artist_name_ptr, 256, album_name_ptr, 256, track_duration_ms, starred, track_link_ptr, 256 );
 
     if ( track_name_ptr )
         track_name->ReleaseBuffer();
@@ -248,6 +252,20 @@ bool MusicPlayer::getTrackInfo( DWORD track_id, CString* track_name, CString* ar
         artist_name->ReleaseBuffer();
     if ( album_name_ptr )
         album_name->ReleaseBuffer();
+    if ( track_link_ptr )
+        track_link->ReleaseBuffer();
+
+    return result;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool MusicPlayer::getTrackAudioInfo( DWORD track_id, AudioInfo* audio_info ) 
+{
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
+
+    bool result = (*m_GetTrackAudioInfo)( track_id, audio_info );
 
     return result;
 }
@@ -270,6 +288,26 @@ bool MusicPlayer::playTrack( DWORD track_id, bool queue )
     VERIFY_PLAYER_LOGGED_IN;
 
     return (*m_PlayTrack)( track_id, queue );
+}
+
+// ----------------------------------------------------------------------------
+//
+bool MusicPlayer::cacheTrack( DWORD track_id )
+{
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
+
+    return (*m_CacheTrack)( track_id );
+}
+
+// ----------------------------------------------------------------------------
+//
+bool MusicPlayer::getCachedTrack( CachedTrack** cached_track )
+{
+    VERIFY_LIBRARY_LOADED;
+    VERIFY_PLAYER_LOGGED_IN;
+
+    return (*m_GetCachedTrack)( cached_track );
 }
 
 // ----------------------------------------------------------------------------
@@ -335,14 +373,14 @@ bool MusicPlayer::isTrackPaused( )
 
 // ----------------------------------------------------------------------------
 //
-DWORD MusicPlayer::getPlayingTrack( DWORD* track_length, DWORD* time_remaining, UINT* queued_tracks, UINT *played_tracks )
+DWORD MusicPlayer::getPlayingTrack( DWORD* track_length, DWORD* time_remaining, UINT* queued_tracks, UINT* previous_tracks )
 {
     VERIFY_LIBRARY_LOADED;
     VERIFY_PLAYER_LOGGED_IN;
 
     DWORD track_id = 0;
 
-    (*m_GetPlayingTrack)( &track_id, track_length, time_remaining, queued_tracks, played_tracks );
+    (*m_GetPlayingTrack)( &track_id, track_length, time_remaining, queued_tracks, previous_tracks );
 
     return track_id;
 }

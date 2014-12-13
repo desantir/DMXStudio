@@ -298,7 +298,7 @@ function controlFixtureGroup(event, fixture_group_id) {
 
 // ----------------------------------------------------------------------------
 //
-function controlFixture2(event, fixture_id, preload_channel_values,tile_clicked) {
+function controlFixture2(event, fixture_id, preload_channel_values, tile_clicked) {
     stopEventPropagation(event);
 
     var fixture = getFixtureById(fixture_id);

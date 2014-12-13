@@ -33,6 +33,10 @@ enum ColorChannels {
     COLOR_CHANNELS
 };
 
+class RGBWA;
+
+typedef std::vector<RGBWA> RGBWAArray;
+
 class RGBWA {
     BYTE    m_rgbwa[COLOR_CHANNELS];
     
@@ -64,7 +68,8 @@ public:
     static bool getColorByName( LPCSTR color_name, RGBWA& rgb );
     static LPCSTR findColorName( RGBWA rgb );
     static std::vector<CString> getAllColorNames( );
-    static void getAllPredefinedColors( std::vector<RGBWA>& dest, bool include_black=false );
+    static void getAllPredefinedColors( RGBWAArray& dest, bool include_black=false );
+    static void getRainbowColors( RGBWAArray& colors );
 
     inline RGBWA getColor() {
         return RGBWA( m_rgbwa );
@@ -122,5 +127,3 @@ public:
 
     CString getColorName( );
 };
-
-typedef std::vector<RGBWA> RGBWAArray;

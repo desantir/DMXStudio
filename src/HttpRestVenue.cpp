@@ -88,6 +88,7 @@ bool HttpRestServices::query_venue_status( CString& response, LPCSTR data )
     json.add( "dimmer", studio.getVenue()->getMasterDimmer() );
     json.add( "whiteout", studio.getVenue()->getWhiteout() );
     json.add( "whiteout_strobe", studio.getVenue()->getWhiteoutStrobeMS() );
+    json.add( "whiteout_color", studio.getVenue()->getWhiteoutColor() );
     json.add( "animation_speed", studio.getVenue()->getAnimationSampleRate() );
     json.add( "current_scene", studio.getVenue()->getCurrentSceneUID() );
     json.add( "current_chase", studio.getVenue()->getRunningChase() );
@@ -155,7 +156,30 @@ bool HttpRestServices::control_venue_strobe( CString& response, LPCSTR data )
         return false;
 
     studio.getVenue()->setWhiteoutStrobeMS( whiteout_strobe_ms );
-    studio.getVenue()->loadScene();
+
+    if ( studio.getVenue()->getWhiteout() != WHITEOUT_OFF )
+        studio.getVenue()->loadScene();
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool HttpRestServices::control_venue_whiteout_color( CString& response, LPCSTR data )
+{
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
+    ULONG rgbwa;
+    if ( data[0] == '#' )
+        data++;
+    if ( sscanf_s( data, "%lx", &rgbwa ) != 1 )
+        return false;
+
+    studio.getVenue()->setWhiteoutColor( RGBWA(rgbwa) );
+
+    if ( studio.getVenue()->getWhiteout() != WHITEOUT_OFF )
+        studio.getVenue()->loadScene();
 
     return true;
 }
