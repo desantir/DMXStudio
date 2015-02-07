@@ -117,6 +117,7 @@ CString MovementAnimation::getSynopsis(void) {
         case MOVEMENT_XCROSS:       movement = "X-cross"; break;
         case MOVEMENT_MOONFLOWER:   movement = "Moonflower"; break;
         case MOVEMENT_COORDINATES:  movement = "Coordinates"; break;
+        case MOVEMENT_SINEWAVE:     movement = "Sinewave"; break;
     }
 
     CString head;
@@ -136,6 +137,10 @@ CString MovementAnimation::getSynopsis(void) {
     else if ( m_movement_type == MOVEMENT_MOONFLOWER ) {
         synopsis.AppendFormat( "Grid( home=%.1f,%.1f height=%.1f spacing=%.1f radius=%.1f pan_incr=%d )\n",
             m_home_x, m_home_y, m_height, m_fixture_spacing, m_radius, m_pan_increment );
+    }
+    else if ( m_movement_type == MOVEMENT_SINEWAVE ) {
+        synopsis.AppendFormat( "Degrees( tilt=%d-%d pan=%d-%d step=%d offset=%d )\n",
+            m_tilt_start, m_tilt_end, m_pan_start, m_pan_end, m_positions, m_pan_increment );
     }
     else {
         synopsis.AppendFormat( "Degrees( tilt=%d-%d pan=%d-%d pan_incr=%d )\n",

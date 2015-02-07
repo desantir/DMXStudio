@@ -84,6 +84,7 @@ private:
     void genXcrossMovement( AnimationTask* task, ParticipantArray& participants );
     void genMoonflowerMovement( AnimationTask* task, ParticipantArray& participants );
     void genCoordinatesMovement( AnimationTask* task, ParticipantArray& participants );
+    void genSineMovement( AnimationTask* task, ParticipantArray& participants );
 
     ChannelValueArray anglesToValues( Channel* channel, AngleList& tilt );
 

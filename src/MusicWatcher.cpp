@@ -46,61 +46,63 @@ UINT MusicWatcher::run(void) {
 
     DWORD current_track_id = 0;
     bool current_track_paused = false;
+    bool init = true;
+    MusicSelectorType last_type = MST_SCENE;
+    UID last_type_uid = m_venue->getDefaultScene()->getUID();
 
     while ( isRunning() ) {
         try {
-            DWORD track_id;
-            bool track_paused;
+            bool track_changed = true;
 
-            if ( !studio.getMusicPlayer()->isLoggedIn() ) {
+            if ( !studio.getMusicPlayer()->isLoggedIn() ||
+                 !m_venue->isMusicSceneSelectEnabled() ) {
                 Sleep( 1000 );
                 continue;
             }
 
-            if ( !m_player->waitOnTrackEvent( 1000, &track_id, &track_paused ) )
-                continue;
+            if ( !init ) {
+                DWORD track_id;
+                bool track_paused;
 
-            if ( current_track_id == track_id && current_track_paused == track_paused )
-                continue;       // We already dealt with this state (i.e. we missed a transition)
+                if ( !m_player->waitOnTrackEvent( 1000, &track_id, &track_paused ) )
+                    continue;
 
-            current_track_id = track_id;
-            current_track_paused = track_paused;
+                if ( current_track_id == track_id && current_track_paused == track_paused )
+                    continue;       // We already dealt with this state (i.e. we missed a transition)
 
-            if ( !m_venue->isMusicSceneSelectEnabled() )
-                continue;
+                track_changed = current_track_id != track_id;   // For dealing with pause transitions
 
-            CString track_name;
-
-            if ( current_track_id == 0 || current_track_paused ) {  // No sound - select silence
-                track_name = SILENCE_TRACK_NAME;
+                current_track_id = track_id;
+                current_track_paused = track_paused;
             }
-            else {                                                  // Use the full track name as the key
-                track_name = m_player->getTrackFullName( current_track_id );
+            else {
+                init = false;
             }
 
-            // Select object type and UID that we will be displaying
+            CString track_name, artist_name, track_link, track_full_name;
             MusicSelectorType type = MST_SCENE;
             UID type_uid = m_venue->getDefaultScene()->getUID();
 
-            m_venue->mapMusicToScene( track_name, type, type_uid );
-
-            bool random = false;
-
-            if ( type == MST_RANDOM_SCENE ) {
-                Scene* scene = m_venue->getSceneByNumber( (rand() % m_venue->getNumScenes())+1 );
-                if ( scene ) {
-                    type_uid = scene->getUID();
-                    type = MST_SCENE;
-                    random = true;
-                }
+            if ( current_track_id == 0 || current_track_paused ) {  // No sound - select silence
+                track_name = SILENCE_TRACK_NAME;
+                track_link = SILENCE_TRACK_LINK;
+                track_full_name = track_name;
             }
-            else if ( type == MST_RANDOM_CHASE ) {
-                Chase* chase = m_venue->getChaseByNumber( (rand() % m_venue->getNumChases())+1 );
-                if ( chase ) {
-                    type_uid = chase->getUID();
-                    type = MST_CHASE;
-                    random = true;
-                }
+            else {                                                  // Use the full track name as the key
+                m_player->getTrackInfo( current_track_id, &track_name, &artist_name, NULL, NULL, NULL, &track_link );
+                track_full_name.Format( "track '%s by %s'", track_name, artist_name );
+            }
+
+            CString method_of_selection;
+
+            if ( current_track_paused || track_changed ) {
+                // Select object type and UID that we will be displaying
+                mapMusicToScene( track_link, current_track_id, type, type_uid, method_of_selection );
+            }
+            else {
+                type = last_type;
+                type_uid = last_type_uid;
+                method_of_selection = "re-";
             }
 
             // Stop any running chases and load the new object
@@ -108,19 +110,25 @@ UINT MusicWatcher::run(void) {
 
             if ( type == MST_SCENE ) {
                 Scene* scene = m_venue->getScene( type_uid );
-                STUDIO_ASSERT( scene, "Music match scene %lu does not exist for track '%s'", type_uid, track_name );
+                STUDIO_ASSERT( scene, "Music match scene %lu does not exist for %s", type_uid, track_full_name );
 
-                DMXStudio::log_status( "Music match %sselected scene '%s' for track '%s'", 
-                    (random) ? "randomly " : "", scene->getName(), track_name );
+                DMXStudio::log_status( "Music match %sselected scene '%s' rated '%s' for %s", 
+                    method_of_selection, scene->getName(), BPMRatings[scene->getBPMRating()].name, track_full_name );
                 m_venue->selectScene( type_uid );
             }
             else if ( type == MST_CHASE ) {
                 Chase* chase = m_venue->getChase( type_uid );
-                STUDIO_ASSERT( chase, "Music match chase %lu does not exist for track '%s'", type_uid, track_name );
+                STUDIO_ASSERT( chase, "Music match chase %lu does not exist for %s", type_uid, track_full_name );
 
-                DMXStudio::log_status( "Music match %sselected chase '%s' for track '%s'", 
-                    (random) ? "randomly " : "", chase->getName(), track_name );
+                DMXStudio::log_status( "Music match %sselected chase '%s' for %s", 
+                    method_of_selection, chase->getName(), track_full_name );
                 m_venue->startChase( type_uid );
+            }
+
+            // Remember last selection in case of a pause
+            if ( !current_track_paused ) {
+                last_type = type;
+                last_type_uid = type_uid;
             }
         }
         catch ( std::exception& ex ) {
@@ -134,6 +142,91 @@ UINT MusicWatcher::run(void) {
     return 0;
 }
 
+// ----------------------------------------------------------------------------
+//
+void MusicWatcher::mapMusicToScene( LPCSTR track_link, DWORD track_id, MusicSelectorType& type, UID& type_uid, CString& method_of_selection )
+{
+    // Select object type and UID that we will be displaying
+    m_venue->mapMusicToScene( track_link, type, type_uid );
+
+    if ( type == MST_SCENE_BY_BPM) {
+        UINT bpm = 0;
+        type_uid = findSceneByBPM( track_link, track_id, bpm );
+        if ( type_uid != 0 ) {
+            type = MST_SCENE;
+            method_of_selection.Format( "%d BPM, ", bpm );
+        }
+        else    // Fall back to random scene if no BPM info
+            type = MST_RANDOM_SCENE;
+    }
+
+    if ( type == MST_RANDOM_SCENE ) {
+        type_uid = m_venue->getRandomScene();
+        if ( type_uid ) {
+            type = MST_SCENE;
+            method_of_selection = "randomly ";
+        }
+    }
+    else if ( type == MST_RANDOM_CHASE ) {
+        type_uid = m_venue->getRandomChase();
+        if ( type_uid ) {
+            type = MST_CHASE;
+            method_of_selection = "randomly ";
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+UID MusicWatcher::findSceneByBPM( LPCSTR track_link, DWORD track_id, UINT& bpm )
+{
+    // TODO - Cache scene BPM map?
+
+    AudioInfo audio_info;
+    if ( !studio.getTrackAudioInfo( track_link, track_id, audio_info ) )
+        return 0;
+
+    bpm = (UINT)(audio_info.tempo+.5);
+
+    // Determine track's BMP rating
+    BPMRating track_bpm_rating = computeBPMRating( bpm );
+    if ( track_bpm_rating == BPM_NO_RATING )
+        return 0;
+
+    SceneRatingsMap ratingsMap;
+
+    m_venue->populateSceneRatingsMap( ratingsMap );
+
+    UINT up, down;
+
+    up = track_bpm_rating;
+    down = up-1;
+
+    while ( down > BPM_NO_RATING || up < BPM_END ) {
+        if ( up < BPM_END ) {
+            SceneRatingsMap::iterator it=ratingsMap.find( (BPMRating)up );
+            if ( it != ratingsMap.end() ) {
+                UIDArray& choices = it->second;
+                return choices.at( (rand() % choices.size()) );
+            }
+
+            up++;
+        }
+
+        if ( down > BPM_NO_RATING ) {
+            SceneRatingsMap::iterator it=ratingsMap.find( (BPMRating)down );
+            if ( it != ratingsMap.end() ) {
+                UIDArray& choices = it->second;
+                return choices.at( (rand() % choices.size()) );
+            }
+
+            down--;
+        }
+    }
+
+    return 0;
+}
+ 
 // ----------------------------------------------------------------------------
 //
 bool MusicWatcher::start()

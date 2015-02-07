@@ -20,7 +20,6 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "VenueReader.h"
 #include "Venue.h"
 #include "SceneSequence.h"
@@ -31,6 +30,7 @@ MA 02111-1307, USA.
 #include "SceneStrobeAnimator.h"
 #include "SceneSoundLevel.h"
 #include "ScenePixelAnimator.h"
+#include "SceneChannelFilter.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -177,6 +177,8 @@ Scene* VenueReader::read( TiXmlElement* self, Scene* scene )
 
     readDObject( self, scene, "scene_number" );
 
+    scene->m_bpm_rating = (BPMRating)read_int_attribute( self, "bpm_rating", BPMRating::BPM_NO_RATING);
+
     std::vector<SceneActor *> actors = 
         read_xml_list<SceneActor>( self->FirstChildElement( "actors" ), "actor" );
 
@@ -217,6 +219,8 @@ Scene* VenueReader::read( TiXmlElement* self, Scene* scene )
                 animation = read( element, (SceneStrobeAnimator*)NULL );
             else if ( !strcmp( class_name, ScenePixelAnimator::className ) )
                 animation = read( element, (ScenePixelAnimator*)NULL );
+            else if ( !strcmp( class_name, SceneChannelFilter::className ) )
+                animation = read( element, (SceneChannelFilter*)NULL );
             else
                 STUDIO_ASSERT( false, "Unknown animation class '%s'", class_name );
 
@@ -320,6 +324,7 @@ MusicSceneSelector* VenueReader::read( TiXmlElement* self, MusicSceneSelector* m
 
     music_scene_selection->m_selection_uid = (UID)read_dword_attribute( self, "uid" );
     music_scene_selection->m_selection_type = (MusicSelectorType)read_dword_attribute( self, "type" );
+    music_scene_selection->m_track_link  = read_text_element( self, "track_link" );
     music_scene_selection->m_track_full_name = read_text_element( self, "track_full_name" );
 
     return music_scene_selection;
@@ -593,6 +598,33 @@ SceneChannelAnimator* VenueReader::read( TiXmlElement* self, SceneChannelAnimato
         animation->m_channel_animations.push_back( *(*it) );
         delete (*it);
     }
+
+    return animation;
+}
+
+// ----------------------------------------------------------------------------
+//
+SceneChannelFilter* VenueReader::read( TiXmlElement* self, SceneChannelFilter* animation )
+{
+    animation = new SceneChannelFilter();
+
+    animation->m_uid = (UID)read_dword_attribute( self, "uid" );
+    animation->m_name = read_text_element( self, "name" );
+    animation->m_description = read_text_element( self, "description" );
+    animation->m_filter = (ChannelFilter)read_unsigned_attribute( self, "filter");
+    animation->m_channel = (channel_t)read_unsigned_attribute( self, "channel" );
+    animation->m_step = read_unsigned_attribute( self, "step" );
+    animation->m_amplitude = read_unsigned_attribute( self, "amplitude" );
+    animation->m_offset = read_int_attribute( self, "offset" );
+
+    TiXmlElement* signal_element = self->FirstChildElement( "signal" );
+    if ( signal_element ) {
+        AnimationSignal* signal = read( signal_element, (AnimationSignal*)NULL );
+        animation->m_signal = *signal;
+        delete signal;
+    }
+
+    read_uids( self, "pfuids", animation->m_actors );
 
     return animation;
 }

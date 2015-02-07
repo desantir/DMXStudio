@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2014 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -19,7 +19,6 @@ along with DMX Studio; see the file _COPYING.txt.  If not, write to
 the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
-
 
 #pragma once
 
@@ -54,6 +53,7 @@ public:
     ChannelAnimation* read( TiXmlElement* self, ChannelAnimation* channel_animation );
     MusicSceneSelector* read( TiXmlElement* self, MusicSceneSelector* music_scene_selection );
     ScenePixelAnimator* read( TiXmlElement* self, ScenePixelAnimator* animation );
+    SceneChannelFilter* read( TiXmlElement* self, SceneChannelFilter* animation );
 
     template <class T>
     std::vector<T *> read_xml_list( TiXmlElement *container, const char *element_name ) {

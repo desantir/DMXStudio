@@ -64,6 +64,7 @@ public:
     virtual CString getSynopsis(void);
     virtual AbstractAnimation* clone(void) = 0;
 
+    // NOTE: The DMX packet contains _modified_ channel values (dimmer, backout, etc)
     virtual void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet ) = 0;
     virtual bool sliceAnimation( DWORD time_ms, BYTE* dmx_packet ) = 0;
     virtual void stopAnimation( void ) = 0;

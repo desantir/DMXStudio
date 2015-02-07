@@ -196,7 +196,7 @@ function initializeUI() {
 
     $("#show_music_matcher").click(showMusicMatch);
 
-    initializeHorizontalSlider("frequency_sample_rate", 25, 1000, 100);
+    initializeHorizontalSlider("frequency_sample_rate", 25, 1000, 50);
 
     $("#channel_panel_colorpicker").ColorPicker({
         color: "#FFFFFF",
@@ -534,6 +534,26 @@ function setEditMode(mode) {
 function configureVenue(event) {
     stopEventPropagation(event);
 
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/query/venue/describe/",
+        cache: false,
+        success: function (data) {
+            var json = jQuery.parseJSON(data);
+            openConfigureVenueDialog(json);
+        },
+        error: function (jqXHR, textError, errorThrown) {
+            $("#configure_venue_dialog").dialog("close");
+            onAjaxError(jqXHR, textError, errorThrown);
+        }
+    });
+}
+
+// ----------------------------------------------------------------------------
+//
+function openConfigureVenueDialog(config_json) {
+    var capture_devices = config_json.capture_devices;
+
     $("#configure_venue_dialog").dialog({
         autoOpen: false,
         width: 540,
@@ -552,7 +572,7 @@ function configureVenue(event) {
                     audio_boost: $("#cvd_audio_boost").val(),
                     audio_boost_floor: $("#cvd_audio_boost_floor").val(),
                     audio_sample_size: $("#cvd_audio_sample_size").val(),
-                    audio_capture_device: $("#cvd_audio_capture_device").val(),
+                    audio_capture_device: capture_devices[$("#cvd_audio_capture_device").val()],
                     auto_blackout: $("#cvd_auto_blackout").val()
                 };
 
@@ -596,66 +616,48 @@ function configureVenue(event) {
     $("#cvd_audio_boost_floor").spinner({ min: 0, max: 100, value: 0.0, step: .1 });
     $("#cvd_auto_blackout").spinner({ min: 0, max: 65000, value: 0, step: 1000 });
 
-    $("#configure_venue_dialog").dialog("open");
+    $("#cvd_name").val(config_json.name);
+    $("#cvd_description").val(config_json.description);
 
-    $.ajax({
-        type: "GET",
-        url: "/dmxstudio/rest/query/venue/describe/",
-        cache: false,
-        success: function (data) {
-            var json = jQuery.parseJSON(data);
-            openConfigureVenueDialog(json);
-        },
-        error: function (jqXHR, textError, errorThrown) {
-            $("#configure_venue_dialog").dialog("close");
-            onAjaxError(jqXHR, textError, errorThrown);
-        }
-    });
-}
-
-// ----------------------------------------------------------------------------
-//
-function openConfigureVenueDialog(json) {
-    $("#cvd_name").val(json.name);
-    $("#cvd_description").val(json.description);
-
-    for (var i = 0; i < json.ports.length; i++) {
-        var port = json.ports[i];
+    for (var i = 0; i < config_json.ports.length; i++) {
+        var port = config_json.ports[i];
         $("#cvd_dmx_port").append($('<option>', {
             value: port,
             text: port,
-            selected: port == json.dmx_port
+            selected: port == config_json.dmx_port
         }));
     }
 
     $("#cvd_dmx_port").multiselect("refresh");
 
-    $("#cvd_dmx_packet_delay_ms").spinner().val( json.dmx_packet_delay_ms );
-    $("#cvd_dmx_minimum_delay_ms").spinner().val (json.dmx_minimum_delay_ms );
-    $("#cvd_audio_boost").spinner().val( json.audio_boost );
-    $("#cvd_audio_boost_floor").spinner().val (json.audio_boost_floor );
-    $("#cvd_auto_blackout").spinner( "value", json.auto_blackout );
+    $("#cvd_dmx_packet_delay_ms").spinner().val(config_json.dmx_packet_delay_ms);
+    $("#cvd_dmx_minimum_delay_ms").spinner().val(config_json.dmx_minimum_delay_ms);
+    $("#cvd_audio_boost").spinner().val(config_json.audio_boost);
+    $("#cvd_audio_boost_floor").spinner().val(config_json.audio_boost_floor);
+    $("#cvd_auto_blackout").spinner("value", config_json.auto_blackout);
 
     for (var i = 1024; i <= 1024*8; i *= 2 ) {
         $("#cvd_audio_sample_size").append($('<option>', {
             value: i,
             text: i,
-            selected: i == json.audio_sample_size
+            selected: i == config_json.audio_sample_size
         }));
     }
 
     $("#cvd_audio_sample_size").multiselect("refresh");
 
-    for (var i = 0; i < json.capture_devices.length; i++) {
-        var device = json.capture_devices[i];
+    for (var i = 0; i < config_json.capture_devices.length; i++) {
+        var device = config_json.capture_devices[i];
         $("#cvd_audio_capture_device").append($('<option>', {
-            value: device,
+            value: i,
             text: device,
-            selected: device == json.audio_capture_device
+            selected: device == config_json.audio_capture_device
         }));
     }
 
     $("#cvd_audio_capture_device").multiselect("refresh");
+
+    $("#configure_venue_dialog").dialog("open");
 }
 
 // ----------------------------------------------------------------------------

@@ -310,7 +310,8 @@ function controlFixture2(event, fixture_id, preload_channel_values, tile_clicked
         "is_capture": !fixture.isActive()
     };
     
-    json.channel_values = preload_channel_values;
+    if ( preload_channel_values != null ) 
+        json.channel_values = preload_channel_values;
 
     var what = fixture.isGroup() ? "fixturegroup" : "fixture";
 
@@ -605,7 +606,7 @@ function createNewFixtureDialog(dialog_title, data) {
         if (!fixtures[i].isGroup()) {
             var address = fixtures[i].getDMXAddress() - 1;
             for (var d = address; d < address + fixtures[i].getNumChannels() ; d++)
-                dmx_addresses[d] = fixtures[i].getNumber();
+                dmx_addresses[d] = fixtures[i].getId();
         }
     }
 
@@ -644,7 +645,7 @@ function createNewFixtureDialog(dialog_title, data) {
             var info = findFixtureDefinition(json.fuid);
             
             for (var i = json.dmx_address - 1; i < json.dmx_address - 1 + info.num_channels; i++) {
-                if (dmx_addresses[i] != 0 && dmx_addresses[i] != json.number) {
+                if (dmx_addresses[i] != 0 && dmx_addresses[i] != json.id) {
                     messageBox("DMX address overlaps existing fixture at address " + (i + 1));
                     return;
                 }
@@ -753,9 +754,10 @@ function showDmxAddressChooser(fixture_number, num_channels) {
     var update_tiles = function ( mode ) {
         $("#cda_addresses").empty();
 
-        var html = "";
+        var html = "<div onclick='selectDmxAddress(event);'>";
         var dmx = 1;
         var allow_overlap = $("#nfd_allow_overlap").is(":checked");
+        var fixture = null;
 
         for (var row = 0; row < 32; row++) {
             for (var col = 0; col < 16; col++) {
@@ -778,10 +780,7 @@ function showDmxAddressChooser(fixture_number, num_channels) {
                 else
                     clazz += " dmx_tile_locked";
 
-                html += "<div class='dmx_tile " + clazz + "' ";
-
-                if (!tile_locked)
-                    html += 'onclick="selectDmxAddress(event,' + dmx + ');"';
+                html += "<div class='dmx_tile " + clazz + "' id='dmxaddr_" + dmx + "' ";
 
                 var style = "";
                 if (row < 31)
@@ -791,16 +790,27 @@ function showDmxAddressChooser(fixture_number, num_channels) {
                 if (col == 0)
                     style += "clear:both;";
 
+                if (dmx_addresses[dmx - 1] != 0) {
+                    if (fixture == null || fixture.getId() != dmx_addresses[dmx - 1])
+                        fixture = getFixtureById(dmx_addresses[dmx - 1])
+
+                    html += "title='" + escapeForHTML(fixture.getFullName()) + "' ";
+                }
+                else
+                    fixture = null;
+
                 var contents = "";
                 if (mode == 0)
                     contents = dmx;
-                else if (dmx_addresses[dmx - 1] != 0)
-                    contents = dmx_addresses[dmx - 1];
+                else if ( fixture != null )
+                    contents = fixture.getNumber();
 
                 html += "style='" + style + "'>" + contents + "</div>";
                 dmx++;
             }
         }
+
+        html += "</div>";
 
         $("#cda_addresses").html(html);
     }
@@ -817,6 +827,12 @@ function showDmxAddressChooser(fixture_number, num_channels) {
 
 function selectDmxAddress(event, address) {
     stopEventPropagation(event);
+
+    var tile = $(event.srcElement);
+    if (!tile.hasClass("dmx_tile_unlocked"))
+        return;
+
+    var address = parseInt( tile.attr('id').substr( 8 ) );
     $("#choose_dmx_address_dialog").dialog("close");
     $("#nfd_dmx_address").spinner("value", address);
 }
@@ -920,13 +936,7 @@ function describeFixture(event, fixture_id) {
         modal: false,
         draggable: true,
         resizable: false,
-        title: "Fixture " + fixture.getNumber() + ": " + escapeForHTML(fixture.getManufacturer()) + " " + escapeForHTML(fixture.getModel()),
-        open: function () { // Stop main body scroll
-            $("body").css("overflow", "hidden");
-        },
-        close: function () {
-            $("body").css("overflow", "auto");
-        }
+        title: "Fixture " + fixture.getNumber() + ": " + escapeForHTML(fixture.getManufacturer()) + " " + escapeForHTML(fixture.getModel())
     });
 
     $("#describe_fixture_number").html(escapeForHTML(fixture.getNumber()));

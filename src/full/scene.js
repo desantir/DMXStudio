@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2012,2013 Robert DeSantis
+Copyright (C) 2012-14 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -22,6 +22,17 @@ MA 02111-1307, USA.
 
 var scenes = new Array();
 
+var BPMRatings = [
+    { name: "no rating", lower: 0, upper: 999 },
+    { name: "very slow (< 60)", lower: 0, upper: 59 },
+    { name: "slow (60-79)", lower: 60, upper: 79 },
+    { name: "medium (80-119)", lower: 80, upper: 119 },
+    { name: "fast (120-149)", lower: 120, upper: 149 },
+    { name: "very fast (>= 150)", lower: 150, upper: 999 },
+];
+
+var last_animation_type = Animations[0].class_name;        // restores last select new animation type in scene edit
+
 // ----------------------------------------------------------------------------
 // class Scene
 //
@@ -43,6 +54,11 @@ function Scene(scene_data)
     // method getName
     this.getName = function () {
         return this.name;
+    }
+
+    // method getBPMRating
+    this.getBPMRating = function () {
+        return this.bpm_rating;
     }
 
     // method getFullName
@@ -225,6 +241,7 @@ function copyScene(event) {
         name: "Copy of " + scene.getName(),
         description: scene.getDescription(),
         number: new_number,
+        bpm_rating: scene.getBPMRating(),
         animations: scene.getAnimations(),
         acts: scene.getActs(),
         actors: actors
@@ -248,6 +265,7 @@ function createScene(event) {
         name: "New Scene " + new_number,
         description: "",
         number: new_number,
+        bpm_rating: 0,
         animations: [],
         acts: current_act == 0 ? [] : [ current_act ],
         actors: actors
@@ -272,6 +290,7 @@ function editScene(event, scene_id) {
         name: scene.getName(),
         description: scene.getDescription(),
         number: scene.getNumber(),
+        bpm_rating: scene.getBPMRating(),
         animations: scene.getAnimations(),
         actors: actors,
         acts: scene.getActs()
@@ -292,6 +311,7 @@ function openNewSceneDialog(dialog_title, action_title, copy, data) {
             name: $("#nsd_name").val(),
             description: $("#nsd_description").val(),
             number: parseInt($("#nsd_number").val()),
+            bpm_rating: parseInt($("#nsd_bpm_rating").val()),
             keep_groups: $("#nsd_keep_groups").is(":checked"),
             actors: $("#nsd_fixtures").val(),
             acts: acts,
@@ -361,7 +381,7 @@ function openNewSceneDialog(dialog_title, action_title, copy, data) {
     $("#new_scene_dialog").dialog({
         autoOpen: false,
         width: 780,
-        height: 620,
+        height: 680,
         modal: true,
         resizable: false,
         buttons: dialog_buttons
@@ -418,6 +438,20 @@ function openNewSceneDialog(dialog_title, action_title, copy, data) {
         checkAllText: 'All acts', uncheckAllText: 'Clear acts', selectedList: 8
     });
 
+    $("#nsd_bpm_rating").empty();
+
+    for (var i=0; i < BPMRatings.length; i++) {
+        $("#nsd_bpm_rating").append($('<option>', {
+            value: i,
+            text: BPMRatings[i].name,
+            selected: data.bpm_rating == i
+        }));
+    }
+
+    $("#nsd_bpm_rating").multiselect({
+        minWidth: 300, multiple: false, selectedList: 1, header: false, height: "auto"
+    });
+
     populate_animations();
 
     $("#nsd_new_animation_button").hover(function () {
@@ -436,13 +470,14 @@ function openNewSceneDialog(dialog_title, action_title, copy, data) {
         $("#nsd_new_animation_type").append($('<option>', {
             value: Animations[i].class_name,
             text: Animations[i].name,
-            selected: i == 0
+            selected: Animations[i].class_name == last_animation_type
         }));
     }
     $("#nsd_new_animation_type").multiselect({ minWidth: 400, multiple: false, selectedList: 1, header: false, noneSelectedText: 'select animation', height: "auto" });
 
     $("#nsd_new_animation_type").bind("multiselectclick", function (event, ui) {
         stopEventPropagation(event);
+        last_animation_type = ui.value;
         $("#nsd_new_animation_description").text(findAnimation(ui.value).description);
     });
 
@@ -609,15 +644,15 @@ function describeScene(event, scene_id) {
         modal: false,
         draggable: true,
         resizable: true,
-        title: "Scene " + scene.getNumber() + ": " + escapeForHTML(scene.getName()),
-        open: function () { // Stop main body scroll
-            // $("body").css("overflow", "hidden");
-        },
-        close: function () {
-            // $("body").css("overflow", "auto");
-        }
+        title: "Scene " + scene.getNumber() + ": " + escapeForHTML(scene.getName())
     });
 
+    $("#describe_scene_dialog").dialog("open");
+
+    describe_scene_content(scene);
+}
+
+function describe_scene_content(scene) {
     var acts = "";
     if (scene.getActs().length > 0) {
         for (var i = 0; i < scene.getActs().length; i++)
@@ -632,6 +667,7 @@ function describeScene(event, scene_id) {
     $("#describe_scene_fixture_count").html(scene.getActors().length);
     $("#describe_scene_animation_count").html(scene.getAnimations().length);
     $("#describe_scene_description").html(scene.getDescription() != null ? escapeForHTML(scene.getDescription()) : "");
+    $("#describe_scene_bpm_rating").html(escapeForHTML(BPMRatings[scene.getBPMRating()].name));
 
     var info = "";
     var clazz = fixture_tile_panel.actions[0].tile_class;
@@ -670,15 +706,15 @@ function describeScene(event, scene_id) {
                 channel_data.push(actor.channels[j].value);
 
             info += makeFixtureTitleLine(fixture, channel_data);
-            info += makeChannelInfoLine(actor.channels,"describe_scene_channels");
+            info += makeChannelInfoLine(actor.channels, "describe_scene_channels");
         }
     }
     else {
         var fixtures = getActiveFixtures();
         for (var i = 0; i < fixtures.length; i++) {
             var fixture = fixtures[i];
-            info += makeFixtureTitleLine(fixture,false);
-            info += makeChannelInfoLine(fixture.getChannels(),"describe_scene_channels");
+            info += makeFixtureTitleLine(fixture, false);
+            info += makeChannelInfoLine(fixture.getChannels(), "describe_scene_channels");
         }
     }
 
@@ -691,7 +727,7 @@ function describeScene(event, scene_id) {
             var animation = scene.getAnimations()[i];
 
             var signal = getSignalSynopsis(animation.signal);
-            var synopsis = getAnimationSynopsis( animation );
+            var synopsis = getAnimationSynopsis(animation);
             var fixtures = "";
 
             if (animation.actors.length > 0) {
@@ -701,7 +737,7 @@ function describeScene(event, scene_id) {
 
                     var fixture = getFixtureById(animation.actors[j]);
 
-                    if ( fixture.isGroup() )
+                    if (fixture.isGroup())
                         fixtures += "G";
 
                     fixtures += fixture.getNumber();
@@ -711,15 +747,15 @@ function describeScene(event, scene_id) {
                 fixtures = "NONE";
 
             info += "<div style=\"clear:both; float: left; font-size: 10pt;\" >";
-            info += "Animation: " + animation.name;
+            info += "Animation: " + getAnimationName(animation);
             info += "</div>";
 
             info += "<div class=\"describe_scene_channels\">";
 
             if (synopsis.length > 0)
-                info += synopsis.replace( /\n/g, "<br />" ) + "<br />";
- 
-            info += "Fixtures: " + fixtures +  "<br />";
+                info += synopsis.replace(/\n/g, "<br />") + "<br />";
+
+            info += "Fixtures: " + fixtures + "<br />";
             info += "Signal: " + signal;
             info += "</div>";
         }
@@ -730,12 +766,12 @@ function describeScene(event, scene_id) {
         $("#describe_scene_hr").hide();
 
     $("#describe_scene_animations").html(info);
-
-    $("#describe_scene_dialog").dialog("open");
 }
 
 function sceneDescribeSelect(event, fixture_id, channel_data) {
-    controlFixture2(event, fixture_id, channel_data, true);
+    stopEventPropagation(event);
+
+    controlFixture2(null, fixture_id, channel_data, false);
 
     var icon = $(event.srcElement);
 

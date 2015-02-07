@@ -20,7 +20,6 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
 #include "IVisitor.h"
@@ -38,12 +37,11 @@ class Scene : public DObject
     CCriticalSection    m_scene_mutex;					// Protect scene objects
 
     ActorMap			m_actors;						// "Actors" in this scene
-
     AnimationPtrArray	m_animations;
-
-    void copy_animations( Scene& rhs );
-
-    Acts                 m_acts;                         // List of acts this object belongs to
+    Acts                m_acts;                         // List of acts this object belongs to
+    BPMRating           m_bpm_rating;                   // BPM rating for this scene   
+    
+    void copy_animations( Scene& rhs );             
 
 public:
     Scene() {}
@@ -88,6 +86,13 @@ public:
 
     inline size_t getNumAnimations() const {
         return m_animations.size();
+    }
+
+    inline BPMRating getBPMRating() const {
+        return m_bpm_rating;
+    }
+    inline void setBPMRating( BPMRating rating ) {
+        m_bpm_rating = rating;
     }
 
     AbstractAnimation* getAnimation( size_t animation_num );

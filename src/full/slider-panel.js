@@ -176,8 +176,6 @@ function Slider(panel, number, slider_frame) {
         this.getHeader().attr("title", header_tip);
         this.getHeader().css('color', slider_data.color ? slider_data.color : "");
 
-        this.getHeader().css('font-size', (slider_data.label.length > 5) ? "8pt" : "" );
-
         this.getLabel().text(slider_data.name);
         this.getFooter().text(slider_data.value);
 

@@ -185,11 +185,11 @@ function initializeUI() {
             cache: false,
             success: function (data) {
                 var json = jQuery.parseJSON(data);
-                playlist = json['playlist'];
+                playlist = json['tracks'];
 
                 var data = [];
-                data = $.map(playlist, function (pl, index) {
-                    return "<option value=" + pl.id + ">" + pl.name + "</option>";
+                data = $.map(playlist, function (track, index) {
+                    return "<option value=" + track.id + ">" + track.track_name + " by " + track.artist_name + "</option>";
                 });
 
                 data.unshift("<option value=0>Select Track</option>", "<option value=-1>PLAY ENTIRE PLAYLIST</option>");

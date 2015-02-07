@@ -217,11 +217,11 @@ bool AnimationSignalProcessor::tick( DWORD time_ms )
         case CAI_SOUND_LEVEL:
         case CAI_AVG_SOUND_LEVEL:
             if ( m_signal_def.isApplyToSpeed() ) {
-                m_next_sample_ms = time_ms + 10 + (sample_rate_ms * (100-m_level)) / 100;
+                m_next_sample_ms = time_ms + std::max<int>( 10, (sample_rate_ms * (100-m_level)) / 100 );
                 break;
             }
             else if ( m_signal_def.isApplyInverseSpeed() ) {
-                m_next_sample_ms = time_ms + 10 + (sample_rate_ms * m_level) / 100;
+                m_next_sample_ms = time_ms + std::max<int>( 10, (sample_rate_ms * m_level) / 100 );
                 break;
             }
 

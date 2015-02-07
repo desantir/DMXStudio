@@ -29,10 +29,11 @@ void DMXTextUI::initializeAnimationEditors() {
     animEditors.push_back( AnimationEditor( SceneSoundLevel::animationName,		    SceneSoundLevel::className, &DMXTextUI::animSoundLevelEditor) );
     animEditors.push_back( AnimationEditor( ScenePatternDimmer::animationName,	    ScenePatternDimmer::className, &DMXTextUI::animPatternDimmerEditor) );
     animEditors.push_back( AnimationEditor( SceneChannelAnimator::animationName,	SceneChannelAnimator::className, &DMXTextUI::animChannelEditor) );
-    animEditors.push_back( AnimationEditor( SceneColorFader::animationName,		SceneColorFader::className, &DMXTextUI::animColorFaderEditor) );
+    animEditors.push_back( AnimationEditor( SceneColorFader::animationName,		    SceneColorFader::className, &DMXTextUI::animColorFaderEditor) );
     animEditors.push_back( AnimationEditor( SceneMovementAnimator::animationName,	SceneMovementAnimator::className, &DMXTextUI::animMovementEditor) );
     animEditors.push_back( AnimationEditor( SceneStrobeAnimator::animationName,	    SceneStrobeAnimator::className, &DMXTextUI::animStrobeEditor) );
     animEditors.push_back( AnimationEditor( ScenePixelAnimator::animationName,	    ScenePixelAnimator::className, &DMXTextUI::animPixelEditor) );
+    animEditors.push_back( AnimationEditor( SceneChannelFilter::animationName,	    SceneChannelFilter::className, &DMXTextUI::animFilterEditor) );
 }
 
 // ----------------------------------------------------------------------------
@@ -239,8 +240,12 @@ public:
 protected:
      void fieldLeaveNotify( size_t field_num ) {
          if ( getField<Field>(field_num) == &m_actor_select ) {
-            if ( m_actor_select.getActorUIDs().size() > 0 )
-                m_channel_field.setFixture( m_venue->getFixture( m_actor_select.getActorUIDs()[0] ) );
+            if ( m_actor_select.getActorUIDs().size() > 0 ) {
+                Fixture* fixture = m_venue->getFixture( m_actor_select.getActorUIDs()[0] );
+                if ( fixture == NULL )
+                    fixture = m_venue->getGroupRepresentative( m_actor_select.getActorUIDs()[0] );
+                m_channel_field.setFixture( fixture );
+            }
          }
          else if ( getField<Field>(field_num) == &m_value_anim_field ) {
             m_range_low_field.setHidden( true );
@@ -296,7 +301,7 @@ public:
         SignalForm( text_io, anim->signal() ),
         m_actor_select( "Fixtures (comma separated)", venue, scene, anim->getActors() ),
         m_movement_field( "Movement" ),
-        m_head_number_field( "Movement number (0=all)", anim->movement().m_head_number, 0, 32 ),
+        m_head_number_field( "Head number (0=all)", anim->movement().m_head_number, 0, 32 ),
         m_movement_speed_field( "Movement speed (0=fastest)",  anim->movement().m_speed, 0, 255 ),
         m_tilt_start_field( "Start tilt angle (degrees)", anim->movement().m_tilt_start, 0, 360 ),
         m_tilt_end_field( "End tilt angle (degrees)", anim->movement().m_tilt_end, 0, 360 ),
@@ -306,7 +311,7 @@ public:
         m_home_wait_field( "Home wait (periods)", anim->movement().m_home_wait_periods, 1, MAX_WAIT_PERIODS ),
         m_dest_wait_field( "Destination wait (periods)", anim->movement().m_dest_wait_periods, 1, MAX_WAIT_PERIODS ),
         m_beam_return_field( "Blackout on return to home", anim->movement().m_backout_home_return ),
-        m_positions_field( "Postions to generate", anim->movement().m_positions, 1, MAX_RANDOM_POSITIONS ),
+        m_positions_field( "Postions to generate / Sinewave step", anim->movement().m_positions, 1, MAX_RANDOM_POSITIONS ),
         m_group_size_field( "Fixtures per group", anim->movement().m_group_size, 1 ),
         m_alternate_groups_field( "Reverse group home positions", anim->movement().m_alternate_groups ),
         m_coordinates_field( "Coordinates (pan1,tilt1;pan2,tilt2;...)", anim->movement().m_coordinates ),
@@ -324,6 +329,7 @@ public:
         m_movement_field.addKeyValue( 5, "Criss-cross" );
         m_movement_field.addKeyValue( 6, "Absolute coordinates" );
         m_movement_field.addKeyValue( 7, "Moon flower" );
+        m_movement_field.addKeyValue( 8, "Sine wave" );
         m_movement_field.setDefaultListValue( anim->movement().m_movement_type );
 
         add( m_movement_field );
@@ -339,10 +345,10 @@ public:
         add( m_pan_start_field );
         add( m_pan_end_field );
         add( m_pan_inc_field );
+        add( m_positions_field );
         add( m_home_wait_field );
         add( m_dest_wait_field );
         add( m_beam_return_field );
-        add( m_positions_field );
         add( m_group_size_field );
         add( m_alternate_groups_field );
         add( m_coordinates_field );
@@ -405,6 +411,9 @@ protected:
         m_movement_speed_field.setHidden( false );
         m_head_number_field.setHidden( false );
 
+        m_pan_inc_field.setLabel( "Pan increment (degrees)" );
+        m_positions_field.setLabel( "Postions to generate" );
+
         switch ( (MovementAnimationType)m_movement_field.getListValue() ) {
             case MOVEMENT_COORDINATES:
                 m_coordinates_field.setHidden( false );
@@ -412,7 +421,6 @@ protected:
                 break;
 
             case MOVEMENT_RANDOM:
-
                 m_positions_field.setHidden( false );
                 m_group_size_field.setHidden( false );
                 m_tilt_end_field.setHidden( false );
@@ -453,6 +461,18 @@ protected:
                 m_pan_start_field.setHidden( false );
                 m_pan_end_field.setHidden( false );
                 m_pan_inc_field.setHidden( false );
+                break;
+
+            case MOVEMENT_SINEWAVE:
+                m_positions_field.setHidden( false );
+                m_group_size_field.setHidden( false );
+                m_tilt_end_field.setHidden( false );
+                m_pan_start_field.setHidden( false );
+                m_pan_end_field.setHidden( false );
+                m_pan_inc_field.setHidden( false );
+
+                m_pan_inc_field.setLabel( "Sine wave offset" );
+                m_positions_field.setLabel( "Sine wave step" );
                 break;
         }
      }
@@ -562,6 +582,102 @@ protected:
                 m_pixels_field.setHidden( false );
                 m_increment_field.setHidden( false );
                 m_color_fade_field.setHidden( true );
+                break;
+        }
+     }
+};
+
+// ----------------------------------------------------------------------------
+//
+class FilterAnimationForm : public SignalForm
+{
+    Venue*              m_venue;
+    ActorSelectField    m_actor_select;
+    NumberedListField	m_filter_field;
+    FixtureChannelField m_channel_field;
+    IntegerField        m_step_field;
+    IntegerField        m_amplitude_field;
+    IntegerField        m_offset_field;
+
+public:
+    FilterAnimationForm( TextIO* text_io, Venue* venue, Scene* scene, SceneChannelFilter* anim ) :
+        m_venue( venue ),
+        m_filter_field( "Channel Filter" ),
+        SignalForm( text_io, anim->signal() ),
+        m_actor_select( "Fixtures (comma separated)", venue, scene, anim->getActors() ),
+        m_channel_field( "Channel", NULL, anim->getChannel() ),
+        m_step_field( "Step", anim->getStep(), 1, 255 ),
+        m_amplitude_field( "Amplitude", anim->getAmplitude(), 1, 255 ),
+        m_offset_field( "Offset", anim->getOffset(), 0, 360 )
+    {
+        m_filter_field.addKeyValue( CF_SINE_WAVE, "Sine Wave" );
+        m_filter_field.addKeyValue( CF_RAMP_UP, "Ramp Up" );
+        m_filter_field.addKeyValue( CF_RAMP_DOWN, "Ramp Down" );
+        m_filter_field.addKeyValue( CF_STEP_WAVE, "Step Wave" );
+        m_filter_field.addKeyValue( CF_RANDOM, "Random" );
+
+        m_filter_field.setDefaultListValue( (DWORD)anim->getFilter() );
+
+        add( m_filter_field );
+        add( m_actor_select );
+        add( m_channel_field );
+        add( m_step_field );
+        add( m_amplitude_field );
+        add( m_offset_field );
+    }
+
+    void update( SceneChannelFilter* anim ) {
+        updateAnimationSignal( anim->signal() );
+
+        anim->setFilter( (ChannelFilter)m_filter_field.getListValue() );
+        anim->setActors( m_actor_select.getActorUIDs() );
+        anim->setChannel( m_channel_field.getChannel() );
+        anim->setStep( m_step_field.getIntValue() );
+        anim->setAmplitude( m_amplitude_field.getIntValue() );
+        anim->setOffset( m_offset_field.getIntValue() );
+    }
+
+protected:
+     void fieldLeaveNotify( size_t field_num ) {
+         if ( getField<Field>(field_num) == &m_actor_select ) {
+            if ( m_actor_select.getActorUIDs().size() > 0 ) {
+                Fixture* fixture = m_venue->getFixture( m_actor_select.getActorUIDs()[0] );
+                if ( fixture == NULL )
+                    fixture = m_venue->getGroupRepresentative( m_actor_select.getActorUIDs()[0] );
+                m_channel_field.setFixture( fixture );
+            }
+            return;
+         }
+
+         if ( getField<Field>(field_num) != &m_filter_field ) {
+            SignalForm::fieldLeaveNotify( field_num );
+            return;
+        }
+
+        switch ( (ChannelFilter)m_filter_field.getListValue() ) {
+            case CF_SINE_WAVE:   			       // Sine wave (amplitude, angle step)
+                m_step_field.setHidden( false );
+                m_amplitude_field.setHidden( false );
+                m_offset_field.setHidden( false );
+                break;
+
+            case CF_RAMP_UP:                       // Ramp up/down (step)
+            case CF_RAMP_DOWN:
+                m_step_field.setHidden( false );
+                m_amplitude_field.setHidden( true );
+                m_offset_field.setHidden( false );
+                break;
+        
+            case CF_STEP_WAVE:                    // Step (step)
+                m_step_field.setHidden( false );
+                m_amplitude_field.setHidden( true );
+                m_offset_field.setHidden( false );
+                break;
+
+            case CF_RANDOM:                       // Random (amplitude)
+                m_step_field.setHidden( true );
+                m_amplitude_field.setHidden( false );
+                m_offset_field.setHidden( false );
                 break;
         }
      }
@@ -949,4 +1065,29 @@ bool DMXTextUI::animPixelEditor( Scene* scene, UID anim_uid )
     }
 
     return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool DMXTextUI::animFilterEditor( Scene* scene, UID anim_uid ) {
+    SceneChannelFilter* anim;
+
+    if ( anim_uid == 0 ) 
+        anim = new SceneChannelFilter( 0, AnimationSignal(), UIDArray(), ChannelFilter::CF_SINE_WAVE, 0, 1, 5, 0 );
+    else
+        anim = reinterpret_cast<SceneChannelFilter*>( scene->getAnimation( anim_uid ) );
+
+    FilterAnimationForm form( &m_text_io, getVenue(), scene, anim );
+    if ( !form.play() )
+        return false;
+
+    form.update( anim );
+
+    if ( anim_uid == 0 ) {
+        anim->setUID( getVenue()->allocUID() );
+        scene->addAnimation( anim );
+    }
+
+    return true;
+
 }

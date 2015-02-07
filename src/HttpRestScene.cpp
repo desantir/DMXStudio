@@ -29,6 +29,7 @@ MA 02111-1307, USA.
 #include "SceneMovementAnimator.h"
 #include "SceneSequence.h"
 #include "ScenePixelAnimator.h"
+#include "SceneChannelFilter.h"
 
 typedef AbstractAnimation* (*ANIMATION_PARSER_FUNC)(SimpleJsonParser, AnimationSignal, UIDArray );
 typedef std::map<CString, ANIMATION_PARSER_FUNC> PARSER_MAP;
@@ -41,20 +42,22 @@ AbstractAnimation* SceneColorFaderParser( SimpleJsonParser parser, AnimationSign
 AbstractAnimation* SceneMovementAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
 AbstractAnimation* SceneStrobeAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
 AbstractAnimation* ScenePixelAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
+AbstractAnimation* SceneChannelFilterParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
 
 AnimationSignal parseAnimationSignal( SimpleJsonParser parser );
 AbstractAnimation* parseAnimation( SimpleJsonParser parser );
 
 static PARSER_MAP init_animation_parsers() {
     PARSER_MAP animation_parsers;
-    animation_parsers[ "FixtureSequencer" ] = &SceneSequenceParser;
-    animation_parsers[ "SoundLevel" ] = &SoundLevelParser;
-    animation_parsers[ "ScenePatternDimmer" ] = &ScenePatternDimmerParser;
-    animation_parsers[ "SceneChannelAnimator" ] = &SceneChannelAnimatorParser;
-    animation_parsers[ "SceneColorSwitcher" ] = &SceneColorFaderParser;
-    animation_parsers[ "SceneMovementAnimator" ] = &SceneMovementAnimatorParser;
-    animation_parsers[ "SceneStrobeAnimator" ] = &SceneStrobeAnimatorParser;
-    animation_parsers[ "ScenePixelAnimator" ] = &ScenePixelAnimatorParser;
+    animation_parsers[ SceneSequence::className ] = &SceneSequenceParser;
+    animation_parsers[ SceneSoundLevel::className ] = &SoundLevelParser;
+    animation_parsers[ ScenePatternDimmer::className ] = &ScenePatternDimmerParser;
+    animation_parsers[ SceneChannelAnimator::className ] = &SceneChannelAnimatorParser;
+    animation_parsers[ SceneColorFader::className] = &SceneColorFaderParser;
+    animation_parsers[ SceneMovementAnimator::className ] = &SceneMovementAnimatorParser;
+    animation_parsers[ SceneStrobeAnimator::className ] = &SceneStrobeAnimatorParser;
+    animation_parsers[ ScenePixelAnimator::className ] = &ScenePixelAnimatorParser;
+    animation_parsers[ SceneChannelFilter::className ] = &SceneChannelFilterParser;
 
     return animation_parsers;
 }
@@ -86,6 +89,7 @@ bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
         json.add( "id", scene->getUID() );
         json.add( "number", scene->getSceneNumber() );
         json.add( "name", scene->getName() );
+        json.add( "bpm_rating", scene->getBPMRating() );
         json.add( "description", scene->getDescription() );
         json.add( "is_default", (scene == default_scene) );
         json.add( "is_running", (active_uid == scene->getUID()) );
@@ -193,6 +197,14 @@ bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
                 json.add( "combine", spa->getCombineFixtures() );
                 json.add( "pixel_off_color", spa->getEmptyColor() );
                 json.addColorArray<RGBWAArray>( "color_progression", spa->getCustomColors() );
+            }
+            else if ( !strcmp( animation->getClassName(), SceneChannelFilter::className ) ) {
+                SceneChannelFilter* scf = (SceneChannelFilter*)animation;
+                json.add( "filter", scf->getFilter() );
+                json.add( "channel", scf->getChannel() );
+                json.add( "step", scf->getStep() );
+                json.add( "amplitude", scf->getAmplitude() );
+                json.add( "offset", scf->getOffset() );
             }
             else if ( !strcmp( animation->getClassName(), SceneMovementAnimator::className ) ) {
                 SceneMovementAnimator* sma = (SceneMovementAnimator*)animation;
@@ -314,6 +326,7 @@ bool HttpRestServices::edit_scene( CString& response, LPCSTR data, EditMode mode
     UID scene_id;
     CString name, description;
     SceneNumber number;
+    BPMRating bpm_rating;
     bool keep_groups;
     Scene* scene = NULL;
     UIDArray actors;
@@ -328,6 +341,7 @@ bool HttpRestServices::edit_scene( CString& response, LPCSTR data, EditMode mode
         name = parser.get<CString>( "name" );
         description = parser.get<CString>( "description" );
         number = parser.get<ULONG>( "number" );
+        bpm_rating = (BPMRating)parser.get<UINT>( "bpm_rating" );
         keep_groups = parser.get<bool>( "keep_groups" );
         actors = parser.get<UIDArray>( "actors" );
         animationParsers = parser.get<PARSER_LIST>("animations");
@@ -396,6 +410,7 @@ bool HttpRestServices::edit_scene( CString& response, LPCSTR data, EditMode mode
 
     scene->setName( name );
     scene->setSceneNumber( number );
+    scene->setBPMRating( bpm_rating );
     scene->setDescription( description );
     scene->setActs( acts );
 
@@ -525,6 +540,18 @@ AbstractAnimation* SceneChannelAnimatorParser( SimpleJsonParser parser, Animatio
     }
 
     return new SceneChannelAnimator( studio.getVenue()->allocUID(), signal, channel_animations );
+}
+
+// ----------------------------------------------------------------------------
+//
+AbstractAnimation* SceneChannelFilterParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
+    ChannelFilter filter = (ChannelFilter)parser.get<unsigned>( "filter" );
+    BYTE channel = parser.get<BYTE>( "channel" );
+    unsigned step = parser.get<unsigned>( "step" );
+    unsigned amplitude= parser.get<unsigned>( "amplitude" );
+    int offset= parser.get<int>( "offset" );
+
+    return new SceneChannelFilter( studio.getVenue()->allocUID(), signal, actors, filter, channel, step, amplitude, offset );
 }
 
 // ----------------------------------------------------------------------------

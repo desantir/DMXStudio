@@ -54,6 +54,8 @@ typedef enum {
 
 } WhiteoutMode;
 
+typedef std::map<BPMRating,UIDArray> SceneRatingsMap;
+
 class Venue : public DObject
 {
     friend class ChaseTask;
@@ -129,7 +131,7 @@ public:
         return m_music_scene_select_map;
     }
 
-    void mapMusicToScene( LPCSTR track_name, MusicSelectorType& type, UID& type_uid );
+    void mapMusicToScene( LPCSTR track_link, MusicSelectorType& type, UID& type_uid );
     void addMusicMapping( MusicSceneSelector& music_scene_selector );
     void deleteMusicMapping( LPCSTR track_full_name );
     void deleteMusicMappings( MusicSelectorType type, UID uid );
@@ -345,6 +347,8 @@ public:
     Scene *getSceneByNumber( SceneNumber scene_number );
     SceneNumber nextAvailableSceneNumber( void );
     void deleteAllScenes();
+    UID getRandomScene();
+    void populateSceneRatingsMap( SceneRatingsMap& map );
 
     UID getCurrentSceneUID() const {
         return m_current_scene;
@@ -384,6 +388,7 @@ public:
     bool copyChaseSteps( UID source_chase_id, UID target_chase_id );
     ChaseNumber nextAvailableChaseNumber( void );
     void deleteAllChases();
+    UID getRandomChase();
 
     inline size_t getNumChases() const {
         return m_chases.size();
@@ -467,3 +472,4 @@ private:
         return m_chase_task;
     }
 };
+

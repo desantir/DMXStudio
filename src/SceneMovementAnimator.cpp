@@ -153,6 +153,10 @@ void SceneMovementAnimator::initAnimation( AnimationTask* task, DWORD time_ms, B
         case MOVEMENT_COORDINATES:						// Absolute coordinates effect
             genCoordinatesMovement( task, participants );
             break;
+
+        case MOVEMENT_SINEWAVE:						    // Sinewave movement
+            genSineMovement( task, participants );
+            break;
     }
 
     SceneChannelAnimator::initAnimation( task, time_ms, dmx_packet );
@@ -411,6 +415,60 @@ void SceneMovementAnimator::genRandomMovement( AnimationTask* task, ParticipantA
                 dimmer.push_back( 255 );
             }
         }
+
+        // Populate the channel arrays for the next group of fixtures
+        populateChannelAnimations( task, participants, particpant_index, tilt, pan, dimmer, speed, movement().m_group_size );
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+static int computeAngle( double angle, int start_value, int end_value )
+{
+    UINT amplitude = abs( (int)(end_value - start_value) );
+
+    double radians = angle * M_PI / 180.0;
+
+    int new_angle = static_cast<int>(start_value + (sin(radians) * amplitude) );
+    if ( new_angle > end_value )
+        new_angle = end_value;
+    else if ( new_angle < start_value )
+        new_angle = start_value;
+    
+    return new_angle;
+}
+
+void SceneMovementAnimator::genSineMovement( AnimationTask* task, ParticipantArray& participants )
+{
+    double start_angle = 0.0;
+
+    for ( size_t particpant_index=0; particpant_index < participants.size(); ) {
+        AngleList pan;
+        AngleList tilt;
+        ChannelValueArray dimmer;
+        ChannelValueArray speed;
+
+        UINT previous_pan = -1;
+        UINT previous_tilt = -1;
+
+        for ( double angle=start_angle; angle < start_angle+360.0; angle += movement().m_positions ) {
+            UINT pan_angle = computeAngle( angle, movement().m_pan_start, movement().m_pan_end );
+            UINT tilt_angle = computeAngle( angle, movement().m_tilt_start, movement().m_tilt_end );
+
+            if ( previous_pan != pan_angle || previous_tilt != tilt_angle ) {
+                for ( UINT wait=0; wait < movement().m_dest_wait_periods; wait++ ) {
+                    pan.push_back( pan_angle );
+                    tilt.push_back( tilt_angle );
+                    speed.push_back( movement().m_speed );
+                    dimmer.push_back( 255 );
+                }
+
+                previous_pan = pan_angle;
+                previous_tilt = tilt_angle;
+            }
+        }
+
+        start_angle += movement().m_pan_increment;
 
         // Populate the channel arrays for the next group of fixtures
         populateChannelAnimations( task, participants, particpant_index, tilt, pan, dimmer, speed, movement().m_group_size );

@@ -1,0 +1,188 @@
+<?xml version="1.0" ?>
+<fixture_definitions>
+    <author>Robert DeSantis</author>
+    <version>1</version>
+    <fixture type="dots" channels="3">
+        <manufacturer>Chauvet</manufacturer>
+        <model>Mega Trix</model>
+        <channels>
+            <channel index="1" type="control" color="false" blackout="false">
+                <name>Auto Program</name>
+                <ranges>
+                    <range start="0" end="0">
+                        <name>OFF</name>
+                    </range>
+                    <range start="1" end="4">
+                        <name>Program 1</name>
+                    </range>
+                    <range start="5" end="9">
+                        <name>Program 2 (squares)</name>
+                    </range>
+                    <range start="10" end="14">
+                        <name>Program 3 (H&V lines)</name>
+                    </range>
+                    <range start="15" end="19">
+                        <name>Program 4 (V lines)</name>
+                    </range>
+                    <range start="20" end="24">
+                        <name>Program 5 (H lines)</name>
+                    </range>
+                    <range start="25" end="29">
+                        <name>Program 6</name>
+                    </range>
+                    <range start="30" end="34">
+                        <name>Program 7 (lg square)</name>
+                    </range>
+                    <range start="35" end="39">
+                        <name>Program 8 (cheverons)</name>
+                    </range>
+                    <range start="40" end="44">
+                        <name>Program 9 (H line)</name>
+                    </range>
+                    <range start="45" end="49">
+                        <name>Program 10</name>
+                    </range>
+                    <range start="50" end="54">
+                        <name>Program 11</name>
+                    </range>
+                    <range start="55" end="59">
+                        <name>Program 12</name>
+                    </range>
+                    <range start="60" end="64">
+                        <name>Program 13</name>
+                    </range>
+                    <range start="65" end="69">
+                        <name>Program 14</name>
+                    </range>
+                    <range start="70" end="74">
+                        <name>Program 15</name>
+                    </range>
+                    <range start="75" end="79">
+                        <name>Program 16 (twirlers)</name>
+                    </range>
+                    <range start="80" end="84">
+                        <name>Program 17 (Zs)</name>
+                    </range>
+                    <range start="85" end="89">
+                        <name>Program 18 (slash)</name>
+                    </range>
+                    <range start="90" end="94">
+                        <name>Program 19</name>
+                    </range>
+                    <range start="95" end="99">
+                        <name>Program 20 (corner fill)</name>
+                    </range>
+                    <range start="100" end="104">
+                        <name>Program 21 (peaks)</name>
+                    </range>
+                    <range start="105" end="109">
+                        <name>Program 22</name>
+                    </range>
+                    <range start="110" end="114">
+                        <name>Program 23</name>
+                    </range>
+                    <range start="115" end="119">
+                        <name>Program 24 (shrinking squares)</name>
+                    </range>
+                    <range start="120" end="124">
+                        <name>Program 25 (step wave)</name>
+                    </range>
+                    <range start="125" end="129">
+                        <name>Program 26 (small H lines)</name>
+                    </range>
+                    <range start="130" end="134">
+                        <name>Program 27 (RGBW pixels)</name>
+                    </range>
+                    <range start="135" end="139">
+                        <name>Program 28 (random RGBWA pixels)</name>
+                    </range>
+                    <range start="140" end="144">
+                        <name>Program 29</name>
+                    </range>
+                    <range start="145" end="149">
+                        <name>Program 30 (2 sine waves)</name>
+                    </range>
+                    <range start="150" end="154">
+                        <name>Program 31 (RG pixels)</name>
+                    </range>
+                    <range start="155" end="159">
+                        <name>Program 32</name>
+                    </range>
+                    <range start="160" end="164">
+                        <name>Program 33</name>
+                    </range>
+                    <range start="165" end="169">
+                        <name>Program 34 (RGBWA pixels wide)</name>
+                    </range>
+                    <range start="170" end="174">
+                        <name>Program 35 (RGBW H line)</name>
+                    </range>
+                    <range start="175" end="179">
+                        <name>Program 36</name>
+                    </range>
+                    <range start="180" end="184">
+                        <name>Program 37</name>
+                    </range>
+                    <range start="185" end="189">
+                        <name>Program 38</name>
+                    </range>
+                    <range start="190" end="194">
+                        <name>Program 39 (sin & cos)</name>
+                    </range>
+                    <range start="195" end="199">
+                        <name>Program 40 (H&V lines)</name>
+                    </range>
+                    <range start="200" end="204">
+                        <name>Program 41</name>
+                    </range>
+                    <range start="205" end="209">
+                        <name>Program 42</name>
+                    </range>
+                    <range start="210" end="214">
+                        <name>Program 43</name>
+                    </range>
+                    <range start="215" end="219">
+                        <name>Program 44</name>
+                    </range>
+                    <range start="220" end="224">
+                        <name>Program 45 (squares)</name>
+                    </range>
+                    <range start="225" end="229">
+                        <name>Program 46</name>
+                    </range>
+                    <range start="230" end="234">
+                        <name>Program 47 (RGBW pixels)</name>
+                    </range>
+                    <range start="235" end="239">
+                        <name>Program 48</name>
+                    </range>
+                    <range start="240" end="244">
+                        <name>Program 49</name>
+                    </range>
+                    <range start="245" end="249">
+                        <name>Program 50 (small, fast H lines)</name>
+                    </range>
+                    <range start="250" end="255">
+                        <name>Auto (sound active)</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="2" type="program speed" color="false" blackout="false">
+                <name>Program Speed</name>
+                <ranges>
+                    <range start="0" end="255">
+                        <name>0-100% (slow to fast)</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="3" type="strobe" color="false" blackout="false">
+                <name>Strobe</name>
+                <ranges>
+                    <range start="0" end="255">
+                        <name>0-100% (slow to fast)</name>
+                    </range>
+                </ranges>
+            </channel>
+        </channels>
+    </fixture>
+</fixture_definitions>

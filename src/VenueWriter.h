@@ -34,6 +34,7 @@ MA 02111-1307, USA.
 #include "SceneStrobeAnimator.h"
 #include "SceneSoundLevel.h"
 #include "ScenePixelAnimator.h"
+#include "SceneChannelFilter.h"
 
 class VenueWriter : public IVisitor, ISerializable
 {
@@ -59,6 +60,7 @@ public:
     void visit( SceneChannelAnimator* animation );
     void visit( SceneSequence* animation );  
     void visit( SceneSoundLevel* animation );  
+    void visit( SceneChannelFilter* animation );
     void visit( AnimationSignal* signal );
     void visit( ChaseStep* chase_step );
     void visit( MovementAnimation* movement );

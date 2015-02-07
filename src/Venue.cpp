@@ -26,6 +26,7 @@ MA 02111-1307, USA.
 #include "AnimationTask.h"
 #include "AbstractAnimation.h"
 #include "FindNextAvailable.h"
+#include "MusicWatcher.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -879,7 +880,7 @@ void Venue::whiteoutChannels( LPBYTE dmx_packet ) {
                 case CHNLT_COLOR_SPEED:
                 case CHNLT_PROG_SPEED:
                 case CHNLT_GOBO:
-                    loadChannel( dmx_packet, pf, channel, 0 );
+                    loadChannel( dmx_packet, pf, channel, cp->getDefaultValue() );
                     break;
             }
 
@@ -1050,15 +1051,15 @@ BYTE Venue::getChannelValue( SceneActor& target_actor, channel_t channel ) {
 
 // ----------------------------------------------------------------------------
 //
-void Venue::mapMusicToScene( LPCSTR track_name, MusicSelectorType& type, UID& type_uid ) {
+void Venue::mapMusicToScene( LPCSTR track_link, MusicSelectorType& type, UID& type_uid ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
     type = MST_SCENE;
     type_uid = getDefaultScene()->getUID();
 
-    MusicSceneSelectMap::iterator it = m_music_scene_select_map.find( track_name );
+    MusicSceneSelectMap::iterator it = m_music_scene_select_map.find( track_link );
     if ( it == m_music_scene_select_map.end() )
-        it = m_music_scene_select_map.find( UNMAPPED_TRACK_NAME );
+        it = m_music_scene_select_map.find( UNMAPPED_TRACK_LINK );
     if ( it != m_music_scene_select_map.end() ) {
         type_uid = it->second.m_selection_uid;
         type = it->second.m_selection_type;
@@ -1070,7 +1071,7 @@ void Venue::mapMusicToScene( LPCSTR track_name, MusicSelectorType& type, UID& ty
 void Venue::addMusicMapping( MusicSceneSelector& music_scene_selector ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    m_music_scene_select_map[ music_scene_selector.m_track_full_name ] = music_scene_selector;
+    m_music_scene_select_map[ music_scene_selector.m_track_link ] = music_scene_selector;
 }
 
 // ----------------------------------------------------------------------------
@@ -1114,7 +1115,7 @@ void Venue::addMusicMappings( std::vector<MusicSceneSelector>& selectors ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
     for ( std::vector<MusicSceneSelector>::iterator it=selectors.begin(); it != selectors.end(); ++it )
-        m_music_scene_select_map[ (*it).m_track_full_name ] = (*it);
+        m_music_scene_select_map[ (*it).m_track_link] = (*it);
 }
 
 // ----------------------------------------------------------------------------
@@ -1160,4 +1161,33 @@ Fixture*  Venue::getGroupRepresentative( UID group_uid ) {
     }
 
     return fixture;
+}
+
+// ----------------------------------------------------------------------------
+//
+UID Venue::getRandomChase() {
+    UINT count = (rand() % getNumChases());
+    for ( ChaseMap::iterator it=m_chases.begin(); it != m_chases.end(); ++it )
+        if ( !count-- )
+            return it->first;
+    return 0;
+}
+
+// ----------------------------------------------------------------------------
+//
+UID Venue::getRandomScene() {
+    UINT count = (rand() % (getNumScenes()-1))+1;
+    for ( SceneMap::iterator it=m_scenes.begin(); it != m_scenes.end(); ++it )
+        if ( !count-- )
+            return it->first;
+    return 0;
+}
+
+// ----------------------------------------------------------------------------
+//
+void Venue::populateSceneRatingsMap( SceneRatingsMap& ratings_map ) {
+    for ( SceneMap::iterator it=m_scenes.begin(); it != m_scenes.end(); ++it ) {
+        BPMRating rating = it->second.getBPMRating();
+        ratings_map[rating].push_back( it->first );
+    }
 }

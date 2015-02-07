@@ -1223,7 +1223,9 @@ void DMXTextUI::describeScene( ) {
     if ( form.play() ) {
         Scene* scene = getVenue()->getScene( scene_field.getSceneUID() );
 
-        m_text_io.printf( "\nScene #%lu - %s\n", scene->getSceneNumber(), scene->getName() );
+        m_text_io.printf( "\nScene #%lu - %s [%s]\n", 
+            scene->getSceneNumber(), scene->getName(), getRatingName(scene->getBPMRating()) );
+
         if ( scene->getNumActors() == 0 )
             m_text_io.printf( "\n   NO FIXTURES\n" );
 
@@ -1292,16 +1294,19 @@ void DMXTextUI::updateScene( ) {
             InputField name_field( "Scene name", scene->getName() );
             InputField description_field( "Scene description", scene->getDescription() );
             ActsField acts_field( scene->getActs() );
+            BPMRatingField bpm_field( scene->getBPMRating() );
 
             form.clear();
             form.add( name_field );
             form.add( description_field );
             form.add( acts_field );
+            form.add( bpm_field );
 
             if ( form.play() ) {
                 scene->setName( name_field.getValue() );
                 scene->setDescription( description_field.getValue() );
                 scene->setActs( acts_field.getActs() );
+                scene->setBPMRating( bpm_field.getRating() );
             }
         }
     }
@@ -1341,6 +1346,7 @@ void DMXTextUI::createScene( ) {
     BooleanField copy_field( "Copy current fixtures", true );
     ActsField acts_field;
     BooleanField keep_groups( "Preserve fixture groups", true );
+    BPMRatingField bpm_field( BPM_MEDIUM );
 
     Form form( &m_text_io );
     form.add( scene_number_field );
@@ -1348,6 +1354,7 @@ void DMXTextUI::createScene( ) {
     form.add( description_field );
     form.add( copy_field );
     form.add( acts_field );
+    form.add( bpm_field );
     form.add( keep_groups );
 
     if ( !form.play() )
@@ -1356,6 +1363,7 @@ void DMXTextUI::createScene( ) {
     Scene scene( getVenue()->allocUID(), scene_number_field.getSceneNumber(),
                  name_field.getValue(), description_field.getValue() );
     scene.setActs( acts_field.getActs() );
+    scene.setBPMRating( bpm_field.getRating() );
 
     getVenue()->addScene( scene );
 

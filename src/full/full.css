@@ -2,7 +2,7 @@
 	Copyright (C) 2011-14 Robert DeSantis
 	hopluvr at gmail dot com
 
-	This file is part of DMX Studio.
+	This file is part of DMX Studio.mm_track_container
  
 	DMX Studio is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -93,6 +93,27 @@
 .lg-icon-track-play { background-position: -672px 0px; }
 .lg-icon-trash { background-position: -704px 0px; }
 
+.md-icon-grey { width: 24px; height: 24px; background-image: url(medium-icons.png);}
+.md-icon-white { width: 24px; height: 24px; background-image: url(medium-icons-white.png); }
+.md-icon-disabled { width: 24px; height: 24px; background-image: url(medium-icons-disabled.png); }
+
+.md-icon-sparkle { background-position: 0px 0px; }
+.md-icon-gear { background-position: -24px 0px; }
+.md-icon-chart { background-position: -48px 0px;}    
+.md-icon-pencil { background-position: -72px 0px;}         
+.md-icon-folder { background-position: -96px 0px; }
+.md-icon-antenna { background-position: -144px 0px; }
+.md-icon-plus { background-position: -192px 0px; }
+.md-icon-speaker { background-position: -240px 0px; }
+.md-icon-tag { background-position: -288px 0px; }
+.md-icon-mic { background-position: -384px 0px; }
+.md-icon-track-back { background-position: -408px 0px; }
+.md-icon-track-forward { background-position: -432px 0px; }
+.md-icon-track-stop { background-position: -456px 0px; }
+.md-icon-track-pause { background-position: -480px 0px; }
+.md-icon-track-play { background-position: -504px 0px; }
+.md-icon-trash { background-position: -528px 0px; }
+
 .menu_icon { margin: 2px 4px 0px 4px; cursor:pointer;} 
          
 .slider_pane_title { float: right; margin-right: 10px; margin-top: 2px; font-size: 8pt; font-family: sans-serif; color: white;}
@@ -102,7 +123,7 @@
 .slider_text_color { color: #808080; font-family: sans-serif; font-size: 10pt; } 
 
 .slider_header { height: 18px; width: 100%; overflow:hidden;   
-                    text-align:center; white-space:nowrap; border-bottom: 1px solid #808080; } 
+                    text-align:center; white-space:nowrap; border-bottom: 1px solid #808080; font-size: 8pt; } 
 .slider_footer { height: 18px; width: 100%; overflow: hidden; 
                     text-align:center; white-space:nowrap;} 
 
@@ -122,8 +143,8 @@
 
 .slider_sliding_highlight { color: white; }
 
-.animation_button { width:610px; height: 70px; text-align:left; margin-bottom: 6px; padding: 6px; font-family: sans-serif; }
-.animation_button_title { clear:both; float:left; color:white; font-size:14pt; }
+.animation_button { width:610px; text-align:left; margin-bottom: 6px; padding: 6px; font-family: sans-serif; }
+.animation_button_title { clear:both; float:left; color:white; font-size:12pt; }
 .animation_button_fixtures { float:right; color:white; font-size:10pt; }    
 .animation_button_signal { clear:both; float:left; color:#2e7db2; font-size:10pt; }
 
@@ -140,9 +161,12 @@
 .dialog_note_text { color:#2e7db2; font-size:8pt; margin-left:4px; } 
 
 .mm_panel_button { font-size: 10pt; font-family: sans-serif; }         
-.mm_track_label { font-size: 10pt; width: 400px; text-wrap:normal; }
+.mm_track_label { font-size: 10pt; width: 440px; text-wrap:normal; }
 .mm_special_track { font-style:italic; }
-.mm_track_container:hover { color: #2e7db2; cursor: pointer; }
+.mm_track_container { clear:both; float:left; width: 990px; }
+.mm_track_container:hover { background-color: #0972a5; cursor: pointer; }
+.mm_odd { background-color: #111111; }
+.mm_even { }
 
 .dmx_tile {  float:left; border: white solid 1px;height:15px;width:38px; padding: 1px;
             font-size: 8pt; font-family: sans-serif; text-align:center;}
@@ -175,8 +199,7 @@
 .track_title { font-family: sans-serif; font-size: 10pt; text-overflow:ellipsis; width: 350px; white-space:nowrap; overflow:hidden; }
 .track_length { font-family: sans-serif; color: #808080; font-size: 8pt; margin-top: 2px;}
 .player_multilist { font-size: 10pt; font-family: sans-serif; }
-.playlist_button { font-size: 7pt; font-family: sans-serif; }
-.track_list { font-family: sans-serif; font-size: 10pt; height: 95%; width: 99%; }
+.playlist_button { font-size: 8pt; font-family: sans-serif; width: 80px; }
 .player_error { float:left; font-family: sans-serif; font-size: 10pt; margin-left: 10px; color: red; }
 
 .act_status { float: right; font-family: sans-serif; color: #0972a5; font-size: 8pt; margin-right: 8px;  }
@@ -184,3 +207,18 @@
 .titlelessDialog { }
 
 .titlelessDialog > .ui-dialog-titlebar { display: none; }
+
+.track_list { font-family: sans-serif; font-size: 10pt; height: 95%; width: 99%; }
+
+.tl_title { padding: 5px 0px 5px 0px; clear: both;  float: left; }
+.tl_odd { padding: 5px 0px 5px 0px; clear: both;  float: left; }
+.tl_even { padding: 5px 0px 5px 0px; clear: both; float: left; background-color: #111111; }
+.tl_odd:hover { background-color: #0972a5; cursor: pointer; }
+.tl_even:hover { background-color: #0972a5; cursor: pointer; }
+
+.tl_item { float: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 2px; }
+.tl_icon { width: 12px; margin: 0px 10px 0px 4px; }
+.tl_track { width: 330px }
+.tl_time { width: 50px; }
+.tl_artist { width: 250px; }
+.tl_album { width: 250px; }

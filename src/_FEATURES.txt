@@ -71,6 +71,8 @@ Loadable connectors to Spotify, iTunes, etc.
 Attach scenes/chases to tracks
 Break up into fixture files
 Generate FUID unique hash
+Sine, step, ramp channel filters
+Scene selection based on the music beat (BPM) or mood
 
 /*
 	workspace:

@@ -27,7 +27,8 @@ MA 02111-1307, USA.
 // ----------------------------------------------------------------------------
 //
 Scene::Scene( UID uid, SceneNumber scene_number, const char * name, const char *description ) : 
-    DObject( uid, scene_number, name, description )
+    DObject( uid, scene_number, name, description ),
+    m_bpm_rating( BPM_NO_RATING )
 {
 }
 
@@ -35,7 +36,8 @@ Scene::Scene( UID uid, SceneNumber scene_number, const char * name, const char *
 //
 Scene::Scene( Scene& other ) :
         DObject( other ),
-        m_actors( other.m_actors )
+        m_actors( other.m_actors ),
+        m_bpm_rating( other.m_bpm_rating )
 {
     copy_animations( other );
 }
@@ -46,6 +48,7 @@ Scene& Scene::operator=( Scene& rhs ) {
     DObject::operator=( rhs ); 
     m_actors = rhs.m_actors;
     m_acts = rhs.m_acts;
+    m_bpm_rating = rhs.m_bpm_rating;
     copy_animations(rhs );
     return *this;
 }

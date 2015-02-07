@@ -25,6 +25,8 @@ MA 02111-1307, USA.
 #include "stdafx.h"
 #include "StudioException.h"
 #include "ColorStrobe.h"
+#include "BPMRating.h"
+#include "MusicPlayer.h"
 
 #define DMX_PACKET_SIZE     512
 #define INVALID_CHANNEL     0xFFFF
@@ -62,7 +64,8 @@ R maxKeyValue( T& map ) {
 }
 
 class Venue;
-class MusicPlayer;
+
+typedef std::map<CString,AudioInfo> AudioTrackInfoCache;
 
 class DMXStudio
 {
@@ -78,6 +81,7 @@ class DMXStudio
     bool                m_enable_http;
     MusicPlayer*        m_music_player;
     bool                m_dmx_required;
+    AudioTrackInfoCache m_track_audio_info_cache;               // Caches track audio info to avoid http lookups
 
 public:
     DMXStudio();
@@ -166,6 +170,8 @@ public:
     bool loadVenueFromString( LPCSTR venue_xml );
     bool newVenue( );
 
+    bool getTrackAudioInfo( LPCSTR track_link, DWORD track_id, AudioInfo& audio_info );
+
 private:
     Venue* readVenueFromFile( const char *input_file );
     void writeVenueToFile( const char *output_file );
@@ -176,6 +182,9 @@ private:
     void openStudioLogFile( void);
     void closeStudioLogFile( void );
     void showIpAddress( void );
+
+    size_t readAudioInfoCache( void );
+    void writeAudioInfoCache( void );
 };
 
 extern DMXStudio studio;

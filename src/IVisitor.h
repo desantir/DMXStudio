@@ -44,6 +44,7 @@ class MovementAnimation;
 class ChannelAnimation;
 struct MusicSceneSelector;
 class ScenePixelAnimator;
+class SceneChannelFilter;
 
 class IVisitor
 {
@@ -63,6 +64,7 @@ public:
     virtual void visit( SceneSequence* animation ) = 0;    
     virtual void visit( SceneSoundLevel* animation ) = 0;   
     virtual void visit( ScenePixelAnimator* animation ) = 0;   
+    virtual void visit( SceneChannelFilter* animation ) = 0;
 
     virtual void visit( AnimationSignal* signal ) = 0;
     virtual void visit( ChaseStep* chase_step ) = 0;

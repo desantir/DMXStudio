@@ -6,7 +6,7 @@
         <manufacturer>Custom</manufacturer>
         <model>LED Array</model>
         <channels>
-            <channel index="1" type="auto program" color="false" blackout="false">
+            <channel index="1" type="auto program" color="false" blackout="false" value="255">
                 <name>Program</name>
                 <ranges>
                     <range start="0" end="9">
@@ -142,7 +142,7 @@
             <channel index="6" type="blue" color="true" blackout="true">
                 <name>Blue</name>
             </channel>
-            <channel index="7" type="dimmer" color="false" blackout="true" value="70">
+            <channel index="7" type="dimmer" color="false" blackout="true" value="255">
                 <name>Dimmer</name>
             </channel>
             <channel index="8" type="control" color="false" blackout="false">

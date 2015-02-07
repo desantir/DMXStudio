@@ -26,7 +26,8 @@ var FadeWhat = ["Color channels", "Dimmer channels", "Color and Dimmer channels"
 var PatternDimmer = [ "Simple sequence", "Cylon", "Pairs", "Toward center", "Alternate", "All" ];
 var AnimationStyle = ["Value List", "Value Range", "Scale Scene Value"];
 var FaderEffect = [ "Color Change", "Strobe", "Color Blend", "All" ];
-var PixelEffect = [ "Scrolling", "Stacked", "Stacked Left", "Stacked Right", "Beam", "Random", "Chase" ];
+var PixelEffect = ["Scrolling", "Stacked", "Stacked Left", "Stacked Right", "Beam", "Random", "Chase"];
+var FilterEffect = ["Sine Wave", "Ramp Up", "Ramp Down", "Step Wave", "Random"];
 
 var MOVEMENT_ANIMATOR_ROOT = "SceneMovementAnimator";
 
@@ -52,14 +53,21 @@ var Animations = [
     { name: "Up/down movement", class_name: "SceneMovementAnimator.4", editor: editSceneMovementAnimator4, synopsis: getSceneMovementAnimator4Synopsis,
       description: "Up/down movement for pan/tilt fixtures" },
     { name: "Beam cross movement", class_name: "SceneMovementAnimator.5", editor: editSceneMovementAnimator5, synopsis: getSceneMovementAnimator5Synopsis,
-    description: "Beam cross movement for pan/tilt fixtures" },
+      description: "Beam cross movement for pan/tilt fixtures" },
     { name: "Programmed movement", class_name: "SceneMovementAnimator.6", editor: editSceneMovementAnimator6, synopsis: getSceneMovementAnimator6Synopsis,
       description: "Move to specific pan/tilt locations for pan/tilt fixtures" },
     { name: "Moonflower movement", class_name: "SceneMovementAnimator.7", editor: editSceneMovementAnimator7, synopsis: getSceneMovementAnimator7Synopsis,
       description: "Moonflower effect for pan/tilt fixtures" },
+    { name: "Sine wave movement", class_name: "SceneMovementAnimator.8", editor: editSceneMovementAnimator8, synopsis: getSceneMovementAnimator8Synopsis,
+      description: "Sine wave effect for pan/tilt fixtures" },
     { name: "Pixel animator", class_name: "ScenePixelAnimator", editor: editPixelAnimator, synopsis: getPixelAnimatorSynopsis,
       description: "Simple dot animations for single depth pixel devices" },
+    { name: "Channel filter", class_name: "SceneChannelFilter", editor: editChannelFilter, synopsis: getChannelFilterSynopsis,
+      description: "Filters applied to channel values" },
 ];
+
+var anim_dialog_height = 750;
+var anim_dialog_width = 840;
 
 // ----------------------------------------------------------------------------
 //
@@ -101,6 +109,15 @@ function findAnimation(what /* Overloaded for string or animation object */ ) {
             return Animations[i];
     }
     return null;
+}
+
+// ----------------------------------------------------------------------------
+//
+function getAnimationName(animation) {
+    var anim_info = findAnimation(animation);
+    if (anim_info == null || anim_info.synopsis == null)
+        return "UNKNOWN";
+    return anim_info.name;
 }
 
 // ----------------------------------------------------------------------------
@@ -159,15 +176,41 @@ function createAnimationButtonText(animation) {
 
     button_innards += "<div class='animation_button_fixtures'>";
 
+    var found = false;
+
     if (animation.actors.length > 0) {
         for (var i = 0; i < animation.actors.length; i++) {
             if (i > 0)
                 button_innards += ", ";
-            button_innards += getFixtureById(animation.actors[i]).getNumber();
+
+            var fixture = getFixtureById(animation.actors[i]);
+            if ( fixture != null ) {
+                button_innards += (fixture.isGroup() ? "G" : "F") + fixture.getNumber();
+                found = true;
+            }
         }
     }
-    else
+    
+    if ( !found )
         button_innards += "NO FIXTURES";
+
+    button_innards += "</div>";
+    button_innards += "<div class='animation_button_signal'>";
+
+    var synopsis = getAnimationSynopsis(animation).split("\n");
+
+    for (var i = 0; i < synopsis.length; i++) {
+        var s = synopsis[i];
+        if (s.length > 120) {
+            s = s.substring(0, 120) + " ...";
+        }
+
+        if (i > 0)
+            button_innards += "<br />";
+
+
+        button_innards += s;
+    }
 
     button_innards += "</div>";
 
@@ -206,7 +249,7 @@ function populateSceneFixtures(multiselect, animation) {
         }
     }
 
-    multiselect.multiselect({ minWidth: 500, multiple: true, noneSelectedText: 'select fixtures' });
+    multiselect.multiselect({ minWidth: 500, multiple: true, noneSelectedText: 'select fixtures', selectedList: 1 });
 }
 
 // ----------------------------------------------------------------------------
@@ -216,6 +259,9 @@ function generateFixtureTiles(order_div, animation) {
     var ul = $("<ul class='sortable_fixtures'>");
     for (var i = 0; i < animation.actors.length; i++) {
         var fixture = getFixtureById(animation.actors[i]);
+        if (fixture == null)
+            continue;
+
         var label = (fixture.isGroup()) ? "G" : "F";
 
         var li = $("<li class='ui-state-default sortable_fixture'>" + label + fixture.getNumber() + "</li>");
@@ -448,8 +494,8 @@ function editFixtureSequencer(anim_info, animation, success_callback) {
 
     edit_dialog.dialog({
         autoOpen: false,
-        width: 780,
-        height: 620,
+        width: anim_dialog_width,
+        height: anim_dialog_height,
         modal: true,
         resizable: false,
         title: "Edit " + anim_info.name,
@@ -493,8 +539,8 @@ function editSceneSoundLevel(anim_info, animation, success_callback) {
 
     edit_dialog.dialog({
         autoOpen: false,
-        width: 780,
-        height: 620,
+        width: anim_dialog_width,
+        height: anim_dialog_height,
         modal: true,
         resizable: false,
         title: "Edit " + anim_info.name,
@@ -550,8 +596,8 @@ function editScenePatternDimmer(anim_info, animation, success_callback) {
 
     edit_dialog.dialog({
         autoOpen: false,
-        width: 780,
-        height: 620,
+        width: anim_dialog_width,
+        height: anim_dialog_height,
         modal: true,
         resizable: false,
         title: "Edit " + anim_info.name,
@@ -608,8 +654,8 @@ function editSceneStrobeAnimator(anim_info, animation, success_callback) {
 
     edit_dialog.dialog({
         autoOpen: false,
-        width: 780,
-        height: 620,
+        width: anim_dialog_width,
+        height: anim_dialog_height,
         modal: true,
         resizable: false,
         title: "Edit " + anim_info.name,
@@ -689,8 +735,8 @@ function editSceneColorSwitcher(anim_info, animation, success_callback) {
 
     edit_dialog.dialog({
         autoOpen: false,
-        width: 780,
-        height: 750,
+        width: anim_dialog_width,
+        height: anim_dialog_height,
         modal: true,
         resizable: false,
         title: "Edit " + anim_info.name,
@@ -888,8 +934,8 @@ function editSceneMovementAnimator(anim_info, animation, success_callback, setup
 
     edit_dialog.dialog({
         autoOpen: false,
-        width: 780,
-        height: 810,
+        width: anim_dialog_width,
+        height: anim_dialog_height,
         modal: true,
         resizable: false,
         title: (animation.new_animation ? "Create " : "Edit ") + anim_info.name,
@@ -993,8 +1039,8 @@ function editSceneMovementAnimator1(anim_info, animation, success_callback) {
 }
 
 function getSceneMovementAnimator1Synopsis(animation) {
-    var synopsis = movementSynopsis(animation.SceneMovementAnimator) +
-                   ", Pan: " + animation.SceneMovementAnimator.pan_start_angle + "-" + animation.SceneMovementAnimator.pan_end_angle +
+    var synopsis = movementSynopsis(animation.SceneMovementAnimator) + "\n" +
+                   "Pan: " + animation.SceneMovementAnimator.pan_start_angle + "-" + animation.SceneMovementAnimator.pan_end_angle +
                    ", Tilt: " + animation.SceneMovementAnimator.tilt_start_angle + "-" + animation.SceneMovementAnimator.tilt_end_angle +
                    ", Group size: " + animation.SceneMovementAnimator.group_size + ", Positions: " + animation.SceneMovementAnimator.positions;
     return synopsis;
@@ -1029,8 +1075,8 @@ function editSceneMovementAnimator2(anim_info, animation, success_callback) {
 }
 
 function getSceneMovementAnimator2Synopsis(animation) {
-    var synopsis = movementSynopsis(animation.SceneMovementAnimator) +
-                   ", Pan: " + animation.SceneMovementAnimator.pan_start_angle + "-" + animation.SceneMovementAnimator.pan_end_angle +
+    var synopsis = movementSynopsis(animation.SceneMovementAnimator) + "\n" +
+                   "Pan: " + animation.SceneMovementAnimator.pan_start_angle + "-" + animation.SceneMovementAnimator.pan_end_angle +
                    ", Increment: " + animation.SceneMovementAnimator.pan_increment +
                    ", Tilt: " + animation.SceneMovementAnimator.tilt_start_angle + "-" + animation.SceneMovementAnimator.tilt_end_angle +
                    ", Return blackout: " + animation.SceneMovementAnimator.blackout_return;
@@ -1066,8 +1112,8 @@ function editSceneMovementAnimator3(anim_info, animation, success_callback) {
 }
     
 function getSceneMovementAnimator3Synopsis(animation) {
-    var synopsis = movementSynopsis(animation.SceneMovementAnimator) +
-                   ", Pan: " + animation.SceneMovementAnimator.pan_start_angle + "-" + animation.SceneMovementAnimator.pan_end_angle +
+    var synopsis = movementSynopsis(animation.SceneMovementAnimator) + "\n" +
+                   "Pan: " + animation.SceneMovementAnimator.pan_start_angle + "-" + animation.SceneMovementAnimator.pan_end_angle +
                    ", Tilt: " + animation.SceneMovementAnimator.tilt_start_angle + "-" + animation.SceneMovementAnimator.tilt_end_angle +
                    "," + (animation.SceneMovementAnimator.alternate_groups ? " Alternate" : "") + " Groups: " + animation.SceneMovementAnimator.group_size +
                    ", Return blackout: " + animation.SceneMovementAnimator.blackout_return;
@@ -1105,8 +1151,8 @@ function editSceneMovementAnimator4(anim_info, animation, success_callback) {
 }
 
 function getSceneMovementAnimator4Synopsis(animation) {
-    var synopsis = movementSynopsis(animation.SceneMovementAnimator) +
-                   ", Pan: " + animation.SceneMovementAnimator.pan_start_angle + "-" + animation.SceneMovementAnimator.pan_end_angle +
+    var synopsis = movementSynopsis(animation.SceneMovementAnimator) + "\n" +
+                   "Pan: " + animation.SceneMovementAnimator.pan_start_angle + "-" + animation.SceneMovementAnimator.pan_end_angle +
                    ", Increment: " + animation.SceneMovementAnimator.pan_increment +
                    ", Tilt: " + animation.SceneMovementAnimator.tilt_start_angle + "-" + animation.SceneMovementAnimator.tilt_end_angle +
                    "," + (animation.SceneMovementAnimator.alternate_groups ? " Alternate" : "") + " Groups: " + animation.SceneMovementAnimator.group_size +
@@ -1185,8 +1231,8 @@ function editSceneMovementAnimator6(anim_info, animation, success_callback) {
 }
 
 function getSceneMovementAnimator6Synopsis(animation) {
-    var synopsis = movementSynopsis(animation.SceneMovementAnimator) +
-                   ", Coordinates: ";
+    var synopsis = movementSynopsis(animation.SceneMovementAnimator) + "\n" +
+                   "Coordinates: ";
 
     for (var i = 0; i < animation.SceneMovementAnimator.coordinates.length; i++) {
         if (i > 0)
@@ -1229,8 +1275,8 @@ function editSceneMovementAnimator7(anim_info, animation, success_callback) {
 }
         
 function getSceneMovementAnimator7Synopsis(animation) {
-    var synopsis = movementSynopsis(animation.SceneMovementAnimator) +
-                   ", Height: " + animation.SceneMovementAnimator.height + "'" +
+    var synopsis = movementSynopsis(animation.SceneMovementAnimator) + "\n" +
+                   "Height: " + animation.SceneMovementAnimator.height + "'" +
                    ", Spacing: " + animation.SceneMovementAnimator.fixture_spacing + "'" +
                    ", Radius: " + animation.SceneMovementAnimator.radius + "'" +
                    ", Home: " + animation.SceneMovementAnimator.home_x + "," + animation.SceneMovementAnimator.home_y +
@@ -1254,8 +1300,8 @@ function editSceneChannelAnimator(anim_info, animation, success_callback) {
 
     edit_dialog.dialog({
         autoOpen: false,
-        width: 780,
-        height: 720,
+        width: anim_dialog_width,
+        height: anim_dialog_height,
         modal: true,
         resizable: false,
         title: "Edit " + anim_info.name,
@@ -1484,8 +1530,8 @@ function editPixelAnimator(anim_info, animation, success_callback) {
 
     edit_dialog.dialog({
         autoOpen: false,
-        width: 780,
-        height: 780,
+        width: anim_dialog_width,
+        height: anim_dialog_height,
         modal: true,
         resizable: false,
         title: "Edit " + anim_info.name,
@@ -1494,7 +1540,7 @@ function editPixelAnimator(anim_info, animation, success_callback) {
                 if (!updateSignal(prefix, animation.signal))
                     return;
 
-                animation.ScenePixelAnimator.pixel_effect = $("#espa_pixel_effect").val();
+                animation.ScenePixelAnimator.pixel_effect = parseInt($("#espa_pixel_effect").val());
                 animation.ScenePixelAnimator.pixel_off_color = $("#espa_pixel_off_color").attr('value');
                 animation.ScenePixelAnimator.generations = $("#espa_generations").val();
                 animation.ScenePixelAnimator.pixels = $("#espa_pixels").val();
@@ -1687,5 +1733,216 @@ function getPixelAnimatorSynopsis(animation) {
         }
     }
 
+    return synopsis;
+}
+
+// ----------------------------------------------------------------------------
+//
+function editChannelFilter(anim_info, animation, success_callback) {
+    var edit_dialog = $("#edit_" + anim_info.class_name + "_dialog");
+    var prefix = "escf";
+
+    if (animation.SceneChannelFilter == null)
+        animation.SceneChannelFilter = {
+            filter: 1,
+            channel: 0,
+            step: 1,
+            amplitude: 10,
+            offset: 0
+        };
+
+    edit_dialog.dialog({
+        autoOpen: false,
+        width: anim_dialog_width,
+        height: anim_dialog_height,
+        modal: true,
+        resizable: false,
+        title: "Edit " + anim_info.name,
+        buttons: {
+            OK: function () {
+                if (!updateSignal(prefix, animation.signal))
+                    return;
+
+                updateOrderedSceneFixtures($("#" + prefix + "_fixture_order"), animation);
+
+                animation.SceneChannelFilter.filter = parseInt($("#escf_filter").val());
+                animation.SceneChannelFilter.channel = parseInt($("#escf_channel").val());
+                animation.SceneChannelFilter.step = parseInt($("#escf_step").val());
+                animation.SceneChannelFilter.amplitude = parseInt($("#escf_amplitude").val());
+                animation.SceneChannelFilter.offset = parseInt($("#escf_offset").val());
+
+                success_callback(animation);
+
+                edit_dialog.dialog("close");
+            },
+            Cancel: function () {
+                edit_dialog.dialog("close");
+            }
+        }
+    });
+
+    var escf_channel = $('#escf_channel');
+    var escf_fixtures = $("#" + prefix + "_fixtures");
+
+    populateSceneFixtures(escf_fixtures, animation);
+    populateFixtureOrder($("#" + prefix + "_fixtures"), $("#" + prefix + "_fixture_order"), animation);
+    populateSignal(prefix, animation.signal);
+
+    $("#" + prefix + "_description").text(anim_info.description);
+
+    $("#escf_step").spinner({ min: 1, max: 255 }).val(animation.SceneChannelFilter.step);
+    $("#escf_amplitude").spinner({ min: 1, max: 255 }).val(animation.SceneChannelFilter.amplitude);
+    $("#escf_offset").spinner({ min: 0, max: 360 }).val(animation.SceneChannelFilter.offset);
+
+    $("#escf_filter").empty();
+    var html = "";
+    for (var i = 0; i < FilterEffect.length; i++) {
+        $("#escf_filter").append($('<option>', {
+            value: i + 1,
+            text: FilterEffect[i],
+            selected: i + 1 == animation.SceneChannelFilter.filter
+        }));
+    }
+
+    for (var i = 0; i < FilterEffect.length; i++) {
+        html += '<option value=' + (i + 1) + ' ' + (i + 1 == animation.SceneChannelFilter.filter ? "selected" : "") +
+                '>' + FilterEffect[i] + '</option>';
+    }
+
+    $("#escf_filter").html( html );
+
+    $("#escf_filter").multiselect({ minWidth: 200, multiple: false, selectedList: 1, header: false, height: "auto" });
+
+    var step_div = $("#escf_step_div");
+    var amplitude_div = $("#escf_amplitude_div");
+    var offset_div = $("#escf_offset_div");
+
+    var update_filter = function (filter) {
+        step_div.show();
+        amplitude_div.show();
+        offset_div.show();
+
+        switch (parseInt(filter)) {
+            case 1:					    // Sine wave (amplitude, angle step)
+                break;
+
+            case 2:					    // Ramp up (step)
+            case 3:					    // Ramp down (step)
+            case 4:				        // Step wave (step)
+                amplitude_div.hide();
+                offset_div.hide();
+                break;
+
+            case 5:                     // Random value (amplitude)
+                step_div.hide();
+                offset_div.hide();
+                break;
+        }
+    }
+
+    $("#escf_filter").bind("multiselectclick", function (event, ui) {
+        stopEventPropagation(event);
+        update_filter(ui.value);
+    });
+
+    update_filter(animation.SceneChannelFilter.filter);
+
+    var update_channels = function (selected) {
+        escf_channel.empty();
+
+        var fixture_ids = escf_fixtures.val(); 
+
+        if (fixture_ids != null && fixture_ids.length > 0) {
+            var fixture = getFixtureById(fixture_ids[0]);
+
+            if (fixture != null) {
+                var channels = fixture.getChannels();
+                var html = "";
+
+                for (var i = 0; i < channels.length; i++) {
+                    html += '<option value=' + i + ' ' + (i == selected ? "selected" : "") +
+                            '>Channel ' + (i + 1) + ": " + channels[i].name + '</option>';
+                }
+
+                escf_channel.html(html);
+            }
+        }
+
+        escf_channel.multiselect("refresh");
+    };
+
+    escf_fixtures.bind("multiselectclick", function (event, ui) {
+        stopEventPropagation(event);
+        update_channels( parseInt($("#escf_channel").val()) );
+    });
+
+    escf_channel.multiselect({ minWidth: 500, multiple: false, selectedList: 1, header: false, noneSelectedText: 'select channel', height: "auto" });
+
+    update_channels(animation.SceneChannelFilter.channel);
+    
+    edit_dialog.dialog("open");
+}
+
+function getChannelFilterSynopsis(animation) {
+    var synopsis = FilterEffect[animation.SceneChannelFilter.filter - 1] + ": ";
+
+    switch (animation.SceneChannelFilter.filter) {
+        case 1:					    // Sine wave (amplitude, angle step)
+            synopsis += "channel " + (animation.SceneChannelFilter.channel + 1) +
+                        " step " + animation.SceneChannelFilter.step +
+                        " amplitude " + animation.SceneChannelFilter.amplitude +
+                        " offset " + animation.SceneChannelFilter.offset;
+            break;
+
+        case 2:					    // Ramp up (step)
+        case 3:					    // Ramp down (step)
+        case 4:				        // Step wave (step)
+            synopsis += "channel " + (animation.SceneChannelFilter.channel + 1) +
+                        " step " + animation.SceneChannelFilter.step;
+            break;
+
+        case 5:                     // Random value (amplitude)
+            synopsis += "amplitude " + animation.SceneChannelFilter.amplitude;
+            break;
+    }
+
+    return synopsis;
+}
+
+// ----------------------------------------------------------------------------
+// Sinewave movement animator
+//
+function editSceneMovementAnimator8(anim_info, animation, success_callback) {
+    var setupFunc = function (dialog) {
+        $("#esma_group_size_container").show();
+
+        $("#esma8_positions").spinner({ min: 1, max: 200 }).val(animation.SceneMovementAnimator.positions);
+        $("#esma8_pan_increment").spinner({ min: 1, max: 200 }).val(animation.SceneMovementAnimator.pan_increment);
+        $("#esma8_pan_start_angle").spinner({ min: 0, max: 720 }).val(animation.SceneMovementAnimator.pan_start_angle);
+        $("#esma8_pan_end_angle").spinner({ min: 0, max: 720 }).val(animation.SceneMovementAnimator.pan_end_angle);
+        $("#esma8_tilt_start_angle").spinner({ min: 0, max: 720 }).val(animation.SceneMovementAnimator.tilt_start_angle);
+        $("#esma8_tilt_end_angle").spinner({ min: 0, max: 720 }).val(animation.SceneMovementAnimator.tilt_end_angle);
+    }
+
+    var updateFunc = function (dialog, animation) {
+        animation.SceneMovementAnimator.positions = $("#esma8_positions").spinner("value");
+        animation.SceneMovementAnimator.pan_increment = $("#esma8_pan_increment").spinner("value");
+        animation.SceneMovementAnimator.pan_start_angle = $("#esma8_pan_start_angle").spinner("value");
+        animation.SceneMovementAnimator.pan_end_angle = $("#esma8_pan_end_angle").spinner("value");
+        animation.SceneMovementAnimator.tilt_start_angle = $("#esma8_tilt_start_angle").spinner("value");
+        animation.SceneMovementAnimator.tilt_end_angle = $("#esma8_tilt_end_angle").spinner("value");
+        return true;
+    }
+
+    editSceneMovementAnimator(anim_info, animation, success_callback, setupFunc, updateFunc);
+}
+
+function getSceneMovementAnimator8Synopsis(animation) {
+    var synopsis = movementSynopsis(animation.SceneMovementAnimator) + "\n" +
+                   "Pan: " + animation.SceneMovementAnimator.pan_start_angle + "-" + animation.SceneMovementAnimator.pan_end_angle +
+                   ", Tilt: " + animation.SceneMovementAnimator.tilt_start_angle + "-" + animation.SceneMovementAnimator.tilt_end_angle +
+                   ", Step: " + animation.SceneMovementAnimator.positions +
+                   ", Offset: " + animation.SceneMovementAnimator.pan_increment +
+                   ", Group size: " + animation.SceneMovementAnimator.group_size + ", Positions: " + animation.SceneMovementAnimator.positions;
     return synopsis;
 }

@@ -64,7 +64,7 @@ UINT AnimationTask::run(void) {
                  m_venue->getWhiteout() == WHITEOUT_STROBE_MANUAL )
                 changed |= m_venue->m_whiteout_strobe.strobe( time_ms );
 
-            if ( m_venue->isLightBlackout() )
+            if ( m_venue->isLightBlackout() )   // Already in blackout - don't need to push changes
                 changed = false;
 
             // Check auto blackout situation
@@ -78,6 +78,7 @@ UINT AnimationTask::run(void) {
                 m_venue->setLightBlackout( false );
                 if ( m_scene )
                     m_venue->loadSceneChannels( m_dmx_packet, m_scene );
+                // We should apply animation slice values here ...
                 changed = true;
             }
 

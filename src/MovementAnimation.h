@@ -34,7 +34,8 @@ typedef enum {
     MOVEMENT_NOD = 4,								// Simple up and down
     MOVEMENT_XCROSS = 5,							// Cross fixture beams
     MOVEMENT_COORDINATES = 6,                       // Move to specific coordinates
-    MOVEMENT_MOONFLOWER = 7 						// Moonflower in and out effect
+    MOVEMENT_MOONFLOWER = 7, 						// Moonflower in and out effect
+    MOVEMENT_SINEWAVE = 8                           // Sine wave movement
 } MovementAnimationType;
 
 struct FixtureCoordinate

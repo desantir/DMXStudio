@@ -325,8 +325,8 @@ bool HttpRestServices::edit_fixture( CString& response, LPCSTR data, EditMode mo
     }
 
     // Make sure number is unique
-    Fixture* fixture = studio.getVenue()->getFixtureByNumber( number );
-    if ( fixture != NULL && fixture_id != fixture->getUID() )
+    Fixture* test = studio.getVenue()->getFixtureByNumber( number );
+    if ( test != NULL && fixture_id != test->getUID() )
         return false;
 
     switch ( mode ) {
@@ -337,6 +337,7 @@ bool HttpRestServices::edit_fixture( CString& response, LPCSTR data, EditMode mo
         }
 
         case UPDATE: {
+            Fixture* fixture = studio.getVenue()->getFixture( fixture_id );
             if ( !fixture )
                 return false;
 
@@ -419,7 +420,7 @@ bool HttpRestServices::control_fixture_group( CString& response, LPCSTR data, DW
         group_uid = parser.get<ULONG>( "id" );
         is_capture = parser.get<bool>( "is_capture" );
 
-        if ( parser.has_key( "channel_values" ) )
+        if ( parser.has_key( "channel_values" ) ) 
             channel_values = parser.get<std::vector<BYTE>>( "channel_values" );
     }
     catch ( std::exception& e ) {

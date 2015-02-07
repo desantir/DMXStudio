@@ -183,6 +183,8 @@ void VenueWriter::visit( Scene* scene )
 
     writeDObject( element, scene, "scene_number" );
 
+    add_attribute( element, "bpm_rating", scene->m_bpm_rating );
+
     // Write all scene actors
     TiXmlElement actors( "actors" );
     visit_map<ActorMap>( actors, scene->m_actors );
@@ -290,6 +292,7 @@ void VenueWriter::visit( MusicSceneSelector* music_scene_selection )
 
     add_attribute( element, "uid", music_scene_selection->m_selection_uid );
     add_attribute( element, "type", music_scene_selection->m_selection_type );
+    add_text_element( element, "track_link", music_scene_selection->m_track_link );
     add_text_element( element, "track_full_name", music_scene_selection->m_track_full_name );
 
     getParent().InsertEndChild( element );
@@ -418,6 +421,28 @@ void VenueWriter::visit( SceneChannelAnimator* animation )
     TiXmlElement channel_animations( "channel_animations" );
     visit_array<ChannelAnimationArray>( channel_animations, animation->m_channel_animations );
     element.InsertEndChild( channel_animations );
+
+    getParent().InsertEndChild( element );
+}
+
+// ----------------------------------------------------------------------------
+//
+void VenueWriter::visit( SceneChannelFilter* animation )
+{
+    TiXmlElement element( "animation" );
+
+    writeDObject( element, animation, "number" );
+
+    add_attribute( element, "class", animation->getClassName() );
+    add_attribute( element, "filter", animation->getFilter() );
+    add_attribute( element, "channel", animation->getChannel() );
+    add_attribute( element, "step", animation->getStep() );
+    add_attribute( element, "amplitude", animation->getAmplitude() );
+    add_attribute( element, "offset", animation->m_offset );
+
+    visit_object<AnimationSignal>( element, animation->m_signal );
+
+    add_pfuids_element<UIDArray>( element, animation->m_actors );
 
     getParent().InsertEndChild( element );
 }

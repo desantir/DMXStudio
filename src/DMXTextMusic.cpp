@@ -93,8 +93,10 @@ public:
 //
 class TrackListField : public NumberedListField
 {
-    DWORD           m_playlist;
-    PlayerItems     m_tracks;
+    DWORD                   m_playlist;
+    PlayerItems             m_tracks;
+    std::map<int,CString>   m_id_to_link;
+
 
 public:
     TrackListField( LPCSTR name ) :
@@ -110,8 +112,16 @@ public:
         int key = 1;
 
         for ( PlayerItems::iterator it=m_tracks.begin(); it != m_tracks.end(); ++it ) {
-            CString track_name = studio.getMusicPlayer()->getTrackFullName( (*it) );
+            CString track_name, artist_name, track_link;
+
+            studio.getMusicPlayer()->getTrackInfo( (*it), &track_name, &artist_name, NULL, NULL, NULL, &track_link );
+
+            m_id_to_link[ key ] = track_link;
+
+            track_name.AppendFormat( "by %s", artist_name );
+
             addKeyValue( key++, track_name );
+
         }
         
         setDefaultListValue( 1 );  
@@ -122,6 +132,13 @@ public:
     }
 
     CString getTrackFullName() {
+        if ( m_tracks.size() == 0 )
+            return "";
+            
+        return CString( getKeyValue() );
+    }
+
+    CString getTrackLink() {
         if ( m_tracks.size() == 0 )
             return "";
             
@@ -353,6 +370,7 @@ void DMXTextUI::musicMapTrack(void)
             m_map_to_field.addKeyValue( 2, "Chase" );
             m_map_to_field.addKeyValue( 3, "Random Scene" );
             m_map_to_field.addKeyValue( 4, "Random Chase" );
+            m_map_to_field.addKeyValue( 5, "Random Scene (BPM)" );
             m_map_to_field.setDefaultListValue( 1 );
 
             add( m_map_target_field );
@@ -364,7 +382,7 @@ void DMXTextUI::musicMapTrack(void)
         }
 
         void addMusicMapping() {
-            CString track_full_name;
+            CString track_full_name, track_link;
             MusicSelectorType type = (MusicSelectorType)m_map_to_field.getListValue();
             UID uid = 0L;
             
@@ -376,16 +394,19 @@ void DMXTextUI::musicMapTrack(void)
             switch ( m_map_target_field.getListValue() ) {
                 case 1:
                     track_full_name = m_tracks_field.getTrackFullName();
+                    track_link = m_tracks_field.getTrackLink();
                     break;
                 case 2:
                     track_full_name = SILENCE_TRACK_NAME;
+                    track_link = SILENCE_TRACK_LINK;
                     break;
                 case 3:
                     track_full_name = UNMAPPED_TRACK_NAME;
+                    track_link =  UNMAPPED_TRACK_LINK;
                     break;
             }
 
-            MusicSceneSelector music_scene_selector( track_full_name, type, uid );
+            MusicSceneSelector music_scene_selector( track_full_name, track_link, type, uid );
             m_venue->addMusicMapping( music_scene_selector );
         }
     };
@@ -452,6 +473,9 @@ void DMXTextUI::musicMapShow()
         }
         else if ( it->second.m_selection_type == MST_RANDOM_CHASE ) {
             target.Format( "Random Chase" );
+        }
+        else if ( it->second.m_selection_type == MST_SCENE_BY_BPM ) {
+            target.Format( "Random Scene (BPM)" );
         }
 
         m_text_io.printf( "   %s -> %s\n", it->second.m_track_full_name, target );

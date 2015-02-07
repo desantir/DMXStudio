@@ -137,40 +137,38 @@ MA 02111-1307, USA.
         <span id="player_error" class="player_error"></span>
         <span id="track_status" class="track_status"></span>
     </div>
-    <div class="collapsable_content" style="margin-top: 8px; margin-bottom: 10px; height: 76px; ">
+    <div class="collapsable_content" style="margin-top: 8px; margin-bottom: 10px; height: 72px; ">
         <div style="width: 230px; margin: 3px 4px 4px 8px;  float:left; display:inline;">
             <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px;" >
                 <span id="volume_mute" class="ui-icon ui-icon-volume-on" style="float: left; margin: -1px 5px 0 0;" title="mute"></span>
                 Master Volume <span id="master_volume_value"></span>
             </p>
-            <div id="master_volume" style="width: 220px; margin: 10px 8px 8px 8px;"></div>
+            <div id="master_volume" style="width: 212px; margin: 10px 8px 8px 8px;"></div>
         </div>
         <div id="track_controls" style="width: 350px; margin: 3px 4px 4px 20px; float:left; display:none;">
-            <div class="ui-state-default ui-corner-all" style="float:left; display:inline; height: 31px; width: 100%; padding: 3px 5px 3px 5px;">
-                <div id="now_playing" class="track_title" style="float: left; width: 100%;"></div>
+            <div class="ui-state-default ui-corner-all" style="float:left; display:inline; height: 34px; width: 100%; padding: 3px 5px 3px 5px;">
+                <div id="now_playing" class="track_title" style="float: left; width: 100%; margin-bottom: 4px;"></div>
                 <div id="track_length" class="track_length" style="clear: both; float: left;"></div>
                 <div id="track_remaining" class="track_length" style="float: right;"></div>
             </div>
-            <div style="clear: both; float:left; margin: 5px 0px 0px 30px;">
-                <div id="track_back_info" class="ui-icon ui-icon-blank" style="float:left; margin-top: 20px;" title="show played tracks"></div>
-                <div id="track_back" class="lg-icon-disabled lg-icon-track-back menu_icon" title="track back" style="float:left; margin-right: 20px;" ></div>
-                <div id="track_play" class="lg-icon-disabled lg-icon-track-play menu_icon" title="track play" style="float:left; margin-right: 20px;"></div>
-                <div id="track_stop" class="lg-icon-disabled lg-icon-track-stop menu_icon" title="track stop" style="float:left; margin-right: 20px;"></div>
-                <div id="track_pause" class="lg-icon-disabled lg-icon-track-pause menu_icon" title="track pause" style="float:left; margin-right: 20px;"></div>
-                <div id="track_forward" class="lg-icon-disabled lg-icon-track-forward menu_icon" title="track forward" style="float:left;"></div>
-                <div id="track_forward_info" class="ui-icon ui-icon-blank" style="float:left; margin-top: 20px; width: 14px;" title="show queued tracks"></div>
+            <div style="clear: both; float:left; margin: 5px 0px 0px 40px;">
+                <div id="track_back_info" class="ui-icon ui-icon-blank" style="float:left; margin-top: 6px;" title="show played tracks"></div>
+                <div id="track_back" class="md-icon-disabled md-icon-track-back menu_icon" title="track back" style="float:left; margin-right: 16px;" ></div>
+                <div id="track_play" class="md-icon-disabled md-icon-track-play menu_icon" title="track play" style="float:left; margin-right: 16px;"></div>
+                <div id="track_stop" class="md-icon-disabled md-icon-track-stop menu_icon" title="track stop" style="float:left; margin-right: 16px;"></div>
+                <div id="track_pause" class="md-icon-disabled md-icon-track-pause menu_icon" title="track pause" style="float:left; margin-right: 16px;"></div>
+                <div id="track_forward" class="md-icon-disabled md-icon-track-forward menu_icon" title="track forward" style="float:left;"></div>
+                <div id="track_forward_info" class="ui-icon ui-icon-blank" style="float:left; margin-top: 6px; width: 14px;" title="show queued tracks"></div>
             </div>
         </div>
         <div id="track_select" style="float:left; margin:3px 0px 0px 36px; display:none;">
             <div>
                 <select id="playlist_list" style="max-width: 400px;"></select>
-                <button id="playlist_play" class="playlist_button" style="margin-left: 6px;">play</button>
-                <button id="playlist_queue" class="playlist_button">queue</button>
             </div>
-            <div style="clear: both; float:left; margin-top: 8px;">
-                <select id="track_list" style="max-width: 400px;"></select>
-                <button id="track_list_play" class="playlist_button" style="margin-left: 6px;">play</button>
-                <button id="track_list_queue" class="playlist_button">queue</button>
+            <div style="margin-top:4px;">
+                <button id="playlist_play" class="playlist_button">play all</button>
+                <button id="playlist_queue" class="playlist_button">queue all</button>
+                <button id="playlist_tracks" class="playlist_button">track list</button>
             </div>
         </div>
         <div style="float:right; display:inline;">
@@ -380,6 +378,8 @@ MA 02111-1307, USA.
         <div class="describe_data" id="describe_scene_fixture_count"></div>
         <div class="describe_title">animations:</div>
         <div class="describe_data" id="describe_scene_animation_count"></div>
+        <div class="describe_title">bpm rating:</div>
+        <div class="describe_data" id="describe_scene_bpm_rating"></div>
         <div class="describe_title">&nbsp;</div>
         <div class="describe_data" id="describe_scene_description"></div>
     </div>
@@ -466,15 +466,24 @@ MA 02111-1307, USA.
 </div>
 
 <div id="new_scene_dialog" style="display:none;">
-    <form style="height:420px;"> 
+    <form style="height:470px;"> 
         <div id="nsd_accordion">
             <h3>General</h3>
             <div>
                 <label for="nsd_fixtures" style="display:block; margin: 0px 0px 4px 0px;">fixtures</label>
                 <select id="nsd_fixtures" style="display:block;" multiple="multiple" ></select>
 
-                <label for="nsd_number" style="display:block; margin: 8px 0px 4px 0px;">number</label>
-                <input id="nsd_number" style="display:block; width:80px;"/>
+                <div>
+                    <div style="clear:both;float:left;">
+                        <label for="nsd_number" style="display:block; margin: 8px 0px 4px 0px;">number</label>
+                        <input id="nsd_number" style="display:block; width:80px;"/>
+                    </div>
+                    <div id="nsd_keep_groups_section" style="float:left; margin: 10px 0px 0px 90px;">
+                        <input type="checkbox" id="nsd_keep_groups" checked="checked" />
+                        <label for="nsd_keep_groups">keep fixtures in groups</label>
+                    </div>
+                    <div style="clear:both;"></div>
+                </div>
 
                 <label for="nsd_name" style="display:block; margin: 8px 0px 4px 0px;">name</label>
                 <input id="nsd_name" style="display:block;width: 400px;" />
@@ -483,13 +492,13 @@ MA 02111-1307, USA.
                 <input id="nsd_description" style="display:block; width: 400px;" />
 
                 <div>
-                    <label for="nsd_acts" style="display:block; margin: 8px 0px 4px 0px;">acts</label>
-                    <select id="nsd_acts" style="display:block;" multiple="multiple" ></select>
+                    <label for="nsd_bpm_rating" style="display:block; margin: 8px 0px 4px 0px;">BPM rating</label>
+                    <select id="nsd_bpm_rating" style="display:block;" multiple="multiple" ></select>
                 </div>
 
-                <div id="nsd_keep_groups_section" style="margin-top: 12px;">
-                    <input type="checkbox" id="nsd_keep_groups" checked="checked" />
-                    <label for="nsd_keep_groups">keep fixtures in groups</label>
+                <div>
+                    <label for="nsd_acts" style="display:block; margin: 8px 0px 4px 0px;">acts</label>
+                    <select id="nsd_acts" style="display:block;" multiple="multiple" ></select>
                 </div>
             </div>
 
@@ -500,8 +509,8 @@ MA 02111-1307, USA.
 
                 <div id="nsd_new_animation_button" class="ui-state-default ui-corner-all" 
                     style="padding: 4px; clear: both; float:left; width: 664px; cursor: pointer;" >
-                    <span style="float:left; margin:2px 10px 0px 6px;">add animation</span>
-                    <select id="nsd_new_animation_type" style="float:left;"><option>random</option></select>
+                    <span class="animation_button_title" style="float:left; margin:2px 10px 0px 6px;">add animation</span>
+                    <select id="nsd_new_animation_type" style="float:left;"></select>
                     <div style="float:right; padding:3px; margin-top:4px;"><span class="ui-icon ui-icon-circle-plus" ></span></div>
                     <div id="nsd_new_animation_description" style="clear:both; float:left;  margin: 4px 0px 0px 4px;" class="animation_description"></div>
                 </div>
@@ -1114,6 +1123,41 @@ MA 02111-1307, USA.
                 </fieldset>
             </div>
 
+            <div id="esma_SceneMovementAnimator8" style="margin-top: 10px; clear:both; float:left; width:100%;">
+                <fieldset  style="padding:8px;">
+                    <legend class="animation_fieldset">sine wave movement</legend>
+
+                    <table style="float:left; margin-right: 20px; margin-top: 4px;">
+                        <tr>
+                            <td style="width:50px;"></td>
+                            <td>start&deg;</td>
+                            <td>end&deg;</td>
+                        </tr>
+                        <tr>
+                            <td>pan</td>
+                            <td><input id="esma8_pan_start_angle" style="display:block; width:60px;" /></td>
+                            <td><input id="esma8_pan_end_angle" style="display:block; width:60px;" /></td>
+                        </tr>
+                        <tr>
+                            <td>tilt</td>
+                            <td><input id="esma8_tilt_start_angle" style="display:block; width:60px;" /></td>
+                            <td><input id="esma8_tilt_end_angle" style="display:block; width:60px;" /></td>
+                        </tr>
+                    </table>
+
+                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                        <label for="esma8_positions" style="display:block;">step</label>
+                        <input id="esma8_positions" style="display:block; width:60px;" />
+                    </div>
+
+                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                        <label for="esma8_pan_increment" style="display:block;">offset</label>
+                        <input id="esma8_pan_increment" style="display:block; width:60px;" />
+                    </div>
+
+                </fieldset>
+            </div>
+
             <div id="esma_signal" style="clear:both; float:left;" ></div>
 
         </fieldset>
@@ -1179,10 +1223,8 @@ MA 02111-1307, USA.
         </div>
 
         <div style="float:right; margin: 5px 0px 2px 0px;">
-            <button id="mmd_add" class="mm_panel_button" style="float:left;" 
-                onclick="music_map_add(event); return false;">map track</button>
-            <button id="mmd_add_all" class="mm_panel_button" style="float:left;"
-                 onclick="music_map_add_all(event); return false;">map playlist</button>
+            <button id="mmd_add" class="mm_panel_button" style="float:left;">map track</button>
+            <button id="mmd_add_all" class="mm_panel_button" style="float:left;">map playlist</button>
         </div>
         <div style="clear: both; "></div>
         <hr style="margin: 10px 0px 10px 0px;" />
@@ -1195,7 +1237,7 @@ MA 02111-1307, USA.
 <div id="mmd_map_template" style="display:none;">
     <div class="mm_track_container">
         <div class="mm_track_label" style="clear:both; float:left; margin: 2px 0px 2px 0px;"></div>
-        <div class="mm_type" style="float:left; margin: 2px 0px 2px 0px; font-size: 10pt; width: 150px;"></div>
+        <div class="mm_type" style="float:left; margin: 2px 0px 2px 0px; font-size: 10pt; width: 180px;"></div>
         <div class="mm_select" style="float:left; margin: 2px 0px 2px 8px; font-size: 10pt; width: 300px;"></div>
         <div style="float:right; margin: 5px 0px 2px 0px;">
             <span class="mm_remove ui-icon ui-icon-circle-minus" title="remove mapping" style="float:left;cursor: pointer;"></span>
@@ -1285,6 +1327,52 @@ MA 02111-1307, USA.
             <label for="ptp_tilt" style="display:block; margin: 12px 0px 4px 0px; font-size:8pt;">tilt °</label>
             <input id="ptp_tilt" style="width: 60px; font-size:8pt;"/>
         </div>
+    </form>
+</div>
+
+<div id="edit_SceneChannelFilter_dialog" style="display:none;">
+    <form style="height:390px;">
+        <fieldset style="padding:8px; margin-top:10px;">
+            <legend class="animation_fieldset">channel filter</legend>
+            <div id="escf_description" class="animation_description"></div>
+            <div style="clear:both; float:left;">
+                <label for="escf_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
+                <select id="escf_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
+
+                <div style="display:block; margin: 10px 0px 4px 0px;">fixture order</div>
+                <div id="escf_fixture_order" style="display:block; margin-bottom:10px; width:500px;"></div>
+            </div>
+
+            <div style="clear:both;float:left; margin-top: 8px;">
+                <label for="escf_channel" style="clear:both; display:block; margin-bottom: 4px;">channel</label>
+                <select id="escf_channel" style="display:block; margin-bottom:10px;"></select>
+            </div>
+
+            <div style="clear:both;float:left; margin-top: 10px;">
+                <div style="clear:both;float:left;" >
+                    <label for="escf_filter" style="clear:both; display:block; margin-bottom: 4px;">filter</label>
+                    <select id="escf_filter" style="display:block; "></select>
+                </div>
+
+                <div id="escf_step_div" style="float:left; margin-left: 10px;">
+                    <label for="escf_step" style="display:block; margin-bottom: 4px;">step</label>
+                    <input id="escf_step" style="display:block; width:70px; "/>
+                </div>
+
+                <div id="escf_amplitude_div" style="float:left; margin-left: 10px;">
+                    <label for="escf_amplitude" style="display:block; margin-bottom: 4px;">amplitude</label>
+                    <input id="escf_amplitude" style="display:block; width:70px;"/>
+                </div>
+
+                <div id="escf_offset_div" style="float:left; margin-left: 10px;">
+                    <label for="escf_offset" style="display:block; margin-bottom: 4px;">offset</label>
+                    <input id="escf_offset" style="display:block; width:70px;"/>
+                </div>
+            </div>
+
+        </fieldset>
+
+        <div id="escf_signal" style="clear:both;" ></div>
     </form>
 </div>
 

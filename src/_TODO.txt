@@ -23,7 +23,6 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L Global animations or attached to a fixture
 		L Animation speed changes based on beat detection
 		L Multiple animations per fixture (deal with channel contention)
-		L Pixel Map support (single/multiple fixtures)
 		L Loadable, scripted, self contained animations with specific properties (versus the current rat's nest)
 
 	L Sound processing
@@ -42,18 +41,19 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L Movement speed abstraction
 		L Dimmer curve (LEDs can fall off fast at the end)
 		L Minimum dimmer setting
+		  Control specific channel(s) on capture
 
 	M Code Maintainence
 		M Bullet proof error detection and automatic restart
 		L Introduce studio fault to kill and restart program (vs error based execeptions)
 
 	L Scene / Chase / Act Improvements
-		L Scene selection based on the music beat (BPM) or mood
 		L Chase changed based on beat, time or track transition
 		L Chase random scene from all/pool
 		L Chase crossfade = % of time cues fading into each other (kill fade time change to crossfade model)?
 		L Chase learn mode - track time and scene transitions
 		L Name acts and easier act selection in UI
+          Pan tilt word size
 
 	L General Enhancements
 		L MIDI fogger control with ready indicator (auto fog timer?)
@@ -61,6 +61,15 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L Fixture duty cycle support?
 		L Video support
 		? Need real color transforms
+          Palettes for location, color, intensity
+		  Fan channel values in a group
+
+	? Concepts
+	      Mark cue
+		  Block cue
+	      Tracking vs non tracking
+		  Cross fade channel values
+		  Bump control single channel value
 
 TODO ------------------------------------------------------------------------ TODO
 

@@ -28,7 +28,9 @@ MA 02111-1307, USA.
 #include "IVisitor.h"
 
 #define SILENCE_TRACK_NAME      "Silence"
+#define SILENCE_TRACK_LINK      "local:track:silence"
 #define UNMAPPED_TRACK_NAME     "Unmapped Tracks"
+#define UNMAPPED_TRACK_LINK     "local:track:unmapped"
 
 class Venue;
 
@@ -36,19 +38,22 @@ enum MusicSelectorType {
     MST_SCENE = 1,
     MST_CHASE = 2,
     MST_RANDOM_SCENE = 3,
-    MST_RANDOM_CHASE = 4
+    MST_RANDOM_CHASE = 4,
+    MST_SCENE_BY_BPM = 5
 };
 
 struct MusicSceneSelector
 {
     CString               m_track_full_name;
+    CString               m_track_link;             // UID of this track
     UID                   m_selection_uid;          // UID of chase or scene
     MusicSelectorType     m_selection_type;         // UID object type
 
     MusicSceneSelector( ) {}
 
-    MusicSceneSelector( LPCSTR track_full_name, MusicSelectorType type, UID type_uid ) :
+    MusicSceneSelector( LPCSTR track_full_name, LPCSTR track_link, MusicSelectorType type, UID type_uid ) :
         m_track_full_name( track_full_name ),
+        m_track_link( track_link ),
         m_selection_uid( type_uid ),
         m_selection_type( type )
     {}
@@ -77,5 +82,9 @@ public:
 
 protected:
     UINT run(void);
+
+private:
+    void MusicWatcher::mapMusicToScene( LPCSTR track_link, DWORD track_id, MusicSelectorType& type, UID& type_uid, CString& method_of_selection ); 
+    UID MusicWatcher::findSceneByBPM( LPCSTR track_link, DWORD track_id, UINT& bpm );
 };
 

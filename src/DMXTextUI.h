@@ -39,6 +39,7 @@ MA 02111-1307, USA.
 #include "SceneMovementAnimator.h"
 #include "SceneStrobeAnimator.h"
 #include "ScenePixelAnimator.h"
+#include "SceneChannelFilter.h"
 #include "Form.h"
 
 class DMXTextUI;
@@ -176,6 +177,7 @@ private:
     bool animMovementEditor( Scene* scene, UID anim_uid );
     bool animStrobeEditor( Scene* scene, UID anim_uid );
     bool animPixelEditor( Scene* scene, UID anim_uid );
+    bool animFilterEditor( Scene* scene, UID anim_uid );
 };
 
 typedef void (DMXTextUI::*HandlerFunc)();
@@ -580,6 +582,11 @@ class ActorSelectField : public InputField
 {
     struct comparitor {
         bool operator() (const CString& lhs, const CString& rhs) const {
+            if ( lhs.GetAt(0) == 'G' && rhs.GetAt(0) != 'G' )
+                return true;
+            if ( lhs.GetAt(0) != 'G' && rhs.GetAt(0) == 'G' )
+                return false;
+
             if ( lhs.GetLength() != rhs.GetLength() )
                 return lhs.GetLength() < rhs.GetLength();
 
@@ -728,3 +735,24 @@ public:
         return acts;
     }
 };
+
+class BPMRatingField : public NumberedListField 
+{
+public:
+    BPMRatingField( BPMRating current_bpm_rating ) : NumberedListField( "BPM rating" )
+    {
+        for ( int index=0; index < BPM_END; index++ )
+            addKeyValue( (BPMRating)index, getRatingName((BPMRating)index) );
+
+        setRating( current_bpm_rating );
+    }
+
+    void setRating( BPMRating rating ) {
+        setDefaultListValue( rating );
+    }
+
+    BPMRating getRating( ) const {
+        return (BPMRating)getListValue();
+    }
+};
+

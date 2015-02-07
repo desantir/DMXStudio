@@ -109,6 +109,10 @@ MA 02111-1307, USA.
 #define DMX_URL_QUERY_MUSIC_MATCHER             DMX_URL_REST "query/music/matcher/"
 #define DMX_URL_EDIT_MUSIC_MATCHER              DMX_URL_REST "edit/music/matcher/"
 
+// Internal play list IDs for queued and played track lists
+#define PLAYED_TRACKS_PLAYLIST      -1
+#define QUEUED_TRACKS_PLAYLIST      -2
+
 class BeatBin
 {
     unsigned    m_start_freq;

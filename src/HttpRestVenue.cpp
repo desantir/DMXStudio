@@ -335,6 +335,7 @@ bool HttpRestServices::query_venue_describe( CString& response, LPCSTR data ) {
     for ( AudioCaptureDeviceArray::iterator it=AudioInputStream::audioCaptureDevices.begin();
             it != AudioInputStream::audioCaptureDevices.end(); ++it )
         json.add( (*it).m_friendly_name );
+
     json.endArray( "capture_devices" );
 
     json.endObject();

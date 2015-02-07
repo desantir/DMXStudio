@@ -451,13 +451,7 @@ function describeChase(event, chase_id) {
         modal: false,
         draggable: true,
         resizable: false,
-        title: "Chase " + chase.getNumber() + ": " + escapeForHTML(chase.getName()),
-        open: function () { // Stop main body scroll
-            $("body").css("overflow", "hidden");
-        },
-        close: function () {
-            $("body").css("overflow", "auto");
-        }
+        title: "Chase " + chase.getNumber() + ": " + escapeForHTML(chase.getName())
     });
 
     var acts = "";

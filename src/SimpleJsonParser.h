@@ -216,7 +216,7 @@ private:
 
     template <class T>
     void convert( LPCSTR value, std::vector<T>& result ) {
-        std::vector<CString> tokens = tokenize( value );
+        std::vector<CString> tokens = tokenize( value, "[],", false );
         for ( std::vector<CString>::iterator it=tokens.begin(); it != tokens.end(); ++it ) {
             T lvalue;
             convert( (LPCSTR)(*it), lvalue );
@@ -226,7 +226,7 @@ private:
 
     template <class T>
     void convert( LPCSTR value, std::set<T>& result ) {
-        std::vector<CString> tokens = tokenize( value );
+        std::vector<CString> tokens = tokenize( value, "[],", false );
         for ( std::vector<CString>::iterator it=tokens.begin(); it != tokens.end(); ++it ) {
             T lvalue;
             convert( (LPCSTR)(*it), lvalue );
@@ -256,7 +256,7 @@ private:
 
     template <class T>
     void convertHex( LPCSTR value, std::vector<T>& result ) {
-        std::vector<CString> tokens = tokenize( value );
+        std::vector<CString> tokens = tokenize( value, "[],", false );
         for ( std::vector<CString>::iterator it=tokens.begin(); it != tokens.end(); ++it ) {
             T lvalue;
             convertHex( (LPCSTR)(*it), lvalue );
