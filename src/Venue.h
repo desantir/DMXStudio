@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-15 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -29,7 +29,7 @@ MA 02111-1307, USA.
 */
 
 #include "IVisitor.h"
-#include "AbstractDMXDriver.h"
+#include "Universe.h"
 #include "Scene.h"
 #include "FixtureGroup.h"
 #include "Chase.h"
@@ -56,6 +56,9 @@ typedef enum {
 
 typedef std::map<BPMRating,UIDArray> SceneRatingsMap;
 
+typedef std::map<universe_t,Universe*> UniverseMap;
+typedef std::vector<Universe*> UniversePtrArray;
+
 class Venue : public DObject
 {
     friend class ChaseTask;
@@ -67,7 +70,9 @@ class Venue : public DObject
     CCriticalSection        m_venue_mutex;						// Protect venue objects
 
     UID					    m_uid_pool;
-    AbstractDMXDriver*      m_universe;
+
+    UniverseMap             m_universes;                        // DMX universes
+
     FixtureMap			    m_fixtures;							// List of fixture instances
     SceneMap			    m_scenes;
     FixtureGroupMap		    m_fixtureGroups;
@@ -78,10 +83,9 @@ class Venue : public DObject
     ChaseTask*			    m_chase_task;
     AnimationTask*		    m_animation_task;
     DWORD				    m_auto_backout_ms;					// Auto backout timer (TODO: FADE OUT)
-    bool				    m_light_blackout;					// Blackout only colors / dimmer
-    CString			        m_dmx_port;							// DMX port connection information
-    unsigned                m_dmx_packet_delay;					// DMX delay between packets
-    unsigned                m_dmx_packet_min_delay;             // DMX minimum time between packets
+    bool				    m_mute_blackout;					// Blackout only colors / dimmer
+    bool                    m_hard_blackout;                    // User forced lighting blackout
+
     CString			        m_audio_capture_device;				// Audio capture device name
     float                   m_audio_boost;                      // Scales incoming audio signal
     float                   m_audio_boost_floor;                // Minimum signal sample value (used when scaling)
@@ -118,7 +122,12 @@ public:
 
     bool open(void);
     bool close(void);
-    bool isRunning() const { return m_universe != NULL; }
+    bool isRunning();
+
+    inline void clearAllUniverses();
+    void addUniverse( Universe* universe );
+    Universe* getUniverse( size_t universe_num );
+    UniversePtrArray getUniverses();
 
     bool isMusicSceneSelectEnabled() const {
         return m_music_scene_select_enabled;
@@ -203,13 +212,6 @@ public:
         return m_audio_boost_floor;
     }
 
-    const char* getDmxPort() const {
-        return m_dmx_port;
-    }
-    void setDmxPort( const char* dmx_port ) {
-        m_dmx_port = dmx_port;
-    }
-
     const char *getVenueLayout() const {
         if ( m_venue_layout.GetLength() == 0 )
             return NULL;
@@ -221,20 +223,6 @@ public:
             m_venue_layout = layout;
         else
             m_venue_layout.Empty();
-    }
-
-    inline unsigned getDmxPacketDelayMS() const {
-        return m_dmx_packet_delay;
-    }
-    void setDmxPacketDelayMS( unsigned delay ) {
-        m_dmx_packet_delay = delay;
-    }
-
-    inline unsigned getDmxMinimumDelayMS( ) const {
-        return m_dmx_packet_min_delay;
-    }
-    void setDmxMinimumDelayMS( unsigned packet_min_delay) {
-        m_dmx_packet_min_delay = packet_min_delay;
     }
 
     const char* getAudioCaptureDevice( ) const {
@@ -274,13 +262,7 @@ public:
     }
 
     UID whoIsAddressRange( universe_t universe, channel_t start_address, channel_t end_address );
-    channel_t findFreeAddressRange( UINT num_channels );
-
-    AbstractDMXDriver* getUniverse() {
-        STUDIO_ASSERT( m_universe, "Venue's DMX universe has not been started" );
-
-        return m_universe;
-    }
+    channel_t findFreeAddressRange( universe_t universe, UINT num_channels );
 
     void setMasterDimmer( BYTE dimmer ) {
         STUDIO_ASSERT( dimmer <= 100, "Master dimmer level must be between 0 and 100" );
@@ -290,11 +272,21 @@ public:
         return m_master_dimmer;
     }
 
-    void setLightBlackout( bool blackout ) {
-        m_light_blackout = blackout;
+    void setMuteBlackout( bool blackout ) {
+        m_mute_blackout = blackout;
     }
-    bool isLightBlackout( ) const {
-        return m_light_blackout;
+    bool isMuteBlackout( ) const {
+        return m_mute_blackout;
+    }
+
+    void setBlackout( bool hard_blackout ) {
+        m_hard_blackout = hard_blackout;
+
+        for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it )
+            (*it).second->setBlackout( m_hard_blackout );
+    }
+    inline bool isBlackout() const {
+        return m_hard_blackout;
     }
 
     void setAutoBlackout( DWORD black_out ) {
@@ -302,7 +294,7 @@ public:
         if ( isRunning() ) {
             getSoundDetector()->setMuteMS( black_out );
             if ( black_out == 0 )
-                setLightBlackout( false );
+                setMuteBlackout( false );
             loadScene();
         }
     }

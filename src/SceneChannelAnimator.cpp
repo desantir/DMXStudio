@@ -175,6 +175,18 @@ void SceneChannelAnimator::initAnimation( AnimationTask* task, DWORD time_ms, BY
         }
     }
 
+    if ( studio.isDebug() ) {
+        CString debug_info;
+        for ( ChannelState cs : m_channel_state ) {
+            debug_info.Format( "%s -> %s channel %d style %d values ", getName(), cs.m_pf->getFullName(), cs.m_channel, cs.m_animation_style );
+            if ( cs.m_value_list != NULL ) {
+                for ( BYTE value : *cs.m_value_list )
+                    debug_info.AppendFormat( "%d ", value );
+            }
+            studio.log( debug_info );
+        }
+    }
+
     m_signal_processor = new AnimationSignalProcessor( m_signal, task );
 }
 

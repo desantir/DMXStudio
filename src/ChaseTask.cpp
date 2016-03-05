@@ -273,8 +273,8 @@ void ChaseTask::computeChannelFade( ULONG fade_time )
 
     // Get the target channel values
     Scene* next_scene = m_venue->getScene( m_chase->getStep( m_next_step )->getSceneUID() );
-    BYTE dmx_fade_targets[DMX_PACKET_SIZE];
-    memset( dmx_fade_targets, 0, DMX_PACKET_SIZE );
+    BYTE dmx_fade_targets[MULTI_UNIV_PACKET_SIZE];
+    memset( dmx_fade_targets, 0, MULTI_UNIV_PACKET_SIZE );
     m_venue->setHomePositions( dmx_fade_targets );
 
     m_venue->loadSceneChannels( dmx_fade_targets, next_scene );
@@ -286,7 +286,7 @@ void ChaseTask::computeChannelFade( ULONG fade_time )
 
     DWORD current_time = GetTickCount();
 
-    for ( channel_t channel=0; channel < DMX_PACKET_SIZE; channel++ ) {
+    for ( channel_t channel=0; channel < MULTI_UNIV_PACKET_SIZE; channel++ ) {
         int delta = dmx_fade_targets[channel] - m_dmx_fade[channel];
         if ( delta != 0 ) {
             m_channel_delta_ms[ channel ] = ((long)fade_time)/delta;

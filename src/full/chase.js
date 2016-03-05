@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2012,2013 Robert DeSantis
+Copyright (C) 2012-2015 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -325,7 +325,7 @@ function openNewChaseDialog(dialog_title, data) {
     }
 
     $("#ncd_acts").multiselect({
-        minWidth: 300, multiple: true, noneSelectedText: 'None',
+        minWidth: 300, multiple: true, noneSelectedText: 'all acts',
         checkAllText: 'All acts', uncheckAllText: 'Clear acts', selectedList: 8
     });
 

@@ -48,6 +48,8 @@ UINT AnimationTask::run(void) {
 
     CSingleLock lock( &m_animation_mutex, FALSE );
 
+    BYTE last_dimmer = m_venue->getMasterDimmer();
+
     while ( isRunning() ) {
         try { 
             lock.Lock();
@@ -55,6 +57,13 @@ UINT AnimationTask::run(void) {
             DWORD time_ms = GetCurrentTime();
             bool changed = m_load_channels;
             m_load_channels = false;
+
+            // See if master dimmer changed
+            if ( last_dimmer != m_venue->getMasterDimmer() ) {
+                last_dimmer = m_venue->getMasterDimmer();
+                // Adjust dimmer channels only to not interrrupt animation
+                changed |= adjust_dimmer_channels();
+            }
 
             for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
                 changed |= (*it)->sliceAnimation( time_ms, m_dmx_packet );
@@ -64,18 +73,18 @@ UINT AnimationTask::run(void) {
                  m_venue->getWhiteout() == WHITEOUT_STROBE_MANUAL )
                 changed |= m_venue->m_whiteout_strobe.strobe( time_ms );
 
-            if ( m_venue->isLightBlackout() )   // Already in blackout - don't need to push changes
+            if ( m_venue->isMuteBlackout() )   // Already in blackout - don't need to push changes
                 changed = false;
 
             // Check auto blackout situation
-            if ( m_venue->getAutoBlackout() != 0 && m_venue->isMute() && !m_venue->isLightBlackout() ) {
-                m_venue->setLightBlackout( true );
+            if ( m_venue->getAutoBlackout() != 0 && m_venue->isMute() && !m_venue->isMuteBlackout() ) {
+                m_venue->setMuteBlackout( true );
                 if ( m_scene )
                     m_venue->loadSceneChannels( m_dmx_packet, m_scene );
                 changed = true;
             }
-            else if ( !m_venue->isMute() && m_venue->isLightBlackout() ) {
-                m_venue->setLightBlackout( false );
+            else if ( !m_venue->isMute() && m_venue->isMuteBlackout() ) {
+                m_venue->setMuteBlackout( false );
                 if ( m_scene )
                     m_venue->loadSceneChannels( m_dmx_packet, m_scene );
                 // We should apply animation slice values here ...
@@ -102,6 +111,30 @@ UINT AnimationTask::run(void) {
     DMXStudio::log_status( "Scene animator stopped" );
 
     return 0;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool AnimationTask::adjust_dimmer_channels() 
+{
+    bool changed = false;
+
+    ActorPtrArray actors = m_scene->getActors();
+    for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
+        SceneActor* actor = (*it);
+
+        for ( Fixture* pf : resolveActorFixtures( actor ) ) {
+            for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+                if ( pf->getChannel( channel )->isDimmer() ) {
+                    BYTE value = actor->getChannelValue( channel );
+                    loadChannel( m_dmx_packet, pf, channel, value );
+                    changed = true;
+                }
+            }                
+        }
+    }
+
+    return changed;
 }
 
 // ----------------------------------------------------------------------------

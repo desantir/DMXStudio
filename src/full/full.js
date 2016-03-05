@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2012-14 Robert DeSantis
+Copyright (C) 2012-15 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -30,6 +30,7 @@ var auto_blackout = false;                          // Venue is in auto backout 
 var client_config_update = false;                   // Client layou has changed -  update server
 var current_act = 0;                                // All acts
 var whiteout_color = '#FFFFFF';                     // Whiteout color
+var num_universes = 1;
 
 var scene_tile_panel;
 var chase_tile_panel;
@@ -253,6 +254,23 @@ function initializeUI() {
 
     });
 
+    init_music_player();
+
+    cache_master_volume = $('#master_volume');
+    cache_whiteout_custom_value = $('#whiteout_custom_value');
+    cache_master_volume_value = $('#master_volume_value');
+    cache_master_volume_handle = $('#master_volume .ui-slider-handle')
+    cache_volume_mute = $("#volume_mute");
+    cache_blackout_buttons = $("#blackout_buttons");
+    cache_whiteout_buttons = $("#whiteout_buttons");
+    cache_music_match_buttons = $("#music_match_buttons");
+    cache_animation_speed = $('#animations_speed');
+    cache_blackout_on = $('#blackout_1');
+    cache_blackout_off = $('#blackout_0');
+    cache_music_match_on = $('#music_match_1');
+    cache_music_match_off = $('#music_match_0');
+    cache_status_icon = $("#system_status_icon");
+
     // Update the UI from server's current state
     updateVenueLayout();
     updateScenes();
@@ -295,25 +313,23 @@ function messageBox(message) {
 // ----------------------------------------------------------------------------
 //
 // No need to keep looking these up on every update and it seems expensive
-//var cache_master_dimmer = null;
 var cache_master_volume = null;
 var cache_whiteout_custom_value = null;
 var cache_master_volume_value = null;
 var cache_master_volume_handle = null;
 var cache_volume_mute = null;
 var cache_animation_speed = null;
-var animation_default = null;
+var cache_blackout_buttons = null;
+var cache_whiteout_buttons = null;
+var cache_music_match_buttons = null;
+var cache_animation_speed = null;
+var cache_blackout_on = null;
+var cache_blackout_off = null;
+var cache_music_match_on = null;
+var cache_music_match_off = null;
+var cache_status_icon = null;
 
 function updateUI() {
-    if (!cache_master_volume) {
-        // cache_master_dimmer = $('#master_dimmer');
-        cache_master_volume = $('#master_volume');
-        cache_whiteout_custom_value = $('#whiteout_custom_value');
-        cache_master_volume_value = $('#master_volume_value');
-        cache_master_volume_handle = $('#master_volume .ui-slider-handle')
-        cache_volume_mute = $("#volume_mute");
-    }
-
     // See if we need to push configuration updates to the server
     if (client_config_update) {
         saveVenueLayout();
@@ -325,6 +341,8 @@ function updateUI() {
         cache: false,
         success: function (data) {
             var json = jQuery.parseJSON(data);
+
+            DMX_MAX_UNIVERSES = parseInt(json.dmx_max_universes);
 
             markActiveScene(json.current_scene);
             markActiveChase(json.current_chase);
@@ -338,7 +356,7 @@ function updateUI() {
                 }
             }
 
-            if (!cache_master_volume_handle.is(':focus') && cache_master_volume.slider("value") != json.master_volume) {
+            if (cache_master_volume.slider("value") != json.master_volume && !cache_master_volume_handle.is(':focus') ) {
                 cache_master_volume_value.html(json.master_volume);
                 cache_master_volume.slider("value", json.master_volume);
             }
@@ -352,42 +370,41 @@ function updateUI() {
                     $("#system_blackout_icon").hide();
             }
 
-            if (!cache_whiteout_custom_value.multiselect( "isOpen" ) && cache_whiteout_custom_value.val() != json.whiteout_strobe) {
-                $("#whiteout_custom_value").empty();
+            if (cache_whiteout_custom_value.val() != json.whiteout_strobe && !cache_whiteout_custom_value.multiselect( "isOpen" )) {
+                cache_whiteout_custom_value.empty();
                 var found = false;
                 for (var i = 0; i < whiteout_ms.length; i++) {
                     if (whiteout_ms[i] == json.whiteout_strobe)
                         found = true;
-                    $("#whiteout_custom_value").append($('<option>', {
+                    cache_whiteout_custom_value.append($('<option>', {
                         value: whiteout_ms[i],
                         text: whiteout_ms[i] + " ms",
                         selected: whiteout_ms[i] == json.whiteout_strobe
                     }));
                 }
                 if (!found) {
-                    $("#whiteout_custom_value").append($('<option>', {
+                    cache_whiteout_custom_value.append($('<option>', {
                         value: json.whiteout_strobe,
                         text: json.whiteout_strobe + " ms",
                         selected: true
                     }));
                 }
-                $("#whiteout_custom_value").multiselect("refresh");
+                cache_whiteout_custom_value.multiselect("refresh");
             }
 
             whiteout_color = json.whiteout_color;
 
-            var blackout_id = json.blackout ? "#blackout_1" : "#blackout_0";
-            if (!$("#blackout_buttons").is(":focus") && !$(blackout_id).prop("checked"))
-                $(blackout_id).prop("checked", true).button("refresh");
+            var blackout = json.blackout ? cache_blackout_on :cache_blackout_off;
+            if (!blackout.prop("checked") && !cache_blackout_buttons.is(":focus"))
+                blackout.prop("checked", true).button("refresh");
 
-            if ( !$("#whiteout_buttons").is(":focus") && !$("#whiteout_" + json.whiteout).prop("checked"))
-                $("#whiteout_" + json.whiteout).prop("checked", true).button("refresh");
+            var whiteout_button = $("#whiteout_" + json.whiteout);
+            if (!whiteout_button.prop("checked") && !cache_whiteout_buttons.is(":focus"))
+                whiteout_button.prop("checked", true).button("refresh");
 
-            if (!$("#music_match_buttons").is(":focus")) {
-                var mm_id = json.music_match ? "#music_match_1" : "#music_match_0";
-                if (!$(mm_id).prop("checked"))
-                    $(mm_id).prop("checked", true).button("refresh");
-            }
+            var mm = json.music_match ? cache_music_match_on : cache_music_match_off;
+            if (!mm.prop("checked") && !cache_music_match_buttons.is(":focus"))
+                    mm.prop("checked", true).button("refresh");
 
             if (json.mute != cache_volume_mute.hasClass("ui-icon-volume-off")) {
                 if (!json.mute) {
@@ -399,28 +416,21 @@ function updateUI() {
                     cache_volume_mute.attr('title', 'unmute');
                 }
             }
- 
-            var animation_speed = $('#animations_speed');
 
-            // Establish the default speed 
-            if (animation_default == null) {
-                animation_default = animation_speed.find('option[value=0]');
-                if (animation_default != null) {
-                    animation_default.html("Default: " + json.animation_speed + " ms");
-                    animation_default.val(json.animation_speed);
-                    animation_speed.multiselect('refresh');
+            if (cache_animation_speed.val() != json.animation_speed && !cache_animation_speed.multiselect("isOpen")) {
+                var o = cache_animation_speed.find("option[value='" + json.animation_speed + "']");
+
+                if (o != null && o.length == 1 )
+                    o.attr("selected", true);
+                else {
+                    cache_animation_speed.append($('<option>', {
+                        value: json.animation_speed,
+                        text: "custom: " + json.animation_speed + " ms",
+                        selected: true
+                    }));
                 }
-            }
 
-            if (!animation_speed.multiselect("isOpen") && animation_speed.val() != json.animation_speed) {
-                var o = animation_speed.find("option[value='" + json.animation_speed + "']");
-                var index = 0;
-
-                if (o != null && o.index() != -1)
-                    index = o.index();
-
-                animation_speed.find('option').eq(index).attr("selected", true);
-                animation_speed.multiselect('refresh');
+                cache_animation_speed.multiselect('refresh');
             }
 
             venue_filename = json.venue_filename;
@@ -428,25 +438,23 @@ function updateUI() {
             update_player_status( json.music_player );
 
             if (!system_status) {
-                var status_icon = $("#system_status_icon");
-                status_icon.addClass("ui-icon-green").removeClass("ui-icon-red");
-                status_icon.attr("title", "status: running");
+                cache_status_icon.addClass("ui-icon-green").removeClass("ui-icon-red");
+                cache_status_icon.attr("title", "status: running");
                 system_status = true;
             }
 
             updateCapturedFixtures(json.captured_fixtures);
 
-            setTimeout(updateUI, 500);
+            setTimeout(updateUI, 1000);
         },
         error: function () {
             if (system_status) {
-                var status_icon = $("#system_status_icon");
-                status_icon.removeClass("ui-icon-green").addClass("ui-icon-red");
-                status_icon.attr("title", "status: disconnected");
+                cache_status_icon.removeClass("ui-icon-green").addClass("ui-icon-red");
+                cache_status_icon.attr("title", "status: disconnected");
                 system_status = false;
             }
 
-            setTimeout(updateUI, 500);
+            setTimeout(updateUI, 2000);
         }
     });
 }
@@ -527,280 +535,6 @@ function setEditMode(mode) {
     }
 
     $(".edit_mode").each(function () { $(this).css('display', state); });
-}
-
-// ----------------------------------------------------------------------------
-//
-function configureVenue(event) {
-    stopEventPropagation(event);
-
-    $.ajax({
-        type: "GET",
-        url: "/dmxstudio/rest/query/venue/describe/",
-        cache: false,
-        success: function (data) {
-            var json = jQuery.parseJSON(data);
-            openConfigureVenueDialog(json);
-        },
-        error: function (jqXHR, textError, errorThrown) {
-            $("#configure_venue_dialog").dialog("close");
-            onAjaxError(jqXHR, textError, errorThrown);
-        }
-    });
-}
-
-// ----------------------------------------------------------------------------
-//
-function openConfigureVenueDialog(config_json) {
-    var capture_devices = config_json.capture_devices;
-
-    $("#configure_venue_dialog").dialog({
-        autoOpen: false,
-        width: 540,
-        height: 550,
-        modal: true,
-        resizable: false,
-        buttons: {
-            "Update Venue": function () {
-
-                var json = {
-                    name: $("#cvd_name").val(),
-                    description: $("#cvd_description").val(),
-                    dmx_port: $("#cvd_dmx_port").val(),
-                    dmx_packet_delay_ms: $("#cvd_dmx_packet_delay_ms").val(),
-                    dmx_minimum_delay_ms: $("#cvd_dmx_minimum_delay_ms").val(),
-                    audio_boost: $("#cvd_audio_boost").val(),
-                    audio_boost_floor: $("#cvd_audio_boost_floor").val(),
-                    audio_sample_size: $("#cvd_audio_sample_size").val(),
-                    audio_capture_device: capture_devices[$("#cvd_audio_capture_device").val()],
-                    auto_blackout: $("#cvd_auto_blackout").val()
-                };
-
-                $.ajax({
-                    type: "POST",
-                    url: "/dmxstudio/rest/edit/venue/update/",
-                    data: JSON.stringify(json),
-                    contentType: 'application/json',
-                    cache: false,
-                    async: false,
-                    success: function () {
-                        updateScenes();
-                        updateChases();
-                        updateFixtures();
-                    },
-
-                    error: onAjaxError
-                });
-
-                $(this).dialog("close");
-            },
-            Cancel: function () {
-                $(this).dialog("close");
-            }
-        }
-    });
-
-    $("#cvd_accordion").accordion({ heightStyle: "fill" });
-
-    $("#cvd_dmx_port").multiselect({ minWidth: 150, multiple: false, selectedList: 1, header: false });
-    $("#cvd_audio_capture_device").multiselect({ minWidth: 400, multiple: false, selectedList: 1, header: false });
-    $("#cvd_audio_sample_size").multiselect({ minWidth: 150, multiple: false, selectedList: 1, header: false, height: "auto" });
-
-    $("#cvd_dmx_port").empty();
-    $("#cvd_audio_capture_device").empty();
-    $("#cvd_audio_sample_size").empty();
-
-    $("#cvd_dmx_packet_delay_ms").spinner({ min: 50, max: 1000, value: 0 });
-    $("#cvd_dmx_minimum_delay_ms").spinner({ min: 0, max: 1000, value: 0 });
-    $("#cvd_audio_boost").spinner({ min: 0, max: 100, value: 0.0, step: .5 });
-    $("#cvd_audio_boost_floor").spinner({ min: 0, max: 100, value: 0.0, step: .1 });
-    $("#cvd_auto_blackout").spinner({ min: 0, max: 65000, value: 0, step: 1000 });
-
-    $("#cvd_name").val(config_json.name);
-    $("#cvd_description").val(config_json.description);
-
-    for (var i = 0; i < config_json.ports.length; i++) {
-        var port = config_json.ports[i];
-        $("#cvd_dmx_port").append($('<option>', {
-            value: port,
-            text: port,
-            selected: port == config_json.dmx_port
-        }));
-    }
-
-    $("#cvd_dmx_port").multiselect("refresh");
-
-    $("#cvd_dmx_packet_delay_ms").spinner().val(config_json.dmx_packet_delay_ms);
-    $("#cvd_dmx_minimum_delay_ms").spinner().val(config_json.dmx_minimum_delay_ms);
-    $("#cvd_audio_boost").spinner().val(config_json.audio_boost);
-    $("#cvd_audio_boost_floor").spinner().val(config_json.audio_boost_floor);
-    $("#cvd_auto_blackout").spinner("value", config_json.auto_blackout);
-
-    for (var i = 1024; i <= 1024*8; i *= 2 ) {
-        $("#cvd_audio_sample_size").append($('<option>', {
-            value: i,
-            text: i,
-            selected: i == config_json.audio_sample_size
-        }));
-    }
-
-    $("#cvd_audio_sample_size").multiselect("refresh");
-
-    for (var i = 0; i < config_json.capture_devices.length; i++) {
-        var device = config_json.capture_devices[i];
-        $("#cvd_audio_capture_device").append($('<option>', {
-            value: i,
-            text: device,
-            selected: device == config_json.audio_capture_device
-        }));
-    }
-
-    $("#cvd_audio_capture_device").multiselect("refresh");
-
-    $("#configure_venue_dialog").dialog("open");
-}
-
-// ----------------------------------------------------------------------------
-//
-function loadSaveVenue( event ) {
-    stopEventPropagation(event);
-
-    $("#load_save_dialog").dialog({
-        autoOpen: false,
-        width: 640,
-        height: 450,
-        modal: true,
-        resizable: false,
-        buttons: [
-            {
-                id: "new_venue_button",
-                text:"New Venue",
-                click: function () {
-                    $("#load_save_dialog").dialog("close");
-                    var ice_dialog = put_user_on_ice("Working ... Please wait");
-
-                    if ($("#lsd_accordion").accordion('option', 'active') == 2) {
-                        var json = {
-                            reset_what: $('input[name=lsd_new_venue]:checked').val()
-                        };
-
-                        $.ajax({
-                            type: "POST",
-                            url: "/dmxstudio/rest/edit/venue/new/",
-                            data: JSON.stringify(json),
-                            contentType: 'application/json',
-                            cache: false,
-                            success: function () {
-                                ice_dialog.dialog("close");
-                                window.location.reload(true);
-                            },
-                            error: function () {
-                                ice_dialog.dialog("close");
-                                onAjaxError();
-                            }
-                        });
-                    }
-                }
-            },
-            {
-                id: "save_venue_button",
-                text: "Save Venue",
-                click: function () {
-                    $("#load_save_dialog").dialog("close");
-                    var ice_dialog = put_user_on_ice("Working ... Please wait");
-
-                    if ($("#lsd_accordion").accordion('option', 'active') == 0) {
-                        var json = { venue_filename: $("#lsd_file_name").val() };
-
-                        $.ajax({
-                            type: "POST",
-                            url: "/dmxstudio/rest/edit/venue/save/",
-                            data: JSON.stringify(json),
-                            contentType: 'application/json',
-                            cache: false,
-                            success: function () {
-                                ice_dialog.dialog("close");
-                                messageBox("Server venue file saved");
-                            },
-                            error: function () {
-                                ice_dialog.dialog("close");
-                                messageBox("Cannot save server venue file!");
-                            }
-                        });
-                    }
-                    else {
-                        document.getElementById("load_save_dialog_downloadFrame").src = "/dmxstudio/rest/venue/download/";
-                        setTimeout(function () { ice_dialog.dialog("close"); }, 500);
-                    }
-                }
-            },
-            {
-                id: "load_venue_button",
-                text: "Load Venue",
-                click: function () {
-                    if ($("#lsd_accordion").accordion('option', 'active') == 0) {
-                        var json = { venue_filename: $("#lsd_file_name").val() };
-                        $("#load_save_dialog").dialog("close");
-                        var ice_dialog = put_user_on_ice("Working ... Please wait");
-
-                        $.ajax({
-                            type: "POST",
-                            url: "/dmxstudio/rest/edit/venue/load/",
-                            data: JSON.stringify(json),
-                            contentType: 'application/json',
-                            cache: false,
-                            success: function () {
-                                window.location.reload( true );
-                            },
-                            error: function () {
-                                ice_dialog.dialog("close");
-                                messageBox("Cannot load server venue file '" + json.venue_filename + "'");
-                            }
-                        });
-                    }
-                    else {
-                        if ($("#lsd_upload_file").val() != "") {
-                            put_user_on_ice("Loading venue ... please wait");               // This is all or nothing - disable the dialog
-                            $("#lsd_form")[0].submit();
-                        }
-                        else
-                            $("#lsd_upload_file").click();
-                    }
-                }
-            },
-            {
-                text: "Cancel",
-                click: function () {
-                    $(this).dialog("close");
-                }
-            }
-        ]
-    });
-
-    function setupButtons() {
-        if ($("#lsd_accordion").accordion('option', 'active') == 2) {
-            $('#new_venue_button').show();
-            $('#load_venue_button').hide();
-            $('#save_venue_button').hide();
-        }
-        else {
-            $('#new_venue_button').hide();
-            $('#load_venue_button').show();
-            $('#save_venue_button').show();
-        }
-    }
-
-    $("#lsd_accordion").accordion({ heightStyle: "fill" }).on("accordionactivate", function (event, ui) {
-        setupButtons();
-    });
-
-    setupButtons();
-
-    $("#lsd_file_name").attr("value", venue_filename);
-
-    $("#load_save_dialog").dialog("open");
-
-    $("#load_save_dialog_uploadFrame").load( function () { location.reload( true ); });
 }
 
 // ----------------------------------------------------------------------------
@@ -955,96 +689,12 @@ function _expand_collapse_section(collapsable_section, collapsed) {
 
 // ----------------------------------------------------------------------------
 //
-function updateVenueLayout() {
-
-    $.getJSON( "/dmxstudio/rest/query/venue/layout/", function (data) {
-        client_config = data;
-        for (var prop in client_config) {
-            if (prop == "edit_mode")
-                setEditMode(client_config.edit_mode);
-            else if (prop == "act") {
-                current_act = client_config.act;
-                $("#act_" + current_act).prop("checked", true).button("refresh");
-                createSceneTiles();
-                createChaseTiles();
-                update_current_act();
-            }
-            else if (prop == "sections") {
-                for (section in client_config.sections) {
-                    if (section == "act_pane") {
-                        setSectionCollapsed("act_pane", client_config.sections.act_pane.collapsed);
-                    }
-                    else if (section == "scene_tiles_pane") {
-                        scene_tile_panel.setScrollContent(client_config.sections.scene_tiles_pane.scroll);
-                        setSectionCollapsed("scene_tiles_pane", client_config.sections.scene_tiles_pane.collapsed);
-                    }
-                    else if (section == "chase_tiles_pane") {
-                        chase_tile_panel.setScrollContent(client_config.sections.chase_tiles_pane.scroll);
-                        setSectionCollapsed("chase_tiles_pane", client_config.sections.chase_tiles_pane.collapsed);
-                    }
-                    else if (section == "fixture_tiles_pane") {
-                        fixture_tile_panel.setScrollContent(client_config.sections.fixture_tiles_pane.scroll);
-                        setSectionCollapsed("fixture_tiles_pane", client_config.sections.fixture_tiles_pane.collapsed);
-                    }
-                    else if (section == "slider_pane") {
-                        slider_panel.setScrollContent(client_config.sections.slider_pane.scroll);
-                        setSectionCollapsed("slider_pane", client_config.sections.slider_pane.collapsed);
-                    }
-                    else if (section == "venue_pane") {
-                        setSectionCollapsed("venue_pane", client_config.sections.venue_pane.collapsed);
-                    }
-                    else if (section == "music_pane") {
-                        setSectionCollapsed("music_pane", client_config.sections.music_pane.collapsed);
-                    }
-                }
-            }
-        }
-    } );
-}
-
-// ----------------------------------------------------------------------------
-//
-function saveVenueLayout() {
-    client_config = {};
-    client_config.edit_mode = edit_mode;
-    client_config.act = current_act;
-
-    client_config.sections = {
-        "venue_pane": {
-            "collapsed": isSectionCollapsed("venue_pane")
-        },
-        "music_pane": {
-            "collapsed": isSectionCollapsed("music_pane")
-        },
-        "act_pane": {
-            "collapsed": isSectionCollapsed("act_pane")
-        },
-        "scene_tiles_pane": {
-            "scroll": scene_tile_panel.isScrollContent(),
-            "collapsed": isSectionCollapsed("scene_tiles_pane")
-        },
-        "chase_tiles_pane": {
-            "scroll": chase_tile_panel.isScrollContent(),
-            "collapsed": isSectionCollapsed("chase_tiles_pane")
-        },
-        "fixture_tiles_pane": {
-            "scroll": fixture_tile_panel.isScrollContent(),
-            "collapsed": isSectionCollapsed("fixture_tiles_pane")
-        },
-        "slider_pane": {
-            "scroll": slider_panel.isScrollContent(),
-            "collapsed": isSectionCollapsed("slider_pane")
-        }
-    };
-
-    client_config_update = false;
-
-    $.ajax({
-        type: "POST",
-        url: "/dmxstudio/rest/edit/venue/layout/save",
-        data: JSON.stringify(client_config),
-        contentType: 'application/json',
-        cache: false,
-        error: onAjaxError
-    });
+function load_options( element, options, selected_func  ) {
+    element.empty();
+    var html = "";
+    for (var i = 0; i < options.length; i++) {
+        html += '<option value=' + (i + 1) + ' ' + (selected_func(i) ? "selected" : "") +
+                '>' + options[i] + '</option>';
+    }
+    element.html(html);
 }

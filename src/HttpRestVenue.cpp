@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-2013 Robert DeSantis
+Copyright (C) 2011-15 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -83,8 +83,8 @@ bool HttpRestServices::query_venue_status( CString& response, LPCSTR data )
 
     JsonBuilder json( response );
     json.startObject();
-    json.add( "blackout", studio.getVenue()->getUniverse()->isBlackout() );
-    json.add( "auto_blackout", studio.getVenue()->isLightBlackout() );
+    json.add( "blackout", studio.getVenue()->isBlackout() );
+    json.add( "auto_blackout", studio.getVenue()->isMuteBlackout() );
     json.add( "dimmer", studio.getVenue()->getMasterDimmer() );
     json.add( "whiteout", studio.getVenue()->getWhiteout() );
     json.add( "whiteout_strobe", studio.getVenue()->getWhiteoutStrobeMS() );
@@ -97,6 +97,7 @@ bool HttpRestServices::query_venue_status( CString& response, LPCSTR data )
     json.add( "has_music_player", studio.hasMusicPlayer() );
     json.add( "music_match", studio.getVenue()->isMusicSceneSelectEnabled() );
     json.add( "venue_filename", studio.getVenueFileName() );
+    json.add( "dmx_max_universes", DMX_MAX_UNIVERSES );
     json.addArray<UIDArray>( "captured_fixtures", studio.getVenue()->getDefaultScene()->getActorUIDs() );
 
     // If we have a music player, return player status
@@ -196,7 +197,7 @@ bool HttpRestServices::control_venue_blackout( CString& response, LPCSTR data )
     if ( sscanf_s( data, "%u", &blackout ) != 1 )
         return false;
 
-    studio.getVenue()->getUniverse()->setBlackout( blackout ? true : false );
+    studio.getVenue()->setBlackout( blackout ? true : false );
 
     return true;
 }
@@ -253,7 +254,6 @@ bool HttpRestServices::control_venue_masterdimmer( CString& response, LPCSTR dat
         return false;
 
     studio.getVenue()->setMasterDimmer( dimmer );
-    studio.getVenue()->loadScene();
 
     return true;
 }
@@ -315,9 +315,6 @@ bool HttpRestServices::query_venue_describe( CString& response, LPCSTR data ) {
     json.add( "name", venue->getName() );
     json.add( "description", venue->getDescription() );
     json.add( "auto_blackout", venue->getAutoBlackout() );
-    json.add( "dmx_port", venue->getDmxPort() );
-    json.add( "dmx_packet_delay_ms", venue->getDmxPacketDelayMS() );
-    json.add( "dmx_minimum_delay_ms", venue->getDmxMinimumDelayMS() );
     json.add( "audio_capture_device", venue->getAudioCaptureDevice() );
     json.add( "audio_sample_size", venue->getAudioSampleSize() );
     json.add( "audio_boost", venue->getAudioBoost() );
@@ -330,6 +327,26 @@ bool HttpRestServices::query_venue_describe( CString& response, LPCSTR data ) {
         json.add( com_port );
     }
     json.endArray( "ports" );
+
+    json.startArray("driver_types");
+    json.add( "Open DMX");
+    json.add( "Enttec USB Pro");
+    json.endArray("driver_types");
+
+    json.startArray( "universes" );
+    UniversePtrArray universes = venue->getUniverses();
+    for ( UniversePtrArray::iterator it=universes.begin(); it != universes.end(); ++it ) {
+        Universe* universe = (*it);
+
+        json.startObject( );
+        json.add( "id", universe->getId() );
+        json.add( "type", universe->getType() );
+        json.add( "dmx_port", universe->getDmxPort() );
+        json.add( "packet_delay_ms", universe->getDmxPacketDelayMS() );
+        json.add( "minimum_delay_ms", universe->getDmxMinimumDelayMS() );
+        json.endObject( );
+    }
+    json.endArray( "universes" );
 
     json.startArray( "capture_devices" );
     for ( AudioCaptureDeviceArray::iterator it=AudioInputStream::audioCaptureDevices.begin();
@@ -358,14 +375,12 @@ bool HttpRestServices::edit_venue_update( CString& response, LPCSTR data, DWORD 
 
         CString name = parser.get<CString>( "name" );
         CString description = parser.get<CString>( "description" );
-        CString dmx_port = parser.get<CString>( "dmx_port" );
         CString audio_capture_device = parser.get<CString>( "audio_capture_device" );
-        int dmx_packet_delay_ms = parser.get<int>( "dmx_packet_delay_ms" );
-        int dmx_minimum_delay_ms = parser.get<int>( "dmx_minimum_delay_ms" );
         int audio_sample_size = parser.get<int>( "audio_sample_size" );
         float audio_boost = parser.get<float>( "audio_boost" );
         float audio_boost_floor = parser.get<float>( "audio_boost_floor" );
         int auto_blackout = parser.get<int>( "auto_blackout" );
+        PARSER_LIST universeParsers = parser.get<PARSER_LIST>("universes");
 
         // There may be a better solution for this, but we need to kill all attached sound devices before the reset
         m_sound_sampler.detach();
@@ -374,14 +389,23 @@ bool HttpRestServices::edit_venue_update( CString& response, LPCSTR data, DWORD 
 
         venue->setName( name );
         venue->setDescription( description );
-        venue->setDmxPort( dmx_port );
-        venue->setDmxPacketDelayMS( dmx_packet_delay_ms );
-        venue->setDmxMinimumDelayMS( dmx_minimum_delay_ms );
         venue->setAudioCaptureDevice( audio_capture_device );
         venue->setAudioBoost( audio_boost );
         venue->setAudioBoostFloor( audio_boost_floor );
         venue->setAudioSampleSize( audio_sample_size );
         venue->setAutoBlackout( auto_blackout );
+
+        venue->clearAllUniverses();
+
+        for ( PARSER_LIST::iterator it=universeParsers.begin(); it != universeParsers.end(); ++it ) {
+            unsigned id = (*it).get<unsigned>( "id" );
+            UniverseType type = (UniverseType)(*it).get<unsigned>( "type" );
+            CString dmx_port = (*it).get<CString>( "dmx_port" );
+            unsigned dmx_packet_delay_ms = (*it).get<unsigned>( "packet_delay_ms" );
+            unsigned dmx_minimum_delay_ms = (*it).get<unsigned>( "minimum_delay_ms" );
+
+            venue->addUniverse( new Universe( id, type, dmx_port, dmx_packet_delay_ms, dmx_minimum_delay_ms ) );
+        }
 
         venue->open();
     }

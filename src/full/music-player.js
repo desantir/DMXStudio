@@ -36,10 +36,29 @@ var track_dialog_refresh = null;
 var PLAYED_TRACKS_PLAYLIST = -1;
 var QUEUED_TRACKS_PLAYLIST = -2;
 
+var track_stop_button = null;
+var track_play_button = null;
+var track_pause_button = null;
+var track_back_button = null;
+var track_forward_button = null;
+var track_back_info_button = null;
+var track_forward_info_button = null;
+
+// ----------------------------------------------------------------------------
+//
+function init_music_player() {
+    track_stop_button = $("#track_stop");
+    track_play_button = $("#track_play");
+    track_pause_button = $("#track_pause");
+    track_back_button = $("#track_back");
+    track_forward_button = $("#track_forward");
+    track_back_info_button = $("#track_back_info");
+    track_forward_info_button = $("#track_forward_info");
+}
+
 // ----------------------------------------------------------------------------
 //
 function update_player_status(music_player_status) {
-
     if (music_player_status == null)
         return;
 
@@ -78,21 +97,21 @@ function update_player_status(music_player_status) {
         }
 
         if (current_track_id == 0) {
-            enable_player_button('track_stop', false);
-            enable_player_button('track_play', false);
-            enable_player_button('track_pause', false);
+            enable_player_button(track_stop_button, false);
+            enable_player_button(track_play_button, false);
+            enable_player_button(track_pause_button, false);
         }
         else {
-            enable_player_button('track_stop', !paused);
-            enable_player_button('track_play', paused);
-            enable_player_button('track_pause', !paused);
+            enable_player_button(track_stop_button, !paused);
+            enable_player_button(track_play_button, paused);
+            enable_player_button(track_pause_button, !paused);
         }
 
-        enable_player_button('track_back', music_player_status.played != 0);
-        enable_player_button('track_forward', music_player_status.queued != 0);
+        enable_player_button(track_back_button, music_player_status.played != 0);
+        enable_player_button(track_forward_button, music_player_status.queued != 0);
 
-        enable_info_button('track_back_info', music_player_status.played != 0);
-        enable_info_button('track_forward_info', music_player_status.queued != 0);
+        enable_info_button(track_back_info_button, music_player_status.played != 0);
+        enable_info_button(track_forward_info_button, music_player_status.queued != 0);
     }
     else if (show_login_dialog) {
         show_login_dialog = false;  // Only once
@@ -180,31 +199,35 @@ function player_login( player_name, username ) {
 
 // ----------------------------------------------------------------------------
 //
-function enable_player_button(id, enabled) {
+function enable_player_button(player_button, enabled) {
+    var current_enable = !player_button.hasClass("md-icon-disabled")
 
-    var player_button = $("#" + id);
+    if (current_enable != enabled) {
+        player_button.attr('disabled', !enabled);
 
-    player_button.attr('disabled', !enabled);
-
-    if (enabled)
-        player_button.removeClass("md-icon-disabled").addClass("md-icon-white");
-    else
-        player_button.removeClass("md-icon-white").addClass("md-icon-disabled");
+        if (enabled)
+            player_button.removeClass("md-icon-disabled").addClass("md-icon-white");
+        else
+            player_button.removeClass("md-icon-white").addClass("md-icon-disabled");
+    }
 }
     
 // ----------------------------------------------------------------------------
 //
-function enable_info_button(id, enabled) {
+function enable_info_button(info_button, enabled) {
 
-    var info_button = $("#" + id);
-    var icon = (id === "track_back_info") ? "ui-icon-star" : "ui-icon-star";
+    var current_enable = !info_button.hasClass("ui-icon-blank")
 
-    info_button.attr('disabled', !enabled);
+    if (current_enable != enabled) {
+        var icon = (info_button === track_back_info_button) ? "ui-icon-star" : "ui-icon-star";
 
-    if (enabled)
-        info_button.removeClass("ui-icon-blank").addClass(icon);
-    else
-        info_button.removeClass(icon).addClass("ui-icon-blank");
+        info_button.attr('disabled', !enabled);
+
+        if (enabled)
+            info_button.removeClass("ui-icon-blank").addClass(icon);
+        else
+            info_button.removeClass(icon).addClass("ui-icon-blank");
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -249,7 +272,7 @@ function initialize_player_ui() {
 function setupTrackSelect(playlist_select) {
     playlist_select.multiselect({
         minWidth: 300, multiple: false, selectedList: 1, header: "Play Lists", noneSelectedText: 'select playlist', classes: 'player_multilist', height: 400
-    }).bind("multiselectclick", function (event, ui) {
+    }).unbind("multiselectclick").bind("multiselectclick", function (event, ui) {
         stopEventPropagation(event);
     });
 
@@ -772,7 +795,7 @@ function setupMusicMatchTrackSelect(playlist_select, tracklist_select) {
 
     playlist_select.multiselect({
         minWidth: 300, multiple: false, selectedList: 1, header: "Play Lists", noneSelectedText: 'select playlist', classes: 'player_multilist', height: 400
-    }).bind("multiselectclick", function (event, ui) {
+    }).unbind("multiselectclick").bind("multiselectclick", function (event, ui) {
         stopEventPropagation(event);
         selectPlaylist(tracklist_select, ui.value);
     });
@@ -915,7 +938,7 @@ function music_map_edit(event) {
         multiple: false,
         selectedList: 1,
         header: false
-    }).bind("multiselectclick", function (event, ui) {
+    }).unbind("multiselectclick").bind("multiselectclick", function (event, ui) {
         stopEventPropagation(event);
         mapping.type = ui.value;
         update_music_map_type();
@@ -933,7 +956,7 @@ function music_map_edit(event) {
         multiple: false,
         selectedList: 1,
         header: false
-    }).bind("multiselectclick", function (event, ui) {
+    }).unbind("multiselectclick").bind("multiselectclick", function (event, ui) {
         stopEventPropagation(event);
         mapping.id = ui.value;
     });

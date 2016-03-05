@@ -172,12 +172,21 @@ void DMXTextUI::listTracks()
 
     if ( form.play() ) {
         PlayerItems tracks;
+        MusicPlayer* player = studio.getMusicPlayer();
 
-        studio.getMusicPlayer()->getTracks( playlist_field.getPlaylist(), tracks );
+        player->getTracks( playlist_field.getPlaylist(), tracks );
 
         for ( PlayerItems::iterator it=tracks.begin(); it != tracks.end(); ++it ) {
-            CString track_name = studio.getMusicPlayer()->getTrackFullName( (*it) );
-            m_text_io.printf( "%s\n", track_name );
+            CString artist, name, album, link; 
+            DWORD duration = 0L;
+            bool stared;
+            // AudioInfo audioInfo;
+
+            player->getTrackInfo( *it, &name, &artist, &album, &duration, &stared, &link );
+            // studio.getTrackAudioInfo( link, *it, audioInfo );
+
+            m_text_io.printf( "%s by %s\n", name, artist );
+            // m_text_io.printf( "Key: %d BPM: %f\n", audioInfo.key, audioInfo.tempo );
         }
     }
 }

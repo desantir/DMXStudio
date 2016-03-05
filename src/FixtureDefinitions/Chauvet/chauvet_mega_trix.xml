@@ -6,7 +6,7 @@
         <manufacturer>Chauvet</manufacturer>
         <model>Mega Trix</model>
         <channels>
-            <channel index="1" type="control" color="false" blackout="false">
+            <channel index="1" type="control" color="false" blackout="true">
                 <name>Auto Program</name>
                 <ranges>
                     <range start="0" end="0">

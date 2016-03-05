@@ -113,6 +113,15 @@ public:
         element.InsertEndChild( pfuids );
     }
 
+    template <class T>
+    static void write_value_list( TiXmlElement& container, const char *name, T& values ) {
+        for ( T::iterator it=values.begin(); it != values.end(); ++it ) {
+            TiXmlElement element( name );
+            add_attribute( element, "value", (*it) );
+            container.InsertEndChild( element );
+        }
+    }
+
     static void add_colors_element( TiXmlElement& element, const char *name, RGBWAArray& colors  ) {
         TiXmlElement colors_element( name );
 
@@ -146,7 +155,7 @@ public:
         RGBWA result = default_value;
 
         if ( value != NULL )
-            sscanf_s( value, "#%lx", &result );
+            sscanf_s( value, "#%lx", (ULONG *)&result );
         return result;
     }
 
@@ -244,6 +253,19 @@ public:
                 element = element->NextSiblingElement();
             }
         }
+    }
+
+    template <class T, class S>
+    static T read_value_list( TiXmlElement* container, const char* item_name ) {
+        T value_list;
+
+        TiXmlElement* element = container->FirstChildElement( item_name );
+        while ( element ) {
+            value_list.push_back( static_cast<S>( read_word_attribute( element, "value" ) ) );
+            element = element->NextSiblingElement();
+        }
+
+        return value_list;
     }
 
 #if 0

@@ -29,6 +29,8 @@ MA 02111-1307, USA.
 #include "DMXStudio.h"
 #include "Threadable.h"
 
+#include <atomic>
+
 #define DEFAULT_PACKET_DELAY_MS			100
 #define DEFAULT_MINIMUM_DELAY_MS        5
 
@@ -42,46 +44,54 @@ typedef enum dmx_status {
     DMX_NO_CONNECTION = 5,
     DMX_OPEN_FAILURE = 6,
     DMX_NO_DEVICE = 7,
-    DMX_NOT_RUNNING = 8
+    DMX_NOT_RUNNING = 8,
+    DMX_RECEIVE_ERROR = 9
 } DMX_STATUS;
 
-class AbstractDMXDriver : public Threadable
+class AbstractDMXDriver
 {
-    BYTE m_packet[ DMX_PACKET_SIZE+1 ];					// Current DMX packet
-    BYTE m_blackout_packet[ DMX_PACKET_SIZE+1 ];		// Blackout DMX packet
+    universe_t m_universe_id;                           // Universe ID (purely informational)
 
-    BYTE m_pending_packet[ DMX_PACKET_SIZE+1 ];			// New DMX packet (staging)
-    volatile bool m_latch;								// Latch DMX packet
     unsigned m_packet_delay;							// Delay between packets
     unsigned m_packet_min_delay;                        // Minimum time between packets
-
-    bool m_blackout;									// Universe is backed out
-    bool m_debug;										// Output packet contents
     CString m_connection_info;							// Current connection information
 
-    CCriticalSection m_write_mutex;						// Write mutex
-    CEvent m_wake;										// Wake up DMX transmitter
+    BYTE m_blackout_packet[DMX_PACKET_SIZE + 1];		// Blackout DMX packet
+    BYTE m_dmx_packet[DMX_PACKET_SIZE + 1];			// New DMX packet (staging)
 
-    UINT run(void);
+    bool m_blackout;									// Universe is backed out
+
+protected:
+    bool m_debug;										// Output packet contents
+
+private:
+    CCriticalSection m_write_mutex;						// Write mutex
 
     AbstractDMXDriver(AbstractDMXDriver& other) {}
     AbstractDMXDriver& operator=(AbstractDMXDriver& rhs) { return *this; }
 
 public:
-    AbstractDMXDriver(void);
+    AbstractDMXDriver( universe_t universe_id );
     virtual ~AbstractDMXDriver(void);
 
-    DMX_STATUS start( const char * connection_info );
+    DMX_STATUS start();
     DMX_STATUS stop();
 
-    DMX_STATUS write( channel_t channel, BYTE value, bool update=false );
+    DMX_STATUS write( channel_t channel, BYTE value );
     DMX_STATUS write_all( BYTE *dmx_512 );
-    DMX_STATUS latch();
-    DMX_STATUS read( channel_t channel, bool pending, BYTE& channel_value );
+
+    DMX_STATUS read( channel_t channel, BYTE& channel_value );
     DMX_STATUS read_all( BYTE *dmx_512 );
 
+    inline boolean is_running() {
+        return dmx_is_running();
+    }
+
     void setBlackout( bool blackout ) {
-        m_blackout = blackout;
+        if ( m_blackout != blackout ) {
+            m_blackout = blackout;
+            sendPacket();
+        }
     }
 
     bool isBlackout( ) const {
@@ -95,23 +105,33 @@ public:
         m_packet_delay = delay;
     }
 
-    inline unsigned getMinimumSleepMS( ) const {
+    inline unsigned getMinimumDelayMS( ) const {
         return m_packet_min_delay;
     }
     void setMinimumDelayMS( unsigned packet_min_delay ) {
         m_packet_min_delay = packet_min_delay;
     }
 
+    inline universe_t getId() const {
+        return m_universe_id;
+    }
+
+    inline LPCSTR getConnectionInfo() const {
+        return m_connection_info;
+    }
+    void setConnectionInfo( LPCSTR connection_info ) {
+        m_connection_info = connection_info;
+    }
+
+    inline DMX_STATUS AbstractDMXDriver::sendPacket(void) {
+        return dmx_send( m_blackout ? m_blackout_packet : m_dmx_packet );
+    }
+
 protected:
-    /**
-        Send a packet frame consiting of a break and the packet supplied.  The
-        supplied packet include the 0 command byte with at least 24 bytes of data
-        to a maximum of 513 total bytes (command + 512 data).
-    */
-    virtual DMX_STATUS dmx_send( unsigned length, BYTE * packet ) = 0;
-
-    virtual DMX_STATUS dmx_open( const char * connection_info ) = 0;
-
+    virtual CString dmx_name() = 0;
+    virtual DMX_STATUS dmx_send( BYTE* packet ) = 0;
+    virtual DMX_STATUS dmx_open(void) = 0;
     virtual DMX_STATUS dmx_close( void ) = 0;
+    virtual boolean dmx_is_running(void) = 0;
 };
 

@@ -120,7 +120,7 @@ public:
 
     void dump() {
         for ( NAME_VALUE_PAIR::iterator it = m_values.begin(); it != m_values.end(); ++it )
-            printf( "%s = %s\n", it->first, it->second );
+            printf( "%s = %s\n", (LPCSTR)it->first, (LPCSTR)it->second );
     }
     
 private:

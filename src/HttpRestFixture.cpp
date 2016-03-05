@@ -143,6 +143,7 @@ bool HttpRestServices::query_fixtures( CString& response, LPCSTR data )
         json.add( "id", group->getUID() );
         json.add( "number", group->getGroupNumber() );
         json.add( "dmx_address", 0 );
+        json.add( "dmx_universe", 0 );
         json.add( "fuid", 0L );
         json.add( "full_name", group->getName() );
         json.add( "is_group", true );
@@ -178,6 +179,7 @@ bool HttpRestServices::query_fixtures( CString& response, LPCSTR data )
         json.add( "id", pf->getUID() );
         json.add( "number", pf->getFixtureNumber() );
         json.add( "dmx_address", pf->getAddress() );
+        json.add( "dmx_universe", pf->getUniverseId() );
         json.add( "fuid", pf->getFUID() );
         json.add( "full_name", pf->getFullName() );
         json.add( "is_group", false );
@@ -308,7 +310,7 @@ bool HttpRestServices::edit_fixture( CString& response, LPCSTR data, EditMode mo
     FUID fuid;
     CString name, description;
     FixtureNumber number;
-    int dmx_address;
+    unsigned dmx_address, dmx_universe;
 
     try {
         parser.parse( data );
@@ -319,6 +321,7 @@ bool HttpRestServices::edit_fixture( CString& response, LPCSTR data, EditMode mo
         number = parser.get<ULONG>( "number" );
         fuid = parser.get<ULONG>( "fuid" );
         dmx_address = parser.get<ULONG>( "dmx_address" );
+        dmx_universe = parser.get<ULONG>( "dmx_universe" );
     }
     catch ( std::exception& e ) {
         throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
@@ -331,7 +334,7 @@ bool HttpRestServices::edit_fixture( CString& response, LPCSTR data, EditMode mo
 
     switch ( mode ) {
         case NEW: {
-            Fixture fixture( studio.getVenue()->allocUID(), number, 1, dmx_address, fuid, name, description );
+            Fixture fixture( studio.getVenue()->allocUID(), number, dmx_universe, dmx_address, fuid, name, description );
             studio.getVenue()->addFixture( fixture );
             break;
         }
@@ -345,6 +348,7 @@ bool HttpRestServices::edit_fixture( CString& response, LPCSTR data, EditMode mo
             fixture->setName( name );
             fixture->setDescription( description );
             fixture->setAddress( dmx_address );
+            fixture->setUniverseId( dmx_universe );
             break;
         }
     }

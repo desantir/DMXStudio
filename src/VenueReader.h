@@ -36,6 +36,7 @@ public:
 
     Venue* read( TiXmlElement* self, Venue* venue );
     Scene* read( TiXmlElement* self, Scene* scene );
+    Universe* read( TiXmlElement* self, Universe* universe );
     Fixture* read( TiXmlElement* self, Fixture* fixture );
     Chase* read( TiXmlElement* self, Chase* chase );
     FixtureGroup* read( TiXmlElement* self, FixtureGroup* fixture_group );

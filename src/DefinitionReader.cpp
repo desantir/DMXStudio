@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2015 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -188,11 +188,13 @@ Channel* DefinitionReader::read( TiXmlElement* self, Channel* channel )
             channel->m_is_dimmer = true;
             channel->m_lowest_intensity = (BYTE)read_int_attribute( dimmer, "lowest_intensity", 0 );
             channel->m_highest_intensity = (BYTE)read_int_attribute( dimmer, "highest_intensity", 255 );
+            channel->m_off_intensity = (BYTE)read_int_attribute( dimmer, "off_intensity", channel->m_lowest_intensity );
         }
         else {
             channel->m_is_dimmer = ( channel->m_type == CHNLT_DIMMER );     // Implies this is the default 0-255 dimmer channel type
             channel->m_lowest_intensity = 0;
             channel->m_highest_intensity = 255;
+            channel->m_off_intensity = 0;
         }
 
         // Add channel ranges

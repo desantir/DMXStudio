@@ -30,7 +30,11 @@ typedef enum {
     DP_PAIRS = 3,
     DP_TOCENTER = 4,
     DP_ALTERNATE = 5,
-    DP_ALL = 6
+    DP_ALL = 6,
+    DP_RANDOM = 7,
+    DP_RAMP_UP = 8,
+    DP_RAMP_UP_DOWN = 9,
+    DP_RANDOM_TO_ALL = 10
 } DimmerPattern;
 
 class ScenePatternDimmer : public SceneChannelAnimator

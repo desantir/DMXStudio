@@ -69,6 +69,7 @@ protected:
     RGBWA   					m_strobe_neg_color;
     unsigned					m_strobe_neg_ms;
     unsigned					m_strobe_pos_ms;
+    UINT                        m_strobe_flashes;
     RGBWAArray                  m_custom_colors;
     FaderEffect                 m_fader_effect;
 
@@ -82,6 +83,7 @@ public:
                         RGBWA strobe_neg_color,
                         unsigned strobe_pos_ms,
                         unsigned strobe_neg_ms,
+                        UINT m_strobe_flashes,
                         RGBWAArray custom_colors,
                         FaderEffect fader_effect );
 
@@ -116,6 +118,13 @@ public:
     }
     void setStrobePosMS( unsigned strobe_pos_ms ) {
         m_strobe_pos_ms = strobe_pos_ms;
+    }
+
+    UINT getStrobeFlashes() const {
+        return m_strobe_flashes;
+    }
+    void setStrobeFlashes( UINT strobe_flashes ) {
+        m_strobe_flashes = strobe_flashes;
     }
 
     RGBWAArray getCustomColors( ) const {

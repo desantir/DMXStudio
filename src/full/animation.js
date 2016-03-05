@@ -23,11 +23,11 @@ MA 02111-1307, USA.
 var ApplySignal = ["Channel Values", "Sample Speed", "Values and Speed", "Sample Speed  (inverted)"];
 var AnimationSignalInput = ["Timer", "Sound Level", "Avg. Sound Level", "Frequency Beat", "Frequency Level", "Random"];
 var FadeWhat = ["Color channels", "Dimmer channels", "Color and Dimmer channels"];
-var PatternDimmer = [ "Simple sequence", "Cylon", "Pairs", "Toward center", "Alternate", "All" ];
+var PatternDimmer = ["Simple sequence", "Cylon", "Pairs", "Toward center", "Alternate", "On/Off", "Random", "Ramp Up", "Ramp Up/Down", "Random Ramp Up"];
 var AnimationStyle = ["Value List", "Value Range", "Scale Scene Value"];
 var FaderEffect = [ "Color Change", "Strobe", "Color Blend", "All" ];
 var PixelEffect = ["Scrolling", "Stacked", "Stacked Left", "Stacked Right", "Beam", "Random", "Chase"];
-var FilterEffect = ["Sine Wave", "Ramp Up", "Ramp Down", "Step Wave", "Random"];
+var FilterEffect = ["Sine Wave", "Ramp Up", "Ramp Down", "Step Wave", "Random" ];
 
 var MOVEMENT_ANIMATOR_ROOT = "SceneMovementAnimator";
 
@@ -36,7 +36,7 @@ var Animations = [
       description: "Sequence fixtures based on timer (simple on/off)." },
     { name: "Channel fader", class_name: "SoundLevel", editor: editSceneSoundLevel, synopsis: getSceneSoundLevelSynopsis, 
       description: "Fade colors and/or dimmers based on venue sound level or beat." },
-    { name: "Pattern sequencer", class_name: "ScenePatternDimmer", editor: editScenePatternDimmer, synopsis: getScenePatternDimmerSynopsis,
+    { name: "Pattern dimmer", class_name: "ScenePatternDimmer", editor: editScenePatternDimmer, synopsis: getScenePatternDimmerSynopsis,
       description: "Light fixtures based on a pattern sequence." },
     { name: "Channel program", class_name: "SceneChannelAnimator", editor: editSceneChannelAnimator, synopsis: getSceneChannelAnimatorSynopsis,
       description: "Animate channel values based on signal input." },
@@ -68,6 +68,7 @@ var Animations = [
 
 var anim_dialog_height = 750;
 var anim_dialog_width = 840;
+var NUM_MOVEMENT_ANIMATIONS = 8;
 
 // ----------------------------------------------------------------------------
 //
@@ -280,7 +281,6 @@ function populateFixtureOrder(fixture_multiselect, order_div, animation) {
     generateFixtureTiles(order_div, animation);
 
     fixture_multiselect.unbind("multiselectclose");
-
     fixture_multiselect.bind("multiselectclose", function (event, ui) {
         stopEventPropagation(event);
         var fixture_ids = fixture_multiselect.val();
@@ -375,17 +375,10 @@ function populateSignal(prefix, signal) {
     container.html(signal_html);
 
     var signal_type = $("#" + prefix + "_signal_type");
-    signal_type.empty();
-
-    for (var i = 0; i < AnimationSignalInput.length; i++) {
-        signal_type.append($('<option>', {
-            value: i+1,
-            text: AnimationSignalInput[i],
-            selected: i + 1 == signal.input_type
-        }));
-    }
+    load_options(signal_type, AnimationSignalInput, function( index ) { return index+1 == signal.input_type; } );
 
     signal_type.multiselect({ minWidth: 300, multiple: false, selectedList: 1, header: false, height: "auto" });
+    signal_type.unbind("multiselectclick");
     signal_type.bind("multiselectclick", function (event, ui) {
         stopEventPropagation(event);
         input_click_handler(parseInt(ui.value));
@@ -414,14 +407,8 @@ function populateSignal(prefix, signal) {
     random_high.spinner({ min: 1, max: 255 }).val(signal.input_high);
 
     var apply_to = $("#" + prefix + "_apply_to");
-    apply_to.empty();
-    for (var i = 0; i < ApplySignal.length; i++) {
-        apply_to.append($('<option>', {
-            value: i + 1,
-            text: ApplySignal[i],
-            selected: i + 1 == signal.apply_to
-        }));
-    }
+    load_options(apply_to, ApplySignal, function (index) { return index + 1 == signal.apply_to; });
+
     apply_to.multiselect({ minWidth: 300, multiple: false, selectedList: 1, header: false, height: "auto" });
 
     input_click_handler(signal.input_type);
@@ -649,7 +636,8 @@ function editSceneStrobeAnimator(anim_info, animation, success_callback) {
         animation.SceneStrobeAnimator = {
             strobe_neg_color: "#000000",
             strobe_pos_ms: 50,
-            strobe_neg_ms: 50
+            strobe_neg_ms: 50,
+            strobe_flashes: 1
         };
 
     edit_dialog.dialog({
@@ -666,6 +654,7 @@ function editSceneStrobeAnimator(anim_info, animation, success_callback) {
 
                 animation.SceneStrobeAnimator.strobe_pos_ms = $("#essa_strobe_pos_ms").val();
                 animation.SceneStrobeAnimator.strobe_neg_ms = $("#essa_strobe_neg_ms").val();
+                animation.SceneStrobeAnimator.strobe_flashes = $("#essa_strobe_flashes").val();
                 animation.SceneStrobeAnimator.strobe_neg_color = $("#essa_colorpicker").attr('value');
                 updateSceneFixtures($("#" + prefix + "_fixtures"), animation);
 
@@ -685,6 +674,7 @@ function editSceneStrobeAnimator(anim_info, animation, success_callback) {
 
     $("#essa_strobe_pos_ms").spinner({ min: 1, max: 60000 }).val(animation.SceneStrobeAnimator.strobe_pos_ms);
     $("#essa_strobe_neg_ms").spinner({ min: 1, max: 60000 }).val(animation.SceneStrobeAnimator.strobe_neg_ms);
+    $("#essa_strobe_flashes").spinner({ min: 1, max: 50 }).val(animation.SceneStrobeAnimator.strobe_flashes);
     $("#essa_colorpicker").css("background-color", "#" + animation.SceneStrobeAnimator.strobe_neg_color);
     $("#essa_colorpicker").attr('value', animation.SceneStrobeAnimator.strobe_neg_color);
 
@@ -714,9 +704,17 @@ function editSceneStrobeAnimator(anim_info, animation, success_callback) {
 }
 
 function getSceneStrobeAnimatorSynopsis(animation) {
-    return "Strobe: on " + animation.SceneStrobeAnimator.strobe_pos_ms + "ms off " +
-           animation.SceneStrobeAnimator.strobe_neg_ms + "ms color " +
-           colorName( animation.SceneStrobeAnimator.strobe_neg_color );
+    var synopsis = "Strobe: ";
+    
+    if (animation.SceneStrobeAnimator.strobe_flashes > 1)
+        synopsis += animation.SceneStrobeAnimator.strobe_flashes + " flashes over " + animation.SceneStrobeAnimator.strobe_pos_ms + "ms";
+    else
+        synopsis += "on " + animation.SceneStrobeAnimator.strobe_pos_ms + "ms";
+
+    synopsis += ", off " + animation.SceneStrobeAnimator.strobe_neg_ms + "ms, negative color " +
+           colorName(animation.SceneStrobeAnimator.strobe_neg_color);
+
+    return synopsis;
 }
 
 // ----------------------------------------------------------------------------
@@ -730,6 +728,7 @@ function editSceneColorSwitcher(anim_info, animation, success_callback) {
             strobe_neg_color: "#000000",
             strobe_pos_ms: 50,
             strobe_neg_ms: 50,
+            strobe_flashes: 1,
             color_progression: []
         };
 
@@ -748,6 +747,7 @@ function editSceneColorSwitcher(anim_info, animation, success_callback) {
                 animation.SceneColorSwitcher.fader_effect = $("#escs_fader_effect").val();
                 animation.SceneColorSwitcher.strobe_pos_ms = $("#escs_strobe_pos_ms").val();
                 animation.SceneColorSwitcher.strobe_neg_ms = $("#escs_strobe_neg_ms").val();
+                animation.SceneColorSwitcher.strobe_flashes = animation.SceneColorSwitcher.strobe_flashes;
                 animation.SceneColorSwitcher.strobe_neg_color = $("#escs_colorpicker").attr('value');
                 animation.SceneColorSwitcher.color_progression = $("#escs_color_progression").expandableContainer("values");
 
@@ -984,7 +984,7 @@ function editSceneMovementAnimator(anim_info, animation, success_callback, setup
     $("#esma_alternate_groups").attr('checked', animation.SceneMovementAnimator.alternate_groups);
 
     // Only reveal the movement div for this movement
-    for (var i = 1; i <= 7; i++) {
+    for (var i = 1; i <= NUM_MOVEMENT_ANIMATIONS; i++) {
         if (i != animation.SceneMovementAnimator.movement_type)
             $("#esma_SceneMovementAnimator" + i).hide();
         else
@@ -1439,6 +1439,7 @@ function new_channel_animation(item, channel_animation) {
         esca_channel.multiselect("refresh");
     };
 
+    esca_fixture.unbind("multiselectclick");
     esca_fixture.bind("multiselectclick", function (event, ui) {
         stopEventPropagation(event);
         update_channels(ui.value, 0);
@@ -1461,6 +1462,8 @@ function new_channel_animation(item, channel_animation) {
             esca_channel_range_container.show();
     }
 
+
+    esca_style.unbind("multiselectclick");
     esca_style.bind("multiselectclick", function (event, ui) {
         stopEventPropagation(event);
         update_style( ui.value );
@@ -1679,6 +1682,7 @@ function editPixelAnimator(anim_info, animation, success_callback) {
         }
     }
 
+    $("#espa_pixel_effect").unbind("multiselectclick");
     $("#espa_pixel_effect").bind("multiselectclick", function (event, ui) {
         stopEventPropagation(event);
         update_effect(ui.value);
@@ -1745,7 +1749,7 @@ function editChannelFilter(anim_info, animation, success_callback) {
     if (animation.SceneChannelFilter == null)
         animation.SceneChannelFilter = {
             filter: 1,
-            channel: 0,
+            channels: [0],
             step: 1,
             amplitude: 10,
             offset: 0
@@ -1766,7 +1770,7 @@ function editChannelFilter(anim_info, animation, success_callback) {
                 updateOrderedSceneFixtures($("#" + prefix + "_fixture_order"), animation);
 
                 animation.SceneChannelFilter.filter = parseInt($("#escf_filter").val());
-                animation.SceneChannelFilter.channel = parseInt($("#escf_channel").val());
+                animation.SceneChannelFilter.channels = $("#escf_channels").val().map(Number);
                 animation.SceneChannelFilter.step = parseInt($("#escf_step").val());
                 animation.SceneChannelFilter.amplitude = parseInt($("#escf_amplitude").val());
                 animation.SceneChannelFilter.offset = parseInt($("#escf_offset").val());
@@ -1781,7 +1785,7 @@ function editChannelFilter(anim_info, animation, success_callback) {
         }
     });
 
-    var escf_channel = $('#escf_channel');
+    var escf_channels = $('#escf_channels');
     var escf_fixtures = $("#" + prefix + "_fixtures");
 
     populateSceneFixtures(escf_fixtures, animation);
@@ -1794,24 +1798,9 @@ function editChannelFilter(anim_info, animation, success_callback) {
     $("#escf_amplitude").spinner({ min: 1, max: 255 }).val(animation.SceneChannelFilter.amplitude);
     $("#escf_offset").spinner({ min: 0, max: 360 }).val(animation.SceneChannelFilter.offset);
 
-    $("#escf_filter").empty();
-    var html = "";
-    for (var i = 0; i < FilterEffect.length; i++) {
-        $("#escf_filter").append($('<option>', {
-            value: i + 1,
-            text: FilterEffect[i],
-            selected: i + 1 == animation.SceneChannelFilter.filter
-        }));
-    }
-
-    for (var i = 0; i < FilterEffect.length; i++) {
-        html += '<option value=' + (i + 1) + ' ' + (i + 1 == animation.SceneChannelFilter.filter ? "selected" : "") +
-                '>' + FilterEffect[i] + '</option>';
-    }
-
-    $("#escf_filter").html( html );
-
-    $("#escf_filter").multiselect({ minWidth: 200, multiple: false, selectedList: 1, header: false, height: "auto" });
+    var filter = $("#escf_filter");
+    load_options( filter, FilterEffect, function( index ) { return index+1 == animation.SceneChannelFilter.filter; } );
+    filter.multiselect({ minWidth: 200, multiple: false, selectedList: 1, header: false, height: "auto" });
 
     var step_div = $("#escf_step_div");
     var amplitude_div = $("#escf_amplitude_div");
@@ -1827,7 +1816,13 @@ function editChannelFilter(anim_info, animation, success_callback) {
                 break;
 
             case 2:					    // Ramp up (step)
+                offset_div.hide();
+                break;
+
             case 3:					    // Ramp down (step)
+                offset_div.hide();
+                break;
+
             case 4:				        // Step wave (step)
                 amplitude_div.hide();
                 offset_div.hide();
@@ -1840,6 +1835,7 @@ function editChannelFilter(anim_info, animation, success_callback) {
         }
     }
 
+    $("#escf_filter").unbind("multiselectclick");
     $("#escf_filter").bind("multiselectclick", function (event, ui) {
         stopEventPropagation(event);
         update_filter(ui.value);
@@ -1847,10 +1843,10 @@ function editChannelFilter(anim_info, animation, success_callback) {
 
     update_filter(animation.SceneChannelFilter.filter);
 
-    var update_channels = function (selected) {
-        escf_channel.empty();
+    var update_channels = function (selected_channels) {
+        var fixture_ids = escf_fixtures.val();
 
-        var fixture_ids = escf_fixtures.val(); 
+        escf_channels.empty();
 
         if (fixture_ids != null && fixture_ids.length > 0) {
             var fixture = getFixtureById(fixture_ids[0]);
@@ -1860,25 +1856,32 @@ function editChannelFilter(anim_info, animation, success_callback) {
                 var html = "";
 
                 for (var i = 0; i < channels.length; i++) {
-                    html += '<option value=' + i + ' ' + (i == selected ? "selected" : "") +
+                    var selected = selected_channels.indexOf(i) != -1;
+
+                    html += '<option value="' + i + '"' + (selected ? " selected" : "") +
                             '>Channel ' + (i + 1) + ": " + channels[i].name + '</option>';
                 }
 
-                escf_channel.html(html);
+                escf_channels.html(html);
             }
         }
 
-        escf_channel.multiselect("refresh");
+        escf_channels.multiselect("refresh");
     };
 
+
+    escf_fixtures.unbind("multiselectclick");
     escf_fixtures.bind("multiselectclick", function (event, ui) {
         stopEventPropagation(event);
-        update_channels( parseInt($("#escf_channel").val()) );
+        setTimeout(function () {
+            var selected_channels = $("#escf_channels").val();
+            update_channels(selected_channels == null ? [] : selected_channels.map(Number));
+        }, 50);
     });
 
-    escf_channel.multiselect({ minWidth: 500, multiple: false, selectedList: 1, header: false, noneSelectedText: 'select channel', height: "auto" });
+    escf_channels.multiselect({ minWidth: 500, multiple: true, selectedList: 1, header: false, noneSelectedText: 'select 1 or more channels', height: "auto" });
 
-    update_channels(animation.SceneChannelFilter.channel);
+    update_channels(animation.SceneChannelFilter.channels);
     
     edit_dialog.dialog("open");
 }
@@ -1886,23 +1889,43 @@ function editChannelFilter(anim_info, animation, success_callback) {
 function getChannelFilterSynopsis(animation) {
     var synopsis = FilterEffect[animation.SceneChannelFilter.filter - 1] + ": ";
 
+    if (animation.SceneChannelFilter.channels.length == 1) {
+        synopsis += "channel " + (animation.SceneChannelFilter.channels[0] + 1);
+    }
+    else {
+        var channels = "";
+        for (var i = 0; i < animation.SceneChannelFilter.channels.length; i++) {
+            if (i > 0)
+                channels += ", ";
+            channels += (animation.SceneChannelFilter.channels[i] + 1);
+        }
+
+        synopsis += "channels " + channels;
+    }
+
     switch (animation.SceneChannelFilter.filter) {
         case 1:					    // Sine wave (amplitude, angle step)
-            synopsis += "channel " + (animation.SceneChannelFilter.channel + 1) +
-                        " step " + animation.SceneChannelFilter.step +
+            synopsis += " step " + animation.SceneChannelFilter.step +
                         " amplitude " + animation.SceneChannelFilter.amplitude +
                         " offset " + animation.SceneChannelFilter.offset;
             break;
 
         case 2:					    // Ramp up (step)
+            synopsis += " step " + animation.SceneChannelFilter.step +
+                        " maximum " + animation.SceneChannelFilter.amplitude;
+            break;
+
         case 3:					    // Ramp down (step)
+            synopsis += " step " + animation.SceneChannelFilter.step +
+                        " minimum " + animation.SceneChannelFilter.amplitude;
+            break;
+
         case 4:				        // Step wave (step)
-            synopsis += "channel " + (animation.SceneChannelFilter.channel + 1) +
-                        " step " + animation.SceneChannelFilter.step;
+            synopsis += " step " + animation.SceneChannelFilter.step;
             break;
 
         case 5:                     // Random value (amplitude)
-            synopsis += "amplitude " + animation.SceneChannelFilter.amplitude;
+            synopsis += " amplitude " + animation.SceneChannelFilter.amplitude;
             break;
     }
 

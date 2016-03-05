@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-15 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -67,6 +67,7 @@ public:
     void visit( ScenePixelAnimator* animation );
     void visit( ChannelAnimation* channel_animation );
     void visit( MusicSceneSelector* music_scene_selection );
+    void visit( Universe* universe );
     // Reminder: Add a virtual entry to IVisitor for all new visit methods
 
     template <class T>

@@ -34,7 +34,7 @@ class AnimationTask : public Threadable
     Venue*				m_venue;
     Scene*				m_scene;
 
-    BYTE				m_dmx_packet[DMX_PACKET_SIZE];
+    BYTE				m_dmx_packet[MULTI_UNIV_PACKET_SIZE];
 
     AnimationPtrArray	m_animations;
     bool                m_load_channels;
@@ -113,5 +113,8 @@ public:
 
 protected:
     UINT run(void);
+
+private:
+    bool adjust_dimmer_channels();
 };
 

@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2012-14 Robert DeSantis
+Copyright (C) 2012-2015 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -31,7 +31,8 @@ var BPMRatings = [
     { name: "very fast (>= 150)", lower: 150, upper: 999 },
 ];
 
-var last_animation_type = Animations[0].class_name;        // restores last select new animation type in scene edit
+var last_animation_type = null;                         // restores last select new animation type in scene edit
+var scene_update_listener = null;
 
 // ----------------------------------------------------------------------------
 // class Scene
@@ -178,6 +179,9 @@ function updateScenes() {
                 scenes.push(new Scene(scene));
             });
             createSceneTiles();
+
+            if (scene_update_listener)
+                scene_update_listener();
         },
         error: onAjaxError
     });
@@ -418,8 +422,8 @@ function openNewSceneDialog(dialog_title, action_title, copy, data) {
 
     $("#nsd_fixtures").multiselect({ minWidth: 500, multiple: true, noneSelectedText: 'select fixtures' });
 
-    // After fixtures are changed, remove any animation actors sthat have been removed
-    $("#nsd_fixtures").on("multiselectclose", function (event, ui) {
+    // After fixtures are changed, remove any animation actors that have been removed
+    $("#nsd_fixtures").unbind("multiselectclose").bind("multiselectclose", function (event, ui) {
         verifyAnimationActors();
     });
     
@@ -434,7 +438,7 @@ function openNewSceneDialog(dialog_title, action_title, copy, data) {
     }
 
     $("#nsd_acts").multiselect({
-        minWidth: 300, multiple: true, noneSelectedText: 'None',
+        minWidth: 300, multiple: true, noneSelectedText: 'all acts',
         checkAllText: 'All acts', uncheckAllText: 'Clear acts', selectedList: 8
     });
 
@@ -461,9 +465,12 @@ function openNewSceneDialog(dialog_title, action_title, copy, data) {
             $(this).removeClass('ui-state-hover');
     });
 
-    $("#nsd_new_animation_button").bind("click", function (event) {
+    $("#nsd_new_animation_button").unbind("click").bind("click", function (event) {
        scene_add_animation(event);
     });
+
+    if ( last_animation_type == null )
+        last_animation_type = Animations[0].class_name; 
 
     $("#nsd_new_animation_type").empty();
     for (var i = 0; i < Animations.length; i++) {
@@ -475,7 +482,7 @@ function openNewSceneDialog(dialog_title, action_title, copy, data) {
     }
     $("#nsd_new_animation_type").multiselect({ minWidth: 400, multiple: false, selectedList: 1, header: false, noneSelectedText: 'select animation', height: "auto" });
 
-    $("#nsd_new_animation_type").bind("multiselectclick", function (event, ui) {
+    $("#nsd_new_animation_type").unbind("multiselectclick").bind("multiselectclick", function (event, ui) {
         stopEventPropagation(event);
         last_animation_type = ui.value;
         $("#nsd_new_animation_description").text(findAnimation(ui.value).description);
@@ -595,7 +602,7 @@ function deleteScene(event, scene_id) {
 
 // ----------------------------------------------------------------------------
 //
-function makeChannelInfoLine(channels,css_class) {
+function makeChannelInfoLine(channels, css_class) {
     if (!channels.length)
         return "";
 
@@ -637,6 +644,8 @@ function describeScene(event, scene_id) {
         return;
     }
 
+    var is_default_scene = scene.isDefault();
+
     $("#describe_scene_dialog").dialog({
         autoOpen: false,
         width: 600,
@@ -644,15 +653,58 @@ function describeScene(event, scene_id) {
         modal: false,
         draggable: true,
         resizable: true,
-        title: "Scene " + scene.getNumber() + ": " + escapeForHTML(scene.getName())
+        title: "Scene " + scene.getNumber() + ": " + escapeForHTML(scene.getName()),
+        open: function () {
+            fixture_state_listener = function (fixture_id, new_state) {
+                if ( !is_default_scene )
+                    update_describe_fixture_icon(fixture_id);
+                else
+                    describe_scene_content(scene_id);
+            }
+
+            scene_update_listener = function () {
+                describe_scene_content(scene_id);
+            }
+        },
+
+        close: function () {
+            fixture_state_listener = null;
+            scene_update_listener = null;
+            describe_data = null;
+        },
     });
 
     $("#describe_scene_dialog").dialog("open");
 
-    describe_scene_content(scene);
+    describe_scene_content(scene_id);
 }
 
-function describe_scene_content(scene) {
+var describe_data = null;
+
+function update_describe_fixture_icon(fixture_id) {
+    var icon = $("#describe_" + fixture_id);
+    if (icon != null && icon.length > 0) {
+        if (!getFixtureById(fixture_id).isActive()) {
+            icon.removeClass("ui-icon-close").addClass("ui-icon-pin-s");
+            icon.attr('title', 'control fixture');
+        }
+        else {
+            icon.removeClass("ui-icon-pin-s").addClass("ui-icon-close");
+            icon.attr('title', 'release fixture');
+        }
+    }
+}
+
+function describe_scene_content( scene_id )
+{
+    var scene = getSceneById(scene_id);
+    if (scene == null) {
+        messageBox("No definition for scene " + scene_id + " in client");
+        return;
+    }
+
+    describe_data = [];
+
     var acts = "";
     if (scene.getActs().length > 0) {
         for (var i = 0; i < scene.getActs().length; i++)
@@ -669,32 +721,30 @@ function describe_scene_content(scene) {
     $("#describe_scene_description").html(scene.getDescription() != null ? escapeForHTML(scene.getDescription()) : "");
     $("#describe_scene_bpm_rating").html(escapeForHTML(BPMRatings[scene.getBPMRating()].name));
 
-    var info = "";
-    var clazz = fixture_tile_panel.actions[0].tile_class;
+    if ( !scene.isDefault() )
+        $("#describe_scene_number").unbind().on('click', function (event) { sceneDescribeSelectAll(event, scene_id, true); });
 
-    function makeFixtureTitleLine(fixture, channel_data) {
+    function makeFixtureTitleLine(fixture) {
         var html = "<div style='clear:both; float: left; font-size: 10pt;'>";
 
-        var data = (channel_data != null) ? JSON.stringify(channel_data) : null;
-        var icon_class = 'ui-icon-pin-s';
-        var icon_title = 'control fixture';
+        html += "<div id='describe_" + fixture.getId() + "' class='ui-icon' ";
+        html += "style='margin-right: 5px; cursor: pointer; float: left;' ";
+        html += "onclick='sceneDescribeSelect(event," + fixture.getId() + ");'";
+        html += "></div>";
 
-        if (fixture.isActive()) {
-            icon_class = 'ui-icon-close';
-            icon_title = 'release fixture';
+        html += "<div style='float: left;'>Fixture " + (fixture.isGroup() ? "Group G" : "") + fixture.getNumber();
+        html += ": " + escapeForHTML(fixture.getFullName()) + "</div>";
+
+        if (!fixture.isGroup()) {
+            html += "<div class='describe_scene_dmx' style='float: left; margin-top: 2px;'>";
+            html += " DMX " + fixture.getUniverseId() + "&nbsp;-&nbsp;" + fixture.getDMXAddress() + "</div>";
         }
-
-        html += "<div class='ui-icon " + icon_class + "' title='" + icon_title + "' style='margin-right: 5px; cursor: pointer; float: left;' ";
-        html += "onclick='sceneDescribeSelect(event," + fixture.getId() + ",\"" + data + "\");'></div>";
-
-        html += "<div style='float: left;'>Fixture " + (fixture.isGroup() ? "Group G" : "") + fixture.getNumber() + ": " + escapeForHTML(fixture.getFullName()) + "</div>";
-
-        if (!fixture.isGroup())
-            html += "<div class='describe_scene_dmx' style='float: left; margin-top: 2px;'>DMX " + fixture.getDMXAddress() + "</div>";
         html += "</div>";
 
         return html;
     }
+
+    var info = "";
 
     if (!scene.isDefault()) {
         for (var i = 0; i < scene.getActors().length; i++) {
@@ -705,20 +755,27 @@ function describe_scene_content(scene) {
             for (var j = 0; j < actor.channels.length; j++)
                 channel_data.push(actor.channels[j].value);
 
-            info += makeFixtureTitleLine(fixture, channel_data);
+            info += makeFixtureTitleLine(fixture);
             info += makeChannelInfoLine(actor.channels, "describe_scene_channels");
+
+            describe_data[describe_data.length] = { "fixture_id": actor.id, "channel_data": channel_data };
         }
     }
     else {
         var fixtures = getActiveFixtures();
         for (var i = 0; i < fixtures.length; i++) {
             var fixture = fixtures[i];
-            info += makeFixtureTitleLine(fixture, false);
+            info += makeFixtureTitleLine(fixture);
             info += makeChannelInfoLine(fixture.getChannels(), "describe_scene_channels");
+
+            describe_data[describe_data.length] = { "fixture_id": fixture.getId(), "channel_data": null };
         }
     }
 
     $("#describe_scene_fixtures").html(info);
+
+    for (var i=0; i < describe_data.length; i++)
+        update_describe_fixture_icon(describe_data[i].fixture_id);
 
     info = "";
 
@@ -768,21 +825,25 @@ function describe_scene_content(scene) {
     $("#describe_scene_animations").html(info);
 }
 
-function sceneDescribeSelect(event, fixture_id, channel_data) {
+function sceneDescribeSelectAll(event, scene_id, select) {
     stopEventPropagation(event);
 
-    controlFixture2(null, fixture_id, channel_data, false);
-
-    var icon = $(event.srcElement);
-
-    if (getFixtureById( fixture_id ).isActive()) {
-        icon.removeClass("ui-icon-close").addClass("ui-icon-pin-s");
-        icon.attr('title', 'control fixture');
+    for (var i=0; i < describe_data.length; i++) {
+        var fixture = getFixtureById(describe_data[i].fixture_id);
+        if ( !fixture.isActive() )
+            sceneDescribeSelect(null, fixture.getId());
     }
-    else {
-        icon.removeClass("ui-icon-pin-s").addClass("ui-icon-close");
-        icon.attr('title', 'release fixture');
-    }
+}
+
+function sceneDescribeSelect(event, fixture_id) {
+    stopEventPropagation(event);
+
+    for (var i = 0; i < describe_data.length; i++)
+        if (describe_data[i].fixture_id == fixture_id) {
+            controlFixture2(null, fixture_id, describe_data[i].channel_data, false);
+            update_describe_fixture_icon(fixture_id);
+            break;
+        }
 }
 
 // ----------------------------------------------------------------------------

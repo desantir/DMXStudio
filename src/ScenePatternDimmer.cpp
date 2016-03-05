@@ -56,12 +56,16 @@ CString ScenePatternDimmer::getSynopsis(void) {
     const char *pattern_name;
 
     switch ( m_dimmer_pattern ) {
-        case DP_SEQUENCE:		pattern_name = "Sequence";		break;
-        case DP_CYLON:			pattern_name = "Cylon";			break;
-        case DP_PAIRS:			pattern_name = "Pairs";			break;
-        case DP_TOCENTER:		pattern_name = "Center";		break;
-        case DP_ALTERNATE:		pattern_name = "Alternate";		break;
-        case DP_ALL:			pattern_name = "All";			break;
+        case DP_SEQUENCE:		pattern_name = "Sequence";		    break;
+        case DP_CYLON:			pattern_name = "Cylon";			    break;
+        case DP_PAIRS:			pattern_name = "Pairs";			    break;
+        case DP_TOCENTER:		pattern_name = "Center";		    break;
+        case DP_ALTERNATE:		pattern_name = "Alternate";		    break;
+        case DP_ALL:			pattern_name = "All";			    break;
+        case DP_RANDOM:			pattern_name = "Random";		    break;
+        case DP_RAMP_UP:		pattern_name = "Ramp Up";		    break;
+        case DP_RAMP_UP_DOWN:	pattern_name = "Ramp Up/Down";	    break;
+        case DP_RANDOM_TO_ALL:	pattern_name = "Random Ramp Up";    break;
     }
 
     synopsis.Format( "Pattern( %s )\n%s", pattern_name,
@@ -117,7 +121,7 @@ void ScenePatternDimmer::initAnimation( AnimationTask* task, DWORD time_ms, BYTE
     switch ( m_dimmer_pattern ) {
         case DP_SEQUENCE: {
             int target = 0; // X - - - -> - X - - -> - - X - -> - - - X
-            for ( size_t i=0; i < m_channel_animations.size(); i++ ) {
+            for ( int i=0; i < num_channels; i++ ) {
                 ChannelAnimation& chan_anim = m_channel_animations[i];
                 DimmerValue& dimmer_values = dimmer_values_array[i];
 
@@ -132,7 +136,7 @@ void ScenePatternDimmer::initAnimation( AnimationTask* task, DWORD time_ms, BYTE
         case DP_CYLON: { // X - - -> - X - -> - - X -> - X - -> - - X
             int target = 0;
 
-            for ( size_t i=0; i < m_channel_animations.size(); i++ ) {
+            for ( int i=0; i < num_channels; i++ ) {
                 ChannelAnimation& chan_anim = m_channel_animations[i];
                 DimmerValue& dimmer_values = dimmer_values_array[i];
 
@@ -147,7 +151,7 @@ void ScenePatternDimmer::initAnimation( AnimationTask* task, DWORD time_ms, BYTE
             int target = 0;
 
             for ( int index=0; index < (num_channels+1)/2; index++ ) {
-                for ( size_t i=0; i < m_channel_animations.size(); i++ ) {
+                for ( int i=0; i < num_channels; i++ ) {
                     ChannelAnimation& chan_anim = m_channel_animations[i];
                     DimmerValue& dimmer_values = dimmer_values_array[i];
                     chan_anim.valueList().push_back( dimmer_values.getValue( target == i || target+1 == i ) );
@@ -159,7 +163,7 @@ void ScenePatternDimmer::initAnimation( AnimationTask* task, DWORD time_ms, BYTE
 
         case DP_TOCENTER: { // X - - X -> - X X -
             int target = 0;
-            for ( size_t i=0; i < m_channel_animations.size(); i++ ) {
+            for ( int i=0; i < num_channels; i++ ) {
                 ChannelAnimation& chan_anim = m_channel_animations[i];
                 DimmerValue& dimmer_values = dimmer_values_array[i];
 
@@ -172,7 +176,7 @@ void ScenePatternDimmer::initAnimation( AnimationTask* task, DWORD time_ms, BYTE
 
         case DP_ALTERNATE: { // X - X - -> - X - X 
             int target = 1;
-            for ( size_t i=0; i < m_channel_animations.size(); i++ ) {
+            for ( int i=0; i < num_channels; i++ ) {
                 ChannelAnimation& chan_anim = m_channel_animations[i];
                 DimmerValue& dimmer_values = dimmer_values_array[i];
 
@@ -183,8 +187,8 @@ void ScenePatternDimmer::initAnimation( AnimationTask* task, DWORD time_ms, BYTE
             break;
         }
 
-        case DP_ALL: { // X X X X -> - - - - 
-            for ( size_t i=0; i < m_channel_animations.size(); i++ ) {
+        case DP_ALL: {          // X X X X -> - - - - 
+            for ( int i=0; i < num_channels; i++ ) {
                 ChannelAnimation& chan_anim = m_channel_animations[i];
                 DimmerValue& dimmer_values = dimmer_values_array[i];
 
@@ -193,6 +197,60 @@ void ScenePatternDimmer::initAnimation( AnimationTask* task, DWORD time_ms, BYTE
             }
             break;
         }
+
+        case DP_RANDOM: {       // * * * * -> * * * * -> ...
+            for ( int i=0; i < num_channels; i++ ) {
+                ChannelAnimation& chan_anim = m_channel_animations[i];
+                DimmerValue& dimmer_values = dimmer_values_array[i];
+
+                for ( int i=0; i < 50; i++ )   // Generate 50 states per dimmer
+                    chan_anim.valueList().push_back( dimmer_values.getValue( (rand() % 2) ? true : false ) );
+            }
+            break;
+        }
+
+        case DP_RAMP_UP:        // - - - - -> X - - - -> X X - - -> X X X - -> X X X X
+        case DP_RAMP_UP_DOWN: { // - - - - -> X - - - -> X X - - -> X X X - -> X X X X -> - X X X -> - - X X -> - - - X
+            for ( int i=0; i < num_channels; i++ ) {
+                ChannelAnimation& chan_anim = m_channel_animations[i];
+                DimmerValue& dimmer_values = dimmer_values_array[i];
+
+                for ( int index=-1; index < num_channels; index++ )
+                    chan_anim.valueList().push_back( dimmer_values.getValue( index >= i ) );
+
+                if ( m_dimmer_pattern == DP_RAMP_UP_DOWN ) {
+                    for ( int index=num_channels-1; index >= 0; index-- )
+                        chan_anim.valueList().push_back( dimmer_values.getValue( index >= i ) );
+                }
+            }
+            break;
+        }
+
+        case DP_RANDOM_TO_ALL: {    // * * * * -> * * * * -> * * * * -> X X X X
+            std::vector<size_t> sequence;
+            for ( int i=0; i < num_channels; i++ )
+                sequence.push_back( i );
+
+            for ( int i=0; i < 50; i++ ) {   // Generated states
+                std::vector<size_t> pool = sequence;
+                std::set<size_t> on;
+
+                for ( int j=0; j < num_channels; j++ ) {
+                    size_t index = rand() % pool.size();
+                    on.insert( pool.at( index ) );
+                    pool.erase( pool.begin() + index );
+
+                    for ( int i=0; i < num_channels; i++ ) {
+                        ChannelAnimation& chan_anim = m_channel_animations[i];
+                        DimmerValue& dimmer_values = dimmer_values_array[i];
+
+                        chan_anim.valueList().push_back( dimmer_values.getValue( on.find(i) != on.end() ) );
+                    }
+                }
+            }
+            break;
+        }
+
     }
 
     return SceneChannelAnimator::initAnimation( task, time_ms, dmx_packet );

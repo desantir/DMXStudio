@@ -20,6 +20,8 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+
 #include "DMXStudio.h"
 #include "DMXFixtureIDs.h"
 #include "FixtureDefinition.h"
@@ -79,7 +81,7 @@ void DMXStudio::runStudio()
     try {
         openStudioLogFile();
 
-        log_status( "DMX Studio v0.2.4" );
+        log_status( "DMX Studio v0.2.6" );
 
         readIniFile();
 

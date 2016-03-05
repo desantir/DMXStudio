@@ -170,6 +170,7 @@ bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
                 json.add( "strobe_neg_color", ssa->getStrobeNegColor() );
                 json.add( "strobe_pos_ms", ssa->getStrobePosMS() );
                 json.add( "strobe_neg_ms", ssa->getStrobeNegMS() );
+                json.add( "strobe_flashes", ssa->getStrobeFlashes() );
             }
             else if ( !strcmp( animation->getClassName(), ScenePatternDimmer::className ) ) {
                 ScenePatternDimmer* spd = (ScenePatternDimmer*)animation;
@@ -185,6 +186,7 @@ bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
                 json.add( "strobe_neg_color", scs->getStrobeNegColor() );
                 json.add( "strobe_pos_ms", scs->getStrobePosMS() );
                 json.add( "strobe_neg_ms", scs->getStrobeNegMS() );
+                json.add( "strobe_flashes", scs->getStrobeFlashes() );
                 json.addColorArray<RGBWAArray>( "color_progression", scs->getCustomColors() );
             }
             else if ( !strcmp( animation->getClassName(), ScenePixelAnimator::className ) ) {
@@ -201,10 +203,10 @@ bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
             else if ( !strcmp( animation->getClassName(), SceneChannelFilter::className ) ) {
                 SceneChannelFilter* scf = (SceneChannelFilter*)animation;
                 json.add( "filter", scf->getFilter() );
-                json.add( "channel", scf->getChannel() );
                 json.add( "step", scf->getStep() );
                 json.add( "amplitude", scf->getAmplitude() );
                 json.add( "offset", scf->getOffset() );
+                json.addArray<ChannelList>( "channels", scf->getChannels() );
             }
             else if ( !strcmp( animation->getClassName(), SceneMovementAnimator::className ) ) {
                 SceneMovementAnimator* sma = (SceneMovementAnimator*)animation;
@@ -463,10 +465,12 @@ AbstractAnimation* ScenePatternDimmerParser( SimpleJsonParser parser, AnimationS
 //
 AbstractAnimation* SceneStrobeAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
     RGBWA strobe_neg_color = parser.getHex<RGBWA>( "strobe_neg_color" );
-    unsigned long strobe_pos_ms = parser.get<unsigned long>( "strobe_pos_ms" );
-    unsigned long strobe_neg_ms = parser.get<unsigned long>( "strobe_neg_ms" );
+    unsigned long strobe_pos_ms = parser.get<unsigned>( "strobe_pos_ms" );
+    unsigned long strobe_neg_ms = parser.get<unsigned>( "strobe_neg_ms" );
+    unsigned long strobe_flashes = parser.get<UINT>( "strobe_flashes" );
 
-    return new SceneStrobeAnimator( studio.getVenue()->allocUID(), signal, actors, strobe_neg_color, strobe_pos_ms, strobe_neg_ms );
+    return new SceneStrobeAnimator( studio.getVenue()->allocUID(), signal, actors, strobe_neg_color, strobe_pos_ms, 
+                                    strobe_neg_ms, strobe_flashes );
 }
 
 // ----------------------------------------------------------------------------
@@ -474,13 +478,14 @@ AbstractAnimation* SceneStrobeAnimatorParser( SimpleJsonParser parser, Animation
 AbstractAnimation* SceneColorFaderParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
     FaderEffect fader_effect = (FaderEffect)parser.get<unsigned>( "fader_effect" );
     RGBWA strobe_neg_color = parser.getHex<RGBWA>( "strobe_neg_color" );
-    unsigned long strobe_pos_ms = parser.get<unsigned long>( "strobe_pos_ms" );
-    unsigned long strobe_neg_ms = parser.get<unsigned long>( "strobe_neg_ms" );
+    unsigned long strobe_pos_ms = parser.get<unsigned>( "strobe_pos_ms" );
+    unsigned long strobe_neg_ms = parser.get<unsigned>( "strobe_neg_ms" );
+    unsigned long strobe_flashes = parser.get<UINT>( "strobe_flashes" );
 
     RGBWAArray color_progression = parser.getHex<RGBWAArray>( "color_progression" );
 
     return new SceneColorFader( studio.getVenue()->allocUID(), signal, actors, strobe_neg_color, 
-                                strobe_pos_ms, strobe_neg_ms, color_progression, fader_effect );
+                                strobe_pos_ms, strobe_neg_ms, strobe_flashes, color_progression, fader_effect );
 }
 
 // ----------------------------------------------------------------------------
@@ -546,12 +551,12 @@ AbstractAnimation* SceneChannelAnimatorParser( SimpleJsonParser parser, Animatio
 //
 AbstractAnimation* SceneChannelFilterParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
     ChannelFilter filter = (ChannelFilter)parser.get<unsigned>( "filter" );
-    BYTE channel = parser.get<BYTE>( "channel" );
     unsigned step = parser.get<unsigned>( "step" );
     unsigned amplitude= parser.get<unsigned>( "amplitude" );
     int offset= parser.get<int>( "offset" );
+    ChannelList channels = parser.get<ChannelList>( "channels" );
 
-    return new SceneChannelFilter( studio.getVenue()->allocUID(), signal, actors, filter, channel, step, amplitude, offset );
+    return new SceneChannelFilter( studio.getVenue()->allocUID(), signal, actors, filter, channels, step, amplitude, offset );
 }
 
 // ----------------------------------------------------------------------------

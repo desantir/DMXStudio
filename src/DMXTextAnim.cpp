@@ -591,13 +591,13 @@ protected:
 //
 class FilterAnimationForm : public SignalForm
 {
-    Venue*              m_venue;
-    ActorSelectField    m_actor_select;
-    NumberedListField	m_filter_field;
-    FixtureChannelField m_channel_field;
-    IntegerField        m_step_field;
-    IntegerField        m_amplitude_field;
-    IntegerField        m_offset_field;
+    Venue*                  m_venue;
+    ActorSelectField        m_actor_select;
+    NumberedListField	    m_filter_field;
+    FixtureChannelsField    m_channel_field;
+    IntegerField            m_step_field;
+    IntegerField            m_amplitude_field;
+    IntegerField            m_offset_field;
 
 public:
     FilterAnimationForm( TextIO* text_io, Venue* venue, Scene* scene, SceneChannelFilter* anim ) :
@@ -605,7 +605,7 @@ public:
         m_filter_field( "Channel Filter" ),
         SignalForm( text_io, anim->signal() ),
         m_actor_select( "Fixtures (comma separated)", venue, scene, anim->getActors() ),
-        m_channel_field( "Channel", NULL, anim->getChannel() ),
+        m_channel_field( "Channels (comma separated)", NULL, anim->getChannels() ),
         m_step_field( "Step", anim->getStep(), 1, 255 ),
         m_amplitude_field( "Amplitude", anim->getAmplitude(), 1, 255 ),
         m_offset_field( "Offset", anim->getOffset(), 0, 360 )
@@ -631,7 +631,7 @@ public:
 
         anim->setFilter( (ChannelFilter)m_filter_field.getListValue() );
         anim->setActors( m_actor_select.getActorUIDs() );
-        anim->setChannel( m_channel_field.getChannel() );
+        anim->setChannels( m_channel_field.getChannels() );
         anim->setStep( m_step_field.getIntValue() );
         anim->setAmplitude( m_amplitude_field.getIntValue() );
         anim->setOffset( m_offset_field.getIntValue() );
@@ -658,13 +658,21 @@ protected:
             case CF_SINE_WAVE:   			       // Sine wave (amplitude, angle step)
                 m_step_field.setHidden( false );
                 m_amplitude_field.setHidden( false );
+                m_amplitude_field.setLabel( "Amplitude" );
                 m_offset_field.setHidden( false );
                 break;
 
-            case CF_RAMP_UP:                       // Ramp up/down (step)
-            case CF_RAMP_DOWN:
+            case CF_RAMP_UP:                       // Ramp up (step)
                 m_step_field.setHidden( false );
-                m_amplitude_field.setHidden( true );
+                m_amplitude_field.setHidden( false );
+                m_amplitude_field.setLabel( "Maximum" );
+                m_offset_field.setHidden( false );
+                break;
+
+            case CF_RAMP_DOWN:                      // Ramp down (step)
+                m_step_field.setHidden( false );
+                m_amplitude_field.setHidden( false );
+                m_amplitude_field.setLabel( "Minimum" );
                 m_offset_field.setHidden( false );
                 break;
         
@@ -677,6 +685,7 @@ protected:
             case CF_RANDOM:                       // Random (amplitude)
                 m_step_field.setHidden( true );
                 m_amplitude_field.setHidden( false );
+                m_amplitude_field.setLabel( "Amplitude" );
                 m_offset_field.setHidden( false );
                 break;
         }
@@ -842,6 +851,10 @@ bool DMXTextUI::animPatternDimmerEditor( Scene* scene, UID anim_uid )
     fade_what_field.addKeyValue( 4, "To Center" );
     fade_what_field.addKeyValue( 5, "Alternate" );
     fade_what_field.addKeyValue( 6, "On/Off" );
+    fade_what_field.addKeyValue( 7, "Random" );
+    fade_what_field.addKeyValue( 8, "Ramp Up" );
+    fade_what_field.addKeyValue( 9, "Ramp Up/Down" );
+    fade_what_field.addKeyValue( 10, "Random Ramp Up" );
     fade_what_field.setDefaultListValue( anim->getDimmerPattern() );
     ActorSelectField actor_select( "Fixtures (comma separated)",  getVenue(), scene, anim->getActors() );
 
@@ -870,7 +883,7 @@ bool DMXTextUI::animColorFaderEditor( Scene* scene, UID anim_uid )
     SceneColorFader* anim;
 
     if ( anim_uid == 0 )
-        anim = new SceneColorFader( 0, AnimationSignal(), UIDArray(), RGBWA::BLACK, 200, 100, RGBWAArray(), FaderEffect::FADER_EFFECT_ALL );
+        anim = new SceneColorFader( 0, AnimationSignal(), UIDArray(), RGBWA::BLACK, 200, 100, 1, RGBWAArray(), FaderEffect::FADER_EFFECT_ALL );
     else
         anim = reinterpret_cast<SceneColorFader*>( scene->getAnimation( anim_uid ) );
 
@@ -921,19 +934,21 @@ bool DMXTextUI::animStrobeEditor( Scene* scene, UID anim_uid )
     SceneColorFader* anim;
 
     if ( anim_uid == 0 )
-        anim = new SceneStrobeAnimator( 0, AnimationSignal(), UIDArray(), RGBWA::BLACK, 200, 100 );
+        anim = new SceneStrobeAnimator( 0, AnimationSignal(), UIDArray(), RGBWA::BLACK, 200, 100, 1 );
     else
         anim = reinterpret_cast<SceneStrobeAnimator*>( scene->getAnimation( anim_uid ) );
 
     ColorSelectField strobe_neg_color_field( "Negative strobe color", anim->getStrobeNegColor() );
     IntegerField strobe_pos_ms_field( "Strobe on (ms)", anim->getStrobePosMS(),0, 32000 );
     IntegerField strobe_neg_ms_field( "Strobe off (ms)", anim->getStrobeNegMS(),0, 32000 );
+    IntegerField strobe_flashes_field( "Strobe flashes", anim->getStrobeFlashes(), 1, 50 );
     ActorSelectField actor_select( "Fixtures (comma separated)",  getVenue(), scene, anim->getActors() );
 
     Form form( &m_text_io );
     form.add( strobe_neg_color_field );
     form.add( strobe_pos_ms_field );
     form.add( strobe_neg_ms_field );
+    form.add( strobe_flashes_field );
     form.add( actor_select );
     if ( !form.play() )
         return false;
@@ -941,6 +956,7 @@ bool DMXTextUI::animStrobeEditor( Scene* scene, UID anim_uid )
     anim->setStrobeNegColor( strobe_neg_color_field.getColor() );
     anim->setStrobePosMS( strobe_pos_ms_field.getLongValue() );
     anim->setStrobeNegMS( strobe_neg_ms_field.getLongValue() );
+    anim->setStrobeFlashes(strobe_flashes_field.getIntValue() );
     anim->setActors( actor_select.getActorUIDs() );
 
     if ( anim_uid == 0 ) {
@@ -1073,7 +1089,7 @@ bool DMXTextUI::animFilterEditor( Scene* scene, UID anim_uid ) {
     SceneChannelFilter* anim;
 
     if ( anim_uid == 0 ) 
-        anim = new SceneChannelFilter( 0, AnimationSignal(), UIDArray(), ChannelFilter::CF_SINE_WAVE, 0, 1, 5, 0 );
+        anim = new SceneChannelFilter( 0, AnimationSignal(), UIDArray(), ChannelFilter::CF_SINE_WAVE, ChannelList(), 1, 5, 0 );
     else
         anim = reinterpret_cast<SceneChannelFilter*>( scene->getAnimation( anim_uid ) );
 

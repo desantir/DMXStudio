@@ -183,7 +183,7 @@ DWORD HttpRestServices::processPostRequest( HttpWorkerThread* worker, BYTE* cont
             contentType = contentType.Left( semi );
 
         if ( studio.isDebug() )
-            printf( "url=%s\nContentType=%s\nrequest=%s\n", url_path, (LPCSTR)contentType, contents );
+            studio.log( "url=%s\nContentType=%s\nrequest=%s\n", url_path, (LPCSTR)contentType, contents );
 
         // Only accept JSON and multipart content types
         if ( contentType != "application/json" && contentType != "multipart/form-data" )

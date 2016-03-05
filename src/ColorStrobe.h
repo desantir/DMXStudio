@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-14 Robert DeSantis
+Copyright (C) 2011-16 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -35,6 +35,16 @@ struct StrobeTime {
     {}
 };
 
+struct StrobeState {
+    bool    m_on;
+    UINT    m_time_ms;
+
+    StrobeState( bool on, UINT time_ms ) :
+        m_on( on ),
+        m_time_ms( time_ms )
+    {}
+};
+
 class ColorStrobe
 {
     RGBWA			m_strobe_positive;
@@ -44,6 +54,11 @@ class ColorStrobe
 
     DWORD			m_strobe_next_ms;
     bool			m_strobe_on;
+
+    UINT            m_flashes;
+
+    UINT            m_index;
+    std::vector<StrobeState> m_states;
 
 public:
     ColorStrobe( void ) {}
@@ -56,40 +71,18 @@ public:
     inline void setPositive( const RGBWA& rgbwa ) {
         m_strobe_positive = rgbwa;
     }
+    inline RGBWA getPositive() const {
+        return m_strobe_positive;
+    }
 
     inline void setNegative( const RGBWA& rgbwa ) {
         m_strobe_negative = rgbwa;
     }
-
     inline RGBWA getNegative( ) const {
         return m_strobe_negative;
     }
 
-    void start( DWORD time_ms, UINT light_ms, UINT dark_ms ) {
-        m_timing.m_on_ms = light_ms;
-        m_timing.m_off_ms = dark_ms;
-        m_strobe_on = true;
-        m_strobe_next_ms = time_ms;		
-    }
-
-    void start( DWORD time_ms, const StrobeTime& timing ) {
-        m_timing = timing;
-        m_strobe_on = true;
-        m_strobe_next_ms = time_ms;		
-    }
-
-    // Returns true if strobe state changed
-    bool strobe( DWORD time_ms ) {
-        if ( time_ms <= m_strobe_next_ms )
-            return false;
-
-        m_strobe_on = !m_strobe_on;
-
-        if ( m_strobe_on )
-            m_strobe_next_ms = time_ms + m_timing.m_on_ms;
-        else
-            m_strobe_next_ms = time_ms + m_timing.m_off_ms;
-
-        return true;
-    }
+    void start( DWORD time_ms, UINT light_ms, UINT dark_ms, UINT flashes );
+    void start( DWORD time_ms, const StrobeTime& timing, UINT flashes );
+    bool strobe( DWORD time_ms );
 };

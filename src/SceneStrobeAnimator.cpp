@@ -20,7 +20,6 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "SceneStrobeAnimator.h"
 
 const char* SceneStrobeAnimator::className = "SceneStrobeAnimator";
@@ -33,8 +32,9 @@ SceneStrobeAnimator::SceneStrobeAnimator( UID animation_uid,
                                           UIDArray actors,
                                           RGBWA strobe_neg_color,
                                           unsigned strobe_pos_ms,
-                                          unsigned strobe_neg_ms ) :
-    SceneColorFader( animation_uid, signal, actors, strobe_neg_color, strobe_pos_ms, strobe_neg_ms, RGBWAArray(), FaderEffect::FADER_EFFECT_STROBE )
+                                          unsigned strobe_neg_ms,
+                                          UINT strobe_flashes) :
+    SceneColorFader( animation_uid, signal, actors, strobe_neg_color, strobe_pos_ms, strobe_neg_ms, strobe_flashes, RGBWAArray(), FaderEffect::FADER_EFFECT_STROBE )
 {
 }
 
@@ -48,7 +48,7 @@ SceneStrobeAnimator::~SceneStrobeAnimator(void)
 //
 AbstractAnimation* SceneStrobeAnimator::clone() {
     return new SceneStrobeAnimator( m_uid, m_signal, m_actors, m_strobe_neg_color, 
-                                     m_strobe_pos_ms, m_strobe_neg_ms );
+                                     m_strobe_pos_ms, m_strobe_neg_ms, m_strobe_flashes );
 }
 
 // ----------------------------------------------------------------------------
@@ -56,8 +56,8 @@ AbstractAnimation* SceneStrobeAnimator::clone() {
 CString SceneStrobeAnimator::getSynopsis(void) {
     CString synopsis;
 
-    synopsis.AppendFormat( "Strobe( -color=%s +ms=%u -ms=%u )\n%s", m_strobe_neg_color.getColorName(),
-        m_strobe_pos_ms, m_strobe_neg_ms, 
+    synopsis.AppendFormat( "Strobe( -color=%s +ms=%u -ms=%u flash=%u )\n%s", m_strobe_neg_color.getColorName(),
+        m_strobe_pos_ms, m_strobe_neg_ms, m_strobe_flashes,
         AbstractAnimation::getSynopsis() );
 
     return synopsis;
@@ -68,7 +68,7 @@ CString SceneStrobeAnimator::getSynopsis(void) {
 void SceneStrobeAnimator::initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet ) {
     SceneColorFader::initAnimation( task, time_ms, dmx_packet );
 
-    m_strobe.start( time_ms, m_strobe_pos_ms, m_strobe_neg_ms );
+    m_strobe.start( time_ms, m_strobe_pos_ms, m_strobe_neg_ms, m_strobe_flashes);
 }
 
 // ----------------------------------------------------------------------------

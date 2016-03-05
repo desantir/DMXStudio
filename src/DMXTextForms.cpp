@@ -238,16 +238,37 @@ FixtureGroupSelectField::FixtureGroupSelectField( LPCSTR label, Venue* venue ) :
 
 // ----------------------------------------------------------------------------
 //
-DmxAddressField::DmxAddressField( LPCSTR label, Venue* venue, Fixture* fixture ) :
+DmxUniverseField::DmxUniverseField(  LPCSTR label, Venue* venue, universe_t universe_id ) :
+    NumberedListField( label )
+{
+    UniversePtrArray universes = venue->getUniverses();
+    for ( UniversePtrArray::iterator it=universes.begin(); it != universes.end(); ++it ) {
+        CString label;
+        label.Format( "DMX Universe %d", (*it)->getId() );
+        addKeyValue( (*it)->getId(), label );        
+    }
+
+    setDefaultListValue( universe_id );
+}
+
+// ----------------------------------------------------------------------------
+//
+DmxAddressField::DmxAddressField( LPCSTR label, Venue* venue, Fixture* fixture, universe_t universe ) :
     IntegerField( label, 1, 1, DMX_PACKET_SIZE ),
     m_venue( venue ),
     m_num_channels(1),
     m_uid(0),
-    m_allow_address_overlap(false)
+    m_allow_address_overlap(false),
+    m_universe_id( universe )
 {
+   setFixture( fixture );
+}
+
+void DmxAddressField::setFixture( Fixture *fixture ) {
     if ( fixture != NULL ) {
         m_uid = fixture->getUID();
         m_num_channels = fixture->getNumChannels();
+        m_universe_id = fixture->getUniverseId();
         setInitialValue( fixture->getAddress() );
     }
 }
@@ -264,7 +285,7 @@ bool DmxAddressField::setValue( LPCSTR value )
     channel_t end_address = (channel_t)result+m_num_channels-1;
 
     if ( !m_allow_address_overlap ) {
-        UID current = m_venue->whoIsAddressRange( 1, (channel_t)result, end_address );
+        UID current = m_venue->whoIsAddressRange( m_universe_id, (channel_t)result, end_address );
         if ( current != 0 && current != m_uid )
             throw FieldException( "DMX address %d already in use", result );
         if ( end_address > DMX_PACKET_SIZE )
@@ -333,6 +354,13 @@ void FixtureChannelField::setFixture( Fixture *fixture ) {
         m_channel = 0;
 
     setDefaultListValue( m_channel+1 );
+}
+
+// ----------------------------------------------------------------------------
+//
+void FixtureChannelsField::setFixture( Fixture *fixture ) {
+    for ( channel_t index=0; index < fixture->getNumChannels(); index++ )
+        addKeyValue( index+1, fixture->getChannel(index)->getName() );
 }
 
 // ----------------------------------------------------------------------------

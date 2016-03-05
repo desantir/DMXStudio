@@ -40,7 +40,7 @@ class SceneChannelFilter : public SceneChannelAnimator
 
     // Configuration
     ChannelFilter       m_filter;
-    channel_t           m_channel;
+    ChannelList         m_channels;
     BYTE                m_step;
     BYTE                m_amplitude;
     int                 m_offset;
@@ -51,7 +51,7 @@ public:
 
     SceneChannelFilter() :
         m_filter(CF_SINE_WAVE),
-        m_channel(0),
+        m_channels(0),
         m_step(1),
         m_amplitude(5),
         m_offset(0)
@@ -61,7 +61,7 @@ public:
                         AnimationSignal signal,
                         UIDArray actors,
                         ChannelFilter filter,
-                        channel_t channel,
+                        ChannelList channels,
                         BYTE step,
                         BYTE amplitude,
                         int offset
@@ -89,11 +89,11 @@ public:
         m_filter = filter;
     }
 
-    inline channel_t getChannel() const {
-        return m_channel;
+    inline ChannelList getChannels() const {
+        return m_channels;
     }
-    inline void setChannel( channel_t channel ) {
-        m_channel = channel;
+    inline void setChannels( ChannelList channels ) {
+        m_channels = channels;
     }
 
     inline BYTE getStep() const {
@@ -121,8 +121,8 @@ private:
     ChannelValueArray generateSineWave( int start_value, double start_angle, int amplitude, int step );
     ChannelValueArray generateStepWave( int start_value, int step );
     ChannelValueArray generateRandom( int start, int end );
-    ChannelValueArray generateRampUp( int start_value, int amplitude );
-    ChannelValueArray generateRampDown( int start_value, int step );
+    ChannelValueArray generateRampUp( int start_value, int amplitude, int maximum );
+    ChannelValueArray generateRampDown( int start_value, int step, int minimum );
 
 };
 

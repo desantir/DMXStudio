@@ -45,6 +45,7 @@ class ChannelAnimation;
 struct MusicSceneSelector;
 class ScenePixelAnimator;
 class SceneChannelFilter;
+class Universe;
 
 class IVisitor
 {
@@ -72,6 +73,8 @@ public:
     virtual void visit( ChannelAnimation* channel_animation ) = 0;
 
     virtual void visit( MusicSceneSelector* music_scene_selection ) = 0;
+
+    virtual void visit( Universe* universe ) = 0;
 
 protected:
     virtual ~IVisitor() {}

@@ -37,7 +37,7 @@
                 <name>Movement Speed</name>
             </channel>
             <channel index="6" type="dimmer/strobe" color="false" blackout="true" value="8">
-                <dimmer lowest_intensity="134" highest_intensity="8" />
+                <dimmer lowest_intensity="134" highest_intensity="8" off_intensity="0" />
                 <name>Dimmer/Strobe</name>
                 <ranges>
                     <range start="0" end="7">

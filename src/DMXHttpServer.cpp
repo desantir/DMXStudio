@@ -146,7 +146,7 @@ UINT DMXHttpServer::run()
 
             retCode = HttpAddUrl( hReqQueue, CA2W(listener_url), NULL );
             if ( retCode == ERROR_ACCESS_DENIED ) 
-                throw StudioException( "Access denied - add URL using 'netsh.exe http add urlacl url=%s user=DOMAIN\user'", listener_url );
+                throw StudioException( "Access denied - add URL using 'netsh.exe http add urlacl url=%s user=DOMAIN\\<username>'", listener_url );
             if (retCode != NO_ERROR)
                 throw StudioException( "HttpAddUrl failed with %lu", retCode );
 
@@ -527,14 +527,14 @@ DWORD HttpWorkerThread::sendResponse(
         ADD_KNOWN_HEADER( response, HttpHeaderCacheControl, "no-cache" );
     }
     else {
-        ADD_KNOWN_HEADER( response, HttpHeaderExpires, "Thu, 27 Dec 2012 16:00:00 GMT" );       // TODO - Compute this
+        ADD_KNOWN_HEADER( response, HttpHeaderExpires, "Thu, 27 Dec 2015 16:00:00 GMT" );       // TODO - Compute this
     }
 
     if ( disposition != NULL ) {
         unknown_header.pName = "Content-Disposition";
-        unknown_header.NameLength = strlen(unknown_header.pName);
+        unknown_header.NameLength = (USHORT)strlen(unknown_header.pName);
         unknown_header.pRawValue = disposition;
-        unknown_header.RawValueLength = strlen( unknown_header.pRawValue );
+        unknown_header.RawValueLength = (USHORT)strlen( unknown_header.pRawValue );
         response.Headers.UnknownHeaderCount = 1;
         response.Headers.pUnknownHeaders = &unknown_header;
     }

@@ -31,8 +31,6 @@ MA 02111-1307, USA.
 #include "DObject.h"
 #include "IVisitor.h"
 
-typedef std::vector<channel_t> PhysicalChannels;
-
 typedef ULONG FixtureNumber;					// Fixture numbers will be user friendly numbers 1-n
 
 class Fixture : public DObject
@@ -47,7 +45,7 @@ class Fixture : public DObject
 
     FixtureDefinition*	m_fixture_definition;	// We only need to get this once
 
-    PhysicalChannels	m_channel_map;			// Channel mappings logical -> physical packet address
+    ChannelList	        m_channel_map;			// Channel mappings logical -> physical packet address
 
 public:
     Fixture() :
@@ -81,8 +79,11 @@ public:
         return getNumber();
     }
 
-    universe_t getUniverse( ) const {
-        return m_universe;;
+    void setUniverseId( universe_t universe ) {
+        m_universe = universe;
+    }
+    inline universe_t getUniverseId( ) const {
+        return m_universe;
     }
 
     void setAddress( channel_t channel ) {
@@ -92,7 +93,7 @@ public:
         return m_address;
     }
 
-    bool setPhysicalChannels( PhysicalChannels& channel_map );
+    bool setPhysicalChannels( ChannelList& channel_map );
 
     // Accessors to handle channel re-mapping
     inline channel_t getChannelAddress( channel_t channel ) {				// Return 1-based actual channel address

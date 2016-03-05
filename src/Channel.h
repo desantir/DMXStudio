@@ -74,6 +74,7 @@ class Channel
     bool                    m_is_dimmer;            // Channel supports dimming
     BYTE                    m_lowest_intensity;     // Dimmer value for lowest intensity
     BYTE                    m_highest_intensity;    // Dimmer value for highest intensity
+    BYTE                    m_off_intensity;        // Dimmer value for off (usually same as lowest intensity)
 
     ChannelValueRangeArray	m_ranges;				// Describes channel value ranges
     ChannelAngleMap			m_angles;				// Angles for pan/tilt
@@ -125,6 +126,10 @@ public:
 
     inline BYTE getDimmerHighestIntensity() const {
         return m_highest_intensity;
+    }
+
+    inline BYTE getDimmerOffIntensity() const {
+        return m_off_intensity;
     }
 
     static const char *getTypeName( ChannelType type );

@@ -56,9 +56,9 @@ class ChaseTask : public Threadable
     bool				m_tap_auto;
     bool				m_fading;
 
-    BYTE				m_dmx_fade[ DMX_PACKET_SIZE ];					// DMX fade packet current values
-    long				m_channel_delta_ms[ DMX_PACKET_SIZE ];			// DMX fade packet ms deltas
-    DWORD				m_channel_next_ms[ DMX_PACKET_SIZE ];			// DMX fade packet ms next
+    BYTE				m_dmx_fade[ MULTI_UNIV_PACKET_SIZE ];					// DMX fade packet current values
+    long				m_channel_delta_ms[ MULTI_UNIV_PACKET_SIZE ];			// DMX fade packet ms deltas
+    DWORD				m_channel_next_ms[ MULTI_UNIV_PACKET_SIZE ];			// DMX fade packet ms next
 
     std::vector<DWORD>	m_tap_intervals;								// Recorded tap intervals
 

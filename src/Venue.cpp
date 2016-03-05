@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-14 Robert DeSantis
+Copyright (C) 2011-15 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -32,12 +32,12 @@ MA 02111-1307, USA.
 //
 Venue::Venue(void) :
     m_uid_pool( 1L ),
-    m_universe( NULL ),
     m_chase_task( NULL ),
     m_animation_task( NULL ),
     m_master_dimmer( 100 ),
     m_auto_backout_ms( 0 ),
-    m_light_blackout( false ),
+    m_mute_blackout( false ),
+    m_hard_blackout( false ),
     m_audio( NULL ),
     m_volume( NULL ),
     m_sound_detector( NULL ),
@@ -87,21 +87,28 @@ bool Venue::open(void) {
         m_sound_detector = new SoundDetector( m_auto_backout_ms );
         m_sound_detector->attach( m_audio );
 
-        m_universe = new OpenDMXDriver();
-        m_universe->setPacketDelayMS( m_dmx_packet_delay );
-        m_universe->setMinimumDelayMS( m_dmx_packet_min_delay );
-        DMX_STATUS status = m_universe->start( m_dmx_port );
+        for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it ) {
+            Universe* universe = (*it).second;
 
-        if ( status != DMX_OK ) {
-            if ( studio.isDMXRequired() ) {
-                DMXStudio::log( StudioException( "Cannot start DMX universe [%s] (STATUS %d)", 
-                                                 getDmxPort(), status ) );
-                close();
-                return false;
+            DMX_STATUS status = universe->start();
+
+            if ( status != DMX_OK ) {
+                if ( studio.isDMXRequired() ) {
+                    DMXStudio::log( StudioException( "Cannot start DMX universe %d [%s] (STATUS %d)", 
+                                                     universe->getId(), universe->getDmxPort(), status ) );
+                    close();
+                    return false;
+                }
+                else {
+                    DMXStudio::log_status( "DMX UNIVERSE %d NOT STARTED [%s] (STATUS %d)", universe->getId(), universe->getDmxPort(), status );
+                }
             }
-            else {
-                DMXStudio::log_status( "DMX UNIVERSE NOT STARTED [error on %s]", getDmxPort() );
-            }
+        }
+
+        // Temp universe fix up
+        for ( FixtureMap::iterator it=m_fixtures.begin(); it != m_fixtures.end(); ++it ) {
+            if ( it->second.getUniverseId() < 1 )
+                it->second.setUniverseId(1);
         }
 
         DMXStudio::log_status( "Venue started [%s]", m_name );
@@ -137,13 +144,7 @@ bool Venue::close(void) {
         m_animation_task = NULL;
     }
 
-    DMXStudio::log_status( "Venue stopped [%s]", m_name );
-
-    if ( m_universe ) {
-        m_universe->stop();
-        delete m_universe;
-        m_universe = NULL;
-    }
+    clearAllUniverses();
 
     if ( m_sound_detector ) {
         m_sound_detector->detach();
@@ -161,6 +162,8 @@ bool Venue::close(void) {
         m_audio = NULL;
     }
 
+    DMXStudio::log_status( "Venue stopped [%s]", m_name );
+
     return true;
 }
 
@@ -168,19 +171,22 @@ bool Venue::close(void) {
 //
 void Venue::setWhiteout( WhiteoutMode whiteout ) {
     if ( whiteout == WHITEOUT_STROBE_SLOW )
-        m_whiteout_strobe.start( GetCurrentTime(), studio.getWhiteoutStrobeSlow() );
+        m_whiteout_strobe.start( GetCurrentTime(), studio.getWhiteoutStrobeSlow(), 1 );
     else if ( whiteout == WHITEOUT_STROBE_FAST )
-        m_whiteout_strobe.start( GetCurrentTime(), studio.getWhiteoutStrobeFast() );
+        m_whiteout_strobe.start( GetCurrentTime(), studio.getWhiteoutStrobeFast(), 1 );
     else if ( whiteout == WHITEOUT_STROBE_MANUAL )
-        m_whiteout_strobe.start( GetCurrentTime(), m_whiteout_strobe_ms, m_whiteout_strobe_ms/2 );
+        m_whiteout_strobe.start( GetCurrentTime(), m_whiteout_strobe_ms, m_whiteout_strobe_ms/2, 1 );
 
     m_whiteout = whiteout;
 }
 
 // ----------------------------------------------------------------------------
 //
-UID Venue::whoIsAddressRange( universe_t universe, channel_t start_address, channel_t end_address ) {
+UID Venue::whoIsAddressRange( universe_t universe_id, channel_t start_address, channel_t end_address ) {
     for ( FixtureMap::iterator it=m_fixtures.begin(); it != m_fixtures.end(); ++it ) {
+        if ( it->second.getUniverseId() != universe_id )
+            continue;
+
         channel_t fixture_start = it->second.getAddress();
         channel_t fixture_end = fixture_start + it->second.getNumChannels() - 1;
 
@@ -193,11 +199,11 @@ UID Venue::whoIsAddressRange( universe_t universe, channel_t start_address, chan
 
 // ----------------------------------------------------------------------------
 //
-channel_t Venue::findFreeAddressRange( UINT num_channels ) 
+channel_t Venue::findFreeAddressRange( universe_t universe_id, UINT num_channels ) 
 {
     // This is brute force ..
     for ( channel_t base=1; base <= DMX_PACKET_SIZE; ) {
-        UID uid = whoIsAddressRange( 1, base, base+num_channels-1 );
+        UID uid = whoIsAddressRange( universe_id, base, base+num_channels-1 );
         if ( !uid )
             return base;
         base += getFixture( uid )->getNumChannels();
@@ -894,7 +900,7 @@ void Venue::whiteoutChannels( LPBYTE dmx_packet ) {
 
 // ----------------------------------------------------------------------------
 //
-void Venue::loadSceneChannels( BYTE *dmx_packet, Scene* scene ) {
+void Venue::loadSceneChannels( BYTE *dmx_multi_universe_packet, Scene* scene ) {
     STUDIO_ASSERT( scene != NULL, "Invalid scene (NULL)" );
 
     ActorPtrArray actors = scene->getActors();
@@ -904,7 +910,7 @@ void Venue::loadSceneChannels( BYTE *dmx_packet, Scene* scene ) {
         for ( Fixture* pf : resolveActorFixtures( actor ) ) {
             for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
                 BYTE value = actor->getChannelValue( channel );
-                loadChannel( dmx_packet, pf, channel, value );
+                loadChannel( dmx_multi_universe_packet, pf, channel, value );
             }                
         }
     }
@@ -913,20 +919,26 @@ void Venue::loadSceneChannels( BYTE *dmx_packet, Scene* scene ) {
 // ----------------------------------------------------------------------------
 // Single point to load a DMX channel - applies dimmer and soft backout effects
 //
-void Venue::loadChannel( BYTE* dmx_packet, Fixture* pf, channel_t channel, BYTE value ) {
-    dmx_packet[ pf->getChannelAddress( channel ) - 1 ] = adjustChannelValue( pf, channel, value );
+void Venue::loadChannel( BYTE* dmx_multi_universe_packet, Fixture* pf, channel_t channel, BYTE value ) {
+    channel_t real_address = 
+        (pf->getUniverseId() * DMX_PACKET_SIZE) + pf->getChannelAddress( channel ) - 1;
+
+    dmx_multi_universe_packet[ real_address ] = adjustChannelValue( pf, channel, value );
 }
 
 // ----------------------------------------------------------------------------
 //
 BYTE Venue::adjustChannelValue( Fixture* pf, channel_t channel, BYTE value )
 {
-    if ( m_light_blackout && pf->getChannel( channel )->canBlackout() )
+    if ( m_mute_blackout && pf->getChannel( channel )->canBlackout() )
         value = 0;
     else if ( m_master_dimmer < 100 && pf->getChannel( channel )->isDimmer() ) {
         Channel* chnl = pf->getChannel( channel );
 
-        if ( chnl->getDimmerLowestIntensity() < chnl->getDimmerHighestIntensity() ) {
+        if ( m_master_dimmer == 0 ) {
+            value = chnl->getDimmerOffIntensity();
+        }
+        else if ( (chnl->getDimmerLowestIntensity() < chnl->getDimmerHighestIntensity()) || value == chnl->getDimmerOffIntensity() ) {
             if ( value >= chnl->getDimmerLowestIntensity() && value <= chnl->getDimmerHighestIntensity() ) {
                 value -= chnl->getDimmerLowestIntensity();
                 value = (value * m_master_dimmer)/100;
@@ -934,7 +946,7 @@ BYTE Venue::adjustChannelValue( Fixture* pf, channel_t channel, BYTE value )
             }
         }
         else {
-            if ( value >= chnl->getDimmerHighestIntensity() && value <= chnl->getDimmerLowestIntensity() ) {
+            if ( (value >= chnl->getDimmerHighestIntensity() && value <= chnl->getDimmerLowestIntensity()) || value == chnl->getDimmerOffIntensity()  ) {
                 unsigned max = chnl->getDimmerLowestIntensity()-chnl->getDimmerHighestIntensity();
                 value -= chnl->getDimmerHighestIntensity();
                 value = max - (((max-value) * m_master_dimmer)/100);
@@ -962,7 +974,9 @@ void Venue::captureAndSetChannelValue( SceneActor& target_actor, channel_t chann
 
             if ( pf->getNumChannels() > channel ) {
                 value = adjustChannelValue( pf, channel, value );
-                getUniverse()->write( pf->getChannelAddress( channel ), value, true );
+                Universe* universe = getUniverse( pf->getUniverseId() );
+                STUDIO_ASSERT( universe != NULL, "Fixture %lu belongs to unknown universe %d", (*it2), pf->getUniverseId() );
+                universe->write( pf->getChannelAddress( channel ), value );
             }
         }
     }
@@ -974,30 +988,38 @@ void Venue::captureAndSetChannelValue( SceneActor& target_actor, channel_t chann
         actor->setChannelValue( channel, value );
 
         value = adjustChannelValue( pf, channel, value );
-        getUniverse()->write( pf->getChannelAddress( channel ), value, true );
+        Universe* universe = getUniverse( pf->getUniverseId() );
+        STUDIO_ASSERT( universe != NULL, "Fixture %lu belongs to unknown universe %d", pf->getUID(), pf->getUniverseId() );
+        universe->write( pf->getChannelAddress( channel ), value );
     }
 }
 
 // ----------------------------------------------------------------------------
 //
-void Venue::writePacket( const BYTE* dmx_packet ) {
-    BYTE packet[ DMX_PACKET_SIZE ];
-    memcpy( packet, dmx_packet, DMX_PACKET_SIZE );
+void Venue::writePacket( const BYTE* dmx_multi_universe_packet ) {
+    BYTE multi_universe_packet[ MULTI_UNIV_PACKET_SIZE ];
+    memcpy( multi_universe_packet, dmx_multi_universe_packet, MULTI_UNIV_PACKET_SIZE );
 
     // Overwrite any manually controlled fixtures
-    loadSceneChannels( packet, getDefaultScene() );
+    loadSceneChannels( multi_universe_packet, getDefaultScene() );
 
     // Handle whiteout effect (all venue fixtures)
     if ( getWhiteout() != WHITEOUT_OFF )               
-        whiteoutChannels( packet );
+        whiteoutChannels( multi_universe_packet );
 
-    getUniverse()->write_all( packet);
+    for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it ) {
+        Universe* universe = (*it).second;
+        universe->write_all( &multi_universe_packet[DMX_PACKET_SIZE * universe->getId()] );
+    }
 }
 
 // ----------------------------------------------------------------------------
 //
-void Venue::readPacket( BYTE* dmx_packet ) {
-    getUniverse()->read_all( dmx_packet );
+void Venue::readPacket( BYTE* dmx_multi_universe_packet ) {
+    for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it ) {
+        Universe* universe = (*it).second;
+        universe->read_all( &dmx_multi_universe_packet[DMX_PACKET_SIZE * universe->getId()] );
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -1190,4 +1212,59 @@ void Venue::populateSceneRatingsMap( SceneRatingsMap& ratings_map ) {
         BPMRating rating = it->second.getBPMRating();
         ratings_map[rating].push_back( it->first );
     }
+}
+
+// ----------------------------------------------------------------------------
+//
+bool Venue::isRunning() { 
+    for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it )
+        if ( (*it).second->isRunning() )
+            return true;
+    return false;
+}
+
+// ----------------------------------------------------------------------------
+//
+void Venue::clearAllUniverses() {
+    CSingleLock lock( &m_venue_mutex, TRUE );
+
+    for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it ) {
+        (*it).second->stop();
+        delete (*it).second;
+    }
+
+    m_universes.clear();
+}
+
+// ----------------------------------------------------------------------------
+//
+void Venue::addUniverse( Universe* universe ) {
+    CSingleLock lock( &m_venue_mutex, TRUE );
+
+    STUDIO_ASSERT( universe->getId() > 0, "Attempt to add invalid universe ID 0" );
+    STUDIO_ASSERT( m_universes.find(universe->getId()) == m_universes.end(), "Universe %d already defined", universe->getId() );
+
+    m_universes[universe->getId()] = universe;
+}
+
+// ----------------------------------------------------------------------------
+//
+Universe* Venue::getUniverse( size_t universe_num ) {
+    UniverseMap::iterator it = m_universes.find(universe_num);
+    STUDIO_ASSERT( it != m_universes.end(), "Invalid universe number %d", universe_num );
+    return (*it).second;
+}
+
+// ----------------------------------------------------------------------------
+//
+UniversePtrArray Venue::getUniverses() {
+    CSingleLock lock( &m_venue_mutex, TRUE );
+
+    UniversePtrArray list;
+    UniverseMap::iterator it;
+
+    for ( it=m_universes.begin(); it != m_universes.end(); ++it )
+        list.push_back( it->second );
+
+    return list;
 }

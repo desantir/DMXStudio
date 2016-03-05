@@ -90,11 +90,7 @@ void VenueWriter::visit( Venue* venue ) {
 
     // Add DMX universes
     TiXmlElement dmx_universes( "dmx_universes" );
-    TiXmlElement universe( "universe" );
-    add_attribute( universe, "index", "0" );
-    add_text_element( universe, "interface", "usb_dmx" );
-    add_text_element( universe, "comm_port", venue->m_dmx_port );
-    dmx_universes.InsertEndChild( universe );
+    visit_ptr_array<UniversePtrArray>( dmx_universes, venue->getUniverses() );
     venueElement.InsertEndChild( dmx_universes );
 
     // Add dimmer/whiteout
@@ -144,6 +140,21 @@ void VenueWriter::visit( Venue* venue ) {
     venueElement.InsertEndChild( music_scenes );
 
     getParent().InsertEndChild( venueElement );
+}
+
+// ----------------------------------------------------------------------------
+//
+void VenueWriter::visit( Universe* universe ) 
+{
+    TiXmlElement universe_element( "universe" );
+    add_attribute( universe_element, "id", universe->getId() );
+    add_attribute(universe_element, "type", universe->getType() );
+    add_attribute( universe_element, "minimum_delay_ms", universe->getDmxMinimumDelayMS() );
+    add_attribute( universe_element, "packet_delay_ms", universe->getDmxPacketDelayMS() );
+    add_text_element( universe_element, "interface", "usb_dmx" );
+    add_text_element( universe_element, "comm_port", universe->getDmxPort() );
+
+    getParent().InsertEndChild( universe_element );
 }
 
 // ----------------------------------------------------------------------------
@@ -310,6 +321,7 @@ void VenueWriter::visit( SceneStrobeAnimator* animation )
     add_attribute( element, "strobe_neg_color", animation->m_strobe_neg_color );
     add_attribute( element, "strobe_pos_ms", animation->m_strobe_pos_ms );
     add_attribute( element, "strobe_neg_ms", animation->m_strobe_neg_ms );
+    add_attribute( element, "strobe_flashes", animation->m_strobe_flashes );
 
     visit_object<AnimationSignal>( element, animation->m_signal );
 
@@ -368,6 +380,7 @@ void VenueWriter::visit( SceneColorFader* animation )
     add_attribute( element, "strobe_neg_color", animation->m_strobe_neg_color );
     add_attribute( element, "strobe_pos_ms", animation->m_strobe_pos_ms );
     add_attribute( element, "strobe_neg_ms", animation->m_strobe_neg_ms );
+    add_attribute( element, "strobe_flahes", animation->m_strobe_flashes );
 
     visit_object<AnimationSignal>( element, animation->m_signal );
 
@@ -435,10 +448,13 @@ void VenueWriter::visit( SceneChannelFilter* animation )
 
     add_attribute( element, "class", animation->getClassName() );
     add_attribute( element, "filter", animation->getFilter() );
-    add_attribute( element, "channel", animation->getChannel() );
     add_attribute( element, "step", animation->getStep() );
     add_attribute( element, "amplitude", animation->getAmplitude() );
     add_attribute( element, "offset", animation->m_offset );
+
+    TiXmlElement channels( "channels" );
+    write_value_list<ChannelList>( channels, "channel", animation->getChannels() );
+    element.InsertEndChild( channels );
 
     visit_object<AnimationSignal>( element, animation->m_signal );
 

@@ -38,7 +38,8 @@ public:
                         UIDArray actors,
                         RGBWA strobe_neg_color,
                         unsigned strobe_pos_ms,
-                        unsigned strobe_neg_ms );
+                        unsigned strobe_neg_ms,
+                        UINT strobe_flashes );
 
     SceneStrobeAnimator(void) :
         SceneColorFader( )

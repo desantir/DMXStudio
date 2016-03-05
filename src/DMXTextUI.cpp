@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-15 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -141,7 +141,7 @@ void DMXTextUI::run()
                 
         if ( getVenue()->isRunning() ) {
             light_status.AppendFormat( "Dimmer %d%% | ", getVenue()->getMasterDimmer() );
-            if ( getVenue()->getUniverse()->isBlackout() )
+            if ( getVenue()->isBlackout() )
                 light_status.AppendFormat( "Blackout ON | " );
             else if ( getVenue()->getWhiteout() != WHITEOUT_OFF ) {
                 light_status.Append( "Whiteout " );
@@ -324,7 +324,7 @@ void DMXTextUI::masterVolume()
 //
 void DMXTextUI::blackout()
 {
-    getVenue()->getUniverse()->setBlackout( !getVenue()->getUniverse()->isBlackout() );
+    getVenue()->setBlackout( !getVenue()->isBlackout() );
 }
 
 // ----------------------------------------------------------------------------
@@ -462,7 +462,10 @@ void DMXTextUI::writeVenue()
 //
 void DMXTextUI::configVenue()
 {
+    const static char * UNUSED_PORT = "OFF";
+
     SelectionList port_selections;
+    port_selections.push_back( UNUSED_PORT );
     for ( UINT port_num=1; port_num <= 12; port_num++ ) {
         CString port;
         port.Format( "com%d", port_num );
@@ -471,25 +474,67 @@ void DMXTextUI::configVenue()
 
     InputField name_field( "Venue name", getVenue()->getName() );
     InputField desc_field( "Venue description", getVenue()->getDescription()  );
-    SelectionField port_field( "DMX port name", getVenue()->getDmxPort(), port_selections );
-    IntegerField dmx_packet_delay_field( "DMX packet delay MS", getVenue()->getDmxPacketDelayMS() );
-    IntegerField dmx_min_delay_field( "DMX packet minimum delay MS", getVenue()->getDmxMinimumDelayMS() );
     AudioCaptureField audio_capture_field( getVenue()->getAudioCaptureDevice() );
     FloatField audio_scale_field( "Audio boost", getVenue()->getAudioBoost(), "%3.1f" );
     FloatField audio_floor_field( "Audio boost sample floor", getVenue()->getAudioBoostFloor(), "%5.3f" );
     IntegerField audio_sample_size_field( "Audio sample size (multiple of 1024)", getVenue()->getAudioSampleSize(), 1024 );
 
+    SelectionField port_fields[DMX_MAX_UNIVERSES] = {
+        SelectionField( "DMX Universe 1: Port", UNUSED_PORT, port_selections ),
+        SelectionField( "DMX Universe 2: Port", UNUSED_PORT, port_selections ),
+        SelectionField( "DMX Universe 3: Port", UNUSED_PORT, port_selections ),
+        SelectionField( "DMX Universe 4: Port", UNUSED_PORT, port_selections )
+    };
+
+    NumberedListField driver_fields[DMX_MAX_UNIVERSES] = {
+        NumberedListField("DMX Universe 1: Driver" ),
+        NumberedListField("DMX Universe 2: Driver" ),
+        NumberedListField("DMX Universe 3: Driver" ),
+        NumberedListField("DMX Universe 4: Driver" )
+    };
+
+    IntegerField dmx_packet_delay_fields[DMX_MAX_UNIVERSES] = {
+        IntegerField ( "DMX Universe 1: Packet delay MS", DEFAULT_PACKET_DELAY_MS ),
+        IntegerField ( "DMX Universe 2: Packet delay MS", DEFAULT_PACKET_DELAY_MS ),
+        IntegerField ( "DMX Universe 3: Packet delay MS", DEFAULT_PACKET_DELAY_MS ),
+        IntegerField ( "DMX Universe 4: Packet delay MS", DEFAULT_PACKET_DELAY_MS )
+    };
+
+    IntegerField dmx_min_delay_fields[DMX_MAX_UNIVERSES] = {
+        IntegerField( "DMX Universe 1: Packet minimum delay MS", DEFAULT_MINIMUM_DELAY_MS ),
+        IntegerField( "DMX Universe 2: Packet minimum delay MS", DEFAULT_MINIMUM_DELAY_MS ),
+        IntegerField( "DMX Universe 3: Packet minimum delay MS", DEFAULT_MINIMUM_DELAY_MS ),
+        IntegerField( "DMX Universe 4: Packet minimum delay MS", DEFAULT_MINIMUM_DELAY_MS )
+    };
+
     Form form( &m_text_io );
 
     form.add( name_field );
     form.add( desc_field );
-    form.add( port_field );
-    form.add( dmx_packet_delay_field );
-    form.add( dmx_min_delay_field );
     form.add( audio_capture_field );
     form.add( audio_scale_field );
     form.add( audio_floor_field );
     form.add( audio_sample_size_field );
+
+    UniversePtrArray universes = getVenue()->getUniverses();
+    for ( UniversePtrArray::iterator it=universes.begin(); it != universes.end(); ++it ) {
+        Universe* universe = (*it);
+        port_fields[universe->getId()-1].setValue( universe->getDmxPort() );
+        
+        driver_fields[universe->getId()-1].addKeyValue( 1, "OPEN DMX" );
+        driver_fields[universe->getId()-1].addKeyValue( 2, "USB PRO" );
+        driver_fields[universe->getId()-1].setDefaultListValue( universe->getType()+1 );
+
+        dmx_packet_delay_fields[universe->getId()-1].setValue( universe->getDmxPacketDelayMS() );
+        dmx_min_delay_fields[universe->getId()-1].setValue( universe->getDmxMinimumDelayMS() ); 
+    }
+
+    for (  unsigned id=0; id < DMX_MAX_UNIVERSES; ++id ) {
+        form.add( port_fields[id] );
+        form.add( driver_fields[id] );
+        form.add( dmx_packet_delay_fields[id] );
+        form.add( dmx_min_delay_fields[id] );
+    }
 
     if ( !form.play() || !form.isChanged() )
         return;
@@ -498,13 +543,25 @@ void DMXTextUI::configVenue()
 
     getVenue()->setName( name_field.getValue() );
     getVenue()->setDescription( desc_field.getValue() );
-    getVenue()->setDmxPort( port_field.getValue() );
-    getVenue()->setDmxPacketDelayMS( dmx_packet_delay_field.getIntValue() );
-    getVenue()->setDmxMinimumDelayMS( dmx_min_delay_field.getIntValue() );
     getVenue()->setAudioCaptureDevice( audio_capture_field.getValue() );
     getVenue()->setAudioBoost( audio_scale_field.getFloatValue() );
     getVenue()->setAudioBoostFloor( audio_floor_field.getFloatValue() );
     getVenue()->setAudioSampleSize( audio_sample_size_field.getIntValue() );
+
+    getVenue()->clearAllUniverses();
+
+    for ( universe_t univ_num=0; univ_num < DMX_MAX_UNIVERSES; ++univ_num ) {
+        if ( !strcmp( UNUSED_PORT, port_fields[univ_num].getValue() ) )
+            continue;
+
+        getVenue()->addUniverse( 
+            new Universe( 
+                    univ_num+1, 
+                    (UniverseType)(driver_fields[univ_num].getListValue()-1),
+                    port_fields[univ_num].getValue(), 
+                    dmx_packet_delay_fields[univ_num].getIntValue(), 
+                    dmx_min_delay_fields[univ_num].getIntValue() ) );
+    }
 
     getVenue()->open();
 }
@@ -1119,7 +1176,6 @@ void DMXTextUI::masterDimmer(void) {
 
     if ( form.isChanged() ) {
         getVenue()->setMasterDimmer( (BYTE)master_dimmer_field.getIntValue() );
-        getVenue()->loadScene();
     }
 }
 
@@ -1137,7 +1193,7 @@ void DMXTextUI::describeFixture(void) {
     SceneActor actor = fixture_field.getActor( );
     if ( !actor.isGroup() ) { 
         Fixture* pf = getVenue()->getFixture( actor.getActorUID() );
-        m_text_io.printf( "%2d: %s @ %d\n", pf->getFixtureNumber(), pf->getFullName(), pf->getAddress() );
+        m_text_io.printf( "%2d: %s @ %d - %d\n", pf->getFixtureNumber(), pf->getFullName(), pf->getUniverseId(), pf->getAddress() );
 
         for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
             Channel* cp = pf->getChannel( channel );
@@ -1596,32 +1652,73 @@ void DMXTextUI::deleteFixture(void) {
 // ----------------------------------------------------------------------------
 //
 void DMXTextUI::updateFixture(void) {
-    ActorSelectField fixture_select_field( "Fixture to update", getVenue(), false );
-    fixture_select_field.allowMultiple( false );
+    class MyForm : public Form
+    {
+    public:
+        ActorSelectField fixture_select_field;
+        InputField name_field;
+        InputField description_field;
+        BooleanField address_overlap_field;
+        DmxAddressField dmx_address_field;
+        DmxUniverseField dmx_universe;
+        Venue* m_venue;
+        Fixture* m_fixture;
 
-    Form form( &m_text_io );
-    form.add( fixture_select_field );
+        void fieldLeaveNotify( size_t field_num ) {
+           if ( getField<Field>( field_num ) == &fixture_select_field ) {
+                m_fixture = m_venue->getFixture( fixture_select_field.getActorUID() );
 
+                dmx_address_field.setFixture( m_fixture );
+                dmx_universe.setUniverse( m_fixture->getUniverseId() );
+
+                name_field.setValue( m_fixture->getName() );
+                description_field.setValue( m_fixture->getDescription() );
+           }
+           else if ( getField<Field>( field_num ) == &dmx_universe ) {
+                if ( dmx_universe.getUniverseId() != m_fixture->getUniverseId() ) {
+                    channel_t base_address = m_venue->findFreeAddressRange( dmx_universe.getUniverseId(), m_fixture->getNumChannels() ); 
+                    if ( base_address == INVALID_CHANNEL )
+                        throw FieldException( "There are no empty address ranges available for %d channels", m_fixture->getNumChannels() );
+
+                    dmx_address_field.setUniverseId( dmx_universe.getUniverseId() );
+                    dmx_address_field.setInitialValue( base_address ); 
+                }
+            }
+            else if ( getField<Field>( field_num ) == &address_overlap_field ) {
+                dmx_address_field.setAllowAddressOverlap( address_overlap_field.isSet() );
+            }
+        }
+
+    public:
+        MyForm( TextIO* input_stream, Venue* venue ) :
+            Form( input_stream, "Create Fixture" ),
+            m_venue(venue),
+            fixture_select_field( "Fixture to update", venue, false ),
+            name_field( "Fixture location", "Somewhere" ),
+            description_field( "Fixture description", "" ),
+            address_overlap_field( "Allow DMX addresses to overlap", false ),  
+            dmx_address_field( "DMX base address", venue, NULL ),
+            dmx_universe( "DMX universe", venue, 0 )
+        {
+            fixture_select_field.allowMultiple( false );
+
+            add( fixture_select_field ),
+            add( name_field );
+            add( description_field );
+            add( dmx_universe );
+            add( address_overlap_field );
+            add( dmx_address_field );
+        }
+    };
+
+    MyForm form( &m_text_io, getVenue() );
     if ( !form.play() )
         return;
 
-    Fixture* pf = getVenue()->getFixture( fixture_select_field.getActorUID() );
-
-    InputField name_field( "Fixture location", pf->getName() );
-    InputField description_field( "Fixture description", pf->getDescription() );
-    DmxAddressField dmx_address_field( "DMX base address", getVenue(), pf );
-
-    form.clear();
-    form.add( name_field );
-    form.add( description_field );
-    form.add( dmx_address_field );
-
-    if ( !form.play() )
-        return;
-
-    pf->setName( name_field.getValue() );
-    pf->setDescription( description_field.getValue() );
-    pf->setAddress( dmx_address_field.getIntValue() );
+    form.m_fixture->setName( form.name_field.getValue() );
+    form.m_fixture->setDescription( form.description_field.getValue() );
+    form.m_fixture->setAddress( form.dmx_address_field.getIntValue() );
+    form.m_fixture->setUniverseId( form.dmx_universe.getUniverseId() );
 }
 
 // ----------------------------------------------------------------------------
@@ -1639,25 +1736,29 @@ void DMXTextUI::createFixture(void)
         InputField description_field;
         BooleanField address_overlap_field;
         DmxAddressField dmx_address_field;
+        DmxUniverseField dmx_universe;
         Venue*	m_venue;
 
         void fieldLeaveNotify( size_t field_num ) {
-            if ( field_num == 0 ) {
+            if ( getField<Field>( field_num ) == &manufacturer_field ) {
                 model_field.setManufacturer( manufacturer_field.getKeyValue() );
             }
-            else if ( field_num == 1 ) {
+            else if ( getField<Field>( field_num ) == &model_field  ) {
                 personality_field.setManuAndModel( manufacturer_field.getKeyValue(), model_field.getKeyValue() );
             }
-            else if ( field_num == 2 ) {
+            else if ( getField<Field>( field_num ) == &dmx_universe ) {
                 FixtureDefinition* fixdef = 
                     &FixtureDefinition::FixtureDefinitions[personality_field.getFUID()];
-                dmx_address_field.setNumChannels( fixdef->getNumChannels() );
-                channel_t base_address = m_venue->findFreeAddressRange( fixdef->getNumChannels() );
+
+                channel_t base_address = m_venue->findFreeAddressRange( dmx_universe.getUniverseId(), fixdef->getNumChannels() ); 
                 if ( base_address == INVALID_CHANNEL )
                     throw FieldException( "There are no empty address ranges available for %d channels", fixdef->getNumChannels() );
+
+                dmx_address_field.setNumChannels( fixdef->getNumChannels() );
+                dmx_address_field.setUniverseId( dmx_universe.getUniverseId() );
                 dmx_address_field.setInitialValue( base_address ); 
             }
-            else if ( field_num == 6 ) {
+            else if ( getField<Field>( field_num ) == &address_overlap_field ) {
                 dmx_address_field.setAllowAddressOverlap( address_overlap_field.isSet() );
             }
         }
@@ -1673,16 +1774,18 @@ void DMXTextUI::createFixture(void)
             name_field( "Fixture location", "Somewhere" ),
             description_field( "Fixture description", "" ),
             address_overlap_field( "Allow DMX addresses to overlap", false ),  
-            dmx_address_field( "DMX base address", venue, NULL )
+            dmx_address_field( "DMX base address", venue, NULL ),
+            dmx_universe( "DMX universe", venue, 0 )
         {
             add( manufacturer_field );
             add( model_field );
             add( personality_field ); 
+            add( dmx_universe );
+            add( address_overlap_field );
+            add( dmx_address_field );
             add( fixture_number_field );
             add( name_field );
             add( description_field );
-            add( address_overlap_field );
-            add( dmx_address_field );
         }
     };
 
@@ -1692,7 +1795,7 @@ void DMXTextUI::createFixture(void)
 
     Fixture fixture( getVenue()->allocUID(),
                      form.fixture_number_field.getFixtureNumber(), 
-                     1,  
+                     form.dmx_universe.getUniverseId(),  
                      form.dmx_address_field.getIntValue(),
                      form.personality_field.getFUID(),
                      form.name_field.getValue(), 

@@ -1,7 +1,7 @@
 <!DOCTYPE html> 
 
 <!--
-Copyright (C) 2011-14 Robert DeSantis
+Copyright (C) 2011-15 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -44,6 +44,7 @@ MA 02111-1307, USA.
     <script src="slider-panel.js"></script>
     <script src="tile-scroll-panel.js"></script>
     <script src="full.js"></script>
+    <script src="venue.js"></script>
     <script src="music-player.js"></script>
     <script src="fixture.js"></script>
     <script src="chase.js"></script>
@@ -94,10 +95,10 @@ MA 02111-1307, USA.
         <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
             <p class="ui-state-default ui-corner-all subsection_title" style="margin: 0px 0px 4px 0px; padding: 4px;">Current Animation Speed</p>
             <select id="animations_speed" style="width:80px;">
-                <option value="0" selected>Default</option>
-                <option value="100">25 ms</option>
-                <option value="100">50 ms</option>
-                <option value="100">75 ms</option>
+                <option value="0" selected>no animations</option>
+                <option value="25">25 ms</option>
+                <option value="50">50 ms</option>
+                <option value="75">75 ms</option>
                 <option value="100">100 ms</option>
                 <option value="150">150 ms</option>
                 <option value="200">200 ms</option>
@@ -368,7 +369,7 @@ MA 02111-1307, USA.
 </div>
 
 <div id="describe_scene_dialog" style="display:none;margin-bottom: 14px;">
-    <div id="describe_scene_number" class="describe_number"></div>
+    <div id="describe_scene_number" class="describe_number" style="cursor: pointer;"></div>
     <div style="float:left; margin-top: 4px;" >
         <div class="describe_title">name:</div>
         <div class="describe_data" id="describe_scene_name"></div>
@@ -421,48 +422,62 @@ MA 02111-1307, USA.
             </div>
 
             <h3>DMX</h3>
+
             <div>
-                <div style="float:left;">
-                    <label for="cvd_dmx_port" style="display:block; margin-bottom:8px;">port</label>
-                    <select id="cvd_dmx_port" style="display:block;"></select>
+                <div style="clear:both; float:left; margin-bottom: 6px;">
+                    <div class="describe_data" style="float:left; width: 40px;">&nbsp;</div>
+                    <div class="describe_data" style="float:left; width: 130px;">port</div>
+                    <div class="describe_data" style="float:left; width: 200px;">type</div>
+                    <div class="describe_data" style="float:left; width: 120px;">delay (ms)</div>
+                    <div class="describe_data" style="float:left; width: 130px;">min delay (ms)</div>
                 </div>
-
-                <div style="float:left; clear: both; margin:46px 20px 0px 0px;">
-                    <span >packet:</span>
-                </div>
-
-                <div style="float:left; margin:20px 18px 0px 0px;">
-                    <label for="cvd_dmx_packet_delay_ms" style="display:block;">delay</label>
-                    <input id="cvd_dmx_packet_delay_ms" style="display:block; width:80px;" title="delay between packets"/>&nbsp;ms
-                </div>
-
-                <div style="float:left; margin:20px 10px 0px 0px;">
-                    <label for="cvd_dmx_minimum_delay_ms" style="display:block;">minimum</label>
-                    <input id="cvd_dmx_minimum_delay_ms" style="display:block; width:80px;" title="minimum delay between packets"/>&nbsp;ms
-                </div>
+                <div id="cvd_universes"></div>
             </div>
 
-            <h3>AUDIO</h3>
+            <h3>Audio</h3>
             <div>
-                <label for="cvd_audio_capture_device" style="display:block; margin-bottom:8px;">capture device</label>
-                <select id="cvd_audio_capture_device" style="display:block;"></select>
-
-                <div style="float:left; margin-right:10px;">
-                    <label for="cvd_audio_boost" style="display:block; margin: 12px 0px 4px 0px;">boost</label>
-                    <input id="cvd_audio_boost" style="display:block; width:80px;" title="scales audio signal"/>
+                    <div style="clear:both; float:left; margin-right:10px;">
+                        <label for="cvd_audio_capture_device" style="display:block; margin-bottom:8px;">capture device</label>
+                        <select id="cvd_audio_capture_device" style="display:block;"></select>
+                    </div>
+                    <div style="clear:both; float:left; margin-right:10px;">
+                        <label for="cvd_audio_boost" style="display:block; margin: 12px 0px 4px 0px;">boost</label>
+                        <input id="cvd_audio_boost" style="display:block; width:80px;" title="scales audio signal" />
+                    </div>
+                    <div style="float:left; margin-right:10px;">
+                        <label for="cvd_audio_boost_floor" style="display:block; margin: 12px 0px 4px 0px;">boost floor</label>
+                        <input id="cvd_audio_boost_floor" style="display:block; width:80px;" title="audio below this is discarded as noise" />
+                    </div>
+                    <div style="clear:both; float:left; margin-right:10px;">
+                        <label for="cvd_audio_sample_size" style="display:block; margin: 12px 0px 8px 0px;">sample size</label>
+                        <select id="cvd_audio_sample_size" style="display:block;" title="higher sample rate increase accuracy"></select>
+                    </div>
                 </div>
-                <div style="float:left; margin-right:10px;">
-                    <label for="cvd_audio_boost_floor" style="display:block; margin: 12px 0px 4px 0px;">boost floor</label>
-                    <input id="cvd_audio_boost_floor" style="display:block; width:80px;" title="audio below this is discarded as noise"/>
-                </div>
-                <div style="clear:both; float:left; margin-right:10px;">
-                    <label for="cvd_audio_sample_size" style="display:block; margin: 12px 0px 8px 0px;">sample size</label>
-                    <select id="cvd_audio_sample_size" style="display:block;" title="higher sample rate increase accuracy"></select>
-                </div>
-            </div>
         </div>
         <span class="dialog_note_text">venue will be restarted on update</span>
     </form>
+</div>
+
+<div id="cvd_universe_template" style="display:none;">
+    <div style="clear:both; float:left; margin-bottom: 8px;" id="dmx_universe_NNN">
+        <div id="cvd_universe_title_NNN" class="describe_data" style="float:left; margin: 3px 0px 0px 0px; width:40px;"></div>
+
+        <div style="float:left; width:130px;">
+            <select id="cvd_dmx_port_NNN" style="display:block;"></select>
+        </div>
+
+        <div style="float:left; width:200px;">
+            <select id="cvd_dmx_type_NNN" style="display:block;"></select>
+        </div>
+
+        <div style="float:left; width:120px;">
+            <input id="cvd_packet_delay_NNN" style="display:block; width:60px;" title="delay between packets"/>
+        </div>
+
+        <div style="float:left; width:120px;">
+            <input id="cvd_minimum_delay_NNN" style="display:block; width:60px;" title="minimum delay between packets"/>
+        </div>
+    </div>
 </div>
 
 <div id="new_scene_dialog" style="display:none;">
@@ -681,17 +696,21 @@ MA 02111-1307, USA.
                 <select id="nfd_personality" style="display:block;" ></select>
             </div>
 
+            <div style="float:left; margin-top:20px; margin-right: 10px;">
+                <label for="nfd_dmx_universe" style="clear: both; display:block; margin: 0px 0px 4px 0px;">universe</label>
+                <input id="nfd_dmx_universe" style="display:block; width: 80px;" />
+            </div>
             <div style="float:left; margin-top:20px;">
-                <label for="nfd_dmx_address" style="clear: both; display:block; margin: 0px 0px 4px 0px;">DMX address</label>
+                <label for="nfd_dmx_address" style="clear: both; display:block; margin: 0px 0px 4px 0px;">address</label>
                 <input id="nfd_dmx_address" style="display:block; width: 80px;" />
             </div>
             <div style="float:left; margin-top:25px;">
-                <span id="nfd_choose_dmx" class="ui-icon ui-icon-calculator" style="float: left; margin: -1px 5px 0 0; cursor:pointer;" 
+                <span id="nfd_choose_dmx" class="ui-icon ui-icon-calculator" style="float: left; margin: -1px 5px 0 -16px; cursor:pointer;" 
                     title="choose dmx address"></span>
             </div>
             <div style="float:left; margin: 45px 0px 0px 20px; ">
                 <input type="checkbox" id="nfd_allow_overlap" checked="checked" value="remove" style="display:block;float:left;margin-top:2px; "/>
-                <label for="nfd_allow_overlap" style="float:left;">allow overlapping addresses</label>
+                <label for="nfd_allow_overlap" style="float:left;">allow address overlap</label>
             </div>
     </form>
 </div>
@@ -842,6 +861,10 @@ MA 02111-1307, USA.
             <div style="float:left; margin-right: 20px;">
                 <label for="essa_strobe_neg_ms" style="display:block;">strobe off</label>
                 <input id="essa_strobe_neg_ms" style="display:block; width:70px;"/>&nbsp;ms
+            </div>
+            <div style="float:left; margin-right: 20px;">
+                <label for="essa_strobe_flashes" style="display:block;">strobe flashes</label>
+                <input id="essa_strobe_flashes" style="display:block; width:70px;" />&nbsp;ms
             </div>
             <div style="float:left;">
                 <div>negative color</div>
@@ -1344,8 +1367,8 @@ MA 02111-1307, USA.
             </div>
 
             <div style="clear:both;float:left; margin-top: 8px;">
-                <label for="escf_channel" style="clear:both; display:block; margin-bottom: 4px;">channel</label>
-                <select id="escf_channel" style="display:block; margin-bottom:10px;"></select>
+                <label for="escf_channels" style="clear:both; display:block; margin-bottom: 4px;">channels</label>
+                <select id="escf_channels" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
             </div>
 
             <div style="clear:both;float:left; margin-top: 10px;">
@@ -1360,7 +1383,7 @@ MA 02111-1307, USA.
                 </div>
 
                 <div id="escf_amplitude_div" style="float:left; margin-left: 10px;">
-                    <label for="escf_amplitude" style="display:block; margin-bottom: 4px;">amplitude</label>
+                    <label id="escf_amplitude_label" for="escf_amplitude" style="display:block; margin-bottom: 4px;">amplitude</label>
                     <input id="escf_amplitude" style="display:block; width:70px;"/>
                 </div>
 

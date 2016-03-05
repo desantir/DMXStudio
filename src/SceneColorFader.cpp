@@ -35,12 +35,14 @@ SceneColorFader::SceneColorFader( UID animation_uid,
                                         RGBWA strobe_neg_color,
                                         unsigned strobe_pos_ms,
                                         unsigned strobe_neg_ms,
+                                        UINT strobe_flashes,
                                         RGBWAArray custom_colors,
                                         FaderEffect fader_effect ) :
     AbstractAnimation( animation_uid, signal ),
     m_strobe_neg_color( strobe_neg_color ),
     m_strobe_pos_ms( strobe_pos_ms ),
     m_strobe_neg_ms( strobe_neg_ms ),
+    m_strobe_flashes( strobe_flashes ),
     m_signal_processor( NULL ),
     m_custom_colors( custom_colors ),
     m_effect_periods( 0 ),
@@ -67,7 +69,7 @@ SceneColorFader::~SceneColorFader(void)
 //
 AbstractAnimation* SceneColorFader::clone() {
     return new SceneColorFader( m_uid, m_signal, m_actors, m_strobe_neg_color, 
-                                   m_strobe_pos_ms, m_strobe_neg_ms, m_custom_colors, m_fader_effect );
+                                   m_strobe_pos_ms, m_strobe_neg_ms, m_strobe_flashes, m_custom_colors, m_fader_effect );
 }
 
 // ----------------------------------------------------------------------------
@@ -207,7 +209,7 @@ bool SceneColorFader::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
             m_strobe.setPositive( rgbwa );
 
             if ( m_start_strobe ) {
-                m_strobe.start( time_ms, m_strobe_pos_ms * (110-level) / 100, m_strobe_neg_ms );
+                m_strobe.start( time_ms, m_strobe_pos_ms * (110-level) / 100, m_strobe_neg_ms, m_strobe_flashes );
                 m_start_strobe = false;
             }
         }

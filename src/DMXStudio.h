@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-15 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -28,8 +28,11 @@ MA 02111-1307, USA.
 #include "BPMRating.h"
 #include "MusicPlayer.h"
 
-#define DMX_PACKET_SIZE     512
-#define INVALID_CHANNEL     0xFFFF
+#define DMX_MAX_UNIVERSES          4
+#define DMX_PACKET_SIZE            512
+#define MULTI_UNIV_PACKET_SIZE     (DMX_PACKET_SIZE*DMX_MAX_UNIVERSES)
+
+#define INVALID_CHANNEL             0xFFFF
 
 #define SAFE_RELEASE(punk)  \
               if ((punk) != NULL)  \
@@ -44,6 +47,8 @@ typedef DWORD UID;
 typedef std::set<UID> UIDSet;
 typedef std::vector<UID> UIDArray;
 typedef std::vector<LPCSTR> LPCSTRArray;
+
+typedef std::vector<channel_t> ChannelList;
 
 inline UIDSet UIDArrayToSet( UIDArray& uid_array ) {
     UIDSet uid_set;

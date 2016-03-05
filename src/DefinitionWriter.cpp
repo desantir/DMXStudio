@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2015 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -115,6 +115,7 @@ void DefinitionWriter::visit( Channel* channel )
         TiXmlElement dimmer( "dimmer" );
         add_attribute( dimmer, "lowest_intensity", channel->m_lowest_intensity );
         add_attribute( dimmer, "highest_intensity", channel->m_highest_intensity );
+        add_attribute( dimmer, "off_intensity", channel->m_off_intensity );
         channel_element.InsertEndChild( dimmer );
     }
 

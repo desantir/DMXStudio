@@ -66,7 +66,7 @@ public:
     }
 
     unsigned getAvgAmplitude( ) const {
-        return m_ampbuf_sum/m_ampbuf_count;
+        return m_ampbuf_count == 0 ? 0 : m_ampbuf_sum/m_ampbuf_count;
     }
 
     bool isMute() const {

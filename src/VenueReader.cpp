@@ -79,14 +79,12 @@ Venue * VenueReader::read( TiXmlElement* self, Venue* venue ) {
     venue->m_name = read_text_element( self, "name" );
     venue->m_description = read_text_element( self, "description" );
 
-    TiXmlElement *universe_container = self->FirstChildElement( "dmx_universes" );
-    if ( universe_container ) {
-        TiXmlElement *universe = universe_container->FirstChildElement( "universe" );
-        if ( universe ) {
-            venue->m_dmx_port = read_text_element( universe, "comm_port" );
-            venue->m_dmx_packet_delay = read_unsigned_attribute( universe, "packet_maximum_delay", DEFAULT_PACKET_DELAY_MS );
-            venue->m_dmx_packet_min_delay = read_unsigned_attribute( universe, "packet_minimum_delay", DEFAULT_MINIMUM_DELAY_MS );
-        }
+    // Add all universes (up to the max, must be in correct order)
+    std::vector<Universe *> universes = 
+        read_xml_list<Universe>( self->FirstChildElement( "dmx_universes" ), "universe" );
+
+    for ( std::vector<Universe *>::iterator it=universes.begin(); it != universes.end(); ++it ) {
+        venue->addUniverse( (*it) );
     }
 
     TiXmlElement *dimmer = self->FirstChildElement( "dimmer" );
@@ -167,6 +165,21 @@ void VenueReader::readDObject( TiXmlElement* self, DObject* dobject, LPCSTR numb
     dobject->m_number = (SceneNumber)read_word_attribute( self, number_name );
     dobject->m_name = read_text_element( self, "name" );
     dobject->m_description = read_text_element( self, "description" );
+}
+
+// ----------------------------------------------------------------------------
+//
+Universe* VenueReader::read( TiXmlElement* self, Universe* universe )
+{
+    universe = new Universe();
+
+    universe->m_id = (universe_t)read_unsigned_attribute( self, "id", 0 );
+    universe->m_type = (UniverseType)read_unsigned_attribute( self, "type", OPEN_DMX );
+    universe->m_dmx_packet_delay = read_unsigned_attribute( self, "packet_delay_ms", DEFAULT_PACKET_DELAY_MS );
+    universe->m_dmx_packet_min_delay = read_unsigned_attribute( self, "minimum_delay_ms", DEFAULT_MINIMUM_DELAY_MS );
+    universe->m_dmx_port = read_text_element( self, "comm_port" );
+
+    return universe;
 }
 
 // ----------------------------------------------------------------------------
@@ -399,6 +412,7 @@ SceneStrobeAnimator* VenueReader::read( TiXmlElement* self, SceneStrobeAnimator*
     animation->m_strobe_neg_color = read_rgbw_attribute( self, "strobe_neg_color" );
     animation->m_strobe_pos_ms = read_unsigned_attribute( self, "strobe_pos_ms" );
     animation->m_strobe_neg_ms = read_unsigned_attribute( self, "strobe_neg_ms"  );
+    animation->m_strobe_flashes = read_unsigned_attribute( self, "strobe_flashes", 1 );
 
     animation->m_name = read_text_element( self, "name" );
     animation->m_description = read_text_element( self, "description" );
@@ -523,6 +537,7 @@ SceneColorFader* VenueReader::read( TiXmlElement* self, SceneColorFader* animati
     animation->m_strobe_neg_color = read_rgbw_attribute( self, "strobe_neg_color" );
     animation->m_strobe_pos_ms = read_unsigned_attribute( self, "strobe_pos_ms" );
     animation->m_strobe_neg_ms = read_unsigned_attribute( self, "strobe_neg_ms"  );
+    animation->m_strobe_flashes = read_unsigned_attribute(self, "strobe_flashes", 1 );
 
     animation->m_name = read_text_element( self, "name" );
     animation->m_description = read_text_element( self, "description" );
@@ -612,10 +627,16 @@ SceneChannelFilter* VenueReader::read( TiXmlElement* self, SceneChannelFilter* a
     animation->m_name = read_text_element( self, "name" );
     animation->m_description = read_text_element( self, "description" );
     animation->m_filter = (ChannelFilter)read_unsigned_attribute( self, "filter");
-    animation->m_channel = (channel_t)read_unsigned_attribute( self, "channel" );
+    channel_t temp_channel = (channel_t)read_unsigned_attribute( self, "channel" );
     animation->m_step = read_unsigned_attribute( self, "step" );
     animation->m_amplitude = read_unsigned_attribute( self, "amplitude" );
     animation->m_offset = read_int_attribute( self, "offset" );
+
+    TiXmlElement* channels = self->FirstChildElement( "channels" );
+    if ( channels )
+        animation->m_channels = read_value_list<ChannelList, channel_t>( channels, "channel" );
+    else
+        animation->m_channels.push_back( temp_channel );
 
     TiXmlElement* signal_element = self->FirstChildElement( "signal" );
     if ( signal_element ) {

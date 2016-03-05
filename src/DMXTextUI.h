@@ -359,16 +359,16 @@ public:
     bool setValue( LPCSTR value );
 };
 
-
 class DmxAddressField : public IntegerField
 {
     Venue*				m_venue;
     channel_t			m_num_channels;
     UID					m_uid;
     bool                m_allow_address_overlap;
+    universe_t          m_universe_id;
 
 public:
-    DmxAddressField( LPCSTR label, Venue* venue, Fixture* fixture=NULL );
+    DmxAddressField( LPCSTR label, Venue* venue, Fixture* fixture=NULL, universe_t universe_id=0 );
 
     bool setValue( LPCSTR value );
 
@@ -376,8 +376,33 @@ public:
         m_num_channels = num_channels;
     }
 
+    void setUniverseId( universe_t universe_id ) {
+        m_universe_id = universe_id;
+    }
+
     void setAllowAddressOverlap( bool allow) {
         m_allow_address_overlap = allow;
+    }
+
+    void setFixture( Fixture *fixture );
+};
+
+class DmxUniverseField : public NumberedListField
+{
+public:
+    DmxUniverseField( LPCSTR label, Venue* venue, universe_t universe_id=1 );
+
+    void isReady() {
+        if ( m_selections.size() == 0 )
+            throw FieldException( "There are no universes available" );
+    }
+
+    universe_t getUniverseId() const {
+        return (universe_t)(getListValue());
+    }
+
+    void setUniverse( universe_t universe_id ) {
+        setDefaultListValue( universe_id );
     }
 };
 
@@ -430,6 +455,33 @@ public:
     AnimationEditor* getAnimationEditor( ) {
         return &DMXTextUI::animEditors[ getListValue()-1 ]; 
     }
+};
+
+class FixtureChannelsField : public MultiNumberedListField
+{
+public:
+    FixtureChannelsField( LPCSTR label, Fixture* fixture, ChannelList channels ) :
+        MultiNumberedListField( label )
+    {
+        if ( fixture != NULL )
+            setFixture( fixture );
+
+        std::vector<UINT> selected;
+        for ( channel_t channel : channels )
+            selected.push_back( channel+1 );
+        if ( selected.size() == 0 )
+            selected.push_back( 1 );
+        setDefaultListValue( selected );
+    }
+
+    ChannelList getChannels() const {
+        ChannelList list;
+        for ( UINT v : getIntSelections( ) )
+            list.push_back( v-1 );
+        return list;
+    }
+
+    void setFixture( Fixture *fixture );
 };
 
 class FixtureChannelField : public NumberedListField

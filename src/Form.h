@@ -564,7 +564,7 @@ public:
 class KeyListComparator
 {
 public:
-    bool operator() ( const CString& k1, const CString& k2 ) {
+    bool operator() ( const CString& k1, const CString& k2 ) const {
         if ( k1.GetLength() < k2.GetLength() )
             return true;
         if ( k1.GetLength() > k2.GetLength() )
@@ -773,7 +773,6 @@ public:
 
 class MultiNumberedListField : public MultiKeyListField 
 {
-
 public:
     MultiNumberedListField( LPCSTR label ) :
         MultiKeyListField( label )
