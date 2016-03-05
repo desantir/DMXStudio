@@ -2,15 +2,19 @@ DMXStudio DMX Controller
 
 Target environment:
 
-- Windows 7 or Vista (only tested 32 bit on either platform)
+- Windows Vista, 7, 8.1, or 10 (only tested 32 bit on either platform)
 
 Build Environment:
 
-- Microsoft Visual Studio
+- Microsoft Visual Studio 2015
 
-To build and use this you will need the following:
+To use this you will need one or more of the following:
 
-- Build a simple USB-based DMX hardware controller based on the FTDI chip (about $20):
+- Enttac USB PRO comatible USB to DMX adapter (such as DMXking ultraDMX Micro -> http://dmxking.com/usbdmx/ultradmxmicro)
+
+or
+
+- Build your own simple USB-based DMX hardware controller based on the FTDI chip (about $20):
 
 	- FTDI Basic Breakout - 5V   http://www.amazon.com/gp/product/B0068QKQEA/
 	- TI SN75176BP               http://www.mouser.com/ProductDetail/Texas-Instruments/SN75176BP/
@@ -22,8 +26,6 @@ To build and use this you will need the following:
 	- Wire / soider /etc
 
 - The FTDI LIB & DLL from FTDI Corp. http://www.ftdichip.com/Drivers/D2XX.htm
-
-- JQuery mobile version 1.1.0        http://jquerymobile.com/blog/2012/04/13/announcing-jquery-mobile-1-1-0/
 
 - DMX controllable fixture(s) and DMX channel descriptions
 
