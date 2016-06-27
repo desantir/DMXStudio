@@ -84,7 +84,7 @@ protected:
     UINT run(void);
 
 private:
-    void MusicWatcher::mapMusicToScene( LPCSTR track_link, DWORD track_id, MusicSelectorType& type, UID& type_uid, CString& method_of_selection ); 
-    UID MusicWatcher::findSceneByBPM( LPCSTR track_link, DWORD track_id, UINT& bpm );
+    void MusicWatcher::mapMusicToScene( LPCSTR track_link, MusicSelectorType& type, UID& type_uid, CString& method_of_selection ); 
+    UID MusicWatcher::findSceneByBPM( LPCSTR track_link, UINT& bpm );
 };
 

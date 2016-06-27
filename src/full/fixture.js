@@ -388,7 +388,7 @@ function loadFixtureChannels( fixture_id, updated_channel_data, tile_clicked ) {
         channels_to_load.push(channel);
     }
 
-    slider_panel.allocateChannels(fixture_id, fixture.getFullName(), channels_to_load, fixture_slider_callback);
+    slider_panel.allocateChannels(fixture_id, fixture.getFullName(), channels_to_load, fixture_slider_callback, true );
 
     if (tile_clicked)
         slider_panel.highlightChannels(fixture_id, true);
@@ -523,14 +523,14 @@ function arrangeSliders(event) {
     slider_panel.releaseAllChannels();
 
     // Add venue master dimmer
-    slider_panel.allocateChannels(MASTER_DIMMER_OWNER, "Venue Dimmer", [master_dimmer_channel], master_dimmer_callback);
+    slider_panel.allocateChannels(MASTER_DIMMER_OWNER, "Venue Dimmer", [master_dimmer_channel], master_dimmer_callback, false );
     master_dimmer_channel.slider = slider_panel.findChannel(MASTER_DIMMER_OWNER, master_dimmer_channel.channel);
 
     // Add color masters if enabled
     if (group_colors) {
         $("#channel_panel_groupcolors").removeClass('ui-icon').addClass('ui-icon-white');
 
-        slider_panel.allocateChannels(COLOR_CHANNELS_OWNER, "Colors", slider_color_channels, fixture_slider_colors_callback);
+        slider_panel.allocateChannels(COLOR_CHANNELS_OWNER, "Colors", slider_color_channels, fixture_slider_colors_callback, true );
     }
     else {
         $("#channel_panel_groupcolors").removeClass('ui-icon-white').addClass('ui-icon');
@@ -541,6 +541,14 @@ function arrangeSliders(event) {
     });
 
     slider_panel.trimUnused();
+}
+
+// ----------------------------------------------------------------------------
+//
+function resetLinkedSliders(event) {
+    stopEventPropagation(event);
+
+    slider_panel.resetLinks();
 }
 
 // ----------------------------------------------------------------------------

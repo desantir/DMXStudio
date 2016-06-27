@@ -256,6 +256,7 @@ Chase* VenueReader::read( TiXmlElement* self, Chase* chase )
 
     chase->m_delay_ms = (ULONG)read_dword_attribute( self, "delay_ms" );
     chase->m_fade_ms = (ULONG)read_dword_attribute( self, "fade_ms" );
+    chase->m_repeat = read_bool_attribute( self, "repeat", true );
 
     TiXmlElement* acts = self->FirstChildElement( "acts" );
     if ( acts ) {

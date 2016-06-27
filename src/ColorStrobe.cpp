@@ -40,7 +40,7 @@ void ColorStrobe::start(DWORD time_ms, const StrobeTime& timing, UINT flashes) {
     int flash_ms = (m_timing.m_on_ms - ((m_flashes - 1)*FLASH_DELAY_MS)) / m_flashes;
 
     if ( flash_ms >= FLASH_DELAY_MS ) {
-        for (int f = 0; f < m_flashes; f++) {
+        for (UINT f = 0; f < m_flashes; f++) {
             if ( f > 0 )
                 m_states.push_back(StrobeState(false, FLASH_DELAY_MS));
            

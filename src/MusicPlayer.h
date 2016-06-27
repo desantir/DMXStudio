@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-16 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -25,23 +25,31 @@ MA 02111-1307, USA.
 #include "stdafx.h"
 #include "StudioException.h"
 
-struct CachedTrack {
-    ULONG    data_size;
-    UINT     channels;
-    UINT     bit_rate;
-    UINT     length_ms;
-    UINT     frames;
-    bool     ready;
-    BYTE     data[1];
+#define LINK_BUFFER_LENGTH      (10*1024)    // Default buffer length for all link list requests
 
-    inline UINT getFrameSize() const {
-        return channels * sizeof(int16_t);
-    }
+#define MAX_LINK_SIZE           256
+
+#define PLAYED_PLAYLIST_LINK    "local:playlist:played"
+#define QUEUED_PLAYLIST_LINK    "local:playlist:queued"
+
+typedef enum {
+    FAILED = 0,                         // Request failed
+    OK = 1,                             // Item processed
+    QUEUED = 2,                         // Request queued
+    NOT_AVAILABLE = 3                   // Resource is not available
+} AudioStatus;
+
+struct AnalyzeInfo {
+    char        link[256];
+    UINT        duration_ms;            // Duration of each data point
+    size_t      data_count;             // Number of data points
+    uint16_t    data[1];                // Amplitude data (0 = 32767)
 };
 
 struct AudioInfo {
-    char        id[512];
-    char        song_type[512];                 // Comman separated list of 'christmas', 'live', 'studio', 'acoustic' and 'electric'
+    char        link[256];
+    char        id[128];
+    char        song_type[128];                 // Comman separated list of 'christmas', 'live', 'studio', 'acoustic' and 'electric'
     int         key;                            // Key of song C,C#,D,D#,E,F,F#,G,B#,B,B#,B (0-11)
     int         mode;                           // 0=minor, 1=major
     int         time_signature;                 // beats per measure
@@ -62,37 +70,38 @@ typedef void (__cdecl *GetPlayerName)( LPSTR buffer, size_t buffer_length );
 typedef bool (__cdecl *Connect)( void );
 typedef bool (__cdecl *Disconnect)( void );
 typedef bool (__cdecl *Signon)( LPCSTR username, LPCSTR password );
-typedef bool (__cdecl *GetPlaylists)( UINT* num_lists, DWORD* playlist_ids, size_t playlist_ids_capacity );
-typedef bool (__cdecl *GetPlaylistName)( DWORD playlist_id, LPSTR buffer, size_t buffer_length );
-typedef bool (__cdecl *GetTracks)( DWORD playlist_id, UINT* num_tracks, DWORD* track_ids, size_t track_ids_capacity );
-typedef bool (__cdecl *PlayTrack)( DWORD track_id, bool queue );
-typedef bool (__cdecl *CacheTrack)( DWORD track_id );
-typedef bool (__cdecl *GetCachedTrack)( CachedTrack** cached_track );
-typedef bool (__cdecl *PlayAllTracks)( DWORD playlist_id, bool queue );
+typedef bool (__cdecl *GetPlaylists)( UINT* num_lists, LPSTR playlist_links, size_t buffer_length );
+typedef bool (__cdecl *GetPlaylistName)( LPCSTR playlist_link, LPSTR buffer, size_t buffer_length );
+typedef bool (__cdecl *GetTracks)( LPCSTR playlist_link, UINT* num_tracks, LPSTR track_links, size_t buffer_length );
+typedef bool (__cdecl *PlayTrack)( LPCSTR track_link, DWORD seek_ms );
+typedef bool (__cdecl *QueueTrack)( LPCSTR track_link );
+typedef bool (__cdecl *PlayAllTracks)( LPCSTR playlist_link, bool queue );
 typedef bool (__cdecl *ForwardTrack)( void );
 typedef bool (__cdecl *BackTrack)( void );
 typedef bool (__cdecl *StopTrack)( void );
 typedef bool (__cdecl *PauseTrack)( bool pause );
-typedef bool (__cdecl *GetPlayingTrack)( DWORD* track_id, DWORD* track_length, DWORD* time_remaining, UINT* queued_tracks, UINT* previous_tracks );
+typedef bool (__cdecl *GetPlayingTrack)( LPSTR track_link, DWORD* track_length, DWORD* time_remaining, UINT* queued_tracks, UINT* previous_tracks );
 typedef bool (__cdecl *IsTrackPaused)( void );
 typedef bool (__cdecl *IsLoggedIn)( void );
-typedef bool (__cdecl *GetQueuedTracks)( UINT* num_tracks, DWORD* track_ids, size_t track_ids_capacity );
-typedef bool (__cdecl *GetPlayedTracks)( UINT* num_tracks, DWORD* track_ids, size_t track_ids_capacity );
-typedef bool (__cdecl *GetLastPlayerError)( LPSTR buffer, size_t buffer_length );
-typedef bool (__cdecl *WaitOnTrackEvent)( DWORD wait_ms, DWORD* track_id, bool* paused );
-typedef bool (__cdecl *GetTrackInfo)( DWORD track_id,  LPSTR track_name, size_t track_name_size, LPSTR artist_name, size_t artist_name_size, 
-                                      LPSTR album_name, size_t album_name_size, DWORD* track_duration_ms, bool* starred, LPSTR track_link, size_t track_link_size );
-typedef bool (__cdecl *GetTrackAudioInfo)( DWORD track_id, AudioInfo* audio_info );
- 
-typedef std::vector<DWORD> PlayerItems;
+typedef bool (__cdecl *GetQueuedTracks)( UINT* num_tracks, LPSTR track_links, size_t buffer_length );
+typedef bool (__cdecl *GetPlayedTracks)( UINT* num_tracks, LPSTR track_links, size_t buffer_length );
+typedef bool (__cdecl *GetLastPlayerError)( LPSTR buffer, UINT buffer_length );
+typedef bool (__cdecl *WaitOnTrackEvent)( DWORD wait_ms, LPSTR track_link, bool* paused );
+typedef bool (__cdecl *GetTrackInfo)( LPCSTR track_link, LPSTR track_name, size_t track_name_size, 
+                                      LPSTR artist_name, size_t artist_name_size, LPSTR album_name, size_t album_name_size,
+                                      DWORD* track_duration_ms,  bool* starred );
+typedef AudioStatus (__cdecl *GetTrackAudioInfo)( LPCSTR track_link, AudioInfo* audio_info, DWORD wait_ms );
+typedef bool (__cdecl *GetTrackAnalysis)( LPCSTR track_link, AnalyzeInfo** analysis_info );
+
+typedef std::vector<CString> PlayerItems;
 
 class MusicPlayer
 {
-    CString             m_dll_path;
-    CString             m_username;
+    CString                 m_dll_path;
+    CString                 m_username;
 
-    HMODULE             m_library;
-    bool                m_logged_in;
+    HMODULE                 m_library;
+    bool                    m_logged_in;
 
     // DLL function pointers
     GetPlayerName           m_GetPlayerName;
@@ -102,10 +111,8 @@ class MusicPlayer
     GetPlaylists            m_GetPlaylists;
     GetPlaylistName         m_GetPlaylistName;
     GetTracks               m_GetTracks;
-    PlayTrack               m_PlayTrack;
+    QueueTrack              m_QueueTrack;
     PlayAllTracks           m_PlayAllTracks;
-    CacheTrack              m_CacheTrack;
-    GetCachedTrack          m_GetCachedTrack;
     ForwardTrack            m_ForwardTrack;
     BackTrack               m_BackTrack;
     StopTrack               m_StopTrack;
@@ -119,6 +126,8 @@ class MusicPlayer
     GetPlayedTracks         m_GetPlayedTracks;
     GetLastPlayerError      m_GetLastPlayerError;
     WaitOnTrackEvent        m_WaitOnTrackEvent;
+    PlayTrack               m_PlayTrack;
+    GetTrackAnalysis        m_GetTrackAnalysis;
 
 public:
     MusicPlayer( LPCSTR library_path, LPCSTR username );
@@ -146,25 +155,25 @@ public:
     bool disconnect( void );
     bool signon( LPCSTR username, LPCSTR password );
     bool getPlaylists( PlayerItems& playlists );
-    bool getTracks( DWORD playlist_id, PlayerItems& tracks );
+    bool getTracks( LPCSTR playlist_link, PlayerItems& tracks );
     bool getQueuedTracks( PlayerItems& queued_tracks );
     bool getPlayedTracks( PlayerItems& queued_tracks );
-    CString getPlaylistName( DWORD playlist_id );
-    CString getTrackFullName( DWORD track_id );
-    bool playAllTracks( DWORD playlist_id, bool queue );
-    bool playTrack( DWORD track_id, bool queue );
-    bool cacheTrack( DWORD track_id );
-    bool getCachedTrack( CachedTrack** cached_track );
+    CString getPlaylistName( LPCSTR playlist_link );
+    CString getTrackFullName( LPCSTR track_link );
+    bool playAllTracks( LPCSTR playlist_link, bool queue );
+    bool playTrack( LPCSTR track_link, DWORD seek_ms );
+    bool queueTrack( LPCSTR track_link );
     bool forwardTrack( void );
     bool backTrack( void );
     bool stopTrack( void );
     bool pauseTrack( bool pause );
     bool isLoggedIn( void );
     bool isTrackPaused( void );
-    bool getTrackAudioInfo( DWORD track_id, AudioInfo* audio_info );
-    DWORD getPlayingTrack( DWORD* track_length=NULL, DWORD* time_remaining=NULL, UINT* queued_tracks=NULL, UINT* previous_tracks=NULL );
+    AudioStatus getTrackAudioInfo( LPCSTR track_link, AudioInfo* audio_info, DWORD wait_ms );
+    bool getPlayingTrack( CString& track_link, DWORD* track_length=NULL, DWORD* time_remaining=NULL, UINT* queued_tracks=NULL, UINT* previous_tracks=NULL );
     CString getLastPlayerError( void );
-    bool waitOnTrackEvent( DWORD wait_ms, DWORD* track_id, bool* paused );
-    bool getTrackInfo( DWORD track_id, CString* track_name=NULL, CString* artist_name=NULL, CString* album_name=NULL, DWORD* track_duration_ms=NULL, 
-                       bool* starred=NULL, CString* track_link=NULL );
+    bool waitOnTrackEvent( DWORD wait_ms, CString& track_link, bool* paused );
+    bool getTrackInfo( LPCSTR track_link, CString* track_name=NULL, CString* artist_name=NULL, CString* album_name=NULL, DWORD* track_duration_ms=NULL, 
+                       bool* starred=NULL );
+    bool getTrackAnalysis( LPCSTR track_link, AnalyzeInfo** info );
 };

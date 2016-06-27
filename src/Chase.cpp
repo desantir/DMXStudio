@@ -25,10 +25,11 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
-Chase::Chase( UID uid, ChaseNumber chase_number, ULONG delay_ms, ULONG fade_ms, const char * name, const char *description ) :
+Chase::Chase( UID uid, ChaseNumber chase_number, ULONG delay_ms, ULONG fade_ms, const char * name, const char *description, bool repeat ) :
     DObject( uid, chase_number, name, description ),
     m_delay_ms(delay_ms),
-    m_fade_ms(fade_ms)
+    m_fade_ms(fade_ms),
+    m_repeat( repeat )
 {
 }
 

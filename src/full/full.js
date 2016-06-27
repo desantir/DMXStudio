@@ -197,6 +197,8 @@ function initializeUI() {
 
     $("#show_music_matcher").click(showMusicMatch);
 
+    $("#chaseTrack").click(chaseTrack);
+
     initializeHorizontalSlider("frequency_sample_rate", 25, 1000, 50);
 
     $("#channel_panel_colorpicker").ColorPicker({
@@ -445,7 +447,7 @@ function updateUI() {
 
             updateCapturedFixtures(json.captured_fixtures);
 
-            setTimeout(updateUI, 1000);
+            setTimeout(updateUI, 500);
         },
         error: function () {
             if (system_status) {
@@ -697,4 +699,19 @@ function load_options( element, options, selected_func  ) {
                 '>' + options[i] + '</option>';
     }
     element.html(html);
+}
+
+// ----------------------------------------------------------------------------
+//
+function multiselectSelect( control, value ) {
+
+    var o = control.find("option[value='" + value + "']");
+
+    if (o != null && o.length == 1 ) {
+        o.attr("selected", true);
+        control.multiselect('refresh');
+        return true;
+    }
+
+    return false;
 }

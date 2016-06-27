@@ -23,6 +23,7 @@ MA 02111-1307, USA.
 
 #include "DMXStudio.h"
 #include "Scene.h"
+#include "Venue.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -140,6 +141,9 @@ UIDArray Scene::getActorUIDs( ) {
 // Transfers animation life-cycle responsibilty to the scene
 void Scene::addAnimation( AbstractAnimation* animation ) {
     CSingleLock lock( &m_scene_mutex, TRUE );
+
+    if ( animation->getUID() == NOUID )
+        animation->setUID( studio.getVenue()->allocUID() );
 
     m_animations.push_back( animation );
 }

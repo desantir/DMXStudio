@@ -59,8 +59,6 @@ DMXTextUI::DMXTextUI(void)
     function_map[ "gd" ] = HandlerInfo( &DMXTextUI::deleteFixtureGroup,         true,   "Group Delete" );
 
     function_map[ "c" ] = HandlerInfo( &DMXTextUI::selectChase,                 true,   "Chase start/stop" );
-    function_map[ "ct" ] = HandlerInfo( &DMXTextUI::chaseTap,                   true,   "Chase tap" );
-    function_map[ "cb" ] = HandlerInfo( &DMXTextUI::chaseBeat,                  true,   "Chase beat" );
     function_map[ "cd" ] = HandlerInfo( &DMXTextUI::deleteChase,                true,   "Chase Delete" );
     function_map[ "cx" ] = HandlerInfo( &DMXTextUI::describeChase,              true,   "Chase Describe" );
     function_map[ "cc" ] = HandlerInfo( &DMXTextUI::createChase,                true,   "Chase Create" );
@@ -198,15 +196,16 @@ void DMXTextUI::run()
         // If we have a music player and it has status, display that
         if ( studio.hasMusicPlayer() && studio.getMusicPlayer()->isLoggedIn() ) {
             DWORD length, remaining;
-            DWORD track = studio.getMusicPlayer()->getPlayingTrack( &length, &remaining );
+            CString track_link;
+            bool success = studio.getMusicPlayer()->getPlayingTrack( track_link, &length, &remaining );
             
             if ( getVenue()->isMusicSceneSelectEnabled() )
                 music_status.AppendFormat( " | Music Match ON" );
             else
                 music_status.AppendFormat( " | Music Match OFF" );
 
-            if ( track ) {
-                music_status.AppendFormat( " | %s", studio.getMusicPlayer()->getTrackFullName( track ) );
+            if ( success ) {
+                music_status.AppendFormat( " | %s", studio.getMusicPlayer()->getTrackFullName( track_link ) );
 
                 if ( length ) {
                     music_status.AppendFormat( " | length %s", track_time(length) );
@@ -583,30 +582,6 @@ void DMXTextUI::quit() {
 
 // ----------------------------------------------------------------------------
 //
-void DMXTextUI::chaseBeat()
-{
-    static IntegerField start_freq__field( "Starting frequency", 150, 0, 128000 );
-    static IntegerField end_freq_field( "Ending frequency", 500, 0, 128000 );
-
-    ChaseSelectField chase_field( "Chase for auto beat", getVenue() );
-    Form form( &m_text_io );
-
-    form.add( chase_field );
-    form.add( start_freq__field );
-    form.add( end_freq_field );
-
-    if ( !form.play() )
-        return;
-
-    if ( getVenue()->isChaseRunning() )
-        getVenue()->stopChase();
-
-    ChaseController cc = getVenue()->startChase( chase_field.getChaseUID(), CHASE_MANUAL );
-    cc.followBeat( start_freq__field.getIntValue(), end_freq_field.getIntValue() );
-}
-
-// ----------------------------------------------------------------------------
-//
 void DMXTextUI::soundDetect( )
 {
     static const char* level_meter = "====================";
@@ -618,7 +593,7 @@ void DMXTextUI::soundDetect( )
             break;
 
         unsigned amp = getVenue()->getSoundDetector()->getAmplitude();
-        const char *meter = &level_meter[ 20 - amp/50 ];
+        const char *meter = &level_meter[ 20 - amp/5 ];
 
         m_text_io.printf( "%4d %s %s                       \r", 
             detector->getAmplitude(), meter, detector->isMute() ? "MUTE" : "     " );
@@ -776,6 +751,7 @@ void DMXTextUI::createChase(void) {
     ActsField acts_field;
     IntegerField chase_delay( "Chase delay (ms)", 0, 0 );
     IntegerField chase_fade( "Chase fade (ms)", 0, 0 );
+    BooleanField repeat_field( "Repeat scene steps", true );
 
     Form form( &m_text_io );
     form.add( chase_number_field );
@@ -784,16 +760,19 @@ void DMXTextUI::createChase(void) {
     form.add( acts_field );
     form.add( chase_delay );
     form.add( chase_fade );
+    form.add( repeat_field );
 
     if ( !form.play() )
         return;
 
-    Chase chase( getVenue()->allocUID(), 
+    Chase chase( 0L, 
                  chase_number_field.getChaseNumber(),
                  chase_delay.getLongValue(),
                  chase_fade.getLongValue(),
                  name_field.getValue(),
-                 description_field.getValue() );
+                 description_field.getValue(),
+                 repeat_field.isSet() );
+
     chase.setActs( acts_field.getActs() );
 
     m_text_io.printf( "\nAdd chase scene steps (select scene 0 to finish)\n\n" );
@@ -813,6 +792,7 @@ void DMXTextUI::updateChase(void) {
         IntegerField		m_chase_delay;
         IntegerField		m_chase_fade;
         ActsField           m_acts_field;
+        BooleanField        m_repeat_field;
         
         void fieldLeaveNotify( size_t field_num ) {
             if ( field_num == 0 ) {
@@ -822,6 +802,7 @@ void DMXTextUI::updateChase(void) {
                 m_acts_field.setActs( chase->getActs() );
                 m_chase_delay.setValue( chase->getDelayMS() );
                 m_chase_fade.setValue( chase->getFadeMS() );
+                m_repeat_field.setValue( chase->isRepeat() );
 
             }
             else if ( field_num == 3 ) {
@@ -839,6 +820,7 @@ void DMXTextUI::updateChase(void) {
             chase->setActs( m_acts_field.getActs() );
             chase->setDelayMS( m_chase_delay.getLongValue() );
             chase->setFadeMS( m_chase_fade.getLongValue() );
+            chase->setRepeat( m_repeat_field.isSet() );
         }
 
     public:
@@ -848,8 +830,9 @@ void DMXTextUI::updateChase(void) {
             m_chase_field( "Select chase to update", m_venue ),
             m_name_field( "Chase name", "" ),
             m_description_field( "Chase description", "" ),
-            m_chase_delay( "Chase delay (ms)", 0, 0 ),
-            m_chase_fade( "Chase fade (ms)", 0, 0  )
+            m_chase_delay( "Chase default duration (ms)", 0, 0 ),
+            m_chase_fade( "Chase fade (ms)", 0, 0  ),
+            m_repeat_field( "Repeat scene steps", true )
         {
             add( m_chase_field );
             add( m_name_field );
@@ -857,6 +840,7 @@ void DMXTextUI::updateChase(void) {
             add( m_acts_field );
             add( m_chase_delay );
             add( m_chase_fade );
+            add( m_repeat_field );
         }
 
         Chase* getChase() const {
@@ -906,7 +890,7 @@ void DMXTextUI::addChaseSteps(void) {
 
     m_text_io.printf( "\nAdd chase scene steps (select scene 0 to finish)\n\n" );
 
-    Chase dummy( 0, 0, 0, 0, "", "" );
+    Chase dummy( 0, 0, 0, 0, "", "", false );
     UINT position = position_field.getIntValue()-1;
 
     if ( editChaseSteps( &dummy, true, position ) ) {
@@ -962,7 +946,7 @@ bool DMXTextUI::editChaseSteps( Chase* chase, bool append_steps, UINT step_num_o
             label.Format( "Step %d scene", step_number+m_step_num_offset );
             SceneNumber scene_number = step->getSceneUID() != 0 ? m_venue->getScene( step->getSceneUID() )->getSceneNumber() : 0;
             addAuto( new SceneSelectField( label, m_venue, scene_number, m_append_steps ) );
-            label.Format( "Step %d delay (ms)", step_number+m_step_num_offset );
+            label.Format( "Step %d duration (ms)", step_number+m_step_num_offset );
             addAuto( new IntegerField( label, step->getDelayMS(), 0 ) );
         }
 
@@ -1041,8 +1025,9 @@ void DMXTextUI::describeChase(void) {
         return;
 
     Chase *chase = getVenue()->getChase( chase_field.getChaseUID() );
-    m_text_io.printf( "\nChase #%d: %s Delay=%lums Fade=%lums\n\n  Acts: ", 
-        chase->getChaseNumber(), chase->getName(), chase->getDelayMS(), chase->getFadeMS() );
+    m_text_io.printf( "\nChase #%d: %s Duration=%lums Fade=%lums Repeat=%s\n\n  Acts: ", 
+        chase->getChaseNumber(), chase->getName(), chase->getDelayMS(), chase->getFadeMS(),
+        chase->isRepeat() ? "true" : "false" );
 
     if ( !chase->getActs().empty() ) {
         for ( ActNumber act : chase->getActs() )
@@ -1054,7 +1039,7 @@ void DMXTextUI::describeChase(void) {
 
     for ( unsigned index=0; index < chase->getNumSteps(); index++ ) {
         ChaseStep* step = chase->getStep( index );
-        m_text_io.printf( "  Step %2d: Scene %lu %s (delay %lums)\n", index+1, 
+        m_text_io.printf( "  Step %2d: Scene %lu %s (duration %lums)\n", index+1, 
                 getVenue()->getScene( step->getSceneUID() )->getSceneNumber(),
                 getVenue()->getScene( step->getSceneUID() )->getName(), step->getDelayMS() );
     }
@@ -1119,49 +1104,6 @@ void DMXTextUI::deleteChaseSteps(void) {
     for ( unsigned step_number=chase->getNumSteps(); step_number-- > 0; )
         if ( form.getField<BooleanField>( step_number )->isSet() )
             chase->deleteStep( step_number );
-}
-
-// ----------------------------------------------------------------------------
-//
-void DMXTextUI::chaseTap(void) {
-    ChaseSelectField chase_field( "Chase to tap", getVenue() );
-
-    Form form( &m_text_io );
-    form.add( chase_field );
-    if ( !form.play() )
-        return;
-
-    if ( getVenue()->isChaseRunning() )
-        getVenue()->stopChase();
-
-    ChaseController cc = getVenue()->startChase( chase_field.getChaseUID(), CHASE_RECORD );
-
-    m_text_io.printf( "\nPress ENTER to tap, ESCAPE to stop\n\n" );
-
-    DWORD ms = 0;
-
-    while ( true ) {
-        int ch = _getch();
-
-        switch ( ch ){
-            case 13: {
-                DWORD now = GetTickCount();
-                cc.tap();
-
-                if ( ms == 0 )
-                    m_text_io.printf( "| " );
-                else
-                    m_text_io.printf( "%lums | ", now-ms );
-
-                ms = now;
-                break;
-            }
-            case 27:
-                cc.loopTap();
-                m_text_io.printf( "\n" );
-                return;
-        }
-    }
 }
 
 // ----------------------------------------------------------------------------
@@ -1416,7 +1358,7 @@ void DMXTextUI::createScene( ) {
     if ( !form.play() )
         return;
 
-    Scene scene( getVenue()->allocUID(), scene_number_field.getSceneNumber(),
+    Scene scene( 0L, scene_number_field.getSceneNumber(),
                  name_field.getValue(), description_field.getValue() );
     scene.setActs( acts_field.getActs() );
     scene.setBPMRating( bpm_field.getRating() );
@@ -1449,7 +1391,6 @@ void DMXTextUI::copyScene(void) {
 
     Scene new_scene( *getVenue()->getScene( scene_field.getSceneUID() ) );
         
-    new_scene.setUID( getVenue()->allocUID() );
     new_scene.setSceneNumber( scene_number_field.getSceneNumber() );
     new_scene.setName( name_field.getValue() );
     new_scene.setDescription( description_field.getValue() );
@@ -1793,7 +1734,7 @@ void DMXTextUI::createFixture(void)
     if ( !form.play() )
         return;
 
-    Fixture fixture( getVenue()->allocUID(),
+    Fixture fixture( 0L,
                      form.fixture_number_field.getFixtureNumber(), 
                      form.dmx_universe.getUniverseId(),  
                      form.dmx_address_field.getIntValue(),
@@ -1898,7 +1839,7 @@ void DMXTextUI::createFixtureGroup( ) {
     if ( !form.play() )
         return;
 
-    FixtureGroup group( getVenue()->allocUID(), 
+    FixtureGroup group( 0L, 
                         form.group_number_field.getGroupNumber(),
                         form.name_field.getValue(), 
                         form.description_field.getValue() );

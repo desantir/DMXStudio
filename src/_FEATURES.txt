@@ -1,3 +1,39 @@
+Features (oldest to newest)
+---------------------------
+Selectable audio input ( listener, mic, none )
+Sound level animations (level, freq) need modifiers to make more effective
+Global sound fade
+Andriod Remote control (simple - blackout, select scene, select chase )
+Whiteout mode with on/off/strobe
+Log to file
+Convert to server, text UI is server UI??
+Fixture initial channel values (set when adding)
+DMXStudio INI file (start http server, threads, whiteout strobe timings, etc)
+Cross scene home position (stop pan/tilt re-seek to home)
+Multiple personality fixtures (i.e. 3, 5, 9 channels) (multiple definitions that are consolidated in the UI per fixture)
+Dimmer channel: Arbitrary ranges, any channel can be a dimmer,  high/low any order, all suported by animations
+Copyright statements
+Choose license scheme - GPL 3
+PC volume control / mute
+Loadable connectors to Spotify, iTunes, etc.
+Attach scenes/chases to tracks
+Break up into fixture files
+Generate FUID unique hash
+Map song mood / tempo to scenes in music matcher http://developer.echonest.com/docs/v4 (Song BPM drives scene selection)
+Sine, step, ramp channel filters
+Scene selection based on the music beat (BPM) or mood
+Multiple universe support
+Support alternate USB DMX driver (Enttec USB Pro)
+Music add-in manages song cache
+Support for background echonest processing and throttling
+Editor to map scenes to points in the track - automatically generate chase with times (aka soundcloud for lighting)
+Control specific channel(s) on capture
+Use persistent song IDs rather than list offsets
+One-shot chase (no restart)
+REMOVED Chase learn mode - track time and scene transitions
+
+Overview
+--------
 
 Channel
 	// Offset (0-4)
@@ -51,29 +87,6 @@ Animations
 		Laser bean movement animation (move to point, strobe, move, strobe, etc) (use coord movement, strobe fixture setting, off on home return true)
 		// Stop reseting channel animation during auto blackout
 		Run once channel animations
-
-Selectable audio input ( listener, mic, none )
-Sound level animations (level, freq) need modifiers to make more effective
-Global sound fade
-Andriod Remote control (simple - blackout, select scene, select chase )
-Whiteout mode with on/off/strobe
-Log to file
-Convert to server, text UI is server UI??
-Fixture initial channel values (set when adding)
-DMXStudio INI file (start http server, threads, whiteout strobe timings, etc)
-Cross scene home position (stop pan/tilt re-seek to home)
-Multiple personality fixtures (i.e. 3, 5, 9 channels) (multiple definitions that are consolidated in the UI per fixture)
-Dimmer channel: Arbitrary ranges, any channel can be a dimmer,  high/low any order, all suported by animations
-Copyright statements
-Choose license scheme - GPL 3
-PC volume control / mute
-Loadable connectors to Spotify, iTunes, etc.
-Attach scenes/chases to tracks
-Break up into fixture files
-Generate FUID unique hash
-Sine, step, ramp channel filters
-Scene selection based on the music beat (BPM) or mood
-
 /*
 	workspace:
 		- default scene where fixtures can be controlled in real time

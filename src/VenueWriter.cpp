@@ -253,6 +253,7 @@ void VenueWriter::visit( Chase* chase )
 
     add_attribute( chase_element, "delay_ms", chase->m_delay_ms );
     add_attribute( chase_element, "fade_ms", chase->m_fade_ms );
+    add_attribute( chase_element, "repeat", chase->m_repeat );
 
     TiXmlElement steps( "chase_steps" );
     visit_array<ChaseStepArray>( steps, chase->m_chase_steps );

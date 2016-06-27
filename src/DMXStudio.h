@@ -48,6 +48,8 @@ typedef std::set<UID> UIDSet;
 typedef std::vector<UID> UIDArray;
 typedef std::vector<LPCSTR> LPCSTRArray;
 
+#define NOUID   0L
+
 typedef std::vector<channel_t> ChannelList;
 
 inline UIDSet UIDArrayToSet( UIDArray& uid_array ) {
@@ -70,8 +72,6 @@ R maxKeyValue( T& map ) {
 
 class Venue;
 
-typedef std::map<CString,AudioInfo> AudioTrackInfoCache;
-
 class DMXStudio
 {
     FILE*               m_hLog;
@@ -86,7 +86,6 @@ class DMXStudio
     bool                m_enable_http;
     MusicPlayer*        m_music_player;
     bool                m_dmx_required;
-    AudioTrackInfoCache m_track_audio_info_cache;               // Caches track audio info to avoid http lookups
 
 public:
     DMXStudio();
@@ -175,8 +174,6 @@ public:
     bool loadVenueFromString( LPCSTR venue_xml );
     bool newVenue( );
 
-    bool getTrackAudioInfo( LPCSTR track_link, DWORD track_id, AudioInfo& audio_info );
-
 private:
     Venue* readVenueFromFile( const char *input_file );
     void writeVenueToFile( const char *output_file );
@@ -187,9 +184,6 @@ private:
     void openStudioLogFile( void);
     void closeStudioLogFile( void );
     void showIpAddress( void );
-
-    size_t readAudioInfoCache( void );
-    void writeAudioInfoCache( void );
 };
 
 extern DMXStudio studio;

@@ -51,7 +51,6 @@ typedef enum {
     WHITEOUT_STROBE_FAST = 2,
     WHITEOUT_STROBE_MANUAL = 3,
     WHITEOUT_ON = 4
-
 } WhiteoutMode;
 
 typedef std::map<BPMRating,UIDArray> SceneRatingsMap;
@@ -63,9 +62,9 @@ class Venue : public DObject
 {
     friend class ChaseTask;
     friend class AnimationTask;
-    friend class ChaseController;
     friend class VenueWriter;
     friend class VenueReader;
+    friend class Scene;
 
     CCriticalSection        m_venue_mutex;						// Protect venue objects
 
@@ -124,7 +123,7 @@ public:
     bool close(void);
     bool isRunning();
 
-    inline void clearAllUniverses();
+    void clearAllUniverses();
     void addUniverse( Universe* universe );
     Universe* getUniverse( size_t universe_num );
     UniversePtrArray getUniverses();
@@ -257,10 +256,6 @@ public:
     void writePacket( const BYTE* dmx_packet );
     void readPacket( BYTE* dmx_packet );
 
-    inline UID allocUID() {
-        return m_uid_pool++;
-    }
-
     UID whoIsAddressRange( universe_t universe, channel_t start_address, channel_t end_address );
     channel_t findFreeAddressRange( universe_t universe, UINT num_channels );
 
@@ -307,7 +302,7 @@ public:
     FixturePtrArray getFixtures();
     Fixture *getFixtureByNumber( FixtureNumber fixture_number );
     FixtureNumber nextAvailableFixtureNumber( void );
-    void addFixture( Fixture& pfixture );
+    UID addFixture( Fixture& pfixture );
     bool deleteFixture( UID pfuid );
     BYTE getChannelValue( Fixture* pfixture, channel_t channel );
     BYTE getChannelValue( SceneActor& actor, channel_t channel );
@@ -333,7 +328,7 @@ public:
     void selectScene( UID scene_uid );
     bool deleteScene( UID scene_uid );
     void updateCurrentScene( );
-    void addScene( Scene& scene );
+    UID addScene( Scene& scene );
     void loadScene();
     void clearAnimations();
     Scene *getSceneByNumber( SceneNumber scene_number );
@@ -363,7 +358,7 @@ public:
     }
 
     // Fixture group methods
-    void addFixtureGroup( FixtureGroup& group );
+    UID addFixtureGroup( FixtureGroup& group );
     FixtureGroupPtrArray getFixtureGroups( );
     FixtureGroup* getFixtureGroup( UID group_id );
     bool deleteFixtureGroup( UID group_id );
@@ -373,7 +368,7 @@ public:
 
     // Scene chase methods
     Chase *getChase( UID chase_uid );
-    void addChase( Chase& chase );
+    UID addChase( Chase& chase );
     ChasePtrArray getChases( );
     Chase* getChaseByNumber( ChaseNumber chase_number );
     bool deleteChase( UID chase_id );
@@ -386,16 +381,15 @@ public:
         return m_chases.size();
     }
 
-    // TODO: These chase functions below vvv and the ChaseController need to be synchronized
-    ChaseController startChase( UID chase_id, ChaseRunMode run_mode = CHASE_AUTO );
+    bool startChase( UID chase_id );
     bool stopChase();
 
     bool isChaseRunning() const {
-        return m_chase_task && m_chase_task->isRunning();
+        return m_chase_task != NULL && m_chase_task->isChaseRunning();
     }
 
     bool isChaseFading() const {
-        return m_chase_task && m_chase_task->isRunning() && m_chase_task->isFading();
+        return isChaseRunning() && m_chase_task->isFading();
     }
 
     UID getRunningChase() const {
@@ -403,65 +397,15 @@ public:
             return 0;
         return m_chase_task->getChase()->getUID();
     }
-    // TODO: These chase functions above ^^^ and the ChaseController need to be synchronized
 
 private:
+    inline UID allocUID() {
+        return m_uid_pool++;
+    }
+
     SceneActor * getDefaultActor( UID pfuid );
     void loadSceneChannels( BYTE *dmx_packet, Scene * scene );
     void loadChannel( BYTE *dmx_packet, Fixture* pf, channel_t channel, BYTE value );
     void whiteoutChannels( LPBYTE dmx_packet );
     BYTE adjustChannelValue( Fixture* pf, channel_t channel, BYTE value );
 };
-
-class ChaseController {
-
-    ChaseTask*			m_chase_task;
-    Venue*				m_venue;
-
-public:
-    ChaseController( Venue* venue, ChaseTask* chase_task ) :
-        m_venue( venue ),
-        m_chase_task( chase_task )
-    {}
-
-    ~ChaseController( void ) {}
-
-    void tap() {
-        getChaseTrigger()->SetEvent();
-    }
-
-    CEvent* getChaseTrigger() {
-        ChaseTask* task = getTask();
-        return task->getTrigger();
-    }
-
-    bool loopTap() {
-        ChaseTask* task = getTask();
-        if ( !task->isRunning() )
-            return false;
-
-        task->loopTap();
-        return true;
-    }
-
-    bool stop() {
-        ChaseTask* task = getTask();
-        m_venue->stopChase();
-        m_chase_task = NULL;
-        return true;
-    }
-
-    bool followBeat( unsigned start_freq, unsigned end_freq ) {
-        ChaseTask* task = getTask();
-        return task->followBeat( start_freq, end_freq );
-    }
-
-private:
-    ChaseTask* getTask() {
-        // There are some obvious thread syncronization issues here - careful
-        if ( !m_chase_task || m_venue->m_chase_task != m_chase_task )
-            throw StudioException( "Using stale chase controller" );
-        return m_chase_task;
-    }
-};
-

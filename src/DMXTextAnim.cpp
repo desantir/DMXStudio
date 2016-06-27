@@ -772,8 +772,8 @@ bool DMXTextUI::animSequencerEditor( Scene* scene, UID anim_uid )
 {
     SceneSequence* anim;
 
-    if ( anim_uid == 0 )
-        anim = new SceneSequence( 0, AnimationSignal(), UIDArray() );
+    if ( anim_uid == NOUID )
+        anim = new SceneSequence( NOUID, AnimationSignal(), UIDArray() );
     else
         anim = reinterpret_cast<SceneSequence*>( scene->getAnimation( anim_uid ) );
 
@@ -789,10 +789,7 @@ bool DMXTextUI::animSequencerEditor( Scene* scene, UID anim_uid )
     anim->signal().setSampleRateMS( sample_ms_field.getLongValue() );
     anim->setActors( actor_select.getActorUIDs() );
 
-    if ( anim_uid == 0 ) {
-        anim->setUID( getVenue()->allocUID() );
-        scene->addAnimation( anim );
-    }
+    scene->addAnimation( anim );
 
     return true;
 }
@@ -803,8 +800,8 @@ bool DMXTextUI::animSoundLevelEditor( Scene* scene, UID anim_uid )
 {
     SceneSoundLevel* anim;
 
-    if ( anim_uid == 0 )
-        anim = new SceneSoundLevel( 0, AnimationSignal(), UIDArray(), FADE_ALL );
+    if ( anim_uid == NOUID )
+        anim = new SceneSoundLevel( NOUID, AnimationSignal(), UIDArray(), FADE_ALL );
     else
         anim = reinterpret_cast<SceneSoundLevel*>( scene->getAnimation( anim_uid ) );
 
@@ -825,10 +822,7 @@ bool DMXTextUI::animSoundLevelEditor( Scene* scene, UID anim_uid )
     form.updateAnimationSignal( anim->signal() );
     anim->setActors( actor_select.getActorUIDs() );
 
-    if ( anim_uid == 0 ) {
-        anim->setUID( getVenue()->allocUID() );
-        scene->addAnimation( anim );
-    }
+    scene->addAnimation( anim );
 
     return true;
 }
@@ -839,8 +833,8 @@ bool DMXTextUI::animPatternDimmerEditor( Scene* scene, UID anim_uid )
 {
     ScenePatternDimmer* anim;
 
-    if ( anim_uid == 0 ) 
-        anim = new ScenePatternDimmer( 0, AnimationSignal(), UIDArray(), DP_SEQUENCE );
+    if ( anim_uid == NOUID ) 
+        anim = new ScenePatternDimmer( NOUID, AnimationSignal(), UIDArray(), DP_SEQUENCE );
     else
         anim = reinterpret_cast<ScenePatternDimmer*>( scene->getAnimation( anim_uid ) );
 
@@ -868,10 +862,7 @@ bool DMXTextUI::animPatternDimmerEditor( Scene* scene, UID anim_uid )
     form.updateAnimationSignal( anim->signal() );
     anim->setActors( actor_select.getActorUIDs() );
 
-    if ( anim_uid == 0 ) {
-        anim->setUID( getVenue()->allocUID() );
-        scene->addAnimation( anim );
-    }
+    scene->addAnimation( anim );
 
     return true;
 }
@@ -882,8 +873,8 @@ bool DMXTextUI::animColorFaderEditor( Scene* scene, UID anim_uid )
 {
     SceneColorFader* anim;
 
-    if ( anim_uid == 0 )
-        anim = new SceneColorFader( 0, AnimationSignal(), UIDArray(), RGBWA::BLACK, 200, 100, 1, RGBWAArray(), FaderEffect::FADER_EFFECT_ALL );
+    if ( anim_uid == NOUID )
+        anim = new SceneColorFader( NOUID, AnimationSignal(), UIDArray(), RGBWA::BLACK, 200, 100, 1, RGBWAArray(), FaderEffect::FADER_EFFECT_ALL );
     else
         anim = reinterpret_cast<SceneColorFader*>( scene->getAnimation( anim_uid ) );
 
@@ -919,10 +910,7 @@ bool DMXTextUI::animColorFaderEditor( Scene* scene, UID anim_uid )
     form.updateAnimationSignal( anim->signal() );
     anim->setActors( actor_select.getActorUIDs() );
 
-    if ( anim_uid == 0 ) {
-        anim->setUID( getVenue()->allocUID() );
-        scene->addAnimation( anim );
-    }
+    scene->addAnimation( anim );
 
     return true;
 }
@@ -959,10 +947,7 @@ bool DMXTextUI::animStrobeEditor( Scene* scene, UID anim_uid )
     anim->setStrobeFlashes(strobe_flashes_field.getIntValue() );
     anim->setActors( actor_select.getActorUIDs() );
 
-    if ( anim_uid == 0 ) {
-        anim->setUID( getVenue()->allocUID() );
-        scene->addAnimation( anim );
-    }
+    scene->addAnimation( anim );
 
     return true;
 }
@@ -973,8 +958,8 @@ bool DMXTextUI::animMovementEditor( Scene* scene, UID anim_uid )
 {
     SceneMovementAnimator* anim;
 
-    if ( anim_uid == 0 )
-        anim = new SceneMovementAnimator( getVenue()->allocUID(), AnimationSignal(), UIDArray(), MovementAnimation() );
+    if ( anim_uid == NOUID )
+        anim = new SceneMovementAnimator( NOUID, AnimationSignal(), UIDArray(), MovementAnimation() );
     else
         anim = reinterpret_cast<SceneMovementAnimator*>( scene->getAnimation( anim_uid ) );
 
@@ -984,10 +969,7 @@ bool DMXTextUI::animMovementEditor( Scene* scene, UID anim_uid )
 
     form.update( anim );
 
-    if ( anim_uid == 0 ) {
-        anim->setUID( getVenue()->allocUID() );
-        scene->addAnimation( anim );
-    }
+    scene->addAnimation( anim );
 
     return true;
 }
@@ -998,8 +980,8 @@ bool DMXTextUI::animChannelEditor( Scene* scene, UID anim_uid )
 {
     SceneChannelAnimator* anim;
 
-    if ( anim_uid == 0 )
-        anim = new SceneChannelAnimator( getVenue()->allocUID(), AnimationSignal(), ChannelAnimationArray() );
+    if ( anim_uid == NOUID )
+        anim = new SceneChannelAnimator( NOUID, AnimationSignal(), ChannelAnimationArray() );
     else
         anim = reinterpret_cast<SceneChannelAnimator*>( scene->getAnimation( anim_uid ) );
 
@@ -1049,10 +1031,7 @@ bool DMXTextUI::animChannelEditor( Scene* scene, UID anim_uid )
     form.updateAnimationSignal( anim->signal() );
     anim->setChannelAnimations( animations );
 
-    if ( anim_uid == 0 ) {
-        anim->setUID( getVenue()->allocUID() );
-        scene->addAnimation( anim );
-    }
+    scene->addAnimation( anim );
 
     return true;
 }
@@ -1063,8 +1042,8 @@ bool DMXTextUI::animPixelEditor( Scene* scene, UID anim_uid )
 {
     ScenePixelAnimator* anim;
 
-    if ( anim_uid == 0 ) 
-        anim = new ScenePixelAnimator( 0, AnimationSignal(), UIDArray(), PixelEffect::BEAM, 
+    if ( anim_uid == NOUID ) 
+        anim = new ScenePixelAnimator( NOUID, AnimationSignal(), UIDArray(), PixelEffect::BEAM, 
                                        RGBWAArray(), RGBWA::BLACK, 5, 1, true, 2, true );
     else
         anim = reinterpret_cast<ScenePixelAnimator*>( scene->getAnimation( anim_uid ) );
@@ -1075,10 +1054,7 @@ bool DMXTextUI::animPixelEditor( Scene* scene, UID anim_uid )
 
     form.update( anim );
 
-    if ( anim_uid == 0 ) {
-        anim->setUID( getVenue()->allocUID() );
-        scene->addAnimation( anim );
-    }
+    scene->addAnimation( anim );
 
     return true;
 }
@@ -1088,8 +1064,8 @@ bool DMXTextUI::animPixelEditor( Scene* scene, UID anim_uid )
 bool DMXTextUI::animFilterEditor( Scene* scene, UID anim_uid ) {
     SceneChannelFilter* anim;
 
-    if ( anim_uid == 0 ) 
-        anim = new SceneChannelFilter( 0, AnimationSignal(), UIDArray(), ChannelFilter::CF_SINE_WAVE, ChannelList(), 1, 5, 0 );
+    if ( anim_uid == NOUID ) 
+        anim = new SceneChannelFilter( NOUID, AnimationSignal(), UIDArray(), ChannelFilter::CF_SINE_WAVE, ChannelList(), 1, 5, 0 );
     else
         anim = reinterpret_cast<SceneChannelFilter*>( scene->getAnimation( anim_uid ) );
 
@@ -1099,10 +1075,7 @@ bool DMXTextUI::animFilterEditor( Scene* scene, UID anim_uid ) {
 
     form.update( anim );
 
-    if ( anim_uid == 0 ) {
-        anim->setUID( getVenue()->allocUID() );
-        scene->addAnimation( anim );
-    }
+    scene->addAnimation( anim );
 
     return true;
 

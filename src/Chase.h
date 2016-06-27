@@ -30,12 +30,6 @@ MA 02111-1307, USA.
 
 typedef ULONG ChaseNumber;
 
-typedef enum {
-    CHASE_MANUAL = 1,
-    CHASE_AUTO,
-    CHASE_RECORD
-} ChaseRunMode;
-
 class Chase : public DObject
 {
     friend class VenueWriter;
@@ -45,15 +39,17 @@ class Chase : public DObject
     ULONG			m_fade_ms;						// Fade time - transition between scenes
     ChaseStepArray	m_chase_steps;
     Acts            m_acts;                         // List of acts this object belongs to
+    bool            m_repeat;                       // Chase will repeat indefinately
 
 public:
     Chase(void) : 
         m_delay_ms( DEFAULT_CHASE_DELAY ),
         m_fade_ms( 0 ),
+        m_repeat( true ),
         DObject()
     {}
 
-    Chase( UID uid, ChaseNumber chase_number, ULONG delay_ms, ULONG fade_ms, const char * name, const char *description );
+    Chase( UID uid, ChaseNumber chase_number, ULONG delay_ms, ULONG fade_ms, const char * name, const char *description, bool repeat );
     ~Chase(void);
 
     void accept( IVisitor* visitor) {
@@ -74,6 +70,13 @@ public:
         return m_delay_ms;
     }
 
+    void setRepeat( bool repeat ) {
+        m_repeat = repeat;
+    }
+    bool isRepeat() const {
+        return m_repeat;
+    }
+    
     void setFadeMS( ULONG fade_ms ) {
         m_fade_ms = fade_ms;
     }

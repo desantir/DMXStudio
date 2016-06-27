@@ -90,6 +90,9 @@ bool SceneSequence::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
 // ----------------------------------------------------------------------------
 //
 void SceneSequence::unselectActor( unsigned actor_num, BYTE* dmx_packet ) {
+    if ( actor_num >= m_running_actors.size() )
+        return;
+
     SceneActor* actor = m_animation_task->getScene()->getActor( m_running_actors[actor_num] );
     STUDIO_ASSERT( actor != NULL, "Missing scene actor for fixture %lu", m_running_actors[actor_num] );
 
@@ -105,6 +108,9 @@ void SceneSequence::unselectActor( unsigned actor_num, BYTE* dmx_packet ) {
 //
 void SceneSequence::selectActor( unsigned actor_num, BYTE* dmx_packet )
 {
+    if ( actor_num >= m_running_actors.size() )
+        return;
+
     SceneActor* actor = m_animation_task->getScene()->getActor( m_running_actors[actor_num] );
     STUDIO_ASSERT( actor != NULL, "Missing scene actor for fixture %lu", m_running_actors[actor_num] );
 

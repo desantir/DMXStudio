@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2012-14 Robert DeSantis
+Copyright (C) 2012-16 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -20,8 +20,13 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
+
+var PLAYED_PLAYLIST_LINK = "local:playlist:played";
+var QUEUED_PLAYLIST_LINK = "local:playlist:queued";
+
 var music_player_ui_ready = false;                  // Music player UI and controls intialized
-var playing_track_id = 0;                           // Current music player track
+var playing_track_link = 0;                         // Current music player track
+var playing_track_position = 0;                     // Tracks play time of current track
 
 var cache_now_playing = null;
 var cache_track_remaining = null;
@@ -32,9 +37,6 @@ var show_login_dialog = true;
 var last_player_error = null;
 
 var track_dialog_refresh = null;
-
-var PLAYED_TRACKS_PLAYLIST = -1;
-var QUEUED_TRACKS_PLAYLIST = -2;
 
 var track_stop_button = null;
 var track_play_button = null;
@@ -66,40 +68,46 @@ function update_player_status(music_player_status) {
         if (!music_player_ui_ready)
             initialize_player_ui();
 
-        var current_track_id = 0;
+        var current_track_link = null;
         var track_name = "";
         var track_length = "";
         var track_remaining = "";
         var track_status = "";
         var paused = false;
+        var bpm = null;
 
         if (music_player_status.playing != null) {
-            current_track_id = music_player_status.playing.track;
+            current_track_link = music_player_status.playing.link;
             track_name = music_player_status.playing.name;
-            track_status = "-" + trackTime(music_player_status.playing.remaining);
-            track_length = trackTime(music_player_status.playing.length);
-            track_remaining = "remaining " + trackTime(music_player_status.playing.remaining);
+            track_status = "-" + trackTime(music_player_status.playing.remaining,false);
+            track_length = trackTime(music_player_status.playing.length,false);
+            track_remaining = "remaining " + trackTime(music_player_status.playing.remaining,false);
             paused = music_player_status.playing.paused;
+            bpm = music_player_status.playing.bpm;
 
             cache_track_remaining.text(track_remaining);        // Always update remaining time
             cache_track_status.text(track_status);              // Always update remaining time
+
+            playing_track_position = music_player_status.playing.length - music_player_status.playing.remaining;
         }
 
-        if (current_track_id != playing_track_id) {
+        if (current_track_link !== playing_track_link) {
             cache_now_playing.text(track_name);
             cache_track_remaining.text(track_remaining);
-            cache_track_length.text(track_length);
+            cache_track_length.text(bpm == null ? track_length : track_length + " | " + Math.round(bpm) + " BPM");
             cache_track_status.text(track_status);
-            playing_track_id = current_track_id;
+            playing_track_link = current_track_link;
 
             if (track_dialog_refresh != null)
                 track_dialog_refresh();
         }
 
-        if (current_track_id == 0) {
+        if (current_track_link == 0) {
             enable_player_button(track_stop_button, false);
             enable_player_button(track_play_button, false);
             enable_player_button(track_pause_button, false);
+
+            playing_track_position = 0;
         }
         else {
             enable_player_button(track_stop_button, !paused);
@@ -288,7 +296,7 @@ function setupTrackSelect(playlist_select) {
 
             $.each(json['playlists'], function (index, playlist) {
                 playlist_select.append($('<option>', {
-                    value: playlist.id,
+                    value: playlist.link,
                     text: playlist.name.substring(0, 200),
                     selected: index == 0
                 }));
@@ -305,12 +313,12 @@ function setupTrackSelect(playlist_select) {
 function playlistPlay(event) {
     stopEventPropagation(event);
 
-    var playlist_number = $("#playlist_list").val();
+    var playlist_link = $("#playlist_list").val();
 
-    if (playlist_number != null && playlist_number > 0) {
+    if (playlist_link != null && playlist_link.length> 0 ) {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/rest/control/music/play/playlist/" + playlist_number + "/0",
+            url: "/dmxstudio/rest/control/music/play/playlist/" + playlist_link + "/0",
             cache: false,
             success: updateMusicUI,
             error: onAjaxError
@@ -323,12 +331,12 @@ function playlistPlay(event) {
 function playlistQueue(event) {
     stopEventPropagation(event);
 
-    var playlist_number = $("#playlist_list").val();
+    var playlist_link = $("#playlist_list").val();
 
-    if (playlist_number != null && playlist_number > 0) {
+    if (playlist_link != null && playlist_link.length > 0 ) {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/rest/control/music/play/playlist/" + playlist_number + "/1",
+            url: "/dmxstudio/rest/control/music/play/playlist/" + playlist_link + "/1",
             cache: false,
             success: function() {
                 updateMusicUI();
@@ -346,17 +354,17 @@ function playlistQueue(event) {
 function playlistTracks(event) {
     stopEventPropagation(event);
 
-    var playlist_number = $("#playlist_list").val();
     var playlist_name = $('#playlist_list option:selected').text(); 
+    var playlist_link = $("#playlist_list").val();
 
-    if (playlist_number != null && playlist_number > 0) {
+    if (playlist_link != null && playlist_link.length > 0 ) {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/rest/query/music/playlist/tracks/" + playlist_number,
+            url: "/dmxstudio/rest/query/music/playlist/tracks/" + playlist_link,
             cache: false,
             success: function (data) {
                 var json = jQuery.parseJSON(data);
-                showTrackList('Playlist: ' + playlist_name, playlist_number, json.tracks);
+                showTrackList( 'Playlist: ' + playlist_name, playlist_link, json.tracks );
             },
             error: onAjaxError
         });
@@ -434,14 +442,14 @@ function track_forward(event) {
 
 // ----------------------------------------------------------------------------
 //
-function playTrack(event, playlist_number, track_number, queue_track ) {
+function playTrack(event, track_link, queue_track ) {
     stopEventPropagation(event);
 
-    var queue = (queue_track) ? "1" : "0";
+    var track_action = (queue_track) ? "queue" : "play";
 
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/rest/control/music/play/track/" + playlist_number + "/" + track_number + "/" + queue,
+        url: "/dmxstudio/rest/control/music/" + track_action + "/track/" + track_link,
         cache: false,
         success: updateMusicUI,
         error: onAjaxError
@@ -450,7 +458,7 @@ function playTrack(event, playlist_number, track_number, queue_track ) {
 
 // ----------------------------------------------------------------------------
 //
-function trackTime(time) {
+function trackTime(time,show_frac) {
     var track_time = "";
     if (time > 60 * 60 * 1000) {
         track_time += Math.floor(time / (60 * 60 * 1000));
@@ -461,12 +469,17 @@ function trackTime(time) {
     track_time += Math.floor(time / (60 * 1000));
     track_time += ":";
     time %= (60 * 1000);
-    time = Math.floor(time / (1000))
 
-    if (time < 10)
+    var seconds = Math.floor(time / (1000));
+    if (seconds < 10)
         track_time += "0"
+    track_time += seconds;
 
-    track_time += time;
+    if ( show_frac ) {
+        time -= seconds * 1000;
+        var frac = time / 100;
+        track_time += "." + frac;
+    }
 
     return track_time;
 }
@@ -482,7 +495,7 @@ function track_back_info(event) {
         cache: false,
         success: function (data) {
             var json = jQuery.parseJSON(data);
-            showStaticTrackList('Played Tracks', PLAYED_TRACKS_PLAYLIST, json.tracks);
+            showStaticTrackList('Played Tracks', PLAYED_PLAYLIST_LINK, json.tracks);
         },
         error: onAjaxError
     });
@@ -499,7 +512,7 @@ function track_forward_info(event) {
         cache: false,
         success: function (data) {
             var json = jQuery.parseJSON(data);
-            showStaticTrackList('Queued Tracks', QUEUED_TRACKS_PLAYLIST, json.tracks);
+            showStaticTrackList('Queued Tracks', QUEUED_PLAYLIST_LINK, json.tracks);
         },
         error: onAjaxError
     });
@@ -507,12 +520,12 @@ function track_forward_info(event) {
 
 // ----------------------------------------------------------------------------
 //
-function trackListAction(event, playlist_number, track_number) {
+function trackListAction(event, track_link) {
     stopEventPropagation(event);
 
     var current = $(event.currentTarget);
     var source = $(event.target);
-    var queue = (playing_track_id != 0 && source.hasClass("tl_icon") && source.hasClass("ui-icon-flag"));
+    var queue = (playing_track_link != 0 && source.hasClass("tl_icon") && source.hasClass("ui-icon-flag"));
 
     if (queue) {
         source.css('rotation', 0);      // Reset rotation
@@ -539,9 +552,11 @@ function trackListAction(event, playlist_number, track_number) {
         icon.attr("title", "playing");
     }
 
+    var track_action = (queue) ? "queue" : "play";
+
     $.ajax({
         type: "GET",
-        url: "/dmxstudio/rest/control/music/play/track/" + playlist_number + "/" + track_number + "/" + (queue ? "1" : "0"),
+        url: "/dmxstudio/rest/control/music/" + track_action + "/track/" + track_link,
         cache: false,
         success: updateMusicUI,
         error: onAjaxError
@@ -550,7 +565,7 @@ function trackListAction(event, playlist_number, track_number) {
 
 // ----------------------------------------------------------------------------
 //
-function showTrackList(title, playlist_number, tracks) {
+function showTrackList( title, playlist_link, tracks ) {
     track_dialog_refresh = function () {
         var track_list = $('#tld_tracks');
         track_list.empty();
@@ -561,6 +576,7 @@ function showTrackList(title, playlist_number, tracks) {
         html += '<div class="tl_item tl_icon">&nbsp;</div>';
         html += '<div class="tl_item tl_track">TRACK</div>';
         html += '<div class="tl_item tl_time">TIME</div>';
+        html += '<div class="tl_item tl_bpm">BPM</div>';
         html += '<div class="tl_item tl_artist">ARTIST</div>';
         html += '<div class="tl_item tl_album">ALBUM</div>';
         html += '</div>'
@@ -568,15 +584,23 @@ function showTrackList(title, playlist_number, tracks) {
         $.each(tracks, function (index, track) {
             var css_class = index & 1 ? "tl_odd" : "tl_even";
 
-            html += '<div class="' + css_class + '" title="play" onclick="trackListAction(event,' + playlist_number + ',' + (index + 1) + ');">';
+            html += '<div class="' + css_class + '" title="play" onclick="trackListAction(event,\'' + track.link + '\');">';
 
-            if (track.id != playing_track_id)
+            if (track.link !== playing_track_link)
                 html += '<div class="tl_item tl_icon ui-icon ui-icon-flag" title="queue"></div>';
             else
                 html += '<div class="tl_item tl_icon ui-icon ui-icon-volume-on" title="playing"></div>';
 
             html += '<div class="tl_item tl_track">' + track.track_name + '</div>';
-            html += '<div class="tl_item tl_time">' + trackTime(parseInt(track.duration)) + '</div>';
+            html += '<div class="tl_item tl_time">' + trackTime(track.duration,false) + '</div>';
+
+            if (track.audio_info != null) {
+                html += '<div class="tl_item tl_bpm">' + Math.round( track.audio_info.bpm ) + '</div>';
+            }
+            else {
+                html += '<div class="tl_item tl_bpm">&nbsp;</div>';
+            }
+
             html += '<div class="tl_item tl_artist">' + track.artist_name + '</div>';
             html += '<div class="tl_item tl_album">' + track.album_name + '</div>';
             html += '</div>'
@@ -590,7 +614,7 @@ function showTrackList(title, playlist_number, tracks) {
     $("#track_list_dialog").dialog({
         modal: false,
         height: 600,
-        width: 980,
+        width: 1040,
         title: title,
         open: function () { // Stop main body scroll
             // $("body").css("overflow", "hidden");
@@ -603,7 +627,7 @@ function showTrackList(title, playlist_number, tracks) {
             'Play All': function () {
                 $.ajax({
                     type: "GET",
-                    url: "/dmxstudio/rest/control/music/play/playlist/" + playlist_number + "/0",
+                    url: "/dmxstudio/rest/control/music/play/playlist/" + playlist_link + "/0",
                     cache: false,
                     success: updateMusicUI,
                     error: onAjaxError
@@ -613,7 +637,7 @@ function showTrackList(title, playlist_number, tracks) {
             'Queue All': function () {
                 $.ajax({
                     type: "GET",
-                    url: "/dmxstudio/rest/control/music/play/playlist/" + playlist_number + "/1",
+                    url: "/dmxstudio/rest/control/music/play/playlist/" + playlist_link + "/1",
                     cache: false,
                     success: updateMusicUI,
                     error: onAjaxError
@@ -629,11 +653,11 @@ function showTrackList(title, playlist_number, tracks) {
 
 // ----------------------------------------------------------------------------
 //
-function showStaticTrackList( title, playlist_number ) {
+function showStaticTrackList( title, playlist_link ) {
     track_dialog_refresh = function () {
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/rest/query/music/" + (playlist_number == PLAYED_TRACKS_PLAYLIST ? "played" : "queued") + "/",
+            url: "/dmxstudio/rest/query/music/" + (playlist_link === PLAYED_PLAYLIST_LINK ? "played" : "queued") + "/",
             cache: false,
             success: function (data) {
                 var json = jQuery.parseJSON(data);
@@ -655,12 +679,14 @@ function showStaticTrackList( title, playlist_number ) {
                 $.each(tracks, function (index, track) {
                     var css_class = index & 1 ? "tl_odd" : "tl_even";
 
+                    html += '<div class="' + css_class + '" title="play" onclick="trackListAction(event,\'' + track.link + '\');">';
                     html += '<div class="' + css_class + '";">';
                     html += '<div class="tl_item tl_track">' + track.track_name + '</div>';
-                    html += '<div class="tl_item tl_time">' + trackTime(parseInt(track.duration)) + '</div>';
+                    html += '<div class="tl_item tl_time">' + trackTime(parseInt(track.duration),false) + '</div>';
                     html += '<div class="tl_item tl_artist">' + track.artist_name + '</div>';
                     html += '<div class="tl_item tl_album">' + track.album_name + '</div>';
-                    html += '</div>'
+                    html += '</div>';
+                    html += '</div>';
                 });
 
                 track_list.append(html);
@@ -717,12 +743,12 @@ function musicMatchDialog( selectionMap ) {
     var send_update = function ( ) {
         $.ajax({
             type: "POST",
-            url: "/dmxstudio/rest/edit/music/matcher/",
+            url: "/dmxstudio/rest/edit/music/matcher/load",
             data: JSON.stringify( $("#mmd_mappings").data("selectionMap") ),
             contentType: 'application/json',
             cache: false,
             success: function () {
-                updateChases();
+                ;
             },
             error: onAjaxError
         });
@@ -733,15 +759,15 @@ function musicMatchDialog( selectionMap ) {
     $("#music_match_dialog").dialog({
         title: "Music Match Mappings",
         autoOpen: false,
-        width: 1024,
+        width: 1048,
         height: 620,
         modal: true,
         resizable: false,
         open: function () { // Stop main body scroll
-            $("body").css("overflow", "hidden");
+            // $("body").css("overflow", "hidden");
         },
         close: function () {
-            $("body").css("overflow", "auto");
+            // $("body").css("overflow", "auto");
         },
         buttons: {
             'Save': send_update,
@@ -751,13 +777,16 @@ function musicMatchDialog( selectionMap ) {
         }
     });
 
+    $("#mmd_add").button().click( music_map_add );
+    $("#mmd_add_all").button().click( music_map_add_all );
+
+    $("#mmd_add").button("disable");
+    $("#mmd_add_all").button("disable");
+
     if (music_player_ui_ready)
         setupMusicMatchTrackSelect($("#mmd_playlist_list"), $("#mmd_track_list"));
     else
         $("#mmd_track_div").hide();
-
-    $("#mmd_add").button().click( music_map_add );
-    $("#mmd_add_all").button().click( music_map_add_all );
 
     $("#mmd_mappings").data("selectionMap", jQuery.extend(true, [], selectionMap));
 
@@ -769,10 +798,12 @@ function musicMatchDialog( selectionMap ) {
 // ----------------------------------------------------------------------------
 //
 function setupMusicMatchTrackSelect(playlist_select, tracklist_select) {
-    function selectPlaylist(tracklist_select, playlist_id) {
+    function selectPlaylist(tracklist_select, playlist_link) {
+        $("#mmd_add_all").button("enable");
+
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/rest/query/music/playlist/tracks/" + playlist_id,
+            url: "/dmxstudio/rest/query/music/playlist/tracks/" + playlist_link,
             cache: false,
             success: function (data) {
                 var json = jQuery.parseJSON(data);
@@ -788,21 +819,26 @@ function setupMusicMatchTrackSelect(playlist_select, tracklist_select) {
                 });
 
                 tracklist_select.multiselect("refresh");
+                tracklist_select.multiselect("uncheckAll");
             },
             error: onAjaxError
         });
     }
 
     playlist_select.multiselect({
-        minWidth: 300, multiple: false, selectedList: 1, header: "Play Lists", noneSelectedText: 'select playlist', classes: 'player_multilist', height: 400
+        minWidth: 400, multiple: false, selectedList: 1, header: "Play Lists", noneSelectedText: 'select playlist', classes: 'player_multilist', height: 400
     }).unbind("multiselectclick").bind("multiselectclick", function (event, ui) {
         stopEventPropagation(event);
         selectPlaylist(tracklist_select, ui.value);
     });
 
     tracklist_select.multiselect({
-        minWidth: 300, multiple: false, selectedList: 1, header: "Playlist Tracks", noneSelectedText: 'select track', classes: 'player_multilist', height: 500
-    });
+        minWidth: 400, multiple: false, selectedList: 1, header: "Playlist Tracks", noneSelectedText: 'select track', classes: 'player_multilist', height: 500
+    }).unbind("multiselectclick").bind("multiselectclick", function (event, ui) {
+        stopEventPropagation(event);
+        
+        $("#mmd_add").button("enable");
+    });;
 
     // Populate playlists
     $.ajax({
@@ -813,21 +849,24 @@ function setupMusicMatchTrackSelect(playlist_select, tracklist_select) {
             var json = jQuery.parseJSON(data);
 
             playlist_select.empty();
+            tracklist_select.empty();
 
             $.each(json['playlists'], function (index, playlist) {
                 playlist_select.append($('<option>', {
-                    value: playlist.id,
+                    value: playlist.link,
                     text: playlist.name.substring(0, 200),
                     selected: index == 0
                 }));
             });
 
             playlist_select.multiselect("refresh");
+            playlist_select.multiselect("uncheckAll");
+            tracklist_select.multiselect("refresh");
 
             // Populate tracks for selected playlist
-            var playlist_id = playlist_select.val();
-            if (playlist_id != null && playlist_id > 0)
-                selectPlaylist(tracklist_select, playlist_id);
+            var playlist_link = playlist_select.val();
+            if (playlist_link != null && playlist_link > 0)
+                selectPlaylist(tracklist_select, playlist_link);
         },
         error: onAjaxError
     });
@@ -1078,4 +1117,113 @@ function music_map_remove(event) {
             break;
         }
     }
+}
+
+// ----------------------------------------------------------------------------
+//
+var std_playlist = null;
+var std_track = null;
+
+function selectTrackDialog( callback ) {
+    var select_track_dialog = $("#select_track_dialog");
+
+    select_track_dialog.dialog({
+        autoOpen: false,
+        width: 800,
+        height: 300,
+        modal: true,
+        buttons:  [ 
+            {
+            id: "std_select_track",
+            text: "Select Track",
+            click: function () {
+                    select_track_dialog.dialog("close");
+                    callback( std_playlist, std_track );
+                }
+            },
+            {
+            text: "Close",
+            click: function () {
+                    select_track_dialog.dialog("close");
+                }
+            }
+        ]
+    });
+
+    if ( select_track_dialog.dialog("isOpen")) {
+         select_track_dialog.dialog("close");
+        return;
+    }
+
+    $("#std_playlists").multiselect({
+        minWidth: 600, multiple: false, selectedList: 1, header: "Play Lists", noneSelectedText: 'select playlist', classes: 'player_multilist', height: 400
+    }).unbind("multiselectclick").bind("multiselectclick", function (event, ui) {
+        stopEventPropagation(event);
+
+        std_playlist = ui.value;
+
+        $.ajax({
+            type: "GET",
+            url: "/dmxstudio/rest/query/music/playlist/tracks/" + ui.value,
+            cache: false,
+            success: function (data) {
+                var json = jQuery.parseJSON(data);
+
+                $("#std_tracks").empty();
+
+                $.each( json.tracks, function (index, track) {
+                    $("#std_tracks").append($('<option>', {
+                        value: index,
+                        text: track.full_name.substring(0, 200),
+                        selected: false,
+                        data: { "track": track }
+                    }));
+                });
+
+                $("#std_tracks").multiselect("refresh");
+                $("#std_tracks").multiselect("uncheckAll");
+            },
+            error: onAjaxError
+        });
+    });
+
+    $("#std_tracks").multiselect({
+        minWidth: 600, multiple: false, selectedList: 1, header: "Tracks", noneSelectedText: 'select track', classes: 'player_multilist', height: 400
+    }).unbind("multiselectclick").bind("multiselectclick", function (event, ui) {
+        stopEventPropagation(event);
+
+        var options = $("#std_tracks option");
+        std_track = $(options[ui.value]).data("track");
+        $("#std_select_track").button("enable");
+    });
+
+    // Populate playlists
+    if ( $("#std_playlists option").length == 0 ) {
+        $.ajax({
+            type: "GET",
+            url: "/dmxstudio/rest/query/music/playlists/",
+            cache: false,
+            success: function (data) {
+                var json = jQuery.parseJSON(data);
+
+                $("#std_playlists").empty();
+                $("#std_tracks").empty();
+
+                $.each(json['playlists'], function (index, playlist) {
+                    $("#std_playlists").append($('<option>', {
+                        value: playlist.link,
+                        text: playlist.name.substring(0, 200),
+                        selected: false
+                    }));
+                });
+
+                $("#std_select_track").button("disable");
+                $("#std_playlists").multiselect("refresh");
+                $("#std_playlists").multiselect("uncheckAll");
+            },
+            error: onAjaxError
+        });
+    }
+
+    select_track_dialog.dialog("open");
 }

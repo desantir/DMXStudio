@@ -109,20 +109,28 @@ bool HttpRestServices::query_venue_status( CString& response, LPCSTR data )
         if ( studio.getMusicPlayer()->isLoggedIn() ) {
             DWORD length, remaining;
             UINT queued, played;
-            DWORD track = studio.getMusicPlayer()->getPlayingTrack( &length, &remaining, &queued, &played );
+            CString track_link;
+            bool success = studio.getMusicPlayer()->getPlayingTrack( track_link, &length, &remaining, &queued, &played );
             
             json.add( "logged_in", true );
             json.add( "mapping", studio.getVenue()->isMusicSceneSelectEnabled() );
             json.add( "queued", queued );
             json.add( "played", played );
 
-            if ( track ) {
+            if ( success ) {
                 json.startObject( "playing" );
-                json.add( "track", track );
-                json.add( "name", studio.getMusicPlayer()->getTrackFullName( track ) );
+                json.add( "link", track_link );
+                json.add( "name", studio.getMusicPlayer()->getTrackFullName( track_link ) );
                 json.add( "length", length );
                 json.add( "remaining", remaining );
                 json.add( "paused", studio.getMusicPlayer()->isTrackPaused() );
+
+                AudioInfo audio_info;
+                if ( studio.getMusicPlayer()->getTrackAudioInfo( track_link, &audio_info, 0L ) == OK ) {
+                    json.add( "bpm", audio_info.tempo );
+                    json.add( "key", audio_info.key );
+                }
+
                 json.endObject( "playing" );
             }
         }

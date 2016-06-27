@@ -146,7 +146,7 @@ UINT DMXHttpServer::run()
 
             retCode = HttpAddUrl( hReqQueue, CA2W(listener_url), NULL );
             if ( retCode == ERROR_ACCESS_DENIED ) 
-                throw StudioException( "Access denied - add URL using 'netsh.exe http add urlacl url=%s user=DOMAIN\\<username>'", listener_url );
+                throw StudioException( "Access denied - add URL using 'netsh.exe http add urlacl url=%s user=[DOMAIN\\]<username>'", listener_url );
             if (retCode != NO_ERROR)
                 throw StudioException( "HttpAddUrl failed with %lu", retCode );
 

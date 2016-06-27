@@ -30,37 +30,30 @@ MA 02111-1307, USA.
 class Venue;
 
 typedef enum chase_state {
-    CHASE_AUTO_INIT = 0,
-    CHASE_LOAD = 1,
-    CHASE_DELAY = 2,
-    CHASE_FADE = 3,
-    CHASE_TAP_INIT = 4,
-    CHASE_TAP_ADVANCE = 5,
-    CHASE_TAP_RECORD = 6,
-    CHASE_TAP_WAIT = 7
+    CHASE_IDLE = 1,
+    CHASE_INIT = 2,
+    CHASE_LOAD = 3,
+    CHASE_DELAY = 4,
+    CHASE_FADE = 5
 } ChaseState;
 
 class ChaseTask : public Threadable
 {
-    Chase*				m_chase;
     Venue*				m_venue;
-    ChaseRunMode		m_run_mode;
-    BeatDetector*		m_beat_detector;
+    CCriticalSection    m_chase_mutex;		    // Protect chase objects
 
     // Running chase state
+    Chase*				m_chase;
     volatile unsigned	m_step_number;			// psuedo-atomic
     ChaseState			m_chase_state;
     DWORD				m_next_state_ms;
+    DWORD               m_fade_ms;
     unsigned			m_next_step;
-    CEvent				m_trigger;
-    bool				m_tap_auto;
     bool				m_fading;
 
     BYTE				m_dmx_fade[ MULTI_UNIV_PACKET_SIZE ];					// DMX fade packet current values
     long				m_channel_delta_ms[ MULTI_UNIV_PACKET_SIZE ];			// DMX fade packet ms deltas
     DWORD				m_channel_next_ms[ MULTI_UNIV_PACKET_SIZE ];			// DMX fade packet ms next
-
-    std::vector<DWORD>	m_tap_intervals;								// Recorded tap intervals
 
     UINT run(void);
 
@@ -69,11 +62,18 @@ class ChaseTask : public Threadable
     ChaseStep* advanceScene( void );
 
 public:
-    ChaseTask( Venue* venue, Chase* chase, ChaseRunMode run_mode );
+    ChaseTask( Venue* venue );
     ~ChaseTask(void);
 
     bool start();
     bool stop();
+
+    bool startChase( Chase* chase );
+    bool stopChase();
+
+    bool isChaseRunning() const {
+        return m_chase != NULL && m_chase_state != CHASE_IDLE;
+    }
 
     bool isFading() const {
         return m_fading;
@@ -86,16 +86,5 @@ public:
     unsigned getCurrentStep() const {
         return m_step_number;
     }
-
-    void loopTap(void) {
-        m_tap_auto = true;
-        m_trigger.SetEvent();
-    }
-
-    CEvent* getTrigger() {
-        return &m_trigger;
-    }
-
-    bool followBeat( unsigned start_freq, unsigned end_freq );
 };
 

@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2013 Robert DeSantis
+Copyright (C) 2013-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -58,6 +58,10 @@ public:
         return it != m_values.end();
     }
 
+    bool is_null( ) {
+        return m_values.size() == 0;
+    }
+
     bool is_null( LPCSTR key ) {
         return findPair( key )->second == "null";
     }
@@ -82,29 +86,20 @@ public:
         SimpleJsonParser parser;
 
         for ( std::vector<CString>::iterator it=array_items.begin(); it != array_items.end(); ++it ) {
-            parser.parse( strip_quotes(*it) );
-            T converted_value = parser.get<T>( "" );
+            CString& value = strip_quotes(*it);
+            T converted_value;
+
+            if ( value[0] == '{' || value [0] == '[' ) {
+                parser.parse( value );
+                converted_value = parser.get<T>( "" );
+            }
+            else        // Assume scalar values
+                convert( value, converted_value );
+
             converted_array.push_back( converted_value );
         }
-         
+
         return converted_array;
-    }
-
-    template <class T>
-    std::set<T> getSet( LPCSTR key ) {
-        std::set<T> converted_set;
-
-        // Array items will be quote delimited
-        std::vector<CString> array_items = get<std::vector<CString>>(key);
-        SimpleJsonParser parser;
-
-        for ( CString item : array_items ) {
-            parser.parse( strip_quotes(item) );
-            T converted_value = parser.get<T>( "" );
-            converted_set.insert( converted_value );
-        }
-         
-        return converted_set;
     }
 
     template <class T>

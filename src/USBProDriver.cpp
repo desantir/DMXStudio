@@ -246,5 +246,7 @@ DMX_STATUS USBProDriver::setParams() {
     printf("BREAK TIME: %d micro sec\n", (int) (params.BreakTime * 10.67) + 100 );
     printf("MAB TIME: %d micro sec\n", (int) (params.MaBTime * 10.67) );
     printf("SEND REFRESH RATE: %d packets/sec\n", params.RefreshRate);
+
+    return DMX_OK;
 }
 

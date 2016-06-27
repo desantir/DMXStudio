@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -20,32 +20,18 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "DMXStudio.h"
 #include "Venue.h"
 
 // ----------------------------------------------------------------------------
 //
-ChaseTask::ChaseTask( Venue* venue, Chase* chase, ChaseRunMode run_mode ) :
+ChaseTask::ChaseTask( Venue* venue ) :
     Threadable( "ChaseTask" ),
+    m_chase(NULL),
     m_venue( venue ),
-    m_chase( chase ),
-    m_run_mode( run_mode ),
-    m_trigger( FALSE, FALSE ),
-    m_tap_auto( false ),
     m_fading( false ),
-    m_beat_detector( NULL )
+    m_chase_state(CHASE_IDLE)
 {
-    switch ( run_mode ) {
-        case CHASE_MANUAL:
-        case CHASE_RECORD:
-            m_chase_state = CHASE_TAP_INIT;
-            break;
-            
-        case CHASE_AUTO:
-            m_chase_state = CHASE_AUTO_INIT;
-            break;
-    }
 }
 
 // ----------------------------------------------------------------------------
@@ -64,49 +50,57 @@ bool ChaseTask::start( ) {
 // ----------------------------------------------------------------------------
 //
 bool ChaseTask::stop() {
-    if ( !stopThread() )
-        return false;
+    stopChase();
 
-    if ( m_beat_detector != NULL ) {
-        m_beat_detector->detach();
-        delete m_beat_detector;
-        m_beat_detector = NULL;
-    }
+    return stopThread();
+}
+
+// ----------------------------------------------------------------------------
+//
+bool ChaseTask::startChase( Chase* next_chase ) {
+    CSingleLock lock( &m_chase_mutex, TRUE );
+
+    stopChase();
+
+    m_chase = next_chase;
+    m_chase_state = CHASE_INIT;
+
+    DMXStudio::log_status( "Chase %d running", m_chase->getChaseNumber() );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool ChaseTask::followBeat( unsigned start_freq, unsigned end_freq ) {
-    if ( m_beat_detector != NULL ) {
-        m_beat_detector->detach();
-        delete m_beat_detector;
+bool ChaseTask::stopChase() {
+    CSingleLock lock( &m_chase_mutex, TRUE );
+
+    if ( m_chase ) {
+        DMXStudio::log_status( "Chase %d stopped", m_chase->getChaseNumber() );
+
+        m_chase = NULL;
+        m_chase_state = CHASE_IDLE;
     }
 
-    m_beat_detector = new BeatDetector( 64 );
-    m_beat_detector->attach( m_venue->getAudio() );
-    m_beat_detector->addFrequencyEvent( getTrigger(), start_freq, end_freq );
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
 UINT ChaseTask::run(void) {
-    bool tap_capture = false;
-    unsigned tap_interval = 0;
+    DMXStudio::log_status( "Chase task running" );
 
-    DMXStudio::log_status( "Chase %d running", m_chase->getChaseNumber() );
+    CSingleLock lock( &m_chase_mutex, FALSE );
 
-    try {
-        while ( isRunning() ) {
-            if ( m_venue->getWhiteout() != WHITEOUT_OFF ) {
-                Sleep( 10 );
-                continue;
-            }
+    while ( isRunning() ) {
+        try {
+            lock.Lock();
 
             switch ( m_chase_state ) {
-                case CHASE_AUTO_INIT:
+                case CHASE_IDLE:
+                    break;
+
+                case CHASE_INIT:
                     m_step_number = m_next_step = 0;
                     m_chase_state = CHASE_LOAD;
                     m_next_state_ms = 0UL;
@@ -118,7 +112,15 @@ UINT ChaseTask::run(void) {
                     // Compute length of running scene
                     m_next_state_ms = step->getDelayMS();
                     if ( m_next_state_ms == 0 )
-                        m_next_state_ms = m_chase->getDelayMS();
+                        m_next_state_ms = m_chase->getDelayMS(); 
+
+                    m_fade_ms = m_chase->getFadeMS();
+
+                    if ( m_next_state_ms - m_fade_ms > 255  )
+                        m_next_state_ms -= m_fade_ms;
+                    else
+                        m_fade_ms = 0L;
+
                     m_next_state_ms += GetTickCount();
 
                     m_chase_state = CHASE_DELAY;
@@ -127,22 +129,25 @@ UINT ChaseTask::run(void) {
 
                 case CHASE_DELAY: {
                     if ( GetTickCount() < m_next_state_ms ) {
-                        Sleep( 10 );
                         break;
                     }
 
-                    // If no fade, just load the next chase scene
-                    ULONG fade_time = m_chase->getFadeMS();
+                    if ( !m_chase->isRepeat() && m_next_step == 0 && m_step_number > 0 ) {
+                        m_venue->selectScene( m_venue->getDefaultScene()->getUID() );
+                        stopChase();
+                        break;
+                    }
 
-                    if ( fade_time < 255 ) {					// No sense fading if < 255ms (i.e. byte value)
+                    // Just load the next chase scene
+                    if ( m_fade_ms == 0 ) {
                         m_chase_state = CHASE_LOAD;
+                        break;
                     }
-                    else {
-                        m_fading = true;
-                        computeChannelFade( fade_time );
-                        m_chase_state = CHASE_FADE;
-                    }
-                    break;
+
+                    // Setup and fall through
+                    m_fading = true;
+                    computeChannelFade( m_fade_ms );
+                    m_chase_state = CHASE_FADE;
                 }
 
                 case CHASE_FADE: {
@@ -157,70 +162,22 @@ UINT ChaseTask::run(void) {
 
                     break;
                 }
-
-                case CHASE_TAP_INIT: {
-                    m_step_number = m_next_step = 0;
-                    m_chase_state = CHASE_TAP_ADVANCE;
-                    tap_capture = false;
-                    break;
-                }
-
-                case CHASE_TAP_WAIT:
-                    if ( GetTickCount() < m_next_state_ms )
-                        Sleep( 1 );
-                    else
-                        m_chase_state = CHASE_TAP_ADVANCE;
-                    break;
-
-                case CHASE_TAP_ADVANCE: {
-                    advanceScene();
-
-                    if ( !m_tap_auto || m_tap_intervals.size() == 0 ) {
-                        m_chase_state = CHASE_TAP_RECORD;
-                        m_next_state_ms = GetTickCount();
-                    }
-                    else {
-                        m_chase_state = CHASE_TAP_WAIT;
-                        m_next_state_ms = GetTickCount()+m_tap_intervals[tap_interval];
-                        tap_interval = (tap_interval+1) % m_tap_intervals.size();
-                    }
-                    break;
-                }
-
-                case CHASE_TAP_RECORD: {
-                    if ( ::WaitForSingleObject( m_trigger.m_hObject, 100 ) == WAIT_OBJECT_0 ) {
-                        if ( CHASE_RECORD == m_run_mode ) {
-                            if ( !tap_capture ) {					// First tap starts capture
-                                tap_capture = true;
-                                m_next_state_ms = GetTickCount();
-                            }
-                            else if ( !m_tap_auto || m_tap_intervals.size() == 0) {
-                                DWORD now = GetTickCount();
-                                m_tap_intervals.push_back( now-m_next_state_ms );
-                                m_next_state_ms = now;
-                            }
-                            else {
-                                m_step_number = m_next_step = tap_interval = 0;
-                            }
-                        }
-
-                        m_chase_state = CHASE_TAP_ADVANCE;
-                    }
-                    break;
-                }
             }
+
+            lock.Unlock();
+
+            Sleep(1);
+        }
+        catch ( std::exception& ex ) {
+            if ( lock.IsLocked() )
+                lock.Unlock();
+
+            DMXStudio::log( ex );
+            return -1;
         }
     }
-    catch ( StudioException& ex ) {
-        DMXStudio::log( ex );
-        return -1;
-    }
-    catch ( std::exception& ex ) {
-        DMXStudio::log( ex );
-        return -1;
-    }
 
-    DMXStudio::log_status( "Chase %d stopped", m_chase->getChaseNumber() );
+    DMXStudio::log_status( "Chase task stopped" );
 
     return 0;
 }
@@ -243,7 +200,7 @@ ChaseStep* ChaseTask::advanceScene()
 // ----------------------------------------------------------------------------
 //
 void ChaseTask::advanceChannelFade( DWORD current_time ) {
-    for ( channel_t channel=0; channel < DMX_PACKET_SIZE; channel++ ) {
+    for ( channel_t channel=0; channel < MULTI_UNIV_PACKET_SIZE; channel++ ) {
         if ( m_channel_delta_ms[ channel ] != 0 ) {
             while ( current_time > m_channel_next_ms[ channel ] ) {
                 if ( m_channel_delta_ms[ channel ] < 0 ) {

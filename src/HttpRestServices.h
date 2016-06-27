@@ -103,15 +103,14 @@ MA 02111-1307, USA.
 #define DMX_URL_QUERY_MUSIC_PLAYLIST_TRACKS     DMX_URL_REST "query/music/playlist/tracks/"
 #define DMX_URL_QUERY_MUSIC_QUEUED              DMX_URL_REST "query/music/queued/"
 #define DMX_URL_QUERY_MUSIC_PLAYED              DMX_URL_REST "query/music/played/"
+#define DMX_URL_CONTROL_MUSIC_QUEUE_TRACK       DMX_URL_REST "control/music/queue/track/"
 #define DMX_URL_CONTROL_MUSIC_PLAY_TRACK        DMX_URL_REST "control/music/play/track/"
 #define DMX_URL_CONTROL_MUSIC_PLAY_PLAYLIST     DMX_URL_REST "control/music/play/playlist/"
 #define DMX_URL_CONTROL_MUSIC_PLAYER_LOGIN      DMX_URL_REST "control/music/player/login/"
 #define DMX_URL_QUERY_MUSIC_MATCHER             DMX_URL_REST "query/music/matcher/"
-#define DMX_URL_EDIT_MUSIC_MATCHER              DMX_URL_REST "edit/music/matcher/"
-
-// Internal play list IDs for queued and played track lists
-#define PLAYED_TRACKS_PLAYLIST      -1
-#define QUEUED_TRACKS_PLAYLIST      -2
+#define DMX_URL_QUERY_MUSIC_TRACK_ANALYZE       DMX_URL_REST "query/music/track/analyze/"
+#define DMX_URL_EDIT_MUSIC_MATCHER_LOAD         DMX_URL_REST "edit/music/matcher/load/"
+#define DMX_URL_EDIT_MUSIC_MATCHER_UPDATE       DMX_URL_REST "edit/music/matcher/update/"
 
 class BeatBin
 {
@@ -217,7 +216,10 @@ protected:
     bool query_music_played( CString& response, LPCSTR data );
     bool query_music_playlist_tracks( CString& response, LPCSTR data );
     bool control_music_play_track( CString& response, LPCSTR data );
+    bool control_music_queue_track( CString& response, LPCSTR data );
     bool control_music_play_playlist( CString& response, LPCSTR data );
+    bool query_music_track_analysis( CString& response, LPCSTR data );
+
     bool control_animation_speed( CString& response, LPCSTR data );
 
     bool query_scenes( CString& response, LPCSTR data );
@@ -273,7 +275,9 @@ protected:
     bool edit_venue_new( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
     bool edit_venue_layout_save( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
 
-    bool edit_music_matcher( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool edit_music_matcher_load( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool edit_music_matcher_update( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+
     bool player_login( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
 
     bool venue_upload( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );

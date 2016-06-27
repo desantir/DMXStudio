@@ -62,7 +62,7 @@ UINT AnimationTask::run(void) {
             if ( last_dimmer != m_venue->getMasterDimmer() ) {
                 last_dimmer = m_venue->getMasterDimmer();
                 // Adjust dimmer channels only to not interrrupt animation
-                changed |= adjust_dimmer_channels();
+                changed |= m_scene != NULL && adjust_dimmer_channels();
             }
 
             for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
@@ -99,10 +99,10 @@ UINT AnimationTask::run(void) {
             Sleep(1);
         }
         catch ( std::exception& ex ) {
-            DMXStudio::log( ex );
-
             if ( lock.IsLocked() )
                 lock.Unlock();
+
+            DMXStudio::log( ex );
 
             clearAnimations();
         }

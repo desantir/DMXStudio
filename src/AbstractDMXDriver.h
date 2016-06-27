@@ -57,7 +57,7 @@ class AbstractDMXDriver
     CString m_connection_info;							// Current connection information
 
     BYTE m_blackout_packet[DMX_PACKET_SIZE + 1];		// Blackout DMX packet
-    BYTE m_dmx_packet[DMX_PACKET_SIZE + 1];			// New DMX packet (staging)
+    BYTE m_dmx_packet[DMX_PACKET_SIZE + 1];			    // New DMX packet (staging)
 
     bool m_blackout;									// Universe is backed out
 

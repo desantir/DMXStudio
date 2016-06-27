@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2013 Robert DeSantis
+Copyright (C) 2013-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -231,8 +231,9 @@ std::vector<CString> SimpleJsonParser::tokenize( LPCSTR value, LPCSTR break_char
 {
     std::vector<CString> tokens;
 
-    LPCSTR start = value;
+    LPCSTR start;
     LPCSTR head;
+    CString token;
 
     bool in_quotes = false;
     bool in_token = false;
@@ -240,19 +241,30 @@ std::vector<CString> SimpleJsonParser::tokenize( LPCSTR value, LPCSTR break_char
 
     char last_char = '\0';
 
-    for ( head=start; *head; head++ ) {
+    for ( head=start=value; *head; head++ ) {
         if ( in_quotes ) {
             if ( *head == '"' && last_char != '\\' ) {
                 in_quotes = false;
                 must_break = true;
+                token = extract_token( start, head );
             }
         }
-        else if ( !in_token && iswspace(*head) ) {
-            start = head+1;
+        else if ( iswspace(*head) ) {
+            if ( in_token && !must_break ) {
+                token = extract_token( start, head-1 );
+                must_break = true;
+            } 
+            else if ( !in_token )
+                start = head+1;
+            else
+                ; // Ignore WS between tokens and breaks
         }
         else if ( strchr( break_chars, *head ) != NULL ) {
+            if ( in_token && !must_break )  // Non-quoted literal
+                token = extract_token( start, head-1 );
+
             if ( in_token )
-                tokens.push_back( extract_token( start, head-1 ) );
+                tokens.push_back( token );
 
             if ( store_breaks )
                 tokens.push_back( extract_token( head, head ) );
@@ -275,7 +287,11 @@ std::vector<CString> SimpleJsonParser::tokenize( LPCSTR value, LPCSTR break_char
     if ( in_token ) {
         if ( in_quotes )
             throw std::exception( "Unterminate quotes" );
-        tokens.push_back( extract_token( start, head-1 ) );
+
+        if ( !must_break )  // Non-quoted literal
+            token = extract_token( start, head-1 );
+
+        tokens.push_back( token );
     }
 
     return tokens;

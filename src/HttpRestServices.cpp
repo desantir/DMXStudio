@@ -73,8 +73,10 @@ HttpRestServices::HttpRestServices(void) :
     m_rest_get_handlers[ DMX_URL_QUERY_MUSIC_QUEUED ] = &HttpRestServices::query_music_queued;
     m_rest_get_handlers[ DMX_URL_QUERY_MUSIC_PLAYED ] = &HttpRestServices::query_music_played;
     m_rest_get_handlers[ DMX_URL_CONTROL_MUSIC_PLAY_TRACK ] = &HttpRestServices::control_music_play_track;
+    m_rest_get_handlers[ DMX_URL_CONTROL_MUSIC_QUEUE_TRACK ] = &HttpRestServices::control_music_queue_track;
     m_rest_get_handlers[ DMX_URL_CONTROL_MUSIC_PLAY_PLAYLIST ] = &HttpRestServices::control_music_play_playlist;
-    m_rest_get_handlers[  DMX_URL_QUERY_MUSIC_MATCHER ] = &HttpRestServices::query_music_matcher;
+    m_rest_get_handlers[ DMX_URL_QUERY_MUSIC_MATCHER ] = &HttpRestServices::query_music_matcher;
+    m_rest_get_handlers[ DMX_URL_QUERY_MUSIC_TRACK_ANALYZE ] = &HttpRestServices::query_music_track_analysis;
 
     // POST request handlers
     m_rest_post_handlers[ DMX_URL_CONTROL_FIXTURE_CHANNELS ] = &HttpRestServices::control_fixture_channels;
@@ -92,7 +94,8 @@ HttpRestServices::HttpRestServices(void) :
     m_rest_post_handlers[ DMX_URL_EDIT_FIXTURE_CREATE ] = &HttpRestServices::edit_fixture_create;
     m_rest_post_handlers[ DMX_URL_EDIT_FIXTURE_UPDATE ] = &HttpRestServices::edit_fixture_update;
     m_rest_post_handlers[ DMX_URL_EDIT_VENUE_LAYOUT_SAVE ] = &HttpRestServices::edit_venue_layout_save;
-    m_rest_post_handlers[ DMX_URL_EDIT_MUSIC_MATCHER ] = &HttpRestServices::edit_music_matcher;
+    m_rest_post_handlers[ DMX_URL_EDIT_MUSIC_MATCHER_LOAD ] = &HttpRestServices::edit_music_matcher_load;
+    m_rest_post_handlers[ DMX_URL_EDIT_MUSIC_MATCHER_UPDATE ] = &HttpRestServices::edit_music_matcher_update;
 
     m_rest_post_handlers[ DMX_URL_EDIT_VENUE_SAVE ] = &HttpRestServices::edit_venue_save;
     m_rest_post_handlers[ DMX_URL_EDIT_VENUE_LOAD ] = &HttpRestServices::edit_venue_load;

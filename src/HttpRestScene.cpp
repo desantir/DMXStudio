@@ -360,7 +360,8 @@ bool HttpRestServices::edit_scene( CString& response, LPCSTR data, EditMode mode
             if ( anim_parser_func == NULL )
                 throw std::exception( "Unknown animation class name from client" );
 
-            animations.push_back( anim_parser_func( animationParser, signal, animation_actors ) );
+            AbstractAnimation* anim = anim_parser_func( animationParser, signal, animation_actors );
+            animations.push_back( anim );
         }
     }
     catch ( std::exception& e ) {
@@ -381,20 +382,16 @@ bool HttpRestServices::edit_scene( CString& response, LPCSTR data, EditMode mode
 
     switch ( mode ) {
         case NEW: {
-            scene_id = studio.getVenue()->allocUID();
             Scene new_scene;
-            new_scene.setUID( scene_id );
-            studio.getVenue()->addScene( new_scene );
+            scene_id = studio.getVenue()->addScene( new_scene );
             scene = studio.getVenue()->getScene( scene_id );
             studio.getVenue()->moveDefaultFixturesToScene( scene_id, actors, keep_groups, true );
             break;
         }
 
         case COPY: {
-            scene_id = studio.getVenue()->allocUID();
             Scene new_scene( *scene );
-            new_scene.setUID( scene_id );
-            studio.getVenue()->addScene( new_scene );
+            scene_id = studio.getVenue()->addScene( new_scene );
             scene = studio.getVenue()->getScene( scene_id );
         }
         
@@ -446,19 +443,19 @@ AnimationSignal parseAnimationSignal( SimpleJsonParser parser ) {
 // ----------------------------------------------------------------------------
 //
 AbstractAnimation* SceneSequenceParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
-    return new SceneSequence( studio.getVenue()->allocUID(), signal, actors );
+    return new SceneSequence( NOUID, signal, actors );
 }
 
 // ----------------------------------------------------------------------------
 //
 AbstractAnimation* SoundLevelParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
-    return new SceneSoundLevel( studio.getVenue()->allocUID(), signal, actors, parser.get<WORD>( "fade_what" ) );
+    return new SceneSoundLevel( NOUID, signal, actors, parser.get<WORD>( "fade_what" ) );
 }
 
 // ----------------------------------------------------------------------------
 //
 AbstractAnimation* ScenePatternDimmerParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
-    return new ScenePatternDimmer( studio.getVenue()->allocUID(), signal, actors, (DimmerPattern)parser.get<int>( "dimmer_pattern" ) );
+    return new ScenePatternDimmer( NOUID, signal, actors, (DimmerPattern)parser.get<int>( "dimmer_pattern" ) );
 }
 
 // ----------------------------------------------------------------------------
@@ -469,7 +466,7 @@ AbstractAnimation* SceneStrobeAnimatorParser( SimpleJsonParser parser, Animation
     unsigned long strobe_neg_ms = parser.get<unsigned>( "strobe_neg_ms" );
     unsigned long strobe_flashes = parser.get<UINT>( "strobe_flashes" );
 
-    return new SceneStrobeAnimator( studio.getVenue()->allocUID(), signal, actors, strobe_neg_color, strobe_pos_ms, 
+    return new SceneStrobeAnimator( NOUID, signal, actors, strobe_neg_color, strobe_pos_ms, 
                                     strobe_neg_ms, strobe_flashes );
 }
 
@@ -484,7 +481,7 @@ AbstractAnimation* SceneColorFaderParser( SimpleJsonParser parser, AnimationSign
 
     RGBWAArray color_progression = parser.getHex<RGBWAArray>( "color_progression" );
 
-    return new SceneColorFader( studio.getVenue()->allocUID(), signal, actors, strobe_neg_color, 
+    return new SceneColorFader( NOUID, signal, actors, strobe_neg_color, 
                                 strobe_pos_ms, strobe_neg_ms, strobe_flashes, color_progression, fader_effect );
 }
 
@@ -523,7 +520,7 @@ AbstractAnimation* SceneMovementAnimatorParser( SimpleJsonParser parser, Animati
         movement.m_coordinates.push_back( FixtureCoordinate( pan, tilt ) );
     }
 
-    return new SceneMovementAnimator( studio.getVenue()->allocUID(), signal, actors, movement );
+    return new SceneMovementAnimator( NOUID, signal, actors, movement );
 }
 
 // ----------------------------------------------------------------------------
@@ -544,7 +541,7 @@ AbstractAnimation* SceneChannelAnimatorParser( SimpleJsonParser parser, Animatio
         channel_animations.push_back( ChannelAnimation( actor, channel, style, value_list ) );
     }
 
-    return new SceneChannelAnimator( studio.getVenue()->allocUID(), signal, channel_animations );
+    return new SceneChannelAnimator( NOUID, signal, channel_animations );
 }
 
 // ----------------------------------------------------------------------------
@@ -556,7 +553,7 @@ AbstractAnimation* SceneChannelFilterParser( SimpleJsonParser parser, AnimationS
     int offset= parser.get<int>( "offset" );
     ChannelList channels = parser.get<ChannelList>( "channels" );
 
-    return new SceneChannelFilter( studio.getVenue()->allocUID(), signal, actors, filter, channels, step, amplitude, offset );
+    return new SceneChannelFilter( NOUID, signal, actors, filter, channels, step, amplitude, offset );
 }
 
 // ----------------------------------------------------------------------------
@@ -571,6 +568,6 @@ AbstractAnimation* ScenePixelAnimatorParser( SimpleJsonParser parser, AnimationS
     unsigned increment= parser.get<unsigned>( "increment" );
     RGBWAArray color_progression = parser.getHex<RGBWAArray>( "color_progression" );
 
-    return new ScenePixelAnimator( studio.getVenue()->allocUID(), signal, actors, pixel_effect, 
+    return new ScenePixelAnimator( NOUID, signal, actors, pixel_effect, 
                     color_progression, empty_color, generations, pixels, fade, increment, combine );
 }

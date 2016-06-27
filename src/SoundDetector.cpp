@@ -86,10 +86,15 @@ HRESULT SoundDetector::ProcessAmplitudes( WORD channels, size_t sample_size, flo
     // Determine peak amplitude for both channels (values approach 1.0 where .999 is loudest and .000 is no sound)
     float peak_amplitude = 0;
     for ( size_t i=0; i < sample_size; i++ ) {
-        if ( sample_data[LEFT_CHANNEL][i] > peak_amplitude )
-            peak_amplitude = sample_data[LEFT_CHANNEL][i];
-        if ( channels > 1 && sample_data[RIGHT_CHANNEL][i] > peak_amplitude )
-            peak_amplitude = sample_data[RIGHT_CHANNEL][i];
+        float sample = abs( sample_data[LEFT_CHANNEL][i] );
+        if ( sample > peak_amplitude )
+            peak_amplitude = sample;
+
+        if ( channels > 1 ) {
+            float sample = abs( sample_data[RIGHT_CHANNEL][i] );
+            if ( sample > peak_amplitude )
+                peak_amplitude = sample;
+        }
     }
 
     // Convert to 0 - 999

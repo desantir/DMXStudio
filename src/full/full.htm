@@ -1,7 +1,7 @@
 <!DOCTYPE html> 
 
 <!--
-Copyright (C) 2011-15 Robert DeSantis
+Copyright (C) 2011-16 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -40,6 +40,7 @@ MA 02111-1307, USA.
     <script type="text/javascript" src="colorpicker/js/colorpicker.js"></script>
     <script src="jquery.container.js"></script>
     <script src="jquery.pan-tilt.js"></script>
+    <script src="jquery.track-visualize.js"></script>
 
     <script src="slider-panel.js"></script>
     <script src="tile-scroll-panel.js"></script>
@@ -52,6 +53,7 @@ MA 02111-1307, USA.
     <script src="animation.js"></script>
     <script src="beatviz.js"></script>
     <script src="freqviz.js"></script>
+    <script src="chase-track.js"></script>
 
     <link rel="stylesheet" href="full.css" />
 
@@ -176,6 +178,7 @@ MA 02111-1307, USA.
             <div id="show_frequency_visualizer" class="lg-icon-grey lg-icon-chart menu_icon" title="frequency visualizer" style="float:right;"></div>
             <div id="show_beat_visualizer" class="lg-icon-grey lg-icon-speaker menu_icon" title="beat visualizer" style="float:right;"></div>
             <div id="show_music_matcher" class="lg-icon-grey lg-icon-tag menu_icon" title="music match mappings" style="float:right;"></div>
+            <!-- div id="show_amplitude_visualizer" class="lg-icon-grey lg-icon-sparkle menu_icon" title="amplitude visualizer" style="float:right;"></div -->
         </div>
     </div>
 </div>
@@ -218,8 +221,8 @@ MA 02111-1307, USA.
         <span class="section_title">SCENES</span>
         <span class="collapsable_icon"></span>
         <span class="scroll_or_grid_icon" style="margin-right: 5px;"></span>
-        <span class="ui-icon ui-icon-plusthick edit_mode" title="new scene" style="float:right; display: none; margin-right: 5px;" onclick="createScene(event);"></span>
-        <span id="copy_scene_button" class="ui-icon ui-icon-clipboard edit_mode" title="copy scene" style="float:right; display: none; margin-right: 5px;" onclick="copyScene(event);"></span>
+        <span class="ui-icon ui-icon-plusthick edit_mode header_icon" title="new scene" onclick="createScene(event);"></span>
+        <span id="copy_scene_button" class="ui-icon ui-icon-clipboard edit_mode header_icon" title="copy scene" onclick="copyScene(event);"></span>
     </div>
     <div class="collapsable_content">
         <div class="scroll-content"></div>    
@@ -234,7 +237,9 @@ MA 02111-1307, USA.
         <span class="section_title">CHASES</span>
         <span class="collapsable_icon"></span>
         <span class="scroll_or_grid_icon" style="margin-right: 5px;"></span>
-        <span class="ui-icon ui-icon-plusthick edit_mode" title="new chase" style="float:right; display: none; margin-right: 5px;" onclick="createChase(event);"></span>
+        <span class="ui-icon ui-icon-plusthick edit_mode header_icon" title="new chase" onclick="createChase(event);"></span>
+        <span id="chaseTrack" class="ui-icon ui-icon-volume-on edit_mode header_icon" title="chase track"></span>
+
     </div>
     <div class="collapsable_content">
         <div class="scroll-content"></div>    
@@ -248,11 +253,11 @@ MA 02111-1307, USA.
     <div class="section_title_container">
         <span class="section_title" >GROUPS & FIXTURES</span>
         <span class="collapsable_icon"></span>
-        <span class="scroll_or_grid_icon"  style="margin-right: 5px;"></span>
-        <span class="ui-icon ui-icon-plusthick edit_mode" title="new fixture" style="float:right; display: none; margin-right: 5px; " onclick="createFixture(event);"></span>
-        <span class="ui-icon ui-icon-plusthick edit_mode" title="new fixture group" style="float:right; display: none; margin: 0px 5px 0px 0px; border: 1px solid #808080;" onclick="createFixtureGroup(event);"></span>
-        <span id="copy_fixtures_button" class="ui-icon ui-icon-clipboard edit_mode" title="copy fixtures to scene" style="float:right; display: none; margin-right: 5px; " onclick="copyFixtures(event);"></span>
-        <span id="clear_fixtures_button" class="ui-icon ui-icon-minus play_item" title="clear all fixtures" style="float:right; margin-right: 5px; border: 1px solid #000000;" onclick="clearFixtures(event);" ></span>
+        <span class="scroll_or_grid_icon" style="margin-right: 5px;"></span>
+        <span class="ui-icon ui-icon-plusthick edit_mode header_icon" title="new fixture" onclick="createFixture(event);"></span>
+        <span class="ui-icon ui-icon-plusthick edit_mode header_icon" title="new fixture group" style="border: 1px solid #808080;" onclick="createFixtureGroup(event);"></span>
+        <span id="copy_fixtures_button" class="ui-icon ui-icon-clipboard edit_mode header_icon" title="copy fixtures to scene" onclick="copyFixtures(event);"></span>
+        <span id="clear_fixtures_button" class="ui-icon ui-icon-minus play_item header_icon" title="clear all fixtures" style="border: 1px solid #000000;" onclick="clearFixtures(event);" ></span>
     </div>
     <div class="collapsable_content">
         <div class="scroll-content"></div>    
@@ -269,10 +274,11 @@ MA 02111-1307, USA.
 
         <span class="scroll_or_grid_icon"  style="margin-right: 5px;"></span>
         <span class="track_slider_icon" style="margin-right: 5px;"></span>
-        <span id="channel_panel_colorpicker" class="ui-icon ui-icon-lightbulb" title="show color palette" style="float:right; cursor:pointer; margin-right: 5px;"></span>
-        <span id="channel_pan_tilt" class="ui-icon ui-icon-arrow-4" title="show pan tilt" style="float:right; cursor:pointer; margin-right: 5px;" onclick="panTilt(event);"></span>
-        <span id="channel_panel_groupcolors" class="ui-icon ui-icon-pin-s" title="group color channels" style="float:right; cursor:pointer; margin-right: 5px;" onclick="groupFixtureSliderColors(event);"></span>
-        <span id="channel_panel_rearrange" class="ui-icon ui-icon-grip-solid-vertical" title="arrange channels" style="float:right; cursor:pointer; margin-right: 5px;" onclick="arrangeSliders(event);"></span>
+        <span id="channel_panel_colorpicker" class="ui-icon ui-icon-lightbulb header_icon" title="show color palette"></span>
+        <span id="channel_pan_tilt" class="ui-icon ui-icon-arrow-4 header_icon" title="show pan tilt" onclick="panTilt(event);"></span>
+        <span id="channel_panel_groupcolors" class="ui-icon ui-icon-pin-s header_icon" title="group color channels" onclick="groupFixtureSliderColors(event);"></span>
+        <span id="channel_panel_rearrange" class="ui-icon ui-icon-grip-solid-vertical header_icon" title="arrange channels" onclick="arrangeSliders(event);"></span>
+        <span id="channel_panel_clear_links" class="ui-icon ui-icon-check header_icon" title="clear linked" onclick="resetLinkedSliders(event);"></span>
         <span id="slider_pane_title" class="slider_pane_title"></span>
     </div>
     <div class="collapsable_content">
@@ -291,6 +297,7 @@ MA 02111-1307, USA.
             <div class="slider_slider"></div>
         </div>
         <div class="slider_footer slider_text_color"></div>
+        <div class="ui-icon-check slider_select"></div>
     </div>
 </div>
 
@@ -301,6 +308,59 @@ MA 02111-1307, USA.
     <div id="frequency_sample_rate" style="clear: both; float:left; width: 150px;"></div>
     <div id="frequency_sample_value" style="float:left; margin-left:15px; color:#808080; width: 50px; font-family:sans-serif; font-size: 8pt; margin-top: 2px;"></div>
     <div id="frequency_sample_number" style="float:right; color:#808080; font-family: sans-serif; font-size: 8pt;"></div>
+</div>
+
+<div id="select_track_dialog" title="Select Track" style="display:none;">
+    <div>
+        <label for="std_playlists" style="display:block; margin: 12px 0px 8px 0px;">playlists:</label>
+        <select id="std_playlists" style="display:block; max-width: 400px;"></select>
+    </div>
+    <div>
+        <label for="std_tracks" style="display:block; margin: 12px 0px 8px 0px;">tracks:</label>
+        <select id="std_tracks" style="max-width: 400px;"></select>
+    </div>
+</div>
+
+<div id="chase_track_dialog" title="Track Chase Editor" style="display:none;">
+    <div id="ctd_track_info" style="margin: 4px 0px 0px 10px; display: none; clear: both; float:left;">
+        <span id="ctd_track_name" style="font: bold 14pt arial; color: white;"></span>
+        <div>
+            <span id="ctd_length" style="font: 10pt arial; color: white;"></span>
+            <span id="ctd_bpm" style="font: 10pt arial; color: white;"></span>
+        </div>
+    </div>
+
+    <button id="ctd_select_track" style="float:right; margin-top: 10px;" >Select Track</button>
+
+    <div id="ctd_visualizer" style="clear:both; overflow-x: hidden; width: 1000px; overflow-y: hidden; height: 250px; margin-top: 20px;">
+    </div>
+
+    <div id="ctd_track_timing" style="margin: 4px 0px 0px 10px; display: none; ">
+        <span style="float:left;font: 8pt arial; color: white; margin-right: 40px;"><span id="ctd_position" ></span>&nbsp;/&nbsp;<span id="ctd_remaining"></span></span>
+        <span id="ctd_selected" style="float:right; font: 8pt arial; color: white; margin-left: 50px;">|&nbsp;=&nbsp;<span id="ctd_selected_time" ></span></span>
+    </div>
+
+    <div style="margin-top:40px; clear:both;">
+        <div id="ctd_scene_select" style="clear: both; float: left; display: none;">
+            <select id="ctd_scenelist" style="max-width: 400px; margin-right: 20px;"></select>
+            <button id="ctd_set_scene" style="font-size: 8pt; font-family: sans-serif; width: 80px;">SET</button>
+            <button id="ctd_clear_scene" style="font-size: 8pt; font-family: sans-serif; width: 80px;">CLEAR</button>
+        </div>
+        <div style="float: right;">
+            <button id="ctd_play" style="font-size: 8pt; font-family: sans-serif; width: 80px;" disabled>PLAY</button>
+            <button id="ctd_stop" style="font-size: 8pt; font-family: sans-serif; width: 80px;" disabled>STOP</button>
+            <button id="ctd_reset" style="font-size: 8pt; font-family: sans-serif; width: 80px;" disabled>RESET</button>
+        </div>
+    </div>
+
+    <div id="ctd_generate_container" style="margin-top:20px; clear:both; float: right;">
+        <button id="ctd_generate" style="font-size: 8pt; font-family: sans-serif; width: 255px;">Generate Chase</button>
+        
+        <div style="margin-top: 4px;">
+            <input type="checkbox" id="ctd_generate_mm" checked="checked" value="true" />
+            <label for="ctd_generate_mm" style="font: 8pt arial;">update music match entry</label>
+        </div>
+    </div>
 </div>
 
 <div id="beat_visualizer_dialog" title="Beat Visualizer" style="display:none;">
@@ -351,10 +411,12 @@ MA 02111-1307, USA.
         <div class="describe_data" id="describe_chase_name"></div>
         <div class="describe_title">acts:</div>
         <div class="describe_data" id="describe_chase_acts"></div>
-        <div class="describe_title">delay:</div>
+        <div class="describe_title">duration:</div>
         <div class="describe_data" id="describe_chase_delay"></div>
         <div class="describe_title">fade:</div>
         <div class="describe_data" id="describe_chase_fade"></div>
+        <div class="describe_title">repeats:</div>
+        <div class="describe_data" id="describe_chase_repeat"></div>
         <div class="describe_title">&nbsp;</div>
         <div class="describe_data" id="describe_chase_description"></div>
     </div>
@@ -592,18 +654,23 @@ MA 02111-1307, USA.
                 </div>
 
                 <div style="clear:both; float:left; margin:10px 18px 4px 0px;">
-                    <label for="ncd_delay_ms" style="display:block;">delay</label>
-                    <input id="ncd_delay_ms" style="display:block; width:80px;" title="default scene length"/>&nbsp;ms
+                    <label for="ncd_delay_ms" style="display:block;">duration</label>
+                    <input id="ncd_delay_ms" style="display:block; width:80px;" title="duration used when step duration = 0ms"/>&nbsp;ms
                 </div>
 
-                <div style="float:left; margin:10px 10px 0px 20px;">
-                    <label for="ncd_fade_ms" style="display:block;">fade</label>
+                <div style="float:left; margin:5px 10px 0px 20px;">
+                    <label for="ncd_fade_ms" style="display:block;">step fade</label>
                     <input id="ncd_fade_ms" style="display:block; width:80px;" title="inter-scene fade"/>&nbsp;ms
+                </div>
+
+                <div style="clear:both; float:left; margin:10px 10px 0px 0px;">
+                    <input type="checkbox" id="ncd_repeat" checked="checked" style="display:block; float:left; margin-top:6px;" />
+                    <label for="ncd_repeat" style="float:left;">repeat scene steps</label>
                 </div>
             </div>
 
             <h3>Scenes</h3>
-            <div id="ncd_steps">
+                <div id="ncd_steps">
             </div>
         </div>
     </form>
@@ -620,8 +687,8 @@ MA 02111-1307, USA.
             <span class="ui-icon ui-icon-circle-plus" title="insert step below" style="float:left; cursor: pointer; margin-right:4px;" onclick="chase_insert_step(event,NNN); return false;"></span>
         </div>
         <div style="float:right; margin: 0px 0px 4px 0px;">
-            <label for="ncd_step_NNN_delay_ms" style="display:block;">delay</label>
-            <input id="ncd_step_NNN_delay_ms" style="display:block; width:70px;" title="default scene length"/>&nbsp;ms
+            <label for="ncd_step_NNN_delay_ms" style="display:block;">duration</label>
+            <input id="ncd_step_NNN_delay_ms" style="display:block; width:80px;" title="step duration (0 for default)"/>&nbsp;ms
         </div>
     </div>
 </div>
@@ -1246,7 +1313,7 @@ MA 02111-1307, USA.
         </div>
 
         <div style="float:right; margin: 5px 0px 2px 0px;">
-            <button id="mmd_add" class="mm_panel_button" style="float:left;">map track</button>
+            <button id="mmd_add" class="mm_panel_button" style="float:left; margin-right: 4px;">map track</button>
             <button id="mmd_add_all" class="mm_panel_button" style="float:left;">map playlist</button>
         </div>
         <div style="clear: both; "></div>

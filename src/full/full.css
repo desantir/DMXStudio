@@ -115,16 +115,18 @@
 .md-icon-trash { background-position: -528px 0px; }
 
 .menu_icon { margin: 2px 4px 0px 4px; cursor:pointer;} 
-         
+
+.header_icon { float:right; cursor:pointer; margin-right: 5px; }
+
 .slider_pane_title { float: right; margin-right: 10px; margin-top: 2px; font-size: 8pt; font-family: sans-serif; color: white;}
 
-.slider_container { float:left; width: 42px; margin: 8px 0px 8px 4px; }
+.slider_container { float:left; width: 42px; margin: 8px 0px 0px 4px; }
 
 .slider_text_color { color: #808080; font-family: sans-serif; font-size: 10pt; } 
 
 .slider_header { height: 18px; width: 100%; overflow:hidden;   
                     text-align:center; white-space:nowrap; border-bottom: 1px solid #808080; font-size: 8pt; } 
-.slider_footer { height: 18px; width: 100%; overflow: hidden; 
+.slider_footer { height: 18px; width: 100%; overflow: hidden; margin-left: 4px;
                     text-align:center; white-space:nowrap;} 
 
 .slider_side_text { width:8px; white-space:nowrap; overflow: visible; 
@@ -132,6 +134,8 @@
                         transform:rotate(-90deg); -moz-transform:rotate(-90deg);-o-transform:rotate(-90deg); 
                         -webkit-transform:rotate(-90deg); -ms-transform:rotate(-90deg); -webkit-transform-origin: 0 0; 
                         -moz-transform-origin: 0 0; -ms-transform-origin: 0 0; -o-transform-origin: 0 0; float: left; }    
+
+.slider_select { margin-left: 15px; height: 16px; }  
 
 .slider_sidecar { position: absolute; top: -15px; left: 0px; width: 300px; height: 12px; background: rgba(0,0,0,0);
                     color: white; font-family: sans-serif; font-size: 8pt; overflow: no-display;
@@ -198,7 +202,7 @@
 .track_status { float: right; font-family: sans-serif; color: #0972a5; font-size: 8pt; margin-right: 8px; display:none; }
 .track_title { font-family: sans-serif; font-size: 10pt; text-overflow:ellipsis; width: 350px; white-space:nowrap; overflow:hidden; }
 .track_length { font-family: sans-serif; color: #808080; font-size: 8pt; margin-top: 2px;}
-.player_multilist { font-size: 10pt; font-family: sans-serif; }
+.player_multilist { font-size: 10pt !important; font-family: sans-serif !important; }
 .playlist_button { font-size: 8pt; font-family: sans-serif; width: 80px; }
 .player_error { float:left; font-family: sans-serif; font-size: 10pt; margin-left: 10px; color: red; }
 
@@ -222,3 +226,4 @@
 .tl_time { width: 50px; }
 .tl_artist { width: 250px; }
 .tl_album { width: 250px; }
+.tl_bpm { width: 50px; }

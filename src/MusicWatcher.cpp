@@ -44,7 +44,7 @@ MusicWatcher::~MusicWatcher(void)
 UINT MusicWatcher::run(void) {
     DMXStudio::log_status( "Music match running" );
 
-    DWORD current_track_id = 0;
+    CString current_track_link;
     bool current_track_paused = false;
     bool init = true;
     MusicSelectorType last_type = MST_SCENE;
@@ -61,18 +61,20 @@ UINT MusicWatcher::run(void) {
             }
 
             if ( !init ) {
-                DWORD track_id;
+                CString track_link;
                 bool track_paused;
 
-                if ( !m_player->waitOnTrackEvent( 1000, &track_id, &track_paused ) )
+                if ( !m_player->waitOnTrackEvent( 1000, track_link, &track_paused ) )
                     continue;
 
-                if ( current_track_id == track_id && current_track_paused == track_paused )
+                bool isCurrentTrack = current_track_link.Compare( track_link ) == 0;
+
+                if ( isCurrentTrack && current_track_paused == track_paused )
                     continue;       // We already dealt with this state (i.e. we missed a transition)
 
-                track_changed = current_track_id != track_id;   // For dealing with pause transitions
+                track_changed = !isCurrentTrack;    // For dealing with pause transitions
 
-                current_track_id = track_id;
+                current_track_link = track_link;
                 current_track_paused = track_paused;
             }
             else {
@@ -83,21 +85,22 @@ UINT MusicWatcher::run(void) {
             MusicSelectorType type = MST_SCENE;
             UID type_uid = m_venue->getDefaultScene()->getUID();
 
-            if ( current_track_id == 0 || current_track_paused ) {  // No sound - select silence
+            if ( current_track_link.IsEmpty() || current_track_paused ) {  // No sound - select silence
                 track_name = SILENCE_TRACK_NAME;
                 track_link = SILENCE_TRACK_LINK;
                 track_full_name = track_name;
             }
             else {                                                  // Use the full track name as the key
-                m_player->getTrackInfo( current_track_id, &track_name, &artist_name, NULL, NULL, NULL, &track_link );
+                m_player->getTrackInfo( current_track_link, &track_name, &artist_name, NULL, NULL, NULL );
                 track_full_name.Format( "track '%s by %s'", track_name, artist_name );
+                track_link = current_track_link;
             }
 
             CString method_of_selection;
 
             if ( current_track_paused || track_changed ) {
                 // Select object type and UID that we will be displaying
-                mapMusicToScene( track_link, current_track_id, type, type_uid, method_of_selection );
+                mapMusicToScene( track_link, type, type_uid, method_of_selection );
             }
             else {
                 type = last_type;
@@ -144,14 +147,14 @@ UINT MusicWatcher::run(void) {
 
 // ----------------------------------------------------------------------------
 //
-void MusicWatcher::mapMusicToScene( LPCSTR track_link, DWORD track_id, MusicSelectorType& type, UID& type_uid, CString& method_of_selection )
+void MusicWatcher::mapMusicToScene( LPCSTR track_link, MusicSelectorType& type, UID& type_uid, CString& method_of_selection )
 {
     // Select object type and UID that we will be displaying
     m_venue->mapMusicToScene( track_link, type, type_uid );
 
     if ( type == MST_SCENE_BY_BPM) {
         UINT bpm = 0;
-        type_uid = findSceneByBPM( track_link, track_id, bpm );
+        type_uid = findSceneByBPM( track_link, bpm );
         if ( type_uid != 0 ) {
             type = MST_SCENE;
             method_of_selection.Format( "%d BPM, ", bpm );
@@ -178,12 +181,13 @@ void MusicWatcher::mapMusicToScene( LPCSTR track_link, DWORD track_id, MusicSele
 
 // ----------------------------------------------------------------------------
 //
-UID MusicWatcher::findSceneByBPM( LPCSTR track_link, DWORD track_id, UINT& bpm )
+UID MusicWatcher::findSceneByBPM( LPCSTR track_link, UINT& bpm )
 {
     // TODO - Cache scene BPM map?
 
     AudioInfo audio_info;
-    if ( !studio.getTrackAudioInfo( track_link, track_id, audio_info ) )
+    AudioStatus status = studio.getMusicPlayer()->getTrackAudioInfo( track_link, &audio_info, 0L );
+    if ( status != OK )
         return 0;
 
     bpm = (UINT)(audio_info.tempo+.5);

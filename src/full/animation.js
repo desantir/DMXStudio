@@ -116,7 +116,7 @@ function findAnimation(what /* Overloaded for string or animation object */ ) {
 //
 function getAnimationName(animation) {
     var anim_info = findAnimation(animation);
-    if (anim_info == null || anim_info.synopsis == null)
+    if (anim_info == null || anim_info.name == null)
         return "UNKNOWN";
     return anim_info.name;
 }

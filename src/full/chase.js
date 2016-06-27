@@ -20,7 +20,7 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-var chases = new Array();
+var chases = [];
 
 // ----------------------------------------------------------------------------
 // class Chase
@@ -84,6 +84,11 @@ function Chase(chase_data)
     this.getActs = function () {
         return this.acts;
     }
+
+    // method isRepeat
+    this.isRepeat = function () {
+        return this.repeat;
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -96,12 +101,21 @@ function getChaseById(id) {
     return null;
 }
 
-
 // ----------------------------------------------------------------------------
 //
 function getChaseByNumber(number) {
     for (var i = 0; i < chases.length; i++)
         if (chases[i].getNumber() == number)
+            return chases[i];
+
+    return null;
+}
+
+// ----------------------------------------------------------------------------
+//
+function getChaseByName(name) {
+    for (var i = 0; i < chases.length; i++)
+        if (chases[i].getName() === name)
             return chases[i];
 
     return null;
@@ -178,7 +192,7 @@ function createChase(event) {
 
     var new_number = getUnusedChaseNumber();
 
-    openNewChaseDialog("Create Chase", {
+    openNewChaseDialog("New Chase", {
         id: 0,
         name: "New Chase " + new_number,
         description: "",
@@ -186,7 +200,9 @@ function createChase(event) {
         fade_ms: 0,
         delay_ms: 1000,
         steps: [{ id: 0, delay_ms: 0 }],
-        acts: current_act == 0 ? [] : [current_act]
+        acts: current_act == 0 ? [] : [current_act],
+        repeat: true,
+        callback: null
     });
 }
 
@@ -199,7 +215,7 @@ function editChase(event, chase_id) {
     if (chase == null)
         return;
 
-    openNewChaseDialog("Update Chase", {
+    openNewChaseDialog("Update Chase " + chase.getNumber(), {
         id: chase.getId(),
         name: chase.getName(),
         description: chase.getDescription(),
@@ -207,7 +223,9 @@ function editChase(event, chase_id) {
         fade_ms: chase.getFadeMS(),
         delay_ms: chase.getDelayMS(),
         steps: chase.getSteps().slice(),
-        acts: chase.getActs()
+        acts: chase.getActs(),
+        repeat: chase.isRepeat(), 
+        callback: null
     });
 }
 
@@ -241,6 +259,7 @@ function openNewChaseDialog(dialog_title, data) {
             delay_ms: $("#ncd_delay_ms").val(),
             steps: steps,
             acts: acts,
+            repeat: $("#ncd_repeat").is(":checked")
         };
 
         if ((make_copy || json.number != data.number) && getChaseByNumber(json.number) != null) {
@@ -256,14 +275,22 @@ function openNewChaseDialog(dialog_title, data) {
         else
             action = "update";
 
+        var action_callback = data.callback;
+
         $.ajax({
             type: "POST",
             url: "/dmxstudio/rest/edit/chase/" + action + "/",
             data: JSON.stringify(json),
             contentType: 'application/json',
             cache: false,
-            success: function () {
+            success: function (data)  {
                 updateChases();
+
+                if ( action_callback != null ) {
+                    var response = JSON.parse( data );
+                    action_callback( response.id );
+                }
+
             },
             error: onAjaxError
         });
@@ -271,7 +298,7 @@ function openNewChaseDialog(dialog_title, data) {
         $("#new_chase_dialog").dialog("close");
     };
 
-    var dialog_buttons = new Array();
+    var dialog_buttons = [];
 
     if (data.id != 0) {
         dialog_buttons[dialog_buttons.length] = {
@@ -301,7 +328,7 @@ function openNewChaseDialog(dialog_title, data) {
         buttons: dialog_buttons
     });
 
-    $("#new_chase_dialog").dialog("option", "title", dialog_title + " " + data.number );
+    $("#new_chase_dialog").dialog("option", "title", dialog_title );
 
     $("#ncd_accordion").accordion({ heightStyle: "fill" });
 
@@ -313,6 +340,7 @@ function openNewChaseDialog(dialog_title, data) {
     $("#ncd_description").val(data.description);
     $("#ncd_fade_ms").spinner({ min: 0, max: 100000 }).val(data.fade_ms);
     $("#ncd_delay_ms").spinner({ min: 0, max: 100000 }).val(data.delay_ms);
+    $("#ncd_repeat").attr('checked', data.repeat);
 
     $("#ncd_acts").empty();
 
@@ -364,13 +392,11 @@ function populate_chase_steps() {
 
         // Fill in scenes
         for (var i = 0; i < scenes.length; i++) {
-            if (!scenes[i].isDefault()) {
-                $("#ncd_step_" + step_num + "_scene").append($('<option>', {
-                    value: scenes[i].getId(),
-                    text: scenes[i].getNumber() + ": " + scenes[i].getFullName(),
-                    selected: scenes[i].getId() == steps[s].id
-                }));
-            }
+            $("#ncd_step_" + step_num + "_scene").append($('<option>', {
+                value: scenes[i].getId(),
+                text: scenes[i].getNumber() + ": " + scenes[i].getFullName(),
+                selected: scenes[i].getId() == steps[s].id
+            }));
         }
 
         // If we don't do this after population, multiselect is empty (refresh may work)
@@ -468,16 +494,18 @@ function describeChase(event, chase_id) {
     $("#describe_chase_delay").html(chase.getDelayMS() + " ms");
     $("#describe_chase_fade").html(chase.getFadeMS() + " ms");
     $("#describe_chase_description").html(chase.getDescription() != null ? escapeForHTML(chase.getDescription()) : "" );
+    $("#describe_chase_repeat").html( chase.isRepeat() ? "Continuous" : "Once" );
 
     var info = "";
     for (var i = 0; i < chase.getSteps().length; i++) {
-        var scene = getSceneById(chase.getSteps()[i].id);
+        var step = chase.getSteps()[i];
+        var scene = getSceneById(step.id);
 
         info += "<div style=\"clear:both; float: left; margin-right:6px;\" class=\"describe_chase_step\">Step " + (i + 1) + ": </div>";
         info += "<div style=\"float: left;\" >Scene " + scene.getNumber() + " " + escapeForHTML(scene.getName() ) + "</div>";
 
-        if (chase.getSteps()[i].delay > 0)
-            info += "<div style=\"float: left; margin-left: 8px;\" class=\"describe_chase_step\">(delay " + chase.getSteps()[i].delay + " ms)</div>";
+        if (step.delay_ms > 0)
+            info += "<div style=\"float: left; margin-left: 8px;\" class=\"describe_chase_step\">(duration " + step.delay_ms + " ms)</div>";
     }
 
     $("#describe_chase_info").html(info);

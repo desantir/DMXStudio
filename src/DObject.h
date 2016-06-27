@@ -48,7 +48,7 @@ protected:
 
 public:
     DObject(void) :
-        m_uid(0),
+        m_uid(NOUID),
         m_number(0)
     {}
 

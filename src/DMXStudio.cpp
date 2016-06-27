@@ -31,7 +31,6 @@ MA 02111-1307, USA.
 #include "VenueReader.h"
 #include "IniFile.h"
 #include "MusicPlayer.h"
-#include "TrackInfoCacheFile.h"
 
 DMXStudio studio;
 
@@ -85,8 +84,6 @@ void DMXStudio::runStudio()
 
         readIniFile();
 
-        size_t audioInfoCacheSize = readAudioInfoCache();
-
         // Read fixture definitions
         FixtureDefinition::readFixtureDefinitions();
 
@@ -119,9 +116,6 @@ void DMXStudio::runStudio()
 
         if ( m_enable_http )
             server.stop();
-
-        if ( audioInfoCacheSize != m_track_audio_info_cache.size() )
-            writeAudioInfoCache();
     }
     catch ( StudioException& ex ) {
         log( ex );
@@ -150,59 +144,6 @@ void DMXStudio::runStudio()
 void DMXStudio::createMusicPlayer( LPCSTR username, LPCSTR player_dll_path )
 {
     m_music_player = new MusicPlayer( player_dll_path, username );
-}
-
-// ----------------------------------------------------------------------------
-//
-bool DMXStudio::getTrackAudioInfo( LPCSTR track_link, DWORD track_id, AudioInfo& audio_info )
-{
-    if ( !m_music_player )
-        return false;
-
-    AudioTrackInfoCache::iterator it = m_track_audio_info_cache.find( track_link );
-
-    if ( it != m_track_audio_info_cache.end() ) {
-        audio_info = (*it).second;
-        return true;
-    }
-
-    if ( !m_music_player->getTrackAudioInfo( track_id, &audio_info ) )
-        return false;
-
-    m_track_audio_info_cache[ track_link ] = audio_info;
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-size_t DMXStudio::readAudioInfoCache()
-{
-    CString filename;
-    filename.Format( "%s\\DMXStudio\\AudioTrackInfo.cache", getUserDocumentDirectory() );
-
-    if ( PathFileExists( filename ) ) {
-        TrackInfoCacheFile cache( filename );
-
-        if ( cache.read( m_track_audio_info_cache ) )
-            DMXStudio::log_status( "Loaded %d entries from audio track info cache '%s'", m_track_audio_info_cache.size(), filename );
-        else
-            DMXStudio::log( "Unable to load audio information cache '%s' (%s)", filename, cache.getLastError() );
-    }
-
-    return m_track_audio_info_cache.size();
-}
-
-// ----------------------------------------------------------------------------
-//
-void DMXStudio::writeAudioInfoCache()
-{
-    CString filename;
-    filename.Format( "%s\\DMXStudio\\AudioTrackInfo.cache", getUserDocumentDirectory() );
-
-    TrackInfoCacheFile cache( filename );
-
-    cache.write( m_track_audio_info_cache );
 }
 
 // ----------------------------------------------------------------------------

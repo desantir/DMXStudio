@@ -273,7 +273,7 @@ bool HttpRestServices::edit_fixturegroup( CString& response, LPCSTR data, EditMo
 
     switch ( mode ) {
         case NEW: {
-            FixtureGroup group( studio.getVenue()->allocUID(), number, name, description );
+            FixtureGroup group( 0L, number, name, description );
             group.setFixtures( UIDArrayToSet( fixture_ids ) );
             studio.getVenue()->addFixtureGroup( group );
             break;
@@ -334,7 +334,7 @@ bool HttpRestServices::edit_fixture( CString& response, LPCSTR data, EditMode mo
 
     switch ( mode ) {
         case NEW: {
-            Fixture fixture( studio.getVenue()->allocUID(), number, dmx_universe, dmx_address, fuid, name, description );
+            Fixture fixture( NOUID, number, dmx_universe, dmx_address, fuid, name, description );
             studio.getVenue()->addFixture( fixture );
             break;
         }

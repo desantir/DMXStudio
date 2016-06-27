@@ -20,7 +20,7 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-var scenes = new Array();
+var scenes = [];
 
 var BPMRatings = [
     { name: "no rating", lower: 0, upper: 999 },
@@ -207,12 +207,18 @@ function createSceneTiles() {
 }
 
 // ----------------------------------------------------------------------------
-//
+// NOTE: This method is invoked by scene tile clicks only
 function playScene(event, scene_id) {
-    stopEventPropagation(event);
-
     if (scene_id == active_scene_id)
         scene_id = getDefaultSceneId();
+
+    selectScene( event, scene_id );
+}
+
+// ----------------------------------------------------------------------------
+//
+function selectScene(event, scene_id) {
+    stopEventPropagation(event);
 
     $.ajax({
         type: "GET",

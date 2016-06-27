@@ -95,40 +95,72 @@ bool HttpRestServices::control_mute_volume( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
+bool HttpRestServices::control_music_queue_track( CString& response, LPCSTR data )
+{
+    if ( !studio.hasMusicPlayer() )
+        return false;
+
+    char        track_link[MAX_LINK_SIZE];
+
+    if ( sscanf_s( data, "%s", track_link, MAX_LINK_SIZE ) != 1 )
+        return false;
+
+    studio.getMusicPlayer()->queueTrack( track_link );
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
 bool HttpRestServices::control_music_play_track( CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
 
-    UINT        track_number;
-    INT         playlist_number;
-    unsigned    queue;
+    char        track_link[MAX_LINK_SIZE];
+    DWORD       seek_ms = 0L;
 
-    if ( sscanf_s( data, "%d/%u/%u", &playlist_number, &track_number, &queue ) != 3 )
+    CString scan_data = data;
+    scan_data.Replace( "/", " " );
+
+    if ( sscanf_s( scan_data, "%s %lu", track_link, MAX_LINK_SIZE, &seek_ms ) < 1 )
         return false;
 
-    PlayerItems tracks;
+    return studio.getMusicPlayer()->playTrack( track_link, seek_ms );
+}
 
-    if ( playlist_number == PLAYED_TRACKS_PLAYLIST )
-        studio.getMusicPlayer()->getPlayedTracks(tracks);
-    else if ( playlist_number == QUEUED_TRACKS_PLAYLIST )
-        studio.getMusicPlayer()->getQueuedTracks(tracks);
-    else {
-        PlayerItems playlists;
-        studio.getMusicPlayer()->getPlaylists( playlists );
-
-        if ( playlist_number <= 0 || playlist_number > (int)playlists.size() )
-            return false;
-
-        DWORD playlist_id = playlists[ playlist_number-1 ];
-        studio.getMusicPlayer()->getTracks( playlist_id, tracks );
-    }
-
-    if ( track_number == 0 || track_number > tracks.size() )
+// ----------------------------------------------------------------------------
+//
+bool HttpRestServices::query_music_track_analysis( CString& response, LPCSTR data )
+{
+    if ( !studio.hasMusicPlayer() )
         return false;
 
-    DWORD track_id = tracks[ track_number-1 ];
-    studio.getMusicPlayer()->playTrack( track_id, queue ? true : false );
+    char        track_link[MAX_LINK_SIZE];
+
+    if ( sscanf_s( data, "%s", track_link, MAX_LINK_SIZE ) != 1 )
+        return false;
+
+    AnalyzeInfo* info;
+
+    if ( !studio.getMusicPlayer()->getTrackAnalysis( track_link, &info ) )
+        return false;
+
+    JsonBuilder json( response );
+
+    json.startObject();
+    json.add( "link", info->link );
+
+    std::vector<uint16_t> amplitude_data( std::begin( info->data), &info->data[info->data_count] );
+
+    json.startObject( "amplitude" );
+    json.add( "duration_ms", info->duration_ms );
+    json.add( "data_count", info->data_count );
+    json.addArray< std::vector<uint16_t>>( "data", amplitude_data );
+    json.endObject( "amplitude" );
+
+    json.endObject();
+
     return true;
 }
 
@@ -139,38 +171,16 @@ bool HttpRestServices::control_music_play_playlist( CString& response, LPCSTR da
     if ( !studio.hasMusicPlayer() )
         return false;
 
-    INT         playlist_number;
+    char        playlist_link[MAX_LINK_SIZE];
     unsigned    queue;
 
-    if ( sscanf_s( data, "%u/%u", &playlist_number, &queue ) != 2 )
+    CString scan_data = data;
+    scan_data.Replace( "/", " " );
+
+    if ( sscanf_s( scan_data, "%s %u", playlist_link, MAX_LINK_SIZE, &queue ) != 2 )
         return false;
 
-    if ( playlist_number == PLAYED_TRACKS_PLAYLIST || 
-         playlist_number == QUEUED_TRACKS_PLAYLIST ) {
-        PlayerItems tracks;
-
-        if ( playlist_number == PLAYED_TRACKS_PLAYLIST )
-            studio.getMusicPlayer()->getPlayedTracks(tracks);
-        else if ( playlist_number == QUEUED_TRACKS_PLAYLIST )
-            studio.getMusicPlayer()->getQueuedTracks(tracks);
-
-        // TODO this is not exactly right - should clear out existing queued tracks
-        for ( PlayerItems::iterator it=tracks.begin(); it != tracks.end(); it++ ) {
-            studio.getMusicPlayer()->playTrack( (*it), queue ? true : false );
-            queue = 1;
-        }
-    }
-    else {
-        PlayerItems playlists;
-        studio.getMusicPlayer()->getPlaylists( playlists );
-        if ( playlist_number <= 0 || playlist_number > (int)playlists.size() )
-            return false;
-
-        DWORD playlist_id = playlists[ playlist_number-1 ];
-        studio.getMusicPlayer()->playAllTracks( playlist_id, queue ? true : false );
-    }
-
-    return true;
+    return studio.getMusicPlayer()->playAllTracks( playlist_link, queue ? true : false );
 }
 
 // ----------------------------------------------------------------------------
@@ -186,12 +196,10 @@ bool HttpRestServices::query_music_playlists( CString& response, LPCSTR data )
     PlayerItems playlists;
     studio.getMusicPlayer()->getPlaylists( playlists );
 
-    UINT playlist_number = 1;
-
     json.startArray( "playlists" );
-    for ( PlayerItems::iterator it=playlists.begin(); it != playlists.end(); it++, playlist_number++ ) {
+    for ( PlayerItems::iterator it=playlists.begin(); it != playlists.end(); it++ ) {
         json.startObject();
-        json.add( "id", playlist_number );
+        json.add( "link", (*it) );
         json.add( "name", studio.getMusicPlayer()->getPlaylistName( (*it) ) );
         json.endObject();
     }
@@ -207,29 +215,39 @@ bool HttpRestServices::query_music_playlists( CString& response, LPCSTR data )
 bool json_track_list( PlayerItems& tracks, CString& response )
 {
     UINT track_number = 1;
+    AudioInfo audioInfo;
 
     JsonBuilder json( response );
     json.startObject();
 
     json.startArray( "tracks" );
     for ( PlayerItems::iterator it=tracks.begin(); it != tracks.end(); it++, track_number++ ) {
-        CString track_name, artist_name, album_name, full_name, track_link;
+        CString track_name, artist_name, album_name, full_name;
         DWORD track_duration_ms;
         bool starred; 
 
-        if ( !studio.getMusicPlayer()->getTrackInfo( (*it), &track_name, &artist_name, &album_name, &track_duration_ms, &starred, &track_link ) )
+        if ( !studio.getMusicPlayer()->getTrackInfo( (*it), &track_name, &artist_name, &album_name, &track_duration_ms, &starred ) )
             continue;
 
         json.startObject();
+        json.add( "link", (*it) );
         json.add( "number", track_number );
         json.add ("full_name", studio.getMusicPlayer()->getTrackFullName( (*it) ) );    // Legacy for music match
-        json.add( "id", (*it) );
         json.add( "track_name", track_name );
         json.add( "artist_name", artist_name );
         json.add( "album_name", album_name );
         json.add( "duration", track_duration_ms ); 
         json.add( "starred", starred );
-        json.add( "link", track_link );
+
+        // Collect any audio info available in the cache and queue up the rest
+        if ( studio.getMusicPlayer()->getTrackAudioInfo( (*it), &audioInfo, 0L ) == OK ) {
+            json.startObject( "audio_info" );
+            json.add( "key", audioInfo.key );
+            json.add( "mode", audioInfo.mode );
+            json.add( "bpm", audioInfo.tempo );
+            json.endObject( "audio_info" );
+        }
+
         json.endObject();
     }
     json.endArray( "tracks" );
@@ -272,20 +290,13 @@ bool HttpRestServices::query_music_playlist_tracks( CString& response, LPCSTR da
     if ( !studio.hasMusicPlayer() )
         return false;
 
-    UINT playlist_number;
+    char playlist_link[MAX_LINK_SIZE];
 
-    if ( sscanf_s( data, "%u", &playlist_number ) != 1 )
+    if ( sscanf_s( data, "%s", playlist_link, MAX_LINK_SIZE ) != 1 )
         return false;
-
-    PlayerItems playlists;
-    studio.getMusicPlayer()->getPlaylists( playlists );
-    if ( playlist_number == 0 || playlist_number >playlists.size() )
-        return false;
-
-    DWORD playlist_id = playlists[ playlist_number-1 ];
 
     PlayerItems tracks;
-    studio.getMusicPlayer()->getTracks( playlist_id, tracks );
+    studio.getMusicPlayer()->getTracks( playlist_link, tracks );
 
     return json_track_list( tracks, response );
 }
@@ -414,9 +425,8 @@ bool HttpRestServices::query_music_matcher( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_music_matcher( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
-{
-   if ( !studio.getVenue() )
+static bool music_matcher_load( LPCSTR data, boolean clearFirst ) {
+    if ( !studio.getVenue() )
         return false;
 
     SimpleJsonParser parser;
@@ -442,9 +452,24 @@ bool HttpRestServices::edit_music_matcher( CString& response, LPCSTR data, DWORD
     }
 
     // Reload the selection map
-    studio.getVenue()->clearMusicMappings();
+    if ( clearFirst )
+        studio.getVenue()->clearMusicMappings();
+
     studio.getVenue()->addMusicMappings( selections );
 
     return true;
 }
 
+// ----------------------------------------------------------------------------
+//
+bool HttpRestServices::edit_music_matcher_load( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+{
+    return music_matcher_load( data, true );
+}
+
+// ----------------------------------------------------------------------------
+//
+bool HttpRestServices::edit_music_matcher_update( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+{
+    return music_matcher_load( data, false );
+}

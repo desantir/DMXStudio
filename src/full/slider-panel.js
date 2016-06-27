@@ -33,6 +33,8 @@ function Slider(panel, number, slider_frame) {
     this.value = 0;
     this.type = 0;
     this.busy = false;
+    this.changed = false;
+    this.linkable = false;
 
     this.panel = panel;
     this.slider_frame = slider_frame;
@@ -40,6 +42,7 @@ function Slider(panel, number, slider_frame) {
     this.side_text = slider_frame.find(".slider_side_text");
     this.slider = slider_frame.find(".slider_slider");
     this.footer = slider_frame.find(".slider_footer");
+    this.linked = slider_frame.find(".slider_select");
 
     // method isUsed
     this.isUsed = function () {
@@ -92,6 +95,11 @@ function Slider(panel, number, slider_frame) {
     // method getLabel
     this.getLabel = function () {
         return this.side_text;
+    }
+
+    // method getLinked
+    this.getLinked = function () {
+        return this.linked;
     }
 
     // method getType
@@ -154,14 +162,55 @@ function Slider(panel, number, slider_frame) {
     this.valueChange = function (new_value) {
         if (this.value != new_value) {
             this.value = new_value;
-            if (this.callback)
-                this.callback(this.owner, this.owner_channel, new_value);
+            this.changed = true;
         }
     }
 
-    // method allocate: channel data { channel, label, name, value, max_value, ranges }
+    // method isChanged
+    this.isChanged = function () {
+        return this.changed;
+    }
 
-    this.allocate = function (owner, header_tip, slider_data, callback ) {
+    // method sendValue
+    this.sendValue = function() {
+        if ( this.callback )
+            this.callback(this.owner, this.owner_channel, this.value);
+        this.changed = false;
+    }
+
+    this.setLinked = function (linked) {
+        if ( linked )
+            this.getLinked().addClass('ui-icon-green').removeClass('ui-icon-active');
+        else
+            this.getLinked().addClass('ui-icon-active').removeClass('ui-icon-green');
+    }
+
+    this.hideLinked = function () {
+        this.getLinked().removeClass('ui-icon-active').removeClass('ui-icon-green');
+    }
+
+    this.isLinked = function (linked) {
+        return this.getLinked().hasClass('ui-icon-green');
+    }
+
+    this.isLinkable = function () {
+        return this.linkable;
+    }
+
+    // method changeEvent
+    this.changeEvent = function (newValue) {
+        if (this.isLinked()) {
+            this.panel.iterateChannels(function (slider) {
+                if (slider.isLinked())
+                    slider.setValue(newValue);
+            });
+        }
+        else
+            this.valueChange(newValue);
+    }
+
+    // method allocate: channel data { channel, label, name, value, max_value, ranges }
+    this.allocate = function (owner, header_tip, slider_data, callback, linkable ) {
         this.owner = owner;
         this.in_use = true;
         this.ranges = slider_data.ranges;
@@ -171,6 +220,7 @@ function Slider(panel, number, slider_frame) {
         this.type = slider_data.type;
         this.tooltip = header_tip;
         this.busy = false;
+        this.linkable = linkable;
 
         this.getHeader().text(slider_data.label);
         this.getHeader().attr("title", header_tip);
@@ -186,6 +236,11 @@ function Slider(panel, number, slider_frame) {
         slider.slider("option", "animate", true);
         slider.slider("option", "max", slider_data.max_value);
 
+        if (this.isLinkable())
+            this.setLinked(false);
+        else
+            this.hideLinked();
+            
         this.getSliderFrame().hover(
             function () {
                 var slider_object = $(this).get(0).slider_object;
@@ -216,6 +271,7 @@ function Slider(panel, number, slider_frame) {
         this.getHeader().text("");
         this.getLabel().text("");
         this.getFooter().text("");
+        this.hideLinked();
 
         this.highlight(false);
 
@@ -280,7 +336,7 @@ function Slider(panel, number, slider_frame) {
         slider_object.getHeader().removeClass('slider_sliding_highlight');
         slider_object.getLabel().removeClass('slider_sliding_highlight');
 
-        slider_object.valueChange(ui.value);
+        slider_object.changeEvent(ui.value);
     });
 
     var panel = this.panel;
@@ -291,7 +347,22 @@ function Slider(panel, number, slider_frame) {
         channel_hint.html(slider_object.getRangeDescription(ui.value));
 
         if ( panel.isTrackSlider() )
-            slider_object.valueChange(ui.value);
+            slider_object.changeEvent(ui.value);
+    });
+
+    var linked = $(this.getLinked());
+    var self = this;
+
+    linked.on("click", function (event) {
+        if (event.ctrlKey) {
+            self.panel.iterateChannels(function (slider) {
+                if (slider.isLinkable() && slider.isUsed()) {
+                    slider.setLinked(slider.getLabel().text() === self.getLabel().text());
+                }
+            });
+        }
+        else
+            self.setLinked(!self.isLinked());
     });
 }
 
@@ -299,6 +370,15 @@ function Slider(panel, number, slider_frame) {
 // class SliderPanel
 //
 function SliderPanel(panel_id, num_sliders, track_slider) {
+
+    // method resetLinks
+    this.resetLinks = function () {
+        this.iterateChannels(function (slider) {
+            if (slider.isLinkable() && slider.isUsed() && slider.isLinked()) {
+                slider.setLinked(false);
+            }
+        });
+    }
 
     // method getFreeChannelStart
     this.getFreeChannelStart = function (needed_sliders) {
@@ -334,7 +414,7 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
     }
 
     // method allocateChannels
-    this.allocateChannels = function (owner, owner_name, channel_data, callback) {
+    this.allocateChannels = function (owner, owner_name, channel_data, callback, linkable ) {
         var num_channels = channel_data.length;
         if (num_channels == 0)
             return;
@@ -346,7 +426,7 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
         }
 
         for (var i = 0; i < num_channels; i++ ) {
-            this.sliders[i + channel_start].allocate(owner, owner_name, channel_data[i], callback);
+            this.sliders[i + channel_start].allocate(owner, owner_name, channel_data[i], callback, linkable );
         }
     }
 
@@ -499,6 +579,18 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
         }
     }
 
+    this.sendUpdates = function () {
+        for (var i = 0; i < this.num_sliders; i++) {
+            if (this.sliders[i].isUsed() && this.sliders[i].isChanged()) {
+                this.sliders[i].sendValue();
+                break;
+            }
+        }
+
+        var _this = this;
+        this.update_timer = setTimeout(function () { _this.sendUpdates(); }, 50);
+    }
+
     // Constructor
     this.panel_id = panel_id;
     this.track_slider = track_slider;                       // Slider owner will be notified of every movement
@@ -536,6 +628,8 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
     this.setScrollContent(true);
     this.setTrackSlider(this.track_slider);
 
+    // Setup timer to send changes to the server
+    this.sendUpdates();
 }
 
 

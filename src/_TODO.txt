@@ -3,66 +3,69 @@ TODO ------------------------------------------------------------------------ TO
 Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 
 	H Scene Animations:
-		H All animations should be shared across scenes and globally defined
-		H Animations are scene-based and do not track well across chase sequences
-		H Animations are not processed during chase cross fade
-		M Incorporate track info to music match scene selection
-		L Movement animation travel time (prefetch next scene/position)
-		L Programs should control travel time rather than fixed signal input
-		L Animation speed changes based on beat detection
-		L Multiple animations per fixture (deal with channel contention)
-		L Loadable, scripted, self contained animations with specific properties (versus the current rat's nest)
-		H Improved sound animation affects (currently they are not very exact and are hard to setup)
+		H   All animations should be shared across scenes and globally defined
+		H   Animations are scene-based and do not track well across chase sequences
+		H   Animations are not processed during chase cross fade
+		H   Improved sound animation affects (currently they are not very exact and are hard to setup)
+
+		M 5 Simplify animations (must be easier to create animations from the UI)
+		M   Incorporate track info to music match scene selection
+
+		L   Movement animation travel time (prefetch next scene/position)
+		L   Programs should control travel time rather than fixed signal input
+		L   Animation speed changes based on beat detection
+		L   Multiple animations per fixture (deal with channel contention)
+		L   Loadable, scripted, self contained animations with specific properties (versus the current rat's nest)
 
 	H Scene / Chase / Act Improvements
-		H Chase visualize track and select scenes based on visualization
-		L Chase changed based on beat, time or track transition
-		L Chase random scene from all/pool
-		L Chase crossfade = % of time cues fading into each other (kill fade time change to crossfade model)?
-		L Chase learn mode - track time and scene transitions
-		L Name acts and easier act selection in UI
+		L 1 BPM with chase for music match?
+		L   Chase changed based on beat, time or track transition
+		L   Chase random scene from all/pool
+		L   Chase crossfade = % of time cues fading into each other (kill fade time change to crossfade model)?
+		L   Name acts and easier act selection in UI
+		L   Other sound analysis for chase scene http://www.smartjava.org/content/exploring-html5-web-audio-visualizing-sound
 
    L Web Full UI - music controller
-		H 1 Scrolling text plugin for playing track name
-		H 5 Positional "map" of fixtures (with icons showing type and direction) for easy capture
+		H 3 Use events to drive UI updates not polling
+
 		M 5 Workspace channel management (re-arrange channels, hidden channels, save channel sets)
-		M 5 Simplify animations (must be easier to create animations from the UI)
+
+		L 1 Scrolling text plugin for playing track name
+		L 5 Positional "map" of fixtures (with icons showing type and direction) for easy capture
 		L 5 Alternative to dialogs
 		L 1 Improved error responses (e.g. "<item> not found")
 		L 1 Handle disconnected server state (disable UI, startup errors out if no COM)
 		L 2 Authentication & session control
 		L 4 Album artwork
-		H 4 Music search
-		  4 Editor to map scenes to points in the track - automatically generate chase with times (aka soundcloud for lighting)
-		    http://www.smartjava.org/content/exploring-html5-web-audio-visualizing-sound
+		L 4 Music search
 
 	L Sound processing
-		M Beat detector scaling, improved detection algorithm, logarithmic scaling
-		L Add channel mixing to audio stream class
-		L Song blending / beat matching
-		M Handle music format changes (must be some event)
-		M Map song mood / tempo to scenes in music matcher http://developer.echonest.com/docs/v4
+		H   Beat detector scaling, improved detection algorithm, logarithmic scaling
+
+		L   Add channel mixing to audio stream class
+		L   Song blending / beat matching
+		L   Handle music format changes (must be some event)
 
 	L Fixtures / Fixture Definitions
-		L Simple angle->value options (angle*xx) == DMX code
-		L Movement speed abstraction
-		L Dimmer curve (LEDs can fall off fast at the end)
-		L Minimum dimmer setting
-		L Park moving heads - stop moving back to home?
-		  Control specific channel(s) on capture
-          Pan/tilt word size
+        H   Palettes for location, color, intensity
+		H   Fan channel values in a group
+
+		L   Simple angle->value options (angle*xx) == DMX code
+		L   Movement speed abstraction
+		L   Dimmer curve (LEDs can fall off fast at the end)
+		L   Minimum dimmer setting
+		L   Park moving heads - stop moving back to home?
+            Pan/tilt word size
 
 	L General Enhancements
-		L MIDI fogger control with ready indicator (auto fog timer?)
-		L Midi controller support ( tablet support )
-		L Video support
-		? Need real color transforms
-          Palettes for location, color, intensity
-		  Fan channel values in a group
+		L   MIDI fogger control with ready indicator (auto fog timer?)
+		L   Midi controller support ( tablet support )
+		L   Video support
+		?   Need real color transforms
 
 	L Code Maintainence
-		M Bullet proof error detection and automatic restart
-		L Introduce studio fault to kill and restart program (vs error based execeptions)
+		M   Bullet proof error detection and automatic restart
+		L   Introduce studio fault to kill and restart program (vs error based execeptions)
 
 	? Concepts
 	      Mark cue

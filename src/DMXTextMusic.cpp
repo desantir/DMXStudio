@@ -84,7 +84,7 @@ public:
         setDefaultListValue( 1 );      
     }
 
-    DWORD getPlaylist() {
+    LPCSTR getPlaylist() {
         return m_playlists[ getListValue()-1 ];
     }
 };
@@ -95,8 +95,6 @@ class TrackListField : public NumberedListField
 {
     DWORD                   m_playlist;
     PlayerItems             m_tracks;
-    std::map<int,CString>   m_id_to_link;
-
 
 public:
     TrackListField( LPCSTR name ) :
@@ -104,7 +102,7 @@ public:
     {
     }
 
-    void setPlaylist( DWORD playlist ) {
+    void setPlaylist( LPCSTR playlist ) {
         studio.getMusicPlayer()->getTracks( playlist, m_tracks );
 
         clear();
@@ -112,11 +110,9 @@ public:
         int key = 1;
 
         for ( PlayerItems::iterator it=m_tracks.begin(); it != m_tracks.end(); ++it ) {
-            CString track_name, artist_name, track_link;
+            CString track_name, artist_name;
 
-            studio.getMusicPlayer()->getTrackInfo( (*it), &track_name, &artist_name, NULL, NULL, NULL, &track_link );
-
-            m_id_to_link[ key ] = track_link;
+            studio.getMusicPlayer()->getTrackInfo( (*it), &track_name, &artist_name, NULL, NULL, NULL );
 
             track_name.AppendFormat( "by %s", artist_name );
 
@@ -127,8 +123,8 @@ public:
         setDefaultListValue( 1 );  
     }
 
-    DWORD getTrack() {
-        return m_tracks.size() == 0 ? NULL : m_tracks[getListValue()-1 ];
+    LPCSTR getTrack() {
+        return m_tracks.size() == 0 ? (LPCSTR)NULL : m_tracks[getListValue()-1 ];
     }
 
     CString getTrackFullName() {
@@ -177,16 +173,19 @@ void DMXTextUI::listTracks()
         player->getTracks( playlist_field.getPlaylist(), tracks );
 
         for ( PlayerItems::iterator it=tracks.begin(); it != tracks.end(); ++it ) {
-            CString artist, name, album, link; 
+            CString artist, name, album; 
             DWORD duration = 0L;
             bool stared;
-            // AudioInfo audioInfo;
+            AudioInfo audioInfo;
 
-            player->getTrackInfo( *it, &name, &artist, &album, &duration, &stared, &link );
-            // studio.getTrackAudioInfo( link, *it, audioInfo );
+            player->getTrackInfo( *it, &name, &artist, &album, &duration, &stared );
 
-            m_text_io.printf( "%s by %s\n", name, artist );
-            // m_text_io.printf( "Key: %d BPM: %f\n", audioInfo.key, audioInfo.tempo );
+            m_text_io.printf( "%s by %s", name, artist );
+
+            if ( player->getTrackAudioInfo( *it, &audioInfo, 0 ) == OK ) 
+                m_text_io.printf( " [Key: %d BPM: %f]\n", audioInfo.key, audioInfo.tempo );
+            else
+                m_text_io.printf( "\n" );
         }
     }
 }
@@ -318,7 +317,10 @@ void DMXTextUI::selectTrack( bool queue )
     form.add( tracks_field );
 
     if ( form.play() ) {
-        studio.getMusicPlayer()->playTrack( tracks_field.getTrack(), queue );
+        if ( queue )
+            studio.getMusicPlayer()->queueTrack( tracks_field.getTrack() );
+        else
+            studio.getMusicPlayer()->playTrack( tracks_field.getTrack(), 0L );
     }
 }
 

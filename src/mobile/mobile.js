@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2012-,2014 Robert DeSantistimeout_send_ajax_request
+Copyright (C) 2012-16 Robert DeSantistimeout_send_ajax_request
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -176,12 +176,12 @@ function initializeUI() {
     });
 
     $("#playlist_select_id").change(function () {
-        var playlist_id = playlist_select_id.value;
+        var playlist_link = playlist_select_id.value;
 
         // Get tracks
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/rest/query/music/playlist/tracks/" + playlist_id,
+            url: "/dmxstudio/rest/query/music/playlist/tracks/" + playlist_link,
             cache: false,
             success: function (data) {
                 var json = jQuery.parseJSON(data);
@@ -189,10 +189,10 @@ function initializeUI() {
 
                 var data = [];
                 data = $.map(playlist, function (track, index) {
-                    return "<option value=" + track.id + ">" + track.track_name + " by " + track.artist_name + "</option>";
+                    return "<option value=" + track.link + ">" + track.track_name + " by " + track.artist_name + "</option>";
                 });
 
-                data.unshift("<option value=0>Select Track</option>", "<option value=-1>PLAY ENTIRE PLAYLIST</option>");
+                data.unshift("<option value=''>Select Track</option>", "<option value='all'>PLAY ENTIRE PLAYLIST</option>");
 
                 $("#playlist_tracks_id").html(data.join(""));
 
@@ -205,18 +205,21 @@ function initializeUI() {
     });
 
     $("#playlist_tracks_id").change(function () {
-        var track_id = playlist_tracks_id.value;
-        var playlist_id = playlist_select_id.value;
-        if (track_id == 0 || playlist_id == 0)
+        var playlist_link = playlist_select_id.value;
+
+        var track_link = playlist_tracks_id.value;
+        if (track_link == null)
             return;
 
         var queue = parseInt($('input[name=track_play_mode]:checked').val());
 
-        if (track_id == -1) {                       // Play all tracks
-            url_str = "/dmxstudio/rest/control/music/play/playlist/" + playlist_id + "/" + queue;
+        if (track_link == "all") {                  // Play all tracks
+            url_str = "/dmxstudio/rest/control/music/play/playlist/" + playlist_link + "/" + queue;
         }
         else {                                      // Play single track
-            url_str = "/dmxstudio/rest/control/music/play/track/" + playlist_id + "/" + track_id + "/" + queue;
+            var track_action = (queue == 1) ? "queue" : "play";
+
+            url_str = "/dmxstudio/rest/control/music/" + track_action  + "/track/" + track_link;
         }
 
         $.ajax({
@@ -399,7 +402,7 @@ function updateMusicPlayer(update_selections) {
 
                         var data = [];
                         data = $.map(playlists, function (pl, index) {
-                            return "<option value=" + pl.id + ">" + pl.name + "</option>";
+                            return "<option value=" + pl.link + ">" + pl.name + "</option>";
                         });
 
                         $("#playlist_select_id").html(data.join(""));

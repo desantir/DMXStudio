@@ -48,6 +48,7 @@ bool HttpRestServices::query_chases( CString& response, LPCSTR data )
         json.add( "is_running", (chase->getUID() == studio.getVenue()->getRunningChase()) );
         json.add( "delay_ms", chase->getDelayMS() );
         json.add( "fade_ms", chase->getFadeMS() );
+        json.add( "repeat", chase->isRepeat() );
         json.addArray<Acts>( "acts", chase->getActs() );
 
         // Add chase steps
@@ -98,6 +99,7 @@ bool HttpRestServices::edit_chase( CString& response, LPCSTR data, EditMode mode
     ChaseStepArray steps;
     Chase* chase = NULL;
     Acts acts;
+    bool repeat;
 
     try {
         parser.parse( data );
@@ -109,6 +111,7 @@ bool HttpRestServices::edit_chase( CString& response, LPCSTR data, EditMode mode
         delay_ms = parser.get<ULONG>( "delay_ms" );
         fade_ms = parser.get<ULONG>( "fade_ms" );
         acts = parser.get<Acts>( "acts" );
+        repeat = parser.get<bool>( "repeat" );
 
         PARSER_LIST step_parsers = parser.get<PARSER_LIST>( "steps" );
 
@@ -134,19 +137,15 @@ bool HttpRestServices::edit_chase( CString& response, LPCSTR data, EditMode mode
 
     switch ( mode ) {
         case NEW: {
-            chase_id = studio.getVenue()->allocUID();
             Chase new_chase;
-            new_chase.setUID( chase_id );
-            studio.getVenue()->addChase( new_chase );
+            chase_id = studio.getVenue()->addChase( new_chase );
             chase = studio.getVenue()->getChase( chase_id );
             break;
         }
 
         case COPY: {
-            chase_id = studio.getVenue()->allocUID();
             Chase new_chase( *chase );
-            new_chase.setUID( chase_id );
-            studio.getVenue()->addChase( new_chase );
+            chase_id = studio.getVenue()->addChase( new_chase );
             chase = studio.getVenue()->getChase( chase_id );
             break;
         }
@@ -163,9 +162,15 @@ bool HttpRestServices::edit_chase( CString& response, LPCSTR data, EditMode mode
     chase->setFadeMS( fade_ms );
     chase->setSteps( steps );
     chase->setActs( acts );
+    chase->setRepeat( repeat );
 
     if ( running_chase_id == chase->getUID() )
         studio.getVenue()->startChase( chase->getUID() );
+
+    JsonBuilder json( response );
+    json.startObject();
+    json.add( "id", chase->getUID() );
+    json.endObject();
 
     return true;
 }

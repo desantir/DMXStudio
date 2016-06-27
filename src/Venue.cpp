@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-15 Robert DeSantis
+Copyright (C) 2011-16 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -51,7 +51,7 @@ Venue::Venue(void) :
     m_music_watcher( NULL ),
     m_audio_sample_size( 1024 )
 {
-    addScene( Scene( m_current_scene=allocUID(), DEFAULT_SCENE_NUMBER, "Workspace", "" ) );
+    m_current_scene = addScene( Scene( NOUID, DEFAULT_SCENE_NUMBER, "Workspace", "" ) );
 }
 
 // ----------------------------------------------------------------------------
@@ -59,6 +59,11 @@ Venue::Venue(void) :
 Venue::~Venue(void)
 {
     close();
+
+    // Release universes
+    for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it ) {
+        delete (*it).second;
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -105,16 +110,13 @@ bool Venue::open(void) {
             }
         }
 
-        // Temp universe fix up
-        for ( FixtureMap::iterator it=m_fixtures.begin(); it != m_fixtures.end(); ++it ) {
-            if ( it->second.getUniverseId() < 1 )
-                it->second.setUniverseId(1);
-        }
-
         DMXStudio::log_status( "Venue started [%s]", m_name );
 
         m_animation_task = new AnimationTask( this );
         m_animation_task->start();
+
+        m_chase_task = new ChaseTask( this );
+        m_chase_task->start();
 
         loadScene();
 
@@ -136,7 +138,11 @@ bool Venue::close(void) {
         m_music_watcher = NULL;
     }
 
-    stopChase();
+    if ( m_chase_task ) {
+        m_chase_task->stop();
+        delete m_chase_task;
+        m_chase_task = NULL;
+    }
 
     if ( m_animation_task ) {
         m_animation_task->stop();
@@ -144,7 +150,10 @@ bool Venue::close(void) {
         m_animation_task = NULL;
     }
 
-    clearAllUniverses();
+    // Stop all universes
+    for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it ) {
+        (*it).second->stop();
+    }
 
     if ( m_sound_detector ) {
         m_sound_detector->detach();
@@ -249,10 +258,15 @@ bool Venue::deleteFixture( UID pfuid ) {
 
 // ----------------------------------------------------------------------------
 //
-void Venue::addFixture( Fixture& pfixture ) {
+UID Venue::addFixture( Fixture& pfixture ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
+    if ( pfixture.getUID() == 0L )
+        pfixture.setUID( allocUID() );
+
     m_fixtures[ pfixture.getUID() ] = pfixture;
+
+    return pfixture.getUID();
 }
 
 // ----------------------------------------------------------------------------
@@ -320,10 +334,15 @@ FixtureGroupPtrArray Venue::getFixtureGroups( ) {
 
 // ----------------------------------------------------------------------------
 //
-void Venue::addFixtureGroup( FixtureGroup& group ) {
+UID Venue::addFixtureGroup( FixtureGroup& group ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
+    if ( group.getUID() == 0L )
+        group.setUID( allocUID() );
+
     m_fixtureGroups[ group.getUID() ]= group;
+
+    return group.getUID();
 }
 
 // ----------------------------------------------------------------------------
@@ -398,10 +417,15 @@ FixtureGroup* Venue::getFixtureGroupByNumber( GroupNumber group_number )
 
 // ----------------------------------------------------------------------------
 //
-void Venue::addChase( Chase& chase ) {
+UID Venue::addChase( Chase& chase ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
+    if ( chase.getUID() == 0L )
+        chase.setUID( allocUID() );
+
     m_chases[ chase.getUID() ] = chase;
+
+    return chase.getUID();
 }
 
 // ----------------------------------------------------------------------------
@@ -490,15 +514,13 @@ void Venue::deleteAllChases()
 
 // ----------------------------------------------------------------------------
 //
-ChaseController Venue::startChase( UID chase_id, ChaseRunMode run_mode ) {
+bool Venue::startChase( UID chase_id ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    stopChase();
+    if ( !m_chase_task )
+        return false;
 
-    m_chase_task = new ChaseTask( this, getChase( chase_id ), run_mode );
-    m_chase_task->start( );
-
-    return ChaseController( this, m_chase_task );
+    return m_chase_task->startChase( getChase( chase_id ) );
 }
 
 // ----------------------------------------------------------------------------
@@ -506,13 +528,10 @@ ChaseController Venue::startChase( UID chase_id, ChaseRunMode run_mode ) {
 bool Venue::stopChase() {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    if ( m_chase_task ) {
-        m_chase_task->stop();
-        delete m_chase_task;
-        m_chase_task = NULL;
-    }
+    if ( !m_chase_task )
+        return false;
 
-    return true;
+    return m_chase_task->stopChase();
 }
 
 // ----------------------------------------------------------------------------
@@ -727,10 +746,15 @@ ScenePtrArray Venue::getScenes() {
 
 // ----------------------------------------------------------------------------
 //
-void Venue::addScene( Scene& scene ) {
+UID Venue::addScene( Scene& scene ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
+    if ( scene.getUID() == 0L )
+        scene.setUID( allocUID() );
+
     m_scenes[ scene.getUID() ] = scene;
+
+    return scene.getUID();
 }
 
 // ----------------------------------------------------------------------------
@@ -749,8 +773,6 @@ void Venue::loadScene() {
 // ----------------------------------------------------------------------------
 //
 void Venue::clearAnimations() {
-    CSingleLock lock( &m_venue_mutex, TRUE );
-
     if ( m_animation_task )
         m_animation_task->clearAnimations();
 }
@@ -921,7 +943,7 @@ void Venue::loadSceneChannels( BYTE *dmx_multi_universe_packet, Scene* scene ) {
 //
 void Venue::loadChannel( BYTE* dmx_multi_universe_packet, Fixture* pf, channel_t channel, BYTE value ) {
     channel_t real_address = 
-        (pf->getUniverseId() * DMX_PACKET_SIZE) + pf->getChannelAddress( channel ) - 1;
+        ((pf->getUniverseId()-1) * DMX_PACKET_SIZE) + pf->getChannelAddress( channel ) - 1;
 
     dmx_multi_universe_packet[ real_address ] = adjustChannelValue( pf, channel, value );
 }
@@ -1009,16 +1031,18 @@ void Venue::writePacket( const BYTE* dmx_multi_universe_packet ) {
 
     for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it ) {
         Universe* universe = (*it).second;
-        universe->write_all( &multi_universe_packet[DMX_PACKET_SIZE * universe->getId()] );
+        universe->write_all( &multi_universe_packet[DMX_PACKET_SIZE * (universe->getId()-1)] );
     }
 }
 
 // ----------------------------------------------------------------------------
 //
 void Venue::readPacket( BYTE* dmx_multi_universe_packet ) {
+    memset( dmx_multi_universe_packet, 0, MULTI_UNIV_PACKET_SIZE );
+
     for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it ) {
         Universe* universe = (*it).second;
-        universe->read_all( &dmx_multi_universe_packet[DMX_PACKET_SIZE * universe->getId()] );
+        universe->read_all( &dmx_multi_universe_packet[DMX_PACKET_SIZE * (universe->getId()-1)] );
     }
 }
 
@@ -1216,11 +1240,8 @@ void Venue::populateSceneRatingsMap( SceneRatingsMap& ratings_map ) {
 
 // ----------------------------------------------------------------------------
 //
-bool Venue::isRunning() { 
-    for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it )
-        if ( (*it).second->isRunning() )
-            return true;
-    return false;
+bool Venue::isRunning() {
+    return m_animation_task != NULL;
 }
 
 // ----------------------------------------------------------------------------
