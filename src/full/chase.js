@@ -22,6 +22,8 @@ MA 02111-1307, USA.
 
 var chases = [];
 
+var SCENE_LOAD_METHODS = [ "", "Load", "Add", "Remove" ];
+
 // ----------------------------------------------------------------------------
 // class Chase
 //
@@ -43,6 +45,11 @@ function Chase(chase_data)
     // method getName
     this.getName = function () {
         return this.name;
+    }
+
+    // method getCreated
+    this.getCreated = function () {
+        return this.created;
     }
 
     // method getFullName
@@ -124,10 +131,7 @@ function getChaseByName(name) {
 // ----------------------------------------------------------------------------
 //
 function getUnusedChaseNumber() {
-    for ( var i=1; i < 50000; i++ )
-        if ( getChaseByNumber(i) == null )
-            return i;
-    return 99999;
+    return getNextUnusedNumber( chases );
 }
 
 // ----------------------------------------------------------------------------
@@ -321,7 +325,7 @@ function openNewChaseDialog(dialog_title, data) {
 
     $("#new_chase_dialog").dialog({
         autoOpen: false,
-        width: 780,
+        width: 800,
         height: 620,
         modal: true,
         resizable: false,
@@ -401,11 +405,19 @@ function populate_chase_steps() {
 
         // If we don't do this after population, multiselect is empty (refresh may work)
         $("#ncd_step_" + step_num + "_scene").multiselect({
-            minWidth: 450,
+            minWidth: 380,
             multiple: false,
             selectedList: 1,
-            header: false
+            header: false,
+            classes: 'player_multilist'
         });
+
+        $("#ncd_step_" + step_num + "_method_div").buttonset();
+        $("#ncd_step_" + step_num + "_method_" + steps[s].load_method).prop("checked", true).button("refresh");
+
+        if ( step_num == 1 ) {
+            $("#ncd_step_" + step_num + "_method_div").hide();
+        }
     }
 }
 
@@ -420,6 +432,7 @@ function reload_steps_data() {
 
         steps[s].id = $("#ncd_step_" + step_num + "_scene").val();
         steps[s].delay_ms = $("#ncd_step_" + step_num + "_delay_ms").val();
+        steps[s].load_method = $("input[name=ncd_step_" + step_num + "_method]:checked").val();
     }
 
     return steps;
@@ -502,7 +515,9 @@ function describeChase(event, chase_id) {
         var scene = getSceneById(step.id);
 
         info += "<div style=\"clear:both; float: left; margin-right:6px;\" class=\"describe_chase_step\">Step " + (i + 1) + ": </div>";
-        info += "<div style=\"float: left;\" >Scene " + scene.getNumber() + " " + escapeForHTML(scene.getName() ) + "</div>";
+        info += "<div style=\"float: left;\" >";
+        info +=  SCENE_LOAD_METHODS[ step.load_method ];
+        info += " scene " + scene.getNumber() + " " + escapeForHTML(scene.getName() ) + "</div>";
 
         if (step.delay_ms > 0)
             info += "<div style=\"float: left; margin-left: 8px;\" class=\"describe_chase_step\">(duration " + step.delay_ms + " ms)</div>";

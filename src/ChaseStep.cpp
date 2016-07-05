@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -20,15 +20,15 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "DMXStudio.h"
 #include "ChaseStep.h"
 
 // ----------------------------------------------------------------------------
 //
-ChaseStep::ChaseStep( UID scene_uid, ULONG delay_ms ) :
+ChaseStep::ChaseStep( UID scene_uid, ULONG delay_ms, SceneLoadMethod method ) :
     m_scene_uid(scene_uid), 
-    m_delay_ms(delay_ms)
+    m_delay_ms(delay_ms),
+    m_method( method )
 {
 }
 

@@ -46,6 +46,7 @@ MA 02111-1307, USA.
 #define DMX_URL_CONTROL_VENUE_STROBE            DMX_URL_REST "control/venue/strobe/" 
 #define DMX_URL_CONTROL_VENUE_WHITEOUT_COLOR    DMX_URL_REST "control/venue/whiteout/color/" 
 #define DMX_URL_CONTROL_SCENE_SHOW              DMX_URL_REST "control/scene/show/" 
+#define DMX_URL_CONTROL_SCENE_STAGE             DMX_URL_REST "control/scene/stage/" 
 #define DMX_URL_CONTROL_CHASE_SHOW              DMX_URL_REST "control/chase/show/" 
 #define DMX_URL_CONTROL_VENUE_MUSIC_MATCH       DMX_URL_REST "control/venue/music_match/"
 #define DMX_URL_CONTROL_ANIMATION_SPEED         DMX_URL_REST "control/venue/animation_speed/"
@@ -108,6 +109,7 @@ MA 02111-1307, USA.
 #define DMX_URL_CONTROL_MUSIC_PLAY_PLAYLIST     DMX_URL_REST "control/music/play/playlist/"
 #define DMX_URL_CONTROL_MUSIC_PLAYER_LOGIN      DMX_URL_REST "control/music/player/login/"
 #define DMX_URL_QUERY_MUSIC_MATCHER             DMX_URL_REST "query/music/matcher/"
+#define DMX_URL_QUERY_MUSIC_MATCHER_SEARCH      DMX_URL_REST "query/music/matcher/search/"
 #define DMX_URL_QUERY_MUSIC_TRACK_ANALYZE       DMX_URL_REST "query/music/track/analyze/"
 #define DMX_URL_EDIT_MUSIC_MATCHER_LOAD         DMX_URL_REST "edit/music/matcher/load/"
 #define DMX_URL_EDIT_MUSIC_MATCHER_UPDATE       DMX_URL_REST "edit/music/matcher/update/"
@@ -197,6 +199,7 @@ protected:
     bool control_venue_masterdimmer( CString& response, LPCSTR data );
     bool control_venue_music_match( CString& response, LPCSTR data );
     bool control_scene_show( CString& response, LPCSTR data );
+    bool control_scene_stage( CString& response, LPCSTR data );
     bool control_chase_show( CString& response, LPCSTR data );
     bool control_venue_strobe( CString& response, LPCSTR data );
     bool control_venue_whiteout_color( CString& response, LPCSTR data );
@@ -233,6 +236,7 @@ protected:
     bool control_soundsampler_stop( CString& response, LPCSTR data );
     bool query_soundsampler( CString& response, LPCSTR data );
     bool query_music_matcher( CString& response, LPCSTR data );
+    bool query_music_matcher_search( CString& response, LPCSTR data );
 
     bool control_beatsampler_start( CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
     bool control_beatsampler_stop( CString& response, LPCSTR data );

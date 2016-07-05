@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -35,7 +35,6 @@ MA 02111-1307, USA.
 DMXStudio studio;
 
 static CString getUserDocumentDirectory();
-extern void readFixtureDefinitions( void );
 
 // ----------------------------------------------------------------------------
 //
@@ -80,7 +79,7 @@ void DMXStudio::runStudio()
     try {
         openStudioLogFile();
 
-        log_status( "DMX Studio v0.2.6" );
+        log_status( "DMX Studio v0.3.0" );
 
         readIniFile();
 
@@ -93,16 +92,16 @@ void DMXStudio::runStudio()
         // Enumerate the IP addresses
         showIpAddress();
 
-        // Start the request server
-        DMXHttpServer server;
-        if ( m_enable_http )
-            server.start();
-
         // Connect to the music player if available
         if ( hasMusicPlayer() ) {
             getMusicPlayer()->initialize( );
             getMusicPlayer()->connect();
         }
+        
+        // Start the request server
+        DMXHttpServer server;
+        if ( m_enable_http )
+            server.start();
 
         // Load the default venue
         if ( !DMXStudio::loadVenueFromFile( getDefaultVenueFilename() ) ) {
@@ -253,7 +252,9 @@ void DMXStudio::openStudioLogFile( )
 
     if ( PathFileExists( filename ) ) {
         CString move_filename;
-        move_filename.Format( "%s\\DMXStudio\\DMXStudio-%010ld.log", getUserDocumentDirectory(), GetCurrentTime() );
+        move_filename.Format( "%s\\DMXStudio\\Logs", getUserDocumentDirectory() );
+        CreateDirectory( move_filename, NULL );
+        move_filename.AppendFormat( "\\DMXStudio-%010ld.log", GetCurrentTime() );
         MoveFile( filename, move_filename );
     }
 

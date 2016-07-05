@@ -26,10 +26,10 @@ MA 02111-1307, USA.
 #include "IVisitor.h"
 #include "AbstractDMXDriver.h"
 
-typedef enum {
+enum UniverseType {
     OPEN_DMX = 0,
     ENTTEC_USB_PRO = 1
-} UniverseType;
+} ;
 
 class Universe {
 

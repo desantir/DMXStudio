@@ -1,7 +1,7 @@
 <!DOCTYPE html> 
 
 <!--
-Copyright (C) 2011-16 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -332,33 +332,57 @@ MA 02111-1307, USA.
 
     <button id="ctd_select_track" style="float:right; margin-top: 10px;" >Select Track</button>
 
-    <div id="ctd_visualizer" style="clear:both; overflow-x: hidden; width: 1000px; overflow-y: hidden; height: 250px; margin-top: 20px;">
+    <div id="ctd_visualizer" style="clear:both; overflow-x: hidden; width: 100%; overflow-y: hidden; height: 50%; margin-top: 20px;">
     </div>
 
     <div id="ctd_track_timing" style="margin: 4px 0px 0px 10px; display: none; ">
-        <span style="float:left;font: 8pt arial; color: white; margin-right: 40px;"><span id="ctd_position" ></span>&nbsp;/&nbsp;<span id="ctd_remaining"></span></span>
-        <span id="ctd_selected" style="float:right; font: 8pt arial; color: white; margin-left: 50px;">|&nbsp;=&nbsp;<span id="ctd_selected_time" ></span></span>
+        <span style="float:left;font: 10pt arial; font-weight: bold; color: white; margin-right: 40px;"><span id="ctd_position" ></span>&nbsp;/&nbsp;<span id="ctd_remaining"></span></span>
+        
+        <span id="ctd_selected" style="float:left; font: 10pt arial; color: white;">CUE&nbsp;=&nbsp;<span id="ctd_selected_time"></span></span>
+                
+        <div id="ctd_bar_widths" style="margin-top:0px; float: right; font-size: 6pt; font-family: sans-serif;">
+            <input type="radio" id="ctd_width_1" name="ctd_width" value="1" /><label for="ctd_width_1">1</label>
+            <input type="radio" id="ctd_width_2" name="ctd_width" value="2" /><label for="ctd_width_2">2</label>
+            <input type="radio" id="ctd_width_3" name="ctd_width" value="3" /><label for="ctd_width_3">3</label>
+            <input type="radio" id="ctd_width_4" name="ctd_width" value="4" /><label for="ctd_width_4">4</label>
+            <input type="radio" id="ctd_width_5" name="ctd_width" value="5" /><label for="ctd_width_5">5</label>
+        </div>
     </div>
 
     <div style="margin-top:40px; clear:both;">
-        <div id="ctd_scene_select" style="clear: both; float: left; display: none;">
-            <select id="ctd_scenelist" style="max-width: 400px; margin-right: 20px;"></select>
-            <button id="ctd_set_scene" style="font-size: 8pt; font-family: sans-serif; width: 80px;">SET</button>
-            <button id="ctd_clear_scene" style="font-size: 8pt; font-family: sans-serif; width: 80px;">CLEAR</button>
+        <div id="ctd_scene_select" style="clear: both; float: left; display: none; font-size: 8pt; font-family: sans-serif; ">
+
+            <div id="ctd_method_div" style="float: left; font-size: 7pt; font-family: sans-serif;" title="(L) normal load scene, (+) add actors to previous scene, (-) remove actors from previous scene">
+                <input type="radio" id="ctd_method_1" name="ctd_method" value="1" checked="checked" /><label for="ctd_method_1">L</label>
+                <input type="radio" id="ctd_method_2" name="ctd_method" value="2" /><label for="ctd_method_2">+</label>
+                <input type="radio" id="ctd_method_3" name="ctd_method" value="3" /><label for="ctd_method_3">-</label>
+            </div>
+
+            <div style="float: left; margin-right: 20px;">
+                <select id="ctd_scenelist" style="max-width: 400px;"></select>
+            </div>
+
+            <div style="clear: both; float: left; margin: 10px 20px 0px 0px;">
+                <button id="ctd_set_scene" style="width: 80px; margin-right: 5px;">SET</button>
+                <button id="ctd_clear_scene" style="width: 80px;">CLEAR</button>
+            </div>
+
         </div>
         <div style="float: right;">
-            <button id="ctd_play" style="font-size: 8pt; font-family: sans-serif; width: 80px;" disabled>PLAY</button>
-            <button id="ctd_stop" style="font-size: 8pt; font-family: sans-serif; width: 80px;" disabled>STOP</button>
-            <button id="ctd_reset" style="font-size: 8pt; font-family: sans-serif; width: 80px;" disabled>RESET</button>
-        </div>
-    </div>
+            <div>
+                <button id="ctd_play" style="font-size: 8pt; font-family: sans-serif; width: 80px;" disabled>PLAY</button>
+                <button id="ctd_stop" style="font-size: 8pt; font-family: sans-serif; width: 80px;" disabled>STOP</button>
+                <button id="ctd_reset" style="font-size: 8pt; font-family: sans-serif; width: 80px;" disabled>RESET</button>
+            </div>
 
-    <div id="ctd_generate_container" style="margin-top:20px; clear:both; float: right;">
-        <button id="ctd_generate" style="font-size: 8pt; font-family: sans-serif; width: 255px;">Generate Chase</button>
-        
-        <div style="margin-top: 4px;">
-            <input type="checkbox" id="ctd_generate_mm" checked="checked" value="true" />
-            <label for="ctd_generate_mm" style="font: 8pt arial;">update music match entry</label>
+            <div id="ctd_generate_container" style="margin-top:20px; clear:both; float: right; display:none; ">
+                <button id="ctd_generate" style="font-size: 8pt; font-family: sans-serif; width: 255px;">Generate Chase</button>
+
+                <div style="margin-top: 4px;">
+                    <input type="checkbox" id="ctd_generate_mm" checked="checked" value="true" />
+                    <label for="ctd_generate_mm" style="font: 8pt arial;">update music match entry</label>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -679,17 +703,25 @@ MA 02111-1307, USA.
 <div id="ncd_step_template" style="display:none;">
     <div id="ncd_step_NNN">
         <div style="clear:both; float:left; margin: 2px 0px 4px 0px;">
-            <label for="ncd_step_NNN_scene" style="display:block;">Step NNN</label>
-            <select id="ncd_step_NNN_scene" style="display:block;" ></select>
+            <label for="ncd_step_NNN_scene" style="display:block;font-size: 8pt; font-family: sans-serif;">Step NNN</label>
+            <select id="ncd_step_NNN_scene" style="display:block;font-size: 8pt; font-family: sans-serif;" ></select>
         </div>
-        <div style="float:right; margin: 30px 0px 0px 20px;">
+        <div style="float:right; margin: 23px 0px 0px 20px;">
             <span id="ncd_step_NNN_remove" class="ui-icon ui-icon-circle-minus" title="remove step" style="float:left;cursor: pointer;" onclick="chase_remove_step(event,NNN); return false;"></span>
             <span class="ui-icon ui-icon-circle-plus" title="insert step below" style="float:left; cursor: pointer; margin-right:4px;" onclick="chase_insert_step(event,NNN); return false;"></span>
         </div>
-        <div style="float:right; margin: 0px 0px 4px 0px;">
+
+        <div style="float:right; margin: 8px 0px 4px 0px;font-size: 8pt; font-family: sans-serif;">
             <label for="ncd_step_NNN_delay_ms" style="display:block;">duration</label>
-            <input id="ncd_step_NNN_delay_ms" style="display:block; width:80px;" title="step duration (0 for default)"/>&nbsp;ms
+            <input id="ncd_step_NNN_delay_ms" style="display:block; width:60px;" title="step duration (0 for default)" />&nbsp;ms
         </div>
+
+        <div id="ncd_step_NNN_method_div" style="float:right; margin: 20px 30px 0px 0px; font-size: 6pt; font-family: sans-serif;" title="(L) normal load scene, (+) add actors to previous scene, (-) remove actors from previous scene">
+            <input type="radio" id="ncd_step_NNN_method_1" name="ncd_step_NNN_method" value="1" checked="checked"/><label for="ncd_step_NNN_method_1">L</label>
+            <input type="radio" id="ncd_step_NNN_method_2" name="ncd_step_NNN_method" value="2" /><label for="ncd_step_NNN_method_2">+</label>
+            <input type="radio" id="ncd_step_NNN_method_3" name="ncd_step_NNN_method" value="3" /><label for="ncd_step_NNN_method_3">-</label>
+        </div>
+
     </div>
 </div>
 

@@ -93,7 +93,7 @@ void SceneSequence::unselectActor( unsigned actor_num, BYTE* dmx_packet ) {
     if ( actor_num >= m_running_actors.size() )
         return;
 
-    SceneActor* actor = m_animation_task->getScene()->getActor( m_running_actors[actor_num] );
+    SceneActor* actor = m_animation_task->getActor( m_running_actors[actor_num] );
     STUDIO_ASSERT( actor != NULL, "Missing scene actor for fixture %lu", m_running_actors[actor_num] );
 
     for ( Fixture *pf : m_animation_task->resolveActorFixtures( actor ) ) {
@@ -111,7 +111,7 @@ void SceneSequence::selectActor( unsigned actor_num, BYTE* dmx_packet )
     if ( actor_num >= m_running_actors.size() )
         return;
 
-    SceneActor* actor = m_animation_task->getScene()->getActor( m_running_actors[actor_num] );
+    SceneActor* actor = m_animation_task->getActor( m_running_actors[actor_num] );
     STUDIO_ASSERT( actor != NULL, "Missing scene actor for fixture %lu", m_running_actors[actor_num] );
 
     for ( Fixture *pf : m_animation_task->resolveActorFixtures( actor ) ) {

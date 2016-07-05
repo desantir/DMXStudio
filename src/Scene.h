@@ -29,6 +29,13 @@ MA 02111-1307, USA.
 
 typedef ULONG SceneNumber;								// Scene numbers will be user friendly numbers 1-n
 
+// Controls how scenes are loaded over existing scenes
+enum SceneLoadMethod {
+    SLM_LOAD = 1,                       // Load the scene and remove any existing actors (default method)
+    SLM_ADD = 2,                        // Add this scene's actors and animations
+    SLM_MINUS = 3                       // Remove this scene's actor and animation
+};
+
 class Scene : public DObject
 {
     friend class VenueWriter;

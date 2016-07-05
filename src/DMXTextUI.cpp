@@ -30,6 +30,8 @@ static HandlerMap function_map;
 
 static CString track_time( DWORD time );
 
+static LPCSTR sceneLoadMethods[] = { NULL, "Load", "Add", "Remove" };
+
 // ----------------------------------------------------------------------------
 //
 DMXTextUI::DMXTextUI(void)
@@ -139,7 +141,7 @@ void DMXTextUI::run()
                 
         if ( getVenue()->isRunning() ) {
             light_status.AppendFormat( "Dimmer %d%% | ", getVenue()->getMasterDimmer() );
-            if ( getVenue()->isBlackout() )
+            if ( getVenue()->isForceBlackout() )
                 light_status.AppendFormat( "Blackout ON | " );
             else if ( getVenue()->getWhiteout() != WHITEOUT_OFF ) {
                 light_status.Append( "Whiteout " );
@@ -159,8 +161,8 @@ void DMXTextUI::run()
                 light_status.Append( "| " );
             }
 
-            if ( getVenue()->getAutoBlackout() != 0 )
-                light_status.AppendFormat( "Blackout %lums | ", getVenue()->getAutoBlackout() );
+            if ( getVenue()->getAutoBlackoutMS() != 0 )
+                light_status.AppendFormat( "Blackout %lums | ", getVenue()->getAutoBlackoutMS() );
             if ( getVenue()->isChaseRunning() ) {
                 Chase* chase = getVenue()->getChase( getVenue()->getRunningChase() );
                 light_status.AppendFormat( "Chase #%lu %s | ", chase->getChaseNumber(), chase->getName() );
@@ -323,7 +325,7 @@ void DMXTextUI::masterVolume()
 //
 void DMXTextUI::blackout()
 {
-    getVenue()->setBlackout( !getVenue()->isBlackout() );
+    getVenue()->setForceBlackout( !getVenue()->isForceBlackout() );
 }
 
 // ----------------------------------------------------------------------------
@@ -344,7 +346,6 @@ void DMXTextUI::whiteout(void)
 
     if ( form.play() && form.isChanged() ) {
         getVenue()->setWhiteout( (WhiteoutMode)(whiteout_field.getListValue()) );
-        getVenue()->loadScene();
     }
 }
 
@@ -372,7 +373,6 @@ void DMXTextUI::whiteout_options()
         getVenue()->setWhiteout( (WhiteoutMode)(whiteout_field.getListValue()) );
         getVenue()->setWhiteoutStrobeMS( whiteout_ms_field.getIntValue() );
         getVenue()->setWhiteoutColor( whiteout_color_field.getColor() );
-        getVenue()->loadScene();
     }
 }
 // ----------------------------------------------------------------------------
@@ -400,20 +400,19 @@ bool DMXTextUI::isUserSure() {
 //
 void DMXTextUI::autoBlackout()
 {
-    IntegerField blackout_field( "Venue auto blackout MS", getVenue()->getAutoBlackout(), 0, 65000 );
+    IntegerField blackout_field( "Venue auto blackout MS", getVenue()->getAutoBlackoutMS(), 0, 65000 );
     Form form( &m_text_io );
 
     form.add( blackout_field );
 
     if ( form.play() && form.isChanged() )
-        getVenue()->setAutoBlackout( blackout_field.getIntValue() );
+        getVenue()->setAutoBlackoutMS( blackout_field.getIntValue() );
 }
 
 // ----------------------------------------------------------------------------
 //
 void DMXTextUI::resetDefaultFixtures() {
     getVenue()->clearAllCapturedActors();
-    getVenue()->loadScene();
 }
 
 // ----------------------------------------------------------------------------
@@ -895,17 +894,27 @@ void DMXTextUI::addChaseSteps(void) {
 
     if ( editChaseSteps( &dummy, true, position ) ) {
         Chase* chase = getVenue()->getChase( chase_field.getChaseUID() );
-        if ( getVenue()->getRunningChase() == chase->getUID() )
-            getVenue()->stopChase();
+
+        UID running_chase_id = getVenue()->getRunningChase();
+        if ( running_chase_id == chase->getUID() )
+            studio.getVenue()->stopChase();
 
         for ( size_t i=0; i < dummy.getNumSteps(); i++ )
             chase->insertStep( position+i, *dummy.getStep(i) );
+
+        getVenue()->chaseUpdated( chase->getUID() );
+
+        if ( running_chase_id == chase->getUID() )
+            getVenue()->startChase( chase->getUID() );
     }
 }
 
 // ----------------------------------------------------------------------------
 //
 bool DMXTextUI::editChaseSteps( Chase* chase, bool append_steps, UINT step_num_offset ) {
+    static const UINT CHASE_FIELDS = 3;              // Fields per chase step
+
+
     class MyForm : public Form {
         Venue*		m_venue;
         Chase*		m_chase;
@@ -915,12 +924,12 @@ bool DMXTextUI::editChaseSteps( Chase* chase, bool append_steps, UINT step_num_o
         void fieldLeaveNotify( size_t field_num ) {
             if ( m_append_steps ) {
                 if ( field_num == size()-1 ) {
-                    SceneSelectField* scene_field = getField<SceneSelectField>( size()-2 );
+                    SceneSelectField* scene_field = getField<SceneSelectField>( size()-CHASE_FIELDS );
                     if ( scene_field->getSceneUID() != 0 )
-                        addStep( size()/2+1, &ChaseStep( 0, 0 ) );
+                        addStep( size()/CHASE_FIELDS+1, &ChaseStep( 0, 0, SLM_LOAD ) );
                 }
-                else if ( field_num == size()-2 ) {
-                    SceneSelectField* scene_field = getField<SceneSelectField>( size()-2 );
+                else if ( field_num == size()-CHASE_FIELDS ) {
+                    SceneSelectField* scene_field = getField<SceneSelectField>( size()-CHASE_FIELDS );
                     if ( scene_field->getListValue() == 0 )
                         stop();
                 }
@@ -938,20 +947,36 @@ bool DMXTextUI::editChaseSteps( Chase* chase, bool append_steps, UINT step_num_o
             setAutoDelete( true );
 
             if ( m_append_steps )
-                addStep( size()/2+1, &ChaseStep( 0, 0 ) );
+                addStep( size()/CHASE_FIELDS+1, &ChaseStep( 0, 0, SLM_LOAD ) );
         }
 
         void addStep( UINT step_number, ChaseStep* step ) {
             CString label;
+            
             label.Format( "Step %d scene", step_number+m_step_num_offset );
             SceneNumber scene_number = step->getSceneUID() != 0 ? m_venue->getScene( step->getSceneUID() )->getSceneNumber() : 0;
             addAuto( new SceneSelectField( label, m_venue, scene_number, m_append_steps ) );
+            
             label.Format( "Step %d duration (ms)", step_number+m_step_num_offset );
             addAuto( new IntegerField( label, step->getDelayMS(), 0 ) );
+            
+            label.Format( "Step %d method", step_number+m_step_num_offset );
+            NumberedListField* method_field = new NumberedListField( label );
+
+            method_field->addKeyValue( SLM_LOAD, sceneLoadMethods[SLM_LOAD] );
+
+            if ( step_number > 1 ) {
+                method_field->addKeyValue( SLM_ADD, sceneLoadMethods[SLM_ADD] );
+                method_field->addKeyValue( SLM_MINUS, sceneLoadMethods[SLM_MINUS] );
+            }
+
+            method_field->setDefaultListValue( step_number == 1 ? SLM_LOAD : step->getMethod() );
+
+            addAuto( method_field );
         }
 
         size_t getNumSteps( ) const {
-            size_t steps = size()/2;
+            size_t steps = size()/3;
             if ( m_append_steps )			// If appending always have one extra at the end
                 steps--;
             return steps;
@@ -970,16 +995,18 @@ bool DMXTextUI::editChaseSteps( Chase* chase, bool append_steps, UINT step_num_o
     size_t chase_steps = form.getNumSteps();
 
     for ( UINT step_num=0; step_num < chase_steps; step_num++ ) {
-        SceneSelectField* scene_field = form.getField<SceneSelectField>( step_num*2 );
-        IntegerField* delay_field = form.getField<IntegerField>( step_num*2+1 );
+        SceneSelectField* scene_field = form.getField<SceneSelectField>( step_num*CHASE_FIELDS );
+        IntegerField* delay_field = form.getField<IntegerField>( step_num*CHASE_FIELDS+1 );
+        NumberedListField* method_field = form.getField<NumberedListField>( step_num*CHASE_FIELDS+2 );
 
         if ( step_num < chase->getNumSteps() ) {
             ChaseStep* step = chase->getStep( step_num );
             step->setSceneUID( scene_field->getSceneUID() );
             step->setDelayMS( delay_field->getLongValue() );
+            step->setMethod( (SceneLoadMethod)method_field->getListValue() );
         }
         else
-            chase->appendStep( ChaseStep( scene_field->getSceneUID(), delay_field->getLongValue() ) );
+            chase->appendStep( ChaseStep( scene_field->getSceneUID(), delay_field->getLongValue(), (SceneLoadMethod)method_field->getListValue() ) );
     }
 
     return true;
@@ -1037,9 +1064,12 @@ void DMXTextUI::describeChase(void) {
         m_text_io.printf( "None" );
     m_text_io.printf( "\n\n" );
 
+
+
     for ( unsigned index=0; index < chase->getNumSteps(); index++ ) {
         ChaseStep* step = chase->getStep( index );
-        m_text_io.printf( "  Step %2d: Scene %lu %s (duration %lums)\n", index+1, 
+        m_text_io.printf( "  Step %2d: %s scene %lu %s (duration %lums)\n", index+1,
+                sceneLoadMethods[ (int)step->getMethod() ],
                 getVenue()->getScene( step->getSceneUID() )->getSceneNumber(),
                 getVenue()->getScene( step->getSceneUID() )->getName(), step->getDelayMS() );
     }
@@ -1428,7 +1458,6 @@ void DMXTextUI::copyFixture(void) {
 
     getVenue()->copySceneFixtureToDefault( scene_select_field.getSceneUID(),
                                         scene_fixture_field.getActorUID() );
-    getVenue()->loadScene();
 }
 
 // ----------------------------------------------------------------------------
@@ -1462,8 +1491,7 @@ void DMXTextUI::deleteFixtureFromScene(void) {
     Scene* scene = getVenue()->getScene( scene_select_field.getSceneUID() );
     scene->removeActor( scene_fixture_field.getActorUID() );
 
-    if ( scene->getUID() == getVenue()->getCurrentSceneUID() )
-        getVenue()->loadScene();
+    getVenue()->sceneUpdated( scene->getUID() );
 }
 
 // ----------------------------------------------------------------------------
@@ -1482,8 +1510,7 @@ void DMXTextUI::sceneDeleteAllAnimations(void)
 
         scene->clearAnimations();
 
-        if ( scene->getUID() == getVenue()->getCurrentSceneUID() )
-            getVenue()->loadScene();
+        getVenue()->sceneUpdated( scene->getUID() );
     }
 }
 
@@ -1525,8 +1552,7 @@ void DMXTextUI::sceneDeleteAnimation(void)
 
     scene->removeAnimation( animation_select_field.getAnimationUID() );
 
-    if ( getVenue()->getCurrentSceneUID() == scene->getUID() )
-        getVenue()->loadScene();
+    getVenue()->sceneUpdated( scene->getUID() );
 }
 
 // ----------------------------------------------------------------------------

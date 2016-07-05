@@ -91,6 +91,7 @@ bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
         json.add( "name", scene->getName() );
         json.add( "bpm_rating", scene->getBPMRating() );
         json.add( "description", scene->getDescription() );
+        json.add( "created", scene->getCreated() );
         json.add( "is_default", (scene == default_scene) );
         json.add( "is_running", (active_uid == scene->getUID()) );
         json.addArray<Acts>( "acts", scene->getActs() );
@@ -419,8 +420,8 @@ bool HttpRestServices::edit_scene( CString& response, LPCSTR data, EditMode mode
 
     if ( mode != UPDATE )            // Switch to new scene
         studio.getVenue()->selectScene( scene->getUID() );
-    else if ( studio.getVenue()->getCurrentSceneUID() == scene->getUID() )
-        studio.getVenue()->loadScene( );
+    else
+        studio.getVenue()->sceneUpdated( scene->getUID() );
 
     return true;
 }

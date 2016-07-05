@@ -28,6 +28,7 @@ var myAmplitudeData = null;
 var myBar = null;
 var myLastStartPosition = 0;
 var myInitialized = false;
+var barWidth = 2;
 
 // ----------------------------------------------------------------------------
 //
@@ -41,8 +42,16 @@ function chaseTrack( event ) {
         width: 1030,
         height: 500,
         modal: false,
+        open: function () {
+            $("#ctd_visualizer").track_visualize_control( "option", "bar_height_zoom", 1 );      // Also resizes!
+
+            $("#ctd_width_" + barWidth).prop("checked", true).button("refresh");
+        },
         close: function () {
             $("#ctd_visualizer").track_visualize_control("stop");
+        },
+        resizeStop: function( event, ui ) {
+            $("#ctd_visualizer").track_visualize_control( "option", "bar_height_zoom", chase_track_dialog.height() / 500 );       // Also resizes!
         }
     });
 
@@ -52,8 +61,7 @@ function chaseTrack( event ) {
     }
 
     $("#ctd_visualizer").track_visualize_control({
-        height: 200,
-        BAR_BOX_WIDTH: 1,
+        BAR_BOX_WIDTH: barWidth,
         EDGE_BORDER: 10,
         amplitude_data: myAmplitudeData,
         no_data_message: "SELECT TRACK TO CHASE",
@@ -68,7 +76,8 @@ function chaseTrack( event ) {
                 myBar = bar;
 
                 if ( bar.annotation != null && bar.annotation.data != null ) {
-                    multiselectSelect( $("#ctd_scenelist"), bar.annotation.data );
+                    multiselectSelect( $("#ctd_scenelist"), bar.annotation.data.scene_uid );
+                    $("#ctd_method_" + bar.annotation.data.load_method).prop("checked", true).button("refresh");
                 }
             }
             else {
@@ -108,10 +117,20 @@ function chaseTrack( event ) {
             $("#ctd_remaining").text("-" + trackTime(myTrack.duration - myPosition, true ));
 
             if ( bar != null && bar.annotation != null ) {
-                var sceneId = bar.annotation.data;
+                var scene_uid = bar.annotation.data.scene_uid;
+                var method = bar.annotation.data.load_method;
                 
                 setTimeout( function() {
-                    selectScene( null, sceneId );
+                    $.ajax({
+                        type: "GET",
+                        url: "/dmxstudio/rest/control/scene/stage/" + scene_uid + "/" + method,
+                        cache: false,
+                        success: function () {
+                            if ( method == 1 )
+                                markActiveScene(scene_uid);
+                        },
+                        error: onAjaxError
+                    });
                 }, 0 );
             }
 
@@ -134,9 +153,36 @@ function chaseTrack( event ) {
                     var json = jQuery.parseJSON(data);
 
                     myAmplitudeData = json.amplitude.data;
-                    myInterval = json.amplitude.duration_ms;    // Sample interval
+                    myInterval = json.amplitude.duration_ms;    // Sampling interval
 
                     chaseSetupTrack( myTrack, myAmplitudeData, myInterval );
+
+                    // Check for a pre-existing chase for this track
+                    $.ajax({
+                        type: "GET",
+                        url: "/dmxstudio/rest/query/music/matcher/search/" + myTrack.link,
+                        cache: false,
+                        success: function (data) {
+                            var json = jQuery.parseJSON(data);
+
+                            if ( json.length != 1 || json[0].type != 2 )
+                                return;
+    
+                            var chase = getChaseById( json[0].id );
+                            if ( chase == null )
+                                return;
+                            
+                            // Load annotations
+                            var time_ms = 0;
+                            for ( var i=0; i < chase.getSteps().length; i++ ) {
+                                var step = chase.getSteps()[i];
+                                annotate_bar( time_ms/myInterval, step.id, step.load_method );
+                                time_ms += step.delay_ms;
+                            }
+                        },
+                        error: function () {
+                        },
+                    });
                 },
                 error: function () {
                     myAmplitudeData = null;
@@ -201,11 +247,10 @@ function chaseTrack( event ) {
     $("#ctd_set_scene").button().click(function () {
         if ( myBar != null ) {
             var sceneId = $("#ctd_scenelist").val();
-            var scene = getSceneById( sceneId );
-            if ( scene != null ) {
-                $("#ctd_visualizer").track_visualize_control( "annotate", myBar.number, scene.getNumber() + ": " + scene.getFullName(), sceneId );
+            var method = $("input[name=ctd_method]:checked").val();
+                
+            if ( annotate_bar( myBar.number, sceneId, method ) )
                 $("#ctd_generate_container").show();
-            }
         }
     });
 
@@ -230,9 +275,37 @@ function chaseTrack( event ) {
         generateChase();
     });
 
+    $("#ctd_bar_widths").buttonset().on("change", function() {
+        var value = $("input[name=ctd_width]:checked").val();
+        $("#ctd_visualizer").track_visualize_control( "option", "BAR_BOX_WIDTH", parseInt(value) );
+    });
+
+    $("#ctd_method_div").buttonset();
+
     chase_track_dialog.dialog("open");
 
     myInitialized = true;
+}
+
+// ----------------------------------------------------------------------------
+//
+function annotate_bar( bar_number, sceneId, method ) {
+    var scene = getSceneById( sceneId );
+    if ( scene == null )
+        return false;
+
+    var action = "";
+
+    if ( method == 2 )
+        action = "Add ";
+    else if ( method == 3 )
+        action = "Remove ";
+
+    var title = action + scene.getNumber() + ": " + scene.getFullName();
+
+    $("#ctd_visualizer").track_visualize_control( "annotate", bar_number, title, { "scene_uid": sceneId, "load_method": method } );
+
+    return true;
 }
 
 // ----------------------------------------------------------------------------
@@ -250,6 +323,7 @@ function chaseStopTrack( resetPosition ) {
                 $("#ctd_visualizer").track_visualize_control( "unselectAll" );
 
                 myPosition = 0;
+                myBar = null;
 
                 $("#ctd_position").text(trackTime(0), true);
                 $("#ctd_remaining").text(trackTime(myTrack.duration), true);
@@ -304,7 +378,7 @@ function generateChase() {
             if ( steps.length > 0 )
                 steps[ steps.length-1 ].delay_ms = time_ms;
 
-            steps[ steps.length] = { id: bars[i].annotation.data, delay_ms: 0 };
+            steps[ steps.length] = { id: bars[i].annotation.data.scene_uid, delay_ms: 0, load_method: bars[i].annotation.data.load_method };
 
             time_ms = 0;        // Reset the time to - this will be come our duration
         }

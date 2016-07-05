@@ -27,12 +27,12 @@ MA 02111-1307, USA.
 #include "ColorFader.h"
 #include "ColorStrobe.h"
 
-typedef enum {
+enum FaderEffect {
     FADER_EFFECT_CHANGE = 1,				// Simple color changer
     FADER_EFFECT_STROBE = 2,				// Strobing color
     FADER_EFFECT_BLEND = 3,					// Blending colors together
     FADER_EFFECT_ALL = 4                    // Use all effects
-} FaderEffect;
+} ;
 
 struct FaderFixture
 {

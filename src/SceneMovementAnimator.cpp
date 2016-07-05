@@ -740,7 +740,7 @@ void SceneMovementAnimator::populateChannelAnimations( AnimationTask* task,
             BYTE high = ch->getDimmerHighestIntensity();
 
             // Replace all 255 dimmer high value with the fixture's dimmer value iff the actors value != 0
-            SceneActor* actor = task->getScene()->getActor( actor_uid );
+            SceneActor* actor = task->getActor( actor_uid );
             if ( actor && actor->getChannelValue( dimmer_channel ) != 0 )
                 high = actor->getChannelValue( dimmer_channel );
 

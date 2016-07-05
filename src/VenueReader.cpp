@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -119,7 +119,7 @@ Venue * VenueReader::read( TiXmlElement* self, Venue* venue ) {
         read_xml_list<Scene>( self->FirstChildElement( "scenes" ), "scene" );
 
     for ( std::vector<Scene *>::iterator it=scenes.begin(); it != scenes.end(); ++it ) {
-        venue->addScene( *(*it) );
+        venue->addScene( *(*it), (*it)->getNumber() == DEFAULT_SCENE_NUMBER);
         delete (*it);
     }
 
@@ -165,6 +165,7 @@ void VenueReader::readDObject( TiXmlElement* self, DObject* dobject, LPCSTR numb
     dobject->m_number = (SceneNumber)read_word_attribute( self, number_name );
     dobject->m_name = read_text_element( self, "name" );
     dobject->m_description = read_text_element( self, "description" );
+    dobject->m_created = read_dword_attribute( self, "created" );
 }
 
 // ----------------------------------------------------------------------------
@@ -287,6 +288,7 @@ ChaseStep* VenueReader::read( TiXmlElement* self, ChaseStep* chase_step )
 
     chase_step->m_scene_uid = read_dword_attribute( self, "scene_uid" );
     chase_step->m_delay_ms = read_dword_attribute( self, "delay_ms"  );
+    chase_step->m_method = (SceneLoadMethod)read_int_attribute( self, "load_method", SLM_LOAD );
 
     return chase_step;
 }

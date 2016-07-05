@@ -114,7 +114,8 @@ UINT ChaseTask::run(void) {
                     if ( m_next_state_ms == 0 )
                         m_next_state_ms = m_chase->getDelayMS(); 
 
-                    m_fade_ms = m_chase->getFadeMS();
+                    // No fading if next step is just add/remove actors
+                    m_fade_ms = step->getMethod() == SLM_LOAD ? m_chase->getFadeMS() : 0L;
 
                     if ( m_next_state_ms - m_fade_ms > 255  )
                         m_next_state_ms -= m_fade_ms;
@@ -122,6 +123,7 @@ UINT ChaseTask::run(void) {
                         m_fade_ms = 0L;
 
                     m_next_state_ms += GetTickCount();
+                    m_next_prep = true;
 
                     m_chase_state = CHASE_DELAY;
                     break;
@@ -129,6 +131,11 @@ UINT ChaseTask::run(void) {
 
                 case CHASE_DELAY: {
                     if ( GetTickCount() < m_next_state_ms ) {
+                        if ( m_next_prep ) {
+                            m_next_prep = false;
+                            prepareForNext();
+                        }
+
                         break;
                     }
 
@@ -184,6 +191,24 @@ UINT ChaseTask::run(void) {
 
 // ----------------------------------------------------------------------------
 //
+void ChaseTask::prepareForNext() {
+    ChaseStep* step_next = m_chase->getStep( m_next_step );
+    if ( step_next->getMethod() == SLM_MINUS )
+        return;
+
+    ChaseStep* step_current = m_chase->getStep( m_step_number );
+
+    Scene* currentScene = m_venue->getScene( step_current->getSceneUID() );
+    Scene* futureScene = m_venue->getScene( step_next->getSceneUID() );
+
+    for ( SceneActor* future_actor : futureScene->getActors() ) {
+        if ( currentScene->getActor( future_actor->getActorUID() ) == NULL )
+             m_venue->stageActor( future_actor );
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
 ChaseStep* ChaseTask::advanceScene()
 {
     m_step_number = m_next_step;
@@ -192,7 +217,7 @@ ChaseStep* ChaseTask::advanceScene()
     if ( ++m_next_step >= m_chase->getNumSteps() )
         m_next_step = 0;
 
-    m_venue->selectScene( step->getSceneUID() );
+    m_venue->stageScene( step->getSceneUID(), step->getMethod() );
 
     return step;
 }
@@ -234,7 +259,7 @@ void ChaseTask::computeChannelFade( ULONG fade_time )
     memset( dmx_fade_targets, 0, MULTI_UNIV_PACKET_SIZE );
     m_venue->setHomePositions( dmx_fade_targets );
 
-    m_venue->loadSceneChannels( dmx_fade_targets, next_scene );
+    m_venue->loadSceneChannels( dmx_fade_targets, next_scene->getActors() );
                 
     // Get the current channel values
     m_venue->readPacket( m_dmx_fade );

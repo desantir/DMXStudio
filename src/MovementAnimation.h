@@ -27,7 +27,7 @@ MA 02111-1307, USA.
 #define MAX_RANDOM_POSITIONS 1000
 #define MAX_WAIT_PERIODS	 500
 
-typedef enum {
+enum MovementAnimationType {
     MOVEMENT_RANDOM = 1,							// Move to random locations
     MOVEMENT_FAN = 2,								// Fan beams
     MOVEMENT_ROTATE = 3,							// Simple rotate at tilt angle
@@ -36,7 +36,7 @@ typedef enum {
     MOVEMENT_COORDINATES = 6,                       // Move to specific coordinates
     MOVEMENT_MOONFLOWER = 7, 						// Moonflower in and out effect
     MOVEMENT_SINEWAVE = 8                           // Sine wave movement
-} MovementAnimationType;
+} ;
 
 struct FixtureCoordinate
 {

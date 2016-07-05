@@ -44,6 +44,7 @@ HttpRestServices::HttpRestServices(void) :
     m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_STROBE ] = &HttpRestServices::control_venue_strobe;
     m_rest_get_handlers[ DMX_URL_CONTROL_VENUE_WHITEOUT_COLOR ] = &HttpRestServices::control_venue_whiteout_color;
     m_rest_get_handlers[ DMX_URL_CONTROL_SCENE_SHOW ] = &HttpRestServices::control_scene_show;
+    m_rest_get_handlers[ DMX_URL_CONTROL_SCENE_STAGE ] = &HttpRestServices::control_scene_stage;
     m_rest_get_handlers[ DMX_URL_CONTROL_CHASE_SHOW ] = &HttpRestServices::control_chase_show;
     m_rest_get_handlers[ DMX_URL_CONTROL_FIXTURE_CAPTURE ] = &HttpRestServices::control_fixture_capture;
     m_rest_get_handlers[ DMX_URL_CONTROL_FIXTURE_RELEASE ] = &HttpRestServices::control_fixture_release;
@@ -77,6 +78,7 @@ HttpRestServices::HttpRestServices(void) :
     m_rest_get_handlers[ DMX_URL_CONTROL_MUSIC_PLAY_PLAYLIST ] = &HttpRestServices::control_music_play_playlist;
     m_rest_get_handlers[ DMX_URL_QUERY_MUSIC_MATCHER ] = &HttpRestServices::query_music_matcher;
     m_rest_get_handlers[ DMX_URL_QUERY_MUSIC_TRACK_ANALYZE ] = &HttpRestServices::query_music_track_analysis;
+    m_rest_get_handlers[ DMX_URL_QUERY_MUSIC_MATCHER_SEARCH ] = &HttpRestServices::query_music_matcher_search;
 
     // POST request handlers
     m_rest_post_handlers[ DMX_URL_CONTROL_FIXTURE_CHANNELS ] = &HttpRestServices::control_fixture_channels;

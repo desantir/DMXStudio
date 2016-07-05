@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -31,14 +31,17 @@ class ChaseStep
     friend class VenueReader;
 
     UID					m_scene_uid;
+    SceneLoadMethod     m_method;                   // How to load this scene (replace, add, minus, etc)    
     ULONG				m_delay_ms;					// Step delay in milliseconds (0 indicates use default)
+
 
 public:
     ChaseStep(void) : 
       m_scene_uid(0), 
+      m_method(SLM_LOAD),
       m_delay_ms(0) {}
 
-    ChaseStep( UID scene_uid, ULONG delay );
+    ChaseStep( UID scene_uid, ULONG delay, SceneLoadMethod method );
     ~ChaseStep(void);
 
     void accept( IVisitor* visitor) {
@@ -57,6 +60,13 @@ public:
     }
     ULONG getDelayMS() const {
         return m_delay_ms;
+    }
+
+    void setMethod( SceneLoadMethod method ) {
+        m_method = method;
+    }
+    SceneLoadMethod getMethod() const {
+        return m_method;
     }
 };
 

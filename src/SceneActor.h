@@ -97,5 +97,6 @@ public:
 };
 
 typedef std::map< UID, SceneActor > ActorMap;
+typedef std::map< UID, SceneActor * > ActorPtrMap;
 typedef std::vector< SceneActor > ActorList;		
 typedef std::vector< SceneActor * > ActorPtrArray;	

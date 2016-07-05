@@ -31,6 +31,7 @@ Control specific channel(s) on capture
 Use persistent song IDs rather than list offsets
 One-shot chase (no restart)
 REMOVED Chase learn mode - track time and scene transitions
+CHASE add/remove/load scene actor to allow accumulated chase effects
 
 Overview
 --------

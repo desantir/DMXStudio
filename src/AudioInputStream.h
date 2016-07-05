@@ -48,10 +48,10 @@ MA 02111-1307, USA.
 #define REFTIMES_PER_SEC  10000000
 #define REFTIMES_PER_MILLISEC  10000
 
-typedef enum {
+enum AudioChannel {
     LEFT_CHANNEL = 0,
     RIGHT_CHANNEL = 1
-} AudioChannel;
+} ;
 
 struct AudioCaptureDevice {
     CStringW	m_id;

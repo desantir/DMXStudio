@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -32,10 +32,11 @@ class AnimationTask : public Threadable
     CCriticalSection    m_animation_mutex;						// Protect animation objects
 
     Venue*				m_venue;
-    Scene*				m_scene;
+    bool				m_active;
 
     BYTE				m_dmx_packet[MULTI_UNIV_PACKET_SIZE];
 
+    ActorMap            m_actors;                               // Actors currently in play
     AnimationPtrArray	m_animations;
     bool                m_load_channels;
 
@@ -46,14 +47,26 @@ public:
     AnimationTask( Venue* venue );
     ~AnimationTask(void);
 
-    void stageScene( Scene* scene );
+    void stageScene( Scene* scene, SceneLoadMethod method );
     void clearAnimations();
+    void stageActor( SceneActor* actor );
 
     bool start();
     bool stop();
 
-    inline Scene* getScene() const {
-        return m_scene;
+    inline SceneActor* getActor( UID actor_uid ) const {
+        auto it = m_actors.find( actor_uid );
+        if ( it == m_actors.end() )
+            return NULL;
+
+        return const_cast<SceneActor *>( &it->second );
+    }
+
+    inline AbstractAnimation* getAnimation( UID anim_uid ) const {
+        for ( auto it=m_animations.begin(); it != m_animations.end(); it++ )
+            if ( (*it)->getUID() == anim_uid )
+                return (*it);
+        return NULL;
     }
 
     inline Fixture* getFixture( UID pfuid ) const {
@@ -69,8 +82,8 @@ public:
     }
     
     inline FixturePtrArray convertActorToFixtures( UID actor_uid ) {
-        SceneActor* actor = getScene()->getActor( actor_uid );
-        STUDIO_ASSERT( actor, "Actor %ul missing from scene", actor_uid );
+        SceneActor* actor = getActor( actor_uid );
+        STUDIO_ASSERT( actor, "Actor %lu missing from scene with UID %d", actor_uid, m_venue->getCurrentSceneUID() );
         return resolveActorFixtures( actor );
     }
 
@@ -79,8 +92,8 @@ public:
     }
 
     inline Fixture* getActorRepresentative( UID actor_uid ) {
-        SceneActor* actor = getScene()->getActor( actor_uid );
-        STUDIO_ASSERT( actor != NULL, "Missing scene actor %lu", actor_uid );
+        SceneActor* actor = getActor( actor_uid );
+        STUDIO_ASSERT( actor, "Actor %lu missing from scene with UID %d", actor_uid, m_venue->getCurrentSceneUID() );
 
         if ( actor->isGroup() )
             return m_venue->getGroupRepresentative( actor->getActorUID() );
@@ -116,5 +129,7 @@ protected:
 
 private:
     bool adjust_dimmer_channels();
+    bool removeScene( Scene* scene );
+    void reloadActors();
 };
 

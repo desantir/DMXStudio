@@ -32,12 +32,12 @@ MA 02111-1307, USA.
 #define PLAYED_PLAYLIST_LINK    "local:playlist:played"
 #define QUEUED_PLAYLIST_LINK    "local:playlist:queued"
 
-typedef enum {
+enum AudioStatus {
     FAILED = 0,                         // Request failed
     OK = 1,                             // Item processed
     QUEUED = 2,                         // Request queued
     NOT_AVAILABLE = 3                   // Resource is not available
-} AudioStatus;
+} ;
 
 struct AnalyzeInfo {
     char        link[256];

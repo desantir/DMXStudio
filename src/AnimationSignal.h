@@ -28,23 +28,23 @@ MA 02111-1307, USA.
 #include "SoundSampler.h"
 #include "SoundDetector.h"
 
-typedef enum {
+enum ApplySignal {
     APPLY_CHANNEL = 1,		        // Input level affects channel values
     APPLY_SPEED = 2,	            // Input level affects sample speed
     APPLY_SPEED_AND_CHANNEL = 3,   	// Input level affects all
     APPLY_INVERSE_SPEED = 4         // Input level inverse sample speed
-} ApplySignal;
+} ;
 
 class AnimationTask;
 
-typedef enum {
+enum AnimationSignalInput{
     CAI_TIMER_ONLY = 1,
     CAI_SOUND_LEVEL = 2,
     CAI_AVG_SOUND_LEVEL = 3,
     CAI_FREQ_BEAT = 4,
     CAI_FREQ_LEVEL = 5,
     CAI_RANDOM = 6
-} AnimationSignalInput;
+} ;
 
 class AnimationSignal
 {

@@ -74,3 +74,4 @@ public:
 };
 
 typedef std::vector<AbstractAnimation*> AnimationPtrArray;
+typedef std::map<UID, AbstractAnimation*> AnimationPtrMap;

@@ -20,13 +20,13 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 var PLAYED_PLAYLIST_LINK = "local:playlist:played";
 var QUEUED_PLAYLIST_LINK = "local:playlist:queued";
 
 var music_player_ui_ready = false;                  // Music player UI and controls intialized
 var playing_track_link = 0;                         // Current music player track
 var playing_track_position = 0;                     // Tracks play time of current track
+var current_playlist = null;                        // Currently selected playlist (global)
 
 var cache_now_playing = null;
 var cache_track_remaining = null;
@@ -79,16 +79,22 @@ function update_player_status(music_player_status) {
         if (music_player_status.playing != null) {
             current_track_link = music_player_status.playing.link;
             track_name = music_player_status.playing.name;
-            track_status = "-" + trackTime(music_player_status.playing.remaining,false);
-            track_length = trackTime(music_player_status.playing.length,false);
-            track_remaining = "remaining " + trackTime(music_player_status.playing.remaining,false);
+            playing_track_position = music_player_status.playing.length - music_player_status.playing.remaining;
             paused = music_player_status.playing.paused;
             bpm = music_player_status.playing.bpm;
 
+            if ( current_track_link != null && current_track_link.length > 0 ) {
+                var status = trackTime(playing_track_position,false) + " / -" + trackTime(music_player_status.playing.remaining,false);
+
+                track_status = track_remaining = status;
+                track_length = trackTime(music_player_status.playing.length,false);
+            }
+            else {
+                track_status = track_length = "no track";
+            }
+
             cache_track_remaining.text(track_remaining);        // Always update remaining time
             cache_track_status.text(track_status);              // Always update remaining time
-
-            playing_track_position = music_player_status.playing.length - music_player_status.playing.remaining;
         }
 
         if (current_track_link !== playing_track_link) {
@@ -277,10 +283,28 @@ function initialize_player_ui() {
 
 // ----------------------------------------------------------------------------
 //
+function getCurrentPlaylist() {
+    return current_playlist;
+}
+
+// ----------------------------------------------------------------------------
+//
+function setCurrentPlaylist(playlist) {
+    current_playlist = playlist;
+
+    $("#playlist_list").multiselect();
+    $('#playlist_list option').eq(current_playlist).attr("selected", true);
+    $("#playlist_list").multiselect("refresh");
+}
+
+// ----------------------------------------------------------------------------
+//
 function setupTrackSelect(playlist_select) {
     playlist_select.multiselect({
         minWidth: 300, multiple: false, selectedList: 1, header: "Play Lists", noneSelectedText: 'select playlist', classes: 'player_multilist', height: 400
     }).unbind("multiselectclick").bind("multiselectclick", function (event, ui) {
+        current_playlist = ui.value;
+        client_config_update = true;
         stopEventPropagation(event);
     });
 
@@ -298,7 +322,7 @@ function setupTrackSelect(playlist_select) {
                 playlist_select.append($('<option>', {
                     value: playlist.link,
                     text: playlist.name.substring(0, 200),
-                    selected: index == 0
+                    selected: current_playlist == null ? index == 0 : current_playlist == playlist.link
                 }));
             });
 
@@ -1155,21 +1179,22 @@ function selectTrackDialog( callback ) {
         return;
     }
 
-    $("#std_playlists").multiselect({
-        minWidth: 600, multiple: false, selectedList: 1, header: "Play Lists", noneSelectedText: 'select playlist', classes: 'player_multilist', height: 400
-    }).unbind("multiselectclick").bind("multiselectclick", function (event, ui) {
-        stopEventPropagation(event);
+    var populate_tracks = function( playlist ) {
+       std_playlist = playlist;
 
-        std_playlist = ui.value;
+       $("#std_tracks").empty();
+
+       if ( playlist == null) {
+            $("#std_tracks").multiselect("refresh");
+            return;
+       }
 
         $.ajax({
             type: "GET",
-            url: "/dmxstudio/rest/query/music/playlist/tracks/" + ui.value,
+            url: "/dmxstudio/rest/query/music/playlist/tracks/" + playlist,
             cache: false,
             success: function (data) {
                 var json = jQuery.parseJSON(data);
-
-                $("#std_tracks").empty();
 
                 $.each( json.tracks, function (index, track) {
                     $("#std_tracks").append($('<option>', {
@@ -1185,6 +1210,13 @@ function selectTrackDialog( callback ) {
             },
             error: onAjaxError
         });
+    }
+
+    $("#std_playlists").multiselect({
+        minWidth: 600, multiple: false, selectedList: 1, header: "Play Lists", noneSelectedText: 'select playlist', classes: 'player_multilist', height: 400
+    }).unbind("multiselectclick").bind("multiselectclick", function (event, ui) {
+        stopEventPropagation(event);
+        populate_tracks( ui.value );
     });
 
     $("#std_tracks").multiselect({
@@ -1213,13 +1245,14 @@ function selectTrackDialog( callback ) {
                     $("#std_playlists").append($('<option>', {
                         value: playlist.link,
                         text: playlist.name.substring(0, 200),
-                        selected: false
+                        selected: current_playlist == null ? index == 0 : current_playlist == playlist.link
                     }));
                 });
 
                 $("#std_select_track").button("disable");
                 $("#std_playlists").multiselect("refresh");
-                $("#std_playlists").multiselect("uncheckAll");
+
+                populate_tracks( $("#std_playlists").val() );
             },
             error: onAjaxError
         });

@@ -140,7 +140,7 @@ void ScenePixelAnimator::initAnimation( AnimationTask* task, DWORD time_ms, BYTE
     // Determine which channels will be participating
     for ( UID actor_uid : populateActors() ) {
         Fixture* pf = m_animation_task->getActorRepresentative( actor_uid );
-        if ( pf->getNumPixels() > 0 ) {
+        if ( pf != NULL && pf->getNumPixels() > 0 ) {
             participants.push_back( Participant( actor_uid, pf->getPixels() ) );
         }
     }

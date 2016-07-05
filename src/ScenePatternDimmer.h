@@ -24,7 +24,7 @@ MA 02111-1307, USA.
 
 #include "SceneChannelAnimator.h"
 
-typedef enum {
+enum DimmerPattern {
     DP_SEQUENCE = 1,
     DP_CYLON = 2,
     DP_PAIRS = 3,
@@ -35,7 +35,7 @@ typedef enum {
     DP_RAMP_UP = 8,
     DP_RAMP_UP_DOWN = 9,
     DP_RANDOM_TO_ALL = 10
-} DimmerPattern;
+} ;
 
 class ScenePatternDimmer : public SceneChannelAnimator
 {

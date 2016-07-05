@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2011-14 Robert DeSantis
+	Copyright (C) 2011-2016 Robert DeSantis
 	hopluvr at gmail dot com
 
 	This file is part of DMX Studio.mm_track_container
@@ -22,8 +22,8 @@
 
 .scroll-pane { overflow: auto; width: 99%; /* float:left; Causes _odd_ issues with layout */ }
 .scroll-content { clear:both; width: 100%; float: left; margin-top: 10px; margin-bottom: 5px; }   /* Tile container */
-.scroll-content-item { width: 92px; height: 92px; float: left; margin: 0px 2px 6px 2px; font-family: sans-serif; text-align: left; }
-.scroll-content-header { margin: 1px 1px 2px 2px; border-bottom: 1px solid white; font-size: 16pt; font-weight: normal; }        
+.scroll-content-item { width: 98px; height: 92px; float: left; margin: 0px 2px 6px 2px; font-family: sans-serif; text-align: left; }
+.scroll-content-header { margin: 1px 1px 2px 2px; border-bottom: 1px solid white; font-size: 14pt; font-weight: normal; }        
 .scroll-content-interior { margin: 2px 2px 1px 2px; font-size: 8pt; font-weight:normal; padding: 0px; overflow: hidden; height: 60px; }
 .highlight-scroll-item { border: 1px solid #808080;  }
 

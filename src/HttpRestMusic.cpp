@@ -425,6 +425,42 @@ bool HttpRestServices::query_music_matcher( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
+bool HttpRestServices::query_music_matcher_search( CString& response, LPCSTR data )
+{
+    if ( !studio.getVenue() )
+        return false;
+
+    char playlist_link[MAX_LINK_SIZE];
+
+    if ( sscanf_s( data, "%s", playlist_link, MAX_LINK_SIZE ) != 1 )
+        return false;
+
+    MusicSceneSelectMap& mm = studio.getVenue()->music_scene_select_map();
+    JsonBuilder json( response );
+
+    json.startArray( );
+
+    MusicSceneSelector selector;
+
+    if ( studio.getVenue()->findMusicMapping( playlist_link, selector ) ) {
+        json.startObject();
+
+        json.add( "track", selector.m_track_full_name );
+        json.add( "id", selector.m_selection_uid );
+        json.add( "type", selector.m_selection_type );
+        json.add( "link", selector.m_track_link );
+        json.add( "special", selector.isSpecialTrack() );
+  
+        json.endObject();
+    }
+
+    json.endArray( );
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
 static bool music_matcher_load( LPCSTR data, boolean clearFirst ) {
     if ( !studio.getVenue() )
         return false;

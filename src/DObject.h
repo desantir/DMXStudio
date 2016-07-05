@@ -41,6 +41,7 @@ protected:
     ULONG			m_number;						// User selected friendly number
     CString		    m_name;
     CString		    m_description;
+    DWORD           m_created;                      // Created tick count
 
     virtual inline void setNumber( ULONG number ) {
         m_number = number;
@@ -49,12 +50,14 @@ protected:
 public:
     DObject(void) :
         m_uid(NOUID),
-        m_number(0)
+        m_number(0),
+        m_created( ::GetTickCount() )
     {}
 
     DObject( UID uid, ULONG number, const char* name, const char *description ) :
         m_uid(uid),
-        m_number(number)
+        m_number(number),
+        m_created( ::GetTickCount() )
     {
         if ( name )
             m_name = name;
@@ -95,5 +98,9 @@ public:
     }
     virtual void setDescription( const char * description ) {
         m_description = description;
+    }
+
+    virtual DWORD getCreated() const {
+        return m_created;
     }
 };

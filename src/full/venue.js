@@ -361,6 +361,8 @@ function updateVenueLayout() {
         for (var prop in client_config) {
             if (prop == "edit_mode")
                 setEditMode(client_config.edit_mode);
+            else if (prop == "playlist") 
+                setCurrentPlaylist(client_config.playlist);
             else if (prop == "act") {
                 current_act = client_config.act;
                 $("#act_" + current_act).prop("checked", true).button("refresh");
@@ -407,6 +409,7 @@ function saveVenueLayout() {
     client_config = {};
     client_config.edit_mode = edit_mode;
     client_config.act = current_act;
+    client_config.playlist = getCurrentPlaylist();
 
     client_config.sections = {
         "venue_pane": {

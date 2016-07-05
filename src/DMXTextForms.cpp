@@ -607,7 +607,7 @@ bool ActorSelectField::setValue( LPCSTR value ) {
 
 // ----------------------------------------------------------------------------
 //
-SceneSelectField::SceneSelectField( LPCSTR label, Venue* venue, SceneNumber default_scene, bool include_default ) :
+SceneSelectField::SceneSelectField( LPCSTR label, Venue* venue, SceneNumber selected_scene, bool include_default ) :
     NumberedListField( label ),
     m_venue( venue ),
     m_include_default( include_default )
@@ -615,21 +615,21 @@ SceneSelectField::SceneSelectField( LPCSTR label, Venue* venue, SceneNumber defa
     ScenePtrArray scenes = m_venue->getScenes();
     sort( scenes.begin(), scenes.end(), SceneSelectField::CompareSceneIDs );
 
-    if ( default_scene == 0 )
-        default_scene = m_venue->getScene()->getSceneNumber();
-    if ( !m_include_default && default_scene == DEFAULT_SCENE_NUMBER )
-        default_scene = 0;
+    if ( selected_scene == 0 )
+        selected_scene = m_venue->getScene()->getSceneNumber();
+    if ( !m_include_default && selected_scene == DEFAULT_SCENE_NUMBER )
+        selected_scene = 0;
 
     for ( ScenePtrArray::iterator it=scenes.begin(); it != scenes.end(); ++it ) {
         Scene* scene = (*it);
         if ( m_include_default || scene->getSceneNumber() != DEFAULT_SCENE_NUMBER ) {
             addKeyValue( scene->getSceneNumber(), scene->getName() );
-            if ( default_scene == 0 )
-                default_scene = scene->getSceneNumber();
+            if ( selected_scene == 0 )
+                selected_scene = scene->getSceneNumber();
         }
     }
 
-    setDefaultListValue( default_scene );
+    setDefaultListValue( selected_scene );
 }
 
 // ----------------------------------------------------------------------------

@@ -715,3 +715,26 @@ function multiselectSelect( control, value ) {
 
     return false;
 }
+
+// ----------------------------------------------------------------------------
+//
+function getNextUnusedNumber( objects ) {
+    var used_numbers = [];
+    var max_created = 0;
+    var start_number = 0;
+
+    for ( var i=0; i < objects.length; i++ ) {
+        used_numbers[ used_numbers.length ] = objects[i].number;
+        if ( objects[i].created > max_created ) {
+            start_number = objects[i].number;
+            max_created = objects[i].created;
+        }
+    }
+
+    while ( ++ start_number < 50000 ) {
+        if ( used_numbers.indexOf( start_number ) == -1 )
+            return start_number;
+    }
+
+    return 99999;
+}

@@ -58,7 +58,7 @@ public:
         m_bitmap[ byte_num ] |= (1<<bit_num);
     }
 
-    bool isSet( size_t bit ) {
+    bool isSet( size_t bit ) const {
         unsigned byte_num = bit / 8;
         unsigned bit_num = 7-(bit % 8);
 

@@ -61,6 +61,10 @@ struct MusicSceneSelector
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
+
+    bool isSpecialTrack() {
+        return m_track_link.Compare(SILENCE_TRACK_LINK) == 0 || m_track_link.Compare(UNMAPPED_TRACK_LINK) == 0;
+    }
 };
 
 typedef std::map<CString, MusicSceneSelector> MusicSceneSelectMap;

@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-14 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -73,6 +73,7 @@ void VenueWriter::writeDObject( TiXmlElement& element, DObject* dobject, LPCSTR 
 {
     add_attribute( element, "uid", dobject->m_uid );
     add_attribute( element, number_name, dobject->m_number );
+    add_attribute( element, "created", dobject->m_created );
     add_text_element( element, "name", dobject->m_name );
     add_text_element( element, "description", dobject->m_description );
 }
@@ -529,6 +530,8 @@ void VenueWriter::visit( ChaseStep* chase_step )
     TiXmlElement step( "chase_step" );
     add_attribute( step, "scene_uid", chase_step->m_scene_uid );
     add_attribute( step, "delay_ms", (DWORD)chase_step->m_delay_ms );
+    add_attribute( step, "load_method", (int)chase_step->m_method );
+
     getParent().InsertEndChild( step );
 }
 

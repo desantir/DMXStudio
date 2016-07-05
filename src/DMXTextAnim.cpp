@@ -711,8 +711,7 @@ void DMXTextUI::sceneAddAnimation(void)
     if ( !(this->*editor->m_handler)( scene, 0 ) )
         return;
 
-    if ( scene->getUID() == getVenue()->getCurrentSceneUID() )
-        getVenue()->loadScene();
+    getVenue()->sceneUpdated( scene->getUID() );
 }
 
 // ----------------------------------------------------------------------------
@@ -762,8 +761,7 @@ void DMXTextUI::sceneUpdateAnimation(void)
     if ( !(this->*editor->m_handler)( scene, animation->getUID() ) )
         return;
 
-    if ( getVenue()->getCurrentSceneUID() == scene->getUID() )
-        getVenue()->loadScene( );
+    getVenue()->sceneUpdated( scene->getUID() );
 }
 
 // ----------------------------------------------------------------------------

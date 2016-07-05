@@ -25,13 +25,13 @@ MA 02111-1307, USA.
 #include "IVisitor.h"
 #include "SceneChannelAnimator.h"
 
-typedef enum {
+enum ChannelFilter {
     CF_SINE_WAVE = 1,					// Sine wave (amplitude, angle step)
     CF_RAMP_UP = 2,					    // Ramp up (step)
     CF_RAMP_DOWN = 3,					// Ramp down (step)
     CF_STEP_WAVE = 4,				    // Step wave (step)
     CF_RANDOM = 5                       // Random value (amplitude)
-} ChannelFilter;
+} ;
 
 class SceneChannelFilter : public SceneChannelAnimator
 {

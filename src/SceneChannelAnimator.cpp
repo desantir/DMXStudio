@@ -132,6 +132,8 @@ AbstractAnimation* SceneChannelAnimator::clone() {
 // ----------------------------------------------------------------------------
 //
 void SceneChannelAnimator::removeActor( UID actor_uid ) {
+    AbstractAnimation::removeActor( actor_uid );
+
     for ( ChannelAnimationArray::iterator it=m_channel_animations.begin(); it != m_channel_animations.end(); ) {
         if ( (*it).getActorUID() == actor_uid )
             it = m_channel_animations.erase( it );
@@ -202,7 +204,7 @@ bool SceneChannelAnimator::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
     if ( !tick ) {
         if ( m_signal_processor->isDecay() ) {		// Handle value decay
             bool changed = false;
-            for ( channel_t channel=0; channel < 512; channel++ ) {
+            for ( channel_t channel=0; channel < sizeof(m_decay_channel); channel++ ) {
                 if ( m_decay_channel[ channel ] ) {
                     dmx_packet[ channel ] = 0;
                     changed = true;
@@ -258,8 +260,12 @@ bool SceneChannelAnimator::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
                 break;
         }
 
-        if ( value == 0 && m_signal.getSampleDecayMS() > 0 )
-            m_decay_channel[ state.m_pf->getChannelAddress( state.m_channel ) - 1 ] = true;
+        if ( value == 0 && m_signal.getSampleDecayMS() > 0 ) {
+            channel_t real_address = 
+                ((state.m_pf->getUniverseId()-1) * DMX_PACKET_SIZE) + state.m_pf->getChannelAddress( state.m_channel ) - 1;
+
+            m_decay_channel[ real_address ] = true;
+        }
         else
             m_animation_task->loadChannel( dmx_packet, state.m_pf, state.m_channel, value );
         changed = true;

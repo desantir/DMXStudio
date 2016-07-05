@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-16 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -49,9 +49,10 @@ Venue::Venue(void) :
     m_whiteout_color( RGBWA::WHITE ),
     m_music_scene_select_enabled( false ),
     m_music_watcher( NULL ),
-    m_audio_sample_size( 1024 )
+    m_audio_sample_size( 1024 ),
+    m_default_scene_uid(0L)
 {
-    m_current_scene = addScene( Scene( NOUID, DEFAULT_SCENE_NUMBER, "Workspace", "" ) );
+    m_current_scene = addScene( Scene( NOUID, DEFAULT_SCENE_NUMBER, "Workspace", "" ), true );
 }
 
 // ----------------------------------------------------------------------------
@@ -64,6 +65,26 @@ Venue::~Venue(void)
     for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it ) {
         delete (*it).second;
     }
+}
+
+// ----------------------------------------------------------------------------
+//
+template <typename  T, typename  S>
+static S nextAvailable( T& map ) {
+    S defaultNumber = 1L;
+    DWORD max_timestamp = 0L;
+
+    FindNextAvailable<S> finder;
+    for ( auto it=map.begin(); it != map.end(); it++ ) {
+        finder.insert( it->second.getNumber() );
+
+        if ( it->second.getCreated() > max_timestamp ) {
+            defaultNumber = it->second.getNumber()+1;
+            max_timestamp = it->second.getCreated();
+        }
+    }
+
+    return (S)finder.nextAvailable( defaultNumber );
 }
 
 // ----------------------------------------------------------------------------
@@ -92,8 +113,8 @@ bool Venue::open(void) {
         m_sound_detector = new SoundDetector( m_auto_backout_ms );
         m_sound_detector->attach( m_audio );
 
-        for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it ) {
-            Universe* universe = (*it).second;
+        for ( auto it : m_universes ) {
+            Universe* universe = it.second;
 
             DMX_STATUS status = universe->start();
 
@@ -118,7 +139,12 @@ bool Venue::open(void) {
         m_chase_task = new ChaseTask( this );
         m_chase_task->start();
 
-        loadScene();
+        try {
+            stageScene( m_current_scene, SLM_LOAD );
+        }
+        catch ( std::exception& ex ) {
+            studio.log( ex );
+        }
 
         if ( studio.hasMusicPlayer() ) {
             m_music_watcher = new MusicWatcher( studio.getMusicPlayer(), this );
@@ -300,11 +326,7 @@ FixturePtrArray Venue::getFixtures() {
 FixtureNumber Venue::nextAvailableFixtureNumber( void ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    FindNextAvailable<FixtureNumber> finder;
-    for ( FixtureMap::iterator it=m_fixtures.begin(); it != m_fixtures.end(); ++it )
-        finder.insert( it->second.getFixtureNumber() );
-
-    return (FixtureNumber)finder.nextAvailable();
+    return nextAvailable<FixtureMap, FixtureNumber>( m_fixtures );
 }
 
 // ----------------------------------------------------------------------------
@@ -396,11 +418,7 @@ GroupNumber Venue::nextAvailableFixtureGroupNumber( void )
 {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    FindNextAvailable<GroupNumber> finder;
-    for ( FixtureGroupMap::iterator it=m_fixtureGroups.begin(); it != m_fixtureGroups.end(); ++it )
-        finder.insert( it->second.getGroupNumber() );
-
-    return (GroupNumber)finder.nextAvailable();
+    return nextAvailable<FixtureGroupMap, GroupNumber>( m_fixtureGroups );
 }
 
 // ----------------------------------------------------------------------------
@@ -470,11 +488,7 @@ Chase* Venue::getChaseByNumber( ChaseNumber chase_number ) {
 ChaseNumber Venue::nextAvailableChaseNumber( void ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    FindNextAvailable<ChaseNumber> finder;
-    for ( ChaseMap::iterator it=m_chases.begin(); it != m_chases.end(); ++it )
-        finder.insert( it->second.getChaseNumber() );
-
-    return (ChaseNumber)finder.nextAvailable();
+    return nextAvailable<ChaseMap, ChaseNumber>( m_chases );
 }
 
 // ----------------------------------------------------------------------------
@@ -494,6 +508,11 @@ bool Venue::deleteChase( UID chase_id ) {
 
     m_chases.erase( it );
     return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+void Venue::chaseUpdated( UID chase_uid ) {
 }
 
 // ----------------------------------------------------------------------------
@@ -577,19 +596,6 @@ Scene *Venue::getSceneByNumber( SceneNumber scene_number ) {
 
 // ----------------------------------------------------------------------------
 //
-void Venue::selectScene( UID scene_uid ) {
-    CSingleLock lock( &m_venue_mutex, TRUE );
-
-    Scene *scene = getScene( scene_uid );
-    if ( scene != NULL ) {
-        clearAnimations();
-        m_current_scene = scene_uid;
-        loadScene();
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
 bool Venue::deleteScene( UID scene_uid ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
@@ -650,11 +656,7 @@ void Venue:: deleteAllScenes()
 SceneNumber Venue::nextAvailableSceneNumber( void ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    FindNextAvailable<SceneNumber> finder;
-    for ( SceneMap::iterator it=m_scenes.begin(); it != m_scenes.end(); ++it )
-        finder.insert( it->second.getSceneNumber() );
-
-    return (ChaseNumber)finder.nextAvailable();
+    return nextAvailable<SceneMap, SceneNumber>( m_scenes );
 }
 
 // ----------------------------------------------------------------------------
@@ -695,8 +697,7 @@ void Venue::moveDefaultFixturesToScene( UID scene_uid, UIDArray actor_uids, bool
     }
 
     // Restart the scene if this is the active scene
-    if ( getCurrentSceneUID() == scene_uid )
-        loadScene();
+    studio.getVenue()->sceneUpdated( scene_uid );
 }
 
 // ----------------------------------------------------------------------------
@@ -707,6 +708,8 @@ void Venue::copySceneFixtureToDefault( UID scene_uid, UID actor_uid ) {
     SceneActor* actor = getScene( scene_uid )->getActor( actor_uid );
     if ( actor )
         getDefaultScene()->addActor( *actor );
+
+    sceneUpdated( m_default_scene_uid );
 }
 
 // ----------------------------------------------------------------------------
@@ -717,6 +720,8 @@ void Venue::clearAllCapturedActors( ) {
     getDefaultScene()->removeAllActors();
     getDefaultScene()->clearAnimations();
     m_captured_actor = 0;
+
+    sceneUpdated( m_default_scene_uid );
 }
 
 // ----------------------------------------------------------------------------
@@ -727,6 +732,8 @@ void Venue::releaseActor( UID actor_id ) {
     getDefaultScene()->removeActor( actor_id );
     if ( m_captured_actor == actor_id )
         m_captured_actor = 0;
+
+    sceneUpdated( m_default_scene_uid );
 }
 
 // ----------------------------------------------------------------------------
@@ -746,7 +753,7 @@ ScenePtrArray Venue::getScenes() {
 
 // ----------------------------------------------------------------------------
 //
-UID Venue::addScene( Scene& scene ) {
+UID Venue::addScene( Scene& scene, bool isDefault ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
     if ( scene.getUID() == 0L )
@@ -754,33 +761,56 @@ UID Venue::addScene( Scene& scene ) {
 
     m_scenes[ scene.getUID() ] = scene;
 
+    if ( isDefault )
+        m_default_scene_uid = scene.getUID();
+
     return scene.getUID();
 }
 
 // ----------------------------------------------------------------------------
 //
-void Venue::loadScene() {
+void Venue::sceneUpdated( UID scene_uid ) {
+    if ( scene_uid == m_current_scene )
+        stageScene( m_current_scene, SLM_LOAD );
+    else if ( scene_uid == m_default_scene_uid )        // Reload channel values to pick up and default actir changes
+        m_animation_task->updateChannels();
+}
+
+// ----------------------------------------------------------------------------
+//
+void Venue::stageScene( UID scene_uid, SceneLoadMethod method ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    Scene* scene = getScene();
+    Scene* scene = getScene( scene_uid );
 
     STUDIO_ASSERT( scene != NULL, "Missing scene" );
 
-    if ( m_animation_task )
-        m_animation_task->stageScene( scene );
+    if ( method == SLM_LOAD ) {
+        m_current_scene = scene_uid;
+    }
+
+    if ( isRunning() )
+        m_animation_task->stageScene( scene, method );
+}
+
+// ----------------------------------------------------------------------------
+//
+void Venue::stageActor( SceneActor* actor ) {
+    if ( isRunning() )
+        m_animation_task->stageActor( actor );
 }
 
 // ----------------------------------------------------------------------------
 //
 void Venue::clearAnimations() {
-    if ( m_animation_task )
+    if ( isRunning() )
         m_animation_task->clearAnimations();
 }
 
 // ----------------------------------------------------------------------------
 //
 DWORD Venue::getAnimationSampleRate() {
-    if ( m_animation_task )
+    if ( isRunning() )
         return m_animation_task->getAnimationSampleRate();
     return 0L;
 }
@@ -788,7 +818,7 @@ DWORD Venue::getAnimationSampleRate() {
 // ----------------------------------------------------------------------------
 //
 void Venue::setAnimationSampleRate( DWORD sample_rate_ms ) {
-    if ( m_animation_task )
+    if ( isRunning() )
         return m_animation_task->setAnimationSampleSampleRate( sample_rate_ms );
 }
 
@@ -863,7 +893,7 @@ void Venue::setHomePositions( LPBYTE dmx_packet )
         for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
             BYTE home_value = pf->getChannel( channel )->getHomeValue();
             if ( home_value != 0 )
-                dmx_packet[ pf->getChannelAddress( channel ) - 1 ] = home_value;
+                loadChannel( dmx_packet, pf, channel, home_value );
         }
     }
 }
@@ -922,16 +952,25 @@ void Venue::whiteoutChannels( LPBYTE dmx_packet ) {
 
 // ----------------------------------------------------------------------------
 //
-void Venue::loadSceneChannels( BYTE *dmx_multi_universe_packet, Scene* scene ) {
-    STUDIO_ASSERT( scene != NULL, "Invalid scene (NULL)" );
+void Venue::blackoutChannels( LPBYTE dmx_packet ) {
+    for ( FixtureMap::iterator it=m_fixtures.begin(); it != m_fixtures.end(); ++it ) {
+        Fixture* pf = &it->second;
 
-    ActorPtrArray actors = scene->getActors();
-    for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
-        SceneActor* actor = (*it);
+        for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+            Channel* cp = pf->getChannel(channel);
+            if ( cp->canBlackout() )        // Do not modify this channel during whiteout
+                loadChannel( dmx_packet, pf, channel, 0 );
+        }
+    }
+}
 
-        for ( Fixture* pf : resolveActorFixtures( actor ) ) {
+// ----------------------------------------------------------------------------
+//
+void Venue::loadSceneChannels( BYTE *dmx_multi_universe_packet, ActorPtrArray& actors ) {
+    for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); it++ ) {
+        for ( Fixture* pf : resolveActorFixtures( (*it) ) ) {
             for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
-                BYTE value = actor->getChannelValue( channel );
+                BYTE value = (*it)->getChannelValue( channel );
                 loadChannel( dmx_multi_universe_packet, pf, channel, value );
             }                
         }
@@ -952,9 +991,7 @@ void Venue::loadChannel( BYTE* dmx_multi_universe_packet, Fixture* pf, channel_t
 //
 BYTE Venue::adjustChannelValue( Fixture* pf, channel_t channel, BYTE value )
 {
-    if ( m_mute_blackout && pf->getChannel( channel )->canBlackout() )
-        value = 0;
-    else if ( m_master_dimmer < 100 && pf->getChannel( channel )->isDimmer() ) {
+    if ( m_master_dimmer < 100 && pf->getChannel( channel )->isDimmer() ) {
         Channel* chnl = pf->getChannel( channel );
 
         if ( m_master_dimmer == 0 ) {
@@ -1023,10 +1060,11 @@ void Venue::writePacket( const BYTE* dmx_multi_universe_packet ) {
     memcpy( multi_universe_packet, dmx_multi_universe_packet, MULTI_UNIV_PACKET_SIZE );
 
     // Overwrite any manually controlled fixtures
-    loadSceneChannels( multi_universe_packet, getDefaultScene() );
+    loadSceneChannels( multi_universe_packet, getDefaultScene()->getActors() );
 
-    // Handle whiteout effect (all venue fixtures)
-    if ( getWhiteout() != WHITEOUT_OFF )               
+    if ( isMuteBlackout() || isForceBlackout() )                    // Handle blackout of all venue fixtures
+        blackoutChannels( multi_universe_packet );
+    else if ( getWhiteout() != WHITEOUT_OFF )                       // Handle whiteout effect (all venue fixtures)              
         whiteoutChannels( multi_universe_packet );
 
     for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it ) {
@@ -1129,6 +1167,20 @@ void Venue::deleteMusicMapping( LPCSTR track_full_name ) {
     if ( it_del != m_music_scene_select_map.end() ) {
         m_music_scene_select_map.erase( it_del );
     }
+}
+
+// ----------------------------------------------------------------------------
+//
+ bool Venue::findMusicMapping( LPCSTR track_full_name, MusicSceneSelector& result ) {
+    CSingleLock lock( &m_venue_mutex, TRUE );
+
+    MusicSceneSelectMap::iterator it = m_music_scene_select_map.find( track_full_name );
+    if ( it == m_music_scene_select_map.end() )
+        return false;
+
+    result = it->second;
+
+    return true;
 }
 
 // ----------------------------------------------------------------------------
@@ -1240,12 +1292,6 @@ void Venue::populateSceneRatingsMap( SceneRatingsMap& ratings_map ) {
 
 // ----------------------------------------------------------------------------
 //
-bool Venue::isRunning() {
-    return m_animation_task != NULL;
-}
-
-// ----------------------------------------------------------------------------
-//
 void Venue::clearAllUniverses() {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
@@ -1288,4 +1334,13 @@ UniversePtrArray Venue::getUniverses() {
         list.push_back( it->second );
 
     return list;
+}
+
+// ----------------------------------------------------------------------------
+//
+void Venue::setForceBlackout( bool hard_blackout ) {
+    m_hard_blackout = hard_blackout;
+
+    if ( isRunning() )
+        m_animation_task->updateChannels();
 }

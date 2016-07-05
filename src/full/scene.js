@@ -57,6 +57,11 @@ function Scene(scene_data)
         return this.name;
     }
 
+    // method getCreated
+    this.getCreated = function () {
+        return this.created;
+    }
+
     // method getBPMRating
     this.getBPMRating = function () {
         return this.bpm_rating;
@@ -147,10 +152,7 @@ function getSceneByNumber(number) {
 // ----------------------------------------------------------------------------
 //
 function getUnusedSceneNumber() {
-    for ( var i=1; i < 50000; i++ )
-        if ( getSceneByNumber(i) == null )
-            return i;
-    return 99999;
+    return getNextUnusedNumber( scenes );
 }
 
 // ----------------------------------------------------------------------------
@@ -600,7 +602,11 @@ function deleteScene(event, scene_id) {
             type: "GET",
             url: "/dmxstudio/rest/delete/scene/" + item.getId(),
             cache: false,
-            success: updateScenes,
+            success: function () {
+                // TODO - remove when events are implemented
+                updateScenes();
+                updateChases();
+            },
             error: onAjaxError
         });
     });

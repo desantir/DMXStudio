@@ -126,7 +126,7 @@ void SceneChannelFilter::initAnimation( AnimationTask* task, DWORD time_ms, BYTE
             ChannelValueArray value_array;
 
             // Get unmodified initial value
-            SceneActor* actor = m_animation_task->getScene()->getActor( actor_uid );
+            SceneActor* actor = m_animation_task->getActor( actor_uid );
             BYTE start_value =  actor->getChannelValue( channel );
 
             switch ( m_filter ) {

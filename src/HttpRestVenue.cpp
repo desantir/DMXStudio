@@ -38,13 +38,32 @@ bool HttpRestServices::control_scene_show( CString& response, LPCSTR data )
     if ( scene_id == 0 )
         scene_id = studio.getVenue()->getDefaultScene() ->getUID();
 
-    Scene* scene = studio.getVenue()->getScene( scene_id );
-    if ( !scene )
-        return false;
-
     studio.getVenue()->stopChase();
 
     studio.getVenue()->selectScene( scene_id );
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool HttpRestServices::control_scene_stage( CString& response, LPCSTR data )
+{
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
+    UID scene_id;
+    SceneLoadMethod method;
+
+    if ( sscanf_s( data, "%lu/%d", &scene_id, &method ) != 2 )
+        return false;
+
+    if ( scene_id == 0 )
+        scene_id = studio.getVenue()->getDefaultScene()->getUID();
+
+    studio.getVenue()->stopChase();
+
+    studio.getVenue()->stageScene( scene_id, method );
 
     return true;
 }
@@ -83,7 +102,7 @@ bool HttpRestServices::query_venue_status( CString& response, LPCSTR data )
 
     JsonBuilder json( response );
     json.startObject();
-    json.add( "blackout", studio.getVenue()->isBlackout() );
+    json.add( "blackout", studio.getVenue()->isForceBlackout() );
     json.add( "auto_blackout", studio.getVenue()->isMuteBlackout() );
     json.add( "dimmer", studio.getVenue()->getMasterDimmer() );
     json.add( "whiteout", studio.getVenue()->getWhiteout() );
@@ -166,9 +185,6 @@ bool HttpRestServices::control_venue_strobe( CString& response, LPCSTR data )
 
     studio.getVenue()->setWhiteoutStrobeMS( whiteout_strobe_ms );
 
-    if ( studio.getVenue()->getWhiteout() != WHITEOUT_OFF )
-        studio.getVenue()->loadScene();
-
     return true;
 }
 
@@ -187,9 +203,6 @@ bool HttpRestServices::control_venue_whiteout_color( CString& response, LPCSTR d
 
     studio.getVenue()->setWhiteoutColor( RGBWA(rgbwa) );
 
-    if ( studio.getVenue()->getWhiteout() != WHITEOUT_OFF )
-        studio.getVenue()->loadScene();
-
     return true;
 }
 
@@ -205,7 +218,7 @@ bool HttpRestServices::control_venue_blackout( CString& response, LPCSTR data )
     if ( sscanf_s( data, "%u", &blackout ) != 1 )
         return false;
 
-    studio.getVenue()->setBlackout( blackout ? true : false );
+    studio.getVenue()->setForceBlackout( blackout ? true : false );
 
     return true;
 }
@@ -242,7 +255,6 @@ bool HttpRestServices::control_venue_whiteout( CString& response, LPCSTR data )
         return false;
 
     studio.getVenue()->setWhiteout( (WhiteoutMode)whiteout );
-    studio.getVenue()->loadScene();
 
     return true;
 }
@@ -322,7 +334,7 @@ bool HttpRestServices::query_venue_describe( CString& response, LPCSTR data ) {
     json.startObject();
     json.add( "name", venue->getName() );
     json.add( "description", venue->getDescription() );
-    json.add( "auto_blackout", venue->getAutoBlackout() );
+    json.add( "auto_blackout", venue->getAutoBlackoutMS() );
     json.add( "audio_capture_device", venue->getAudioCaptureDevice() );
     json.add( "audio_sample_size", venue->getAudioSampleSize() );
     json.add( "audio_boost", venue->getAudioBoost() );
@@ -401,7 +413,7 @@ bool HttpRestServices::edit_venue_update( CString& response, LPCSTR data, DWORD 
         venue->setAudioBoost( audio_boost );
         venue->setAudioBoostFloor( audio_boost_floor );
         venue->setAudioSampleSize( audio_sample_size );
-        venue->setAutoBlackout( auto_blackout );
+        venue->setAutoBlackoutMS( auto_blackout );
 
         venue->clearAllUniverses();
 

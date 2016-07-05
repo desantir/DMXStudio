@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-15 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -45,13 +45,13 @@ class AnimationTask;
 
 #define DEFAULT_SCENE_NUMBER	0
 
-typedef enum {
+enum WhiteoutMode {
     WHITEOUT_OFF = 0,
     WHITEOUT_STROBE_SLOW = 1,
     WHITEOUT_STROBE_FAST = 2,
     WHITEOUT_STROBE_MANUAL = 3,
     WHITEOUT_ON = 4
-} WhiteoutMode;
+} ;
 
 typedef std::map<BPMRating,UIDArray> SceneRatingsMap;
 
@@ -79,6 +79,7 @@ class Venue : public DObject
 
     BYTE				    m_master_dimmer;					// Master dimmer( 0 -> 100 )
     UID					    m_current_scene;					// Currently active scene
+    UID                     m_default_scene_uid;                // The default scene
     ChaseTask*			    m_chase_task;
     AnimationTask*		    m_animation_task;
     DWORD				    m_auto_backout_ms;					// Auto backout timer (TODO: FADE OUT)
@@ -121,7 +122,10 @@ public:
 
     bool open(void);
     bool close(void);
-    bool isRunning();
+
+    inline bool isRunning() {
+        return m_animation_task != NULL;
+    }
 
     void clearAllUniverses();
     void addUniverse( Universe* universe );
@@ -145,6 +149,7 @@ public:
     void deleteMusicMappings( MusicSelectorType type, UID uid );
     void clearMusicMappings();
     void addMusicMappings( std::vector<MusicSceneSelector>& music_scene_selectors );
+    bool findMusicMapping( LPCSTR track_link, MusicSceneSelector& result );
 
     inline UINT getAudioSampleSize() const {
         return m_audio_sample_size;
@@ -267,33 +272,26 @@ public:
         return m_master_dimmer;
     }
 
-    void setMuteBlackout( bool blackout ) {
+    inline void setMuteBlackout( bool blackout ) {
         m_mute_blackout = blackout;
     }
-    bool isMuteBlackout( ) const {
+    inline bool isMuteBlackout( ) const {
         return m_mute_blackout;
     }
 
-    void setBlackout( bool hard_blackout ) {
-        m_hard_blackout = hard_blackout;
+    void setForceBlackout( bool hard_blackout );
 
-        for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it )
-            (*it).second->setBlackout( m_hard_blackout );
-    }
-    inline bool isBlackout() const {
+    inline bool isForceBlackout() const {
         return m_hard_blackout;
     }
 
-    void setAutoBlackout( DWORD black_out ) {
+    void setAutoBlackoutMS( DWORD black_out ) {
         m_auto_backout_ms = black_out;
         if ( isRunning() ) {
             getSoundDetector()->setMuteMS( black_out );
-            if ( black_out == 0 )
-                setMuteBlackout( false );
-            loadScene();
         }
     }
-    DWORD getAutoBlackout( ) const {
+    DWORD getAutoBlackoutMS( ) const {
         return m_auto_backout_ms;
     }
 
@@ -325,35 +323,39 @@ public:
     // Scene methods
     Scene *getScene( UID scene_uid );
     ScenePtrArray getScenes();
-    void selectScene( UID scene_uid );
     bool deleteScene( UID scene_uid );
-    void updateCurrentScene( );
-    UID addScene( Scene& scene );
-    void loadScene();
+    UID addScene( Scene& scene, bool isDefault=false );
+    void stageScene( UID scene_uid, SceneLoadMethod method );
+    void stageActor( SceneActor* actor );
     void clearAnimations();
     Scene *getSceneByNumber( SceneNumber scene_number );
     SceneNumber nextAvailableSceneNumber( void );
     void deleteAllScenes();
     UID getRandomScene();
     void populateSceneRatingsMap( SceneRatingsMap& map );
+    void sceneUpdated( UID scene_uid );
 
-    UID getCurrentSceneUID() const {
+    inline void selectScene( UID scene_uid ) {
+        stageScene( scene_uid, SLM_LOAD );
+    }
+
+    inline UID getCurrentSceneUID() const {
         return m_current_scene;
     }
 
-    Scene *getScene( ) {
+    inline Scene *getScene( ) {
         return getScene( m_current_scene );
     }
 
-    Scene *getDefaultScene() {
-        return getSceneByNumber( DEFAULT_SCENE_NUMBER );
+    inline Scene *getDefaultScene() {
+        return getScene( m_default_scene_uid );
     }
 
-    bool isDefaultScene() {
+    inline bool isDefaultScene() {
         return (getScene()->getSceneNumber() == DEFAULT_SCENE_NUMBER );
     }
 
-    size_t getNumScenes( ) const {
+    inline size_t getNumScenes( ) const {
         return m_scenes.size();
     }
 
@@ -376,6 +378,7 @@ public:
     ChaseNumber nextAvailableChaseNumber( void );
     void deleteAllChases();
     UID getRandomChase();
+    void chaseUpdated( UID chase_uid );
 
     inline size_t getNumChases() const {
         return m_chases.size();
@@ -404,8 +407,9 @@ private:
     }
 
     SceneActor * getDefaultActor( UID pfuid );
-    void loadSceneChannels( BYTE *dmx_packet, Scene * scene );
+    void loadSceneChannels( BYTE *dmx_multi_universe_packet, ActorPtrArray& actors );
     void loadChannel( BYTE *dmx_packet, Fixture* pf, channel_t channel, BYTE value );
     void whiteoutChannels( LPBYTE dmx_packet );
+    void blackoutChannels( LPBYTE dmx_packet );
     BYTE adjustChannelValue( Fixture* pf, channel_t channel, BYTE value );
 };

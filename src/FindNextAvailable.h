@@ -45,22 +45,12 @@ public:
         set( value );
     }
 
-    T nextAvailable() const {
-        T next = 0;
-       
-        BYTE mask = 0x80;
-        BYTE *ptr = m_bitmap;
+    T nextAvailable( T next = 0 ) const {
         T fence = m_capacity * 8;
 
-        for ( ; next < fence; next++ ) {
-            if ( !(*ptr & mask) )
+        for ( ; next < fence; next++ )
+            if ( !isSet( next ) )
                 break;
-
-            if ( !(mask >>= 1) ) {
-                ptr++;
-                mask = 0x80;
-            }
-        }
 
         return next;
     }

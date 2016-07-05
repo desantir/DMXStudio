@@ -132,7 +132,7 @@ void SceneColorFader::initAnimation( AnimationTask* task, DWORD time_ms, BYTE* d
 
     // For each fixture, find red, green, blue, white channels
     for ( UID actor_uid : populateActors() ) {
-        SceneActor* actor = m_animation_task->getScene()->getActor( actor_uid );
+        SceneActor* actor = m_animation_task->getActor( actor_uid );
         STUDIO_ASSERT( actor != NULL, "Missing scene actor for fixture %lu", actor_uid );
 
         // Setup state so that the slice animation does not need to gather additional info

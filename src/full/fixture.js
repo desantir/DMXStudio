@@ -57,6 +57,11 @@ function Fixture(fixture_data)
         return this.number;
     }
 
+    // method getCreated
+    this.getCreated = function () {
+        return this.created;
+    }
+
     // method getName
     this.getName = function () {
         return this.name;
@@ -173,11 +178,18 @@ function getFixtureGroupByNumber(number) {
 
 // ----------------------------------------------------------------------------
 //
+function filterFixtures( filter ) {
+    var objects = [];
+    for (var i = 0; i < fixtures.length; i++)
+        if ( filter( fixtures[i] ) )
+            objects[objects.length] = fixtures[i];
+    return objects;
+}
+
+// ----------------------------------------------------------------------------
+//
 function getUnusedFixtureGroupNumber() {
-    for (var i = 1; i < 50000; i++)
-        if (getFixtureGroupByNumber(i) == null)
-            return i;
-    return 99999;
+    return getNextUnusedNumber( filterFixtures( function( f ) { return f.isGroup(); } ) );
 }
 
 // ----------------------------------------------------------------------------
@@ -193,20 +205,13 @@ function getFixtureByNumber(number) {
 // ----------------------------------------------------------------------------
 //
 function getUnusedFixtureNumber() {
-    for (var i = 1; i < 50000; i++)
-        if (getFixtureByNumber(i) == null)
-            return i;
-    return 99999;
+    return getNextUnusedNumber( filterFixtures( function( f ) { return !f.isGroup(); } ) );
 }
 
 // ----------------------------------------------------------------------------
 // 
 function getActiveFixtures() {
-    var list = [];
-    for (var i = 0; i < fixtures.length; i++)
-        if (fixtures[i].isActive())
-            list.push(fixtures[i]);
-    return list;
+    return filterFixtures( function( f ) { return f.isActive(); } );
 }
 
 // ----------------------------------------------------------------------------
@@ -966,7 +971,11 @@ function deleteFixture(event, fixture_id) {
             type: "GET",
             url: "/dmxstudio/rest/delete/fixture/" + item.getId(),
             cache: false,
-            success: updateFixtures,
+            success: function () {
+                // TODO - remove when events are implemented
+                updateFixtures();
+                updateScenes();
+            },
             error: onAjaxError
         });
     });
@@ -1087,12 +1096,14 @@ function openNewFixtureGroupDialog(dialog_title, data) {
             channel_data[i] = sliders[i].getValue();
         $("#nfgd_sliders").empty();
 
+        var ids = $("#nfgd_fixtures").val();
+
         var json = {
             id: data.id,
             name: $("#nfgd_name").val(),
             description: $("#nfgd_description").val(),
             number: parseInt($("#nfgd_number").val()),
-            fixture_ids: $("#nfgd_fixtures").val(),
+            fixture_ids: ids == null ? [] : ids,
             channel_values: channel_data
         };
 
@@ -1204,7 +1215,11 @@ function deleteFixtureGroup(event, fixture_group_id) {
             type: "GET",
             url: "/dmxstudio/rest/delete/fixturegroup/" + item.getId(),
             cache: false,
-            success: updateFixtures,
+            success: function () {
+                // TODO - remove when events are implemented
+                updateFixtures();
+                updateScenes();
+            },
             error: onAjaxError
         });
     });

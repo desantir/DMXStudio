@@ -26,11 +26,11 @@ MA 02111-1307, USA.
 #include "Scene.h"
 #include "AnimationTask.h"
 
-typedef enum {
+enum ChannelAnimationStyle {
     CAM_LIST = 1,					// Cycle list of values
     CAM_RANGE = 2,					// Scale range of values
     CAM_SCALE = 3					// Scale scene value
-} ChannelAnimationStyle;
+} ;
 
 typedef std::vector<BYTE> ChannelValueArray;
 
@@ -128,7 +128,7 @@ class SceneChannelAnimator : public AbstractAnimation
 
     // State information
     ChannelStateArray			m_channel_state;
-    bool						m_decay_channel[512];
+    bool						m_decay_channel[MULTI_UNIV_PACKET_SIZE];
     AnimationSignalProcessor*	m_signal_processor;
 
 protected:
@@ -184,7 +184,7 @@ public:
 
 protected:
     SceneActor* getActor( UID actor_uid ) {
-        SceneActor* actor = m_animation_task->getScene()->getActor( actor_uid );
+        SceneActor* actor = m_animation_task->getActor( actor_uid );
         STUDIO_ASSERT( actor != NULL, "Missing scene actor %lu", actor_uid );
         return actor;
     }

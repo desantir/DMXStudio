@@ -142,6 +142,7 @@ bool HttpRestServices::query_fixtures( CString& response, LPCSTR data )
         json.startObject();
         json.add( "id", group->getUID() );
         json.add( "number", group->getGroupNumber() );
+        json.add( "created", group->getCreated() );
         json.add( "dmx_address", 0 );
         json.add( "dmx_universe", 0 );
         json.add( "fuid", 0L );
@@ -178,6 +179,7 @@ bool HttpRestServices::query_fixtures( CString& response, LPCSTR data )
         json.startObject();
         json.add( "id", pf->getUID() );
         json.add( "number", pf->getFixtureNumber() );
+        json.add( "created", pf->getCreated() );
         json.add( "dmx_address", pf->getAddress() );
         json.add( "dmx_universe", pf->getUniverseId() );
         json.add( "fuid", pf->getFUID() );
@@ -401,9 +403,6 @@ bool HttpRestServices::control_fixture( CString& response, LPCSTR data, DWORD si
             studio.getVenue()->releaseActor( fixture_id );
         else
             studio.getVenue()->clearAllCapturedActors();
-
-        // If releasing, reload the current scene
-        studio.getVenue()->loadScene();
     }
 
     return true;
@@ -453,9 +452,6 @@ bool HttpRestServices::control_fixture_group( CString& response, LPCSTR data, DW
     }
     else {
         studio.getVenue()->releaseActor( group_uid );
-
-        // If releasing, reload the current scene
-        studio.getVenue()->loadScene();
     }
 
     return true;
@@ -512,8 +508,6 @@ bool HttpRestServices::control_fixture_release( CString& response, LPCSTR data )
         studio.getVenue()->releaseActor( fixture_id );
     else
         studio.getVenue()->clearAllCapturedActors();
-
-    studio.getVenue()->loadScene();
 
     return true;
 }

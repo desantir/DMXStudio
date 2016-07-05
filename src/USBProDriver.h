@@ -67,21 +67,21 @@ protected:
 };
 
 #pragma pack(1)
-typedef struct {
+struct DMXUSBPROParamsType {
     unsigned char FirmwareLSB;
     unsigned char FirmwareMSB;
     unsigned char BreakTime;
     unsigned char MaBTime;
     unsigned char RefreshRate;
-} DMXUSBPROParamsType;
+} ;
 
-typedef struct {
+struct DMXUSBPROSetParamsType {
     unsigned char UserSizeLSB;
     unsigned char UserSizeMSB;
     unsigned char BreakTime;
     unsigned char MaBTime;
     unsigned char RefreshRate;
-} DMXUSBPROSetParamsType;
+} ;
 #pragma pack()
 
 struct ReceivedDmxCosStruct

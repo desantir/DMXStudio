@@ -54,14 +54,7 @@ CString AbstractAnimation::getSynopsis(void) {
 // ----------------------------------------------------------------------------
 //
 UIDArray AbstractAnimation::populateActors( ) {
-    UIDArray resolved_actors;
-
-    //if ( m_actors.size() > 0 )              // Resolve preset actor list
-        resolved_actors = m_actors;
-    //else                               
-    //    resolved_actors = m_animation_task->getScene()->getActorUIDs();
-
-    return resolved_actors;
+    return m_actors;
 }
 
 // ----------------------------------------------------------------------------

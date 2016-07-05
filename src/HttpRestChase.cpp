@@ -45,6 +45,7 @@ bool HttpRestServices::query_chases( CString& response, LPCSTR data )
         json.add( "number", chase->getChaseNumber() );
         json.add( "name", chase->getName() );
         json.add( "description", chase->getDescription() );
+        json.add( "created", chase->getCreated() );
         json.add( "is_running", (chase->getUID() == studio.getVenue()->getRunningChase()) );
         json.add( "delay_ms", chase->getDelayMS() );
         json.add( "fade_ms", chase->getFadeMS() );
@@ -59,6 +60,7 @@ bool HttpRestServices::query_chases( CString& response, LPCSTR data )
             json.startObject();
             json.add( "id", (*steps_it).getSceneUID() );
             json.add( "delay_ms", (*steps_it).getDelayMS() );
+            json.add( "load_method", (*steps_it).getMethod() ); 
             json.endObject();
         }
         json.endArray( "steps" );
@@ -116,7 +118,7 @@ bool HttpRestServices::edit_chase( CString& response, LPCSTR data, EditMode mode
         PARSER_LIST step_parsers = parser.get<PARSER_LIST>( "steps" );
 
         for ( PARSER_LIST::iterator it=step_parsers.begin(); it != step_parsers.end(); ++it ) {
-            steps.push_back( ChaseStep( (*it).get<ULONG>( "id" ), (*it).get<ULONG>( "delay_ms" ) ) );
+            steps.push_back( ChaseStep( (*it).get<ULONG>( "id" ), (*it).get<ULONG>( "delay_ms" ), (SceneLoadMethod)(*it).get<int>( "load_method" ) ) );
         }
     }
     catch ( std::exception& e ) {
@@ -163,6 +165,8 @@ bool HttpRestServices::edit_chase( CString& response, LPCSTR data, EditMode mode
     chase->setSteps( steps );
     chase->setActs( acts );
     chase->setRepeat( repeat );
+
+    studio.getVenue()->chaseUpdated( chase->getUID() );
 
     if ( running_chase_id == chase->getUID() )
         studio.getVenue()->startChase( chase->getUID() );

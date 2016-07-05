@@ -72,23 +72,38 @@ MA 02111-1307, USA.
         },
 
         _init: function () {
-            this.load(this.options.amplitude_data);
+            this.load( this.options.amplitude_data, this.options.interval_ms );
         },
 
         load: function ( amplitude_data, interval_ms ) {
             this.options.amplitude_data = amplitude_data;
             this.options.interval_ms = interval_ms;
 
-            this.container.scrollLeft(0);
             this.bars = [];
+
+            if (amplitude_data != null && amplitude_data.length > 0) {
+                for (var i = 0; i < this.options.amplitude_data.length; i++) {
+                    this.bars[this.bars.length] = {
+                        "number": i,
+                        "x": 0, "y": 0, "height": 0,
+                        "highlight": false, "selected": false, hover: false, "annotation": null
+                    };
+                }
+            }
+
+            this.resize();
+        },
+
+        resize: function () {
+            this.container.scrollLeft(0);
             this.max_bar_height = 0;
             this.options.height = this.element.height();
 
-            if (amplitude_data == null || amplitude_data.length == 0) {
-                this.canvasWidth = Math.max( 800, this.container.width() );
+            if ( this.options.amplitude_data == null || this.options.amplitude_data.length == 0) {
+                this.canvasWidth = Math.max( this.options.min_width, this.container.width() );
             }
             else {
-                this.canvasWidth = Math.max( (amplitude_data.length *
+                this.canvasWidth = Math.max( (this.options.amplitude_data.length *
                         (this.options.BAR_BOX_WIDTH + this.options.BAR_BORDER_SIZE)) + (this.options.EDGE_BORDER * 2), this.options.min_width);
 
                 if ( this.canvasWidth >= this.element.width() )
@@ -96,20 +111,18 @@ MA 02111-1307, USA.
 
                 var x = this.options.EDGE_BORDER;
 
-                for (var i = 0; i < this.options.amplitude_data.length; i++) {
-                    var bar_height = ((this.options.amplitude_data[i] / 32767.0) * 100) * this.options.bar_height_zoom;
-                    var y = this.options.height - bar_height - this.options.BAR_BORDER_SIZE;
+                for (var i = 0; i < this.bars.length; i++) {
+                    var height = ((this.options.amplitude_data[i] / 32767.0) * 100) * this.options.bar_height_zoom;
+                    var y = this.options.height - height - this.options.BAR_BORDER_SIZE;
 
-                    this.bars[this.bars.length] = {
-                        "number": i,
-                        "x": x, "y": y, "height": bar_height,
-                        "highlight": false, "selected": false, hover: false, "annotation": null
-                    };
+                    this.bars[i].x = x;
+                    this.bars[i].y = y;
+                    this.bars[i].height = height;
 
                     x += (this.options.BAR_BOX_WIDTH + this.options.BAR_BORDER_SIZE);         // Borders overlap - hence 1 border
 
-                    if (bar_height > this.max_bar_height + 4)
-                        this.max_bar_height = bar_height + 4;
+                    if (height > this.max_bar_height + 4)
+                        this.max_bar_height = height + 4;
                 }
             }
 
@@ -126,14 +139,8 @@ MA 02111-1307, USA.
 
             var ctx = this.canvas.get(0).getContext("2d");
 
-            ctx.beginPath();
-
-            ctx.lineWidth = 0;
             ctx.fillStyle = this.options.background_color;
-            ctx.rect(0, 0, this.canvasWidth, this.options.height);
-            ctx.stroke();
-            ctx.fill();
-            ctx.closePath();
+            ctx.fillRect(0, 0, this.canvasWidth, this.options.height);
 
             if (this.bars.length == 0) {
                 ctx.font = '42pt Arial';
@@ -142,7 +149,10 @@ MA 02111-1307, USA.
                 ctx.fillText(this.options.no_data_message, 10, this.options.height/2 + 20 );
             }
             else {
-                for (var y = 0; y < 2; y++)
+                // HACK! Paint bars multiple times to avoid hover changing the colors. Need
+                // to figure out why this is happening as the effect is not desired.
+
+                for ( var y=0; y < 3; y++ )
                     for (var i = 0; i < this.bars.length; i++)
                         this._paint_bar(ctx, this.bars[i], true);
             }
@@ -282,25 +292,37 @@ MA 02111-1307, USA.
                 ctx.fillStyle = this.options.bar_unselected_color;
 
             ctx.fill();
+            ctx.closePath();
 
             if (drawAnnotation && bar.annotation != null && bar.annotation.label != null) {
+
+                var bar_width = this.options.BAR_BOX_WIDTH + this.options.BAR_BORDER_SIZE;
+
                 ctx.save();
                 ctx.translate(0, 0);
                 ctx.rotate( 270 * Math.PI / 180);
                 ctx.font = '7pt Arial';
                 ctx.textAlign = 'left';
                 ctx.fillStyle = this.options.annotation_text_color;
-                ctx.fillText(bar.annotation.label, -(this.options.height - this.max_bar_height - 4), bar.x - 2);
+                ctx.fillText(bar.annotation.label, -(this.options.height - this.max_bar_height - 4), bar.x + bar_width/2 - 2);
                 ctx.restore();
 
-                var text_width = ctx.measureText(bar.annotation.label).width;
+                var text_height = ctx.measureText(bar.annotation.label).width;
+                var text_width = ctx.measureText('M').width;   // Just an approximation
 
-                ctx.lineWidth = .5;
+                bar.annotation.textbox = {
+                    "top": (this.options.height-this.max_bar_height) - text_height - 4, 
+                    "left": bar.x+bar_width/2-2-text_width, 
+                    "height": text_height, 
+                    "width": text_width+2 };  // +2 for the line
+
+                ctx.lineWidth = 1;
                 ctx.strokeStyle = this.options.annotation_line_color;
                 ctx.beginPath();
-                ctx.moveTo(bar.x + .5, bar.y);
-                ctx.lineTo(bar.x + .5, (this.options.height-this.max_bar_height) - text_width );
+                ctx.moveTo(bar.x + bar_width/2, bar.y);
+                ctx.lineTo(bar.x + bar_width/2, (this.options.height-this.max_bar_height) - text_height );
                 ctx.stroke();
+                ctx.closePath();
             }
         },
 
@@ -332,17 +354,28 @@ MA 02111-1307, USA.
             var canvas_x = $(window).scrollLeft() + event.clientX - Math.round(this.canvas.offset().left);
             var canvas_y = $(window).scrollTop() + event.clientY - Math.round(this.canvas.offset().top);
 
+            if (canvas_y < this.options.height - this.max_bar_height - this.options.BAR_BORDER_SIZE) {
+                // See if the hit is any a bar's annotation box
+                for (var i = 0; i < this.bars.length; i++) {
+                    var bar = this.bars[i];
+                    if ( bar.annotation == null || bar.annotation.textbox == null )
+                        continue;
+
+                    var box = bar.annotation.textbox;
+                    if ( canvas_x >= box.left && canvas_x < box.left+box.width && 
+                         canvas_y >= box.top && canvas_y < box.top+box.height )
+                        return bar;
+                }
+
+                return null;
+            }
+
             var bar_number = Math.floor((canvas_x - this.options.EDGE_BORDER) / (this.options.BAR_BOX_WIDTH + this.options.BAR_BORDER_SIZE));
 
             if (bar_number < 0 || bar_number >= this.bars.length)
                 return null;
 
-            var bar = this.bars[bar_number];
-
-            if (canvas_y < this.options.height - this.max_bar_height - this.options.BAR_BORDER_SIZE)
-                return null;
-            
-            return bar;
+            return this.bars[bar_number];
         },
 
         _on_mouse_down: function (event) {
@@ -443,7 +476,7 @@ MA 02111-1307, USA.
         _setOption: function (key, value) {
             this.options[key] = value;
             $.Widget.prototype._setOption.apply(this, arguments);
-            this.draw();
+            this.resize();
         }
     });
 
