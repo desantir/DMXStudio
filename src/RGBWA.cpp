@@ -124,6 +124,15 @@ CString RGBWA::getColorName( ) {
     return name;
 }
 
+
+// ----------------------------------------------------------------------------
+//
+CString RGBWA::asString( ) {
+    CString name;
+    name.Format( "%02x%02x%02x%02x%02x%02x", red(), green(), blue(), white(), amber() );
+    return name;
+}
+
 // ----------------------------------------------------------------------------
 //
 std::vector<CString> RGBWA::getAllColorNames( ) {

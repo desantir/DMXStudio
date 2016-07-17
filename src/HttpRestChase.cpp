@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-2013 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -23,50 +23,26 @@ MA 02111-1307, USA.
 #include "HttpRestServices.h"
 #include "Venue.h"
 
+void chaseToJson( JsonBuilder& json, Chase* scene );
+
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_chases( CString& response, LPCSTR data )
+bool HttpRestServices::query_chase( DMXHttpSession* session, CString& response, LPCSTR data ) 
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
-    ChasePtrArray chases = studio.getVenue()->getChases();
+    UID uid;
+    if ( sscanf_s( data, "%lu", &uid ) != 1 )
+        return false;
 
-    std::sort( chases.begin(), chases.end(), CompareObjectNumber );
-    
+    Chase* chase = studio.getVenue()->getChase( uid );
+    if ( chase == NULL )
+        return false;
+
     JsonBuilder json( response );
-
     json.startArray();
-    for ( ChasePtrArray::iterator it=chases.begin(); it != chases.end(); it++ ) {
-        Chase* chase = (*it);
-
-        json.startObject();
-        json.add( "id", chase->getUID() );
-        json.add( "number", chase->getChaseNumber() );
-        json.add( "name", chase->getName() );
-        json.add( "description", chase->getDescription() );
-        json.add( "created", chase->getCreated() );
-        json.add( "is_running", (chase->getUID() == studio.getVenue()->getRunningChase()) );
-        json.add( "delay_ms", chase->getDelayMS() );
-        json.add( "fade_ms", chase->getFadeMS() );
-        json.add( "repeat", chase->isRepeat() );
-        json.addArray<Acts>( "acts", chase->getActs() );
-
-        // Add chase steps
-        ChaseStepArray steps = chase->getSteps();
-
-        json.startArray( "steps" );
-        for ( ChaseStepArray::iterator steps_it=steps.begin(); steps_it != steps.end(); steps_it++ ) {
-            json.startObject();
-            json.add( "id", (*steps_it).getSceneUID() );
-            json.add( "delay_ms", (*steps_it).getDelayMS() );
-            json.add( "load_method", (*steps_it).getMethod() ); 
-            json.endObject();
-        }
-        json.endArray( "steps" );
-
-        json.endObject();
-    }
+    chaseToJson( json, chase );
     json.endArray();
 
     return true;
@@ -74,7 +50,30 @@ bool HttpRestServices::query_chases( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::delete_chase( CString& response, LPCSTR data ) {
+bool HttpRestServices::query_chases( DMXHttpSession* session, CString& response, LPCSTR data )
+{
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
+    ChasePtrArray chases = studio.getVenue()->getChases();
+    std::sort( chases.begin(), chases.end(), CompareObjectNumber );
+    
+    JsonBuilder json( response );
+
+    json.startArray();
+
+    for ( ChasePtrArray::iterator it=chases.begin(); it != chases.end(); it++ ) {
+        chaseToJson( json, (*it) );
+    }
+
+    json.endArray();
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool HttpRestServices::delete_chase( DMXHttpSession* session, CString& response, LPCSTR data ) {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
@@ -88,7 +87,7 @@ bool HttpRestServices::delete_chase( CString& response, LPCSTR data ) {
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_chase( CString& response, LPCSTR data, EditMode mode ) {
+bool HttpRestServices::edit_chase( DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode ) {
    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
@@ -147,6 +146,7 @@ bool HttpRestServices::edit_chase( CString& response, LPCSTR data, EditMode mode
 
         case COPY: {
             Chase new_chase( *chase );
+            new_chase.setUID( NOUID );
             chase_id = studio.getVenue()->addChase( new_chase );
             chase = studio.getVenue()->getChase( chase_id );
             break;
@@ -177,4 +177,36 @@ bool HttpRestServices::edit_chase( CString& response, LPCSTR data, EditMode mode
     json.endObject();
 
     return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+void chaseToJson( JsonBuilder& json, Chase* chase )
+{
+    json.startObject();
+    json.add( "id", chase->getUID() );
+    json.add( "number", chase->getChaseNumber() );
+    json.add( "name", chase->getName() );
+    json.add( "description", chase->getDescription() );
+    json.add( "created", chase->getCreated() );
+    json.add( "is_running", (chase->getUID() == studio.getVenue()->getRunningChase()) );
+    json.add( "delay_ms", chase->getDelayMS() );
+    json.add( "fade_ms", chase->getFadeMS() );
+    json.add( "repeat", chase->isRepeat() );
+    json.addArray<Acts>( "acts", chase->getActs() );
+
+    // Add chase steps
+    ChaseStepArray steps = chase->getSteps();
+
+    json.startArray( "steps" );
+    for ( ChaseStepArray::iterator steps_it=steps.begin(); steps_it != steps.end(); steps_it++ ) {
+        json.startObject();
+        json.add( "id", (*steps_it).getSceneUID() );
+        json.add( "delay_ms", (*steps_it).getDelayMS() );
+        json.add( "load_method", (*steps_it).getMethod() ); 
+        json.endObject();
+    }
+    json.endArray( "steps" );
+
+    json.endObject();
 }

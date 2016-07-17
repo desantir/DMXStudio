@@ -1,0 +1,375 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals" />
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{9D5082EC-A4AF-4FFE-8868-2FD8D9E9444E}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>DMXStudio</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
+    <UseOfMfc>Static</UseOfMfc>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>NotSet</CharacterSet>
+    <UseOfMfc>Static</UseOfMfc>
+    <TargetPlatformVersion>7.0</TargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <CodeAnalysisRuleSet>NativeMinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>httpapi.lib;Dsound.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CustomBuildStep>
+      <Command>echo "$(ProjectDir)$(Configuration)"
+mkdir  "$(ProjectDir)$(Configuration)\FixtureDefinitions"
+xcopy  /s /y /E "$(ProjectDir)FixtureDefinitions" "$(ProjectDir)$(Configuration)\FixtureDefinitions"
+mkdir "$(ProjectDir)$(Configuration)\docroot"
+mkdir "$(ProjectDir)$(Configuration)\docroot\mobile"
+mkdir "$(ProjectDir)$(Configuration)\docroot\full"
+xcopy /y /s "$(ProjectDir)\mobile\*" "$(ProjectDir)$(Configuration)\docroot\mobile"
+xcopy /y /s "$(ProjectDir)\full\*" "$(ProjectDir)$(Configuration)\docroot\full"
+xcopy /y /s "$(ProjectDir)\jquery.mobile-1.4.5\*" "$(ProjectDir)$(Configuration)\docroot\mobile"
+xcopy /y /s "$(ProjectDir)\jquery-ui-1.9.2.custom\*" "$(ProjectDir)$(Configuration)\docroot\full"
+mkdir "$(ProjectDir)$(Configuration)\docroot\full\flot"
+xcopy /y /s "$(ProjectDir)\flot-flot-f0e78fc" "$(ProjectDir)$(Configuration)\docroot\full\flot"
+mkdir "$(ProjectDir)$(Configuration)\docroot\full\colorpicker"
+xcopy /y /s "$(ProjectDir)\colorpicker" "$(ProjectDir)$(Configuration)\docroot\full\colorpicker"
+xcopy /y /s "$(ProjectDir)\jquery-minicolors\jquery.minicolors.*" "$(ProjectDir)$(Configuration)\docroot\mobile"
+mkdir "$(ProjectDir)$(Configuration)\docroot\full\jquery-toastmessage"
+xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\docroot\full\jquery-toastmessage" </Command>
+      <Outputs>$(SolutionDir)$(Configuration)FixtureDefinitions.xml;%(Outputs)</Outputs>
+      <Inputs>$(SolutionDir)\FixtureDefinitions.xml</Inputs>
+      <TreatOutputAsContent>true</TreatOutputAsContent>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>httpapi.lib;Dsound.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CustomBuildStep>
+      <Command>echo "$(ProjectDir)$(Configuration)"
+mkdir  "$(ProjectDir)$(Configuration)\FixtureDefinitions"
+xcopy  /s /y /E "$(ProjectDir)FixtureDefinitions" "$(ProjectDir)$(Configuration)\FixtureDefinitions"
+mkdir "$(ProjectDir)$(Configuration)\docroot"
+mkdir "$(ProjectDir)$(Configuration)\docroot\mobile"
+mkdir "$(ProjectDir)$(Configuration)\docroot\full"
+xcopy /y /s "$(ProjectDir)\mobile\*" "$(ProjectDir)$(Configuration)\docroot\mobile"
+xcopy /y /s "$(ProjectDir)\full\*" "$(ProjectDir)$(Configuration)\docroot\full"
+xcopy /y /s "$(ProjectDir)\jquery.mobile-1.4.5\*" "$(ProjectDir)$(Configuration)\docroot\mobile"
+xcopy /y /s "$(ProjectDir)\jquery-ui-1.9.2.custom\*" "$(ProjectDir)$(Configuration)\docroot\full"
+mkdir "$(ProjectDir)$(Configuration)\docroot\full\flot"
+xcopy /y /s "$(ProjectDir)\flot-flot-f0e78fc" "$(ProjectDir)$(Configuration)\docroot\full\flot"
+mkdir "$(ProjectDir)$(Configuration)\docroot\full\colorpicker"
+xcopy /y /s "$(ProjectDir)\colorpicker" "$(ProjectDir)$(Configuration)\docroot\full\colorpicker"
+xcopy /y /s "$(ProjectDir)\jquery-minicolors\jquery.minicolors.*" "$(ProjectDir)$(Configuration)\docroot\mobile"
+mkdir "$(ProjectDir)$(Configuration)\docroot\full\jquery-toastmessage"
+xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\docroot\full\jquery-toastmessage" </Command>
+      <Outputs>$(SolutionDir)$(Configuration)FixtureDefinitions.xml;%(Outputs)</Outputs>
+      <Inputs>$(SolutionDir)DMXStudio\FixtureDefinitions.xml</Inputs>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
+    <None Include="colorpicker\css\colorpicker.css" />
+    <None Include="colorpicker\css\layout.css" />
+    <None Include="colorpicker\js\colorpicker.js" />
+    <None Include="ftd2xx.dll" />
+    <None Include="full\chase-track.js" />
+    <None Include="full\animation.js" />
+    <None Include="full\beatviz.js" />
+    <None Include="full\chase.js" />
+    <None Include="full\events.js" />
+    <None Include="full\fixture.js" />
+    <None Include="full\freqviz.js" />
+    <None Include="full\full.js" />
+    <None Include=".\full\tile-scroll-panel.js" />
+    <None Include="full\jquery-container.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="full\jquery.container.js" />
+    <None Include="full\jquery.multiselect.js" />
+    <None Include="full\jquery.pan-tilt.js" />
+    <None Include="full\jquery.track-visualize.js" />
+    <None Include="full\music-player.js" />
+    <None Include="full\scene.js" />
+    <None Include="full\slider-panel.js" />
+    <None Include="full\venue.js" />
+    <None Include="jquery-toastmessage\css\jquery.toastmessage.css" />
+    <None Include="jquery-toastmessage\jquery.toastmessage.js" />
+    <None Include="mobile\mobile.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="mobile\mobile.js" />
+    <None Include="_COPYING.txt" />
+    <None Include="_FEATURES.txt" />
+    <None Include="_TODO.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AbstractAnimation.cpp" />
+    <ClCompile Include="AbstractDMXDriver.cpp" />
+    <ClCompile Include="AnimationSignal.cpp" />
+    <ClCompile Include="AnimationTask.cpp" />
+    <ClCompile Include="AudioInputStream.cpp" />
+    <ClCompile Include="AudioVolumeController.cpp" />
+    <ClCompile Include="BeatDetector.cpp" />
+    <ClCompile Include="BPMRating.cpp" />
+    <ClCompile Include="Channel.cpp" />
+    <ClCompile Include="ChannelAngle.cpp" />
+    <ClCompile Include="ChannelValueRange.cpp" />
+    <ClCompile Include="Chase.cpp" />
+    <ClCompile Include="ChaseFader.cpp" />
+    <ClCompile Include="ChaseStep.cpp" />
+    <ClCompile Include="ChaseTask.cpp" />
+    <ClCompile Include="ColorStrobe.cpp" />
+    <ClCompile Include="DefinitionReader.cpp" />
+    <ClCompile Include="DefinitionWriter.cpp" />
+    <ClCompile Include="DMXHttpRedirector.cpp" />
+    <ClCompile Include="DMXHttpServer.cpp" />
+    <ClCompile Include="DMXHttpWorker.cpp" />
+    <ClCompile Include="DMXTextAnim.cpp" />
+    <ClCompile Include="DMXTextForms.cpp" />
+    <ClCompile Include="DMXTextMusic.cpp" />
+    <ClCompile Include="DMXTextUI.cpp" />
+    <ClCompile Include="DMXStudio.cpp" />
+    <ClCompile Include="EventBus.cpp" />
+    <ClCompile Include="Fixture.cpp" />
+    <ClCompile Include="FixtureDefinition.cpp" />
+    <ClCompile Include="FixtureGroup.cpp" />
+    <ClCompile Include="Form.cpp" />
+    <ClCompile Include="FTDI_DMXDriver.cpp" />
+    <ClCompile Include="HttpFull.cpp" />
+    <ClCompile Include="HttpMobile.cpp" />
+    <ClCompile Include="HttpRestBeats.cpp" />
+    <ClCompile Include="HttpRestChase.cpp" />
+    <ClCompile Include="HttpRestEvents.cpp" />
+    <ClCompile Include="HttpRestFixture.cpp" />
+    <ClCompile Include="HttpRestMusic.cpp" />
+    <ClCompile Include="HttpRestScene.cpp" />
+    <ClCompile Include="HttpRestServices.cpp" />
+    <ClCompile Include="HttpRestVenue.cpp" />
+    <ClCompile Include="IniFile.cpp" />
+    <ClCompile Include="MovementAnimation.cpp" />
+    <ClCompile Include="MusicPlayer.cpp" />
+    <ClCompile Include="MusicWatcher.cpp" />
+    <ClCompile Include="OpenDMXDriver.cpp" />
+    <ClCompile Include="RGBWA.cpp" />
+    <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="SceneActor.cpp" />
+    <ClCompile Include="SceneChannelAnimator.cpp" />
+    <ClCompile Include="SceneChannelFilter.cpp" />
+    <ClCompile Include="SceneColorFader.cpp" />
+    <ClCompile Include="ScenePatternDimmer.cpp" />
+    <ClCompile Include="ScenePixelAnimator.cpp" />
+    <ClCompile Include="SceneSequence.cpp" />
+    <ClCompile Include="SceneMovementAnimator.cpp" />
+    <ClCompile Include="SceneSoundLevel.cpp" />
+    <ClCompile Include="SceneStrobeAnimator.cpp" />
+    <ClCompile Include="SimpleJsonParser.cpp" />
+    <ClCompile Include="SoundDetector.cpp" />
+    <ClCompile Include="SoundSampler.cpp" />
+    <ClCompile Include="stdafx.cpp" />
+    <ClCompile Include="Threadable.cpp" />
+    <ClCompile Include="tinystr.cpp" />
+    <ClCompile Include="tinyxml.cpp" />
+    <ClCompile Include="tinyxmlerror.cpp" />
+    <ClCompile Include="tinyxmlparser.cpp" />
+    <ClCompile Include="TextIO.cpp" />
+    <ClCompile Include="Universe.cpp" />
+    <ClCompile Include="USBProDriver.cpp" />
+    <ClCompile Include="Venue.cpp" />
+    <ClCompile Include="VenueReader.cpp" />
+    <ClCompile Include="VenueWriter.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="ftd2xx.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AbstractDMXDriver.h" />
+    <ClInclude Include="Act.h" />
+    <ClInclude Include="AnimationSignal.h" />
+    <ClInclude Include="AnimationTask.h" />
+    <ClInclude Include="AudioInputStream.h" />
+    <ClInclude Include="AudioVolumeController.h" />
+    <ClInclude Include="BeatDetector.h" />
+    <ClInclude Include="Bitmap.h" />
+    <ClInclude Include="BPMRating.h" />
+    <ClInclude Include="Channel.h" />
+    <ClInclude Include="ChannelAngle.h" />
+    <ClInclude Include="ChannelValueRange.h" />
+    <ClInclude Include="Chase.h" />
+    <ClInclude Include="ChaseFader.h" />
+    <ClInclude Include="ChaseStep.h" />
+    <ClInclude Include="ChaseTask.h" />
+    <ClInclude Include="ColorFader.h" />
+    <ClInclude Include="ColorStrobe.h" />
+    <ClInclude Include="DefinitionReader.h" />
+    <ClInclude Include="DefinitionWriter.h" />
+    <ClInclude Include="DMXFixtureIDs.h" />
+    <ClInclude Include="DMXHttpRedirector.h" />
+    <ClInclude Include="DMXHttpServer.h" />
+    <ClInclude Include="DMXHttpSession.h" />
+    <ClInclude Include="DMXHttpWorker.h" />
+    <ClInclude Include="DMXStudio.h" />
+    <ClInclude Include="DMXTextUI.h" />
+    <ClInclude Include="DObject.h" />
+    <ClInclude Include="Event.h" />
+    <ClInclude Include="EventBus.h" />
+    <ClInclude Include="EventBusListener.h" />
+    <ClInclude Include="ffft\Array.h" />
+    <ClInclude Include="ffft\Array.hpp" />
+    <ClInclude Include="ffft\def.h" />
+    <ClInclude Include="ffft\DynArray.h" />
+    <ClInclude Include="ffft\DynArray.hpp" />
+    <ClInclude Include="ffft\FFTReal.h" />
+    <ClInclude Include="ffft\FFTReal.hpp" />
+    <ClInclude Include="ffft\OscSinCos.h" />
+    <ClInclude Include="ffft\OscSinCos.hpp" />
+    <ClInclude Include="FindNextAvailable.h" />
+    <ClInclude Include="Fixture.h" />
+    <ClInclude Include="FixtureDefinition.h" />
+    <ClInclude Include="FixtureGroup.h" />
+    <ClInclude Include="Form.h" />
+    <ClInclude Include="FreqBin.h" />
+    <ClInclude Include="ftd2xx.h" />
+    <ClInclude Include="AbstractAnimation.h" />
+    <ClInclude Include="FTDI_DMXDriver.h" />
+    <ClInclude Include="HttpFull.h" />
+    <ClInclude Include="HttpMobile.h" />
+    <ClInclude Include="HttpRestServices.h" />
+    <ClInclude Include="IDefinitionVisitor.h" />
+    <ClInclude Include="IniFile.h" />
+    <ClInclude Include="ISerializable.h" />
+    <ClInclude Include="IVisitor.h" />
+    <ClInclude Include="MovementAnimation.h" />
+    <ClInclude Include="MusicPlayer.h" />
+    <ClInclude Include="MusicWatcher.h" />
+    <ClInclude Include="OpenDMXDriver.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="RGBWA.h" />
+    <ClInclude Include="Scene.h" />
+    <ClInclude Include="SceneActor.h" />
+    <ClInclude Include="SceneChannelAnimator.h" />
+    <ClInclude Include="SceneChannelFilter.h" />
+    <ClInclude Include="SceneColorFader.h" />
+    <ClInclude Include="ScenePatternDimmer.h" />
+    <ClInclude Include="ScenePixelAnimator.h" />
+    <ClInclude Include="SceneSequence.h" />
+    <ClInclude Include="SceneMovementAnimator.h" />
+    <ClInclude Include="SceneSoundLevel.h" />
+    <ClInclude Include="SceneStrobeAnimator.h" />
+    <ClInclude Include="SimpleJsonBuilder.h" />
+    <ClInclude Include="SimpleJsonParser.h" />
+    <ClInclude Include="SoundDetector.h" />
+    <ClInclude Include="SoundSampler.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="StudioException.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="Threadable.h" />
+    <ClInclude Include="tinystr.h" />
+    <ClInclude Include="tinyxml.h" />
+    <ClInclude Include="TextIO.h" />
+    <ClInclude Include="Universe.h" />
+    <ClInclude Include="USBProDriver.h" />
+    <ClInclude Include="Venue.h" />
+    <ClInclude Include="VenueReader.h" />
+    <ClInclude Include="VenueWriter.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="DMXStudio.ico" />
+    <Image Include="full\favicon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DMXStudio.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="FixtureDefinitions\ADJ\adj_galaxian_royal.xml" />
+    <Xml Include="FixtureDefinitions\ADJ\adj_quad_scan.xml" />
+    <Xml Include="FixtureDefinitions\ADJ\adj_uvled_bar_16.xml" />
+    <Xml Include="FixtureDefinitions\Blizzard\blizzard_min_spot.xml" />
+    <Xml Include="FixtureDefinitions\Blizzard\blizzard_min_wash.xml" />
+    <Xml Include="FixtureDefinitions\Blizzard\blizzard_puck.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+    <Xml Include="FixtureDefinitions\Blizzard\blizzard_rocker.xml" />
+    <Xml Include="FixtureDefinitions\Chauvet\chauvet_abyss.xml" />
+    <Xml Include="FixtureDefinitions\Chauvet\chauvet_colorbandpix_mini.xml" />
+    <Xml Include="FixtureDefinitions\Chauvet\chauvet_led_dimmer_4.xml" />
+    <Xml Include="FixtureDefinitions\Chauvet\chauvet_mega_trix.xml" />
+    <Xml Include="FixtureDefinitions\Chauvet\chauvet_pixpar_12.xml" />
+    <Xml Include="FixtureDefinitions\Chauvet\chauvet_slimpar_h6.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+    <Xml Include="FixtureDefinitions\Chauvet\chauvet_swarm_4.xml" />
+    <Xml Include="FixtureDefinitions\Chauvet\chauvet_swarm_5fx.xml" />
+    <Xml Include="FixtureDefinitions\Chauvet\chauvet_vue_1_1.xml" />
+    <Xml Include="FixtureDefinitions\Custom\led_array.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include=".\full\full.htm" />
+    <Text Include="full\full.css" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

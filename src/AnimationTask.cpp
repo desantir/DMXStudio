@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -27,8 +27,8 @@ MA 02111-1307, USA.
 AnimationTask::AnimationTask( Venue* venue ) :
     Threadable( "AnimationTask" ),
     m_venue( venue ),
-    m_active( true ),
-    m_load_channels( false )
+    m_load_channels( false ),
+    m_chase_fade_uid( m_venue->allocUID() )
 {
     // Initialize packet - we may start in blackout mode
     memset( m_dmx_packet, 0, sizeof(m_dmx_packet) );
@@ -44,18 +44,29 @@ AnimationTask::~AnimationTask(void)
 
 // ----------------------------------------------------------------------------
 //
+bool AnimationTask::handleEvent( const Event& event ) 
+{
+    switch ( event.m_source ) {
+        case ES_WHITEOUT:
+        case ES_WHITEOUT_COLOR:
+        case ES_WHITEOUT_STROBE:
+        case ES_MASTER_DIMMER:
+            if ( event.m_action == EA_CHANGED )
+                m_load_channels = true;
+            break;
+     }
+
+     return false;
+}
+
+// ----------------------------------------------------------------------------
+//
 UINT AnimationTask::run(void) {
     DMXStudio::log_status( "Scene animator running" );
 
     m_load_channels = true;
 
     CSingleLock lock( &m_animation_mutex, FALSE );
-
-    // TODO - these should all be even driven
-    BYTE currentDimmer = m_venue->getMasterDimmer();
-    WhiteoutMode currentWhiteoutMode = WHITEOUT_OFF;
-    UINT curentWhiteoutStrobeMS = m_venue->getWhiteoutStrobeMS();
-    RGBWA currntWhiteoutColor = m_venue->getWhiteoutColor();
 
     while ( isRunning() ) {
         try { 
@@ -64,36 +75,20 @@ UINT AnimationTask::run(void) {
             DWORD time_ms = GetCurrentTime();
             bool changed = m_load_channels;
 
-            // MASTER DIMMER
-
-            if ( currentDimmer != m_venue->getMasterDimmer() ) {
-                currentDimmer = m_venue->getMasterDimmer();
-                // Adjust dimmer channels only to not interrrupt animation
-                changed |= m_active && adjust_dimmer_channels();
-            }
-
             // ANIMATION TIME SLICE
 
             for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
                 changed |= (*it)->sliceAnimation( time_ms, m_dmx_packet );
 
-            // WHITEOUT
+            // WHITEOUT STROBE
 
-            if ( currentWhiteoutMode != m_venue->getWhiteout() ||
-                 curentWhiteoutStrobeMS != m_venue->getWhiteoutStrobeMS() ||
-                 currntWhiteoutColor != m_venue->getWhiteoutColor() ) {
-                currentWhiteoutMode = m_venue->getWhiteout();
-                curentWhiteoutStrobeMS = m_venue->getWhiteoutStrobeMS();
-                currntWhiteoutColor = m_venue->getWhiteoutColor();
-                changed = true;
-            }
-
-            if ( currentWhiteoutMode == WHITEOUT_STROBE_SLOW ||
-                currentWhiteoutMode == WHITEOUT_STROBE_FAST ||
-                currentWhiteoutMode == WHITEOUT_STROBE_MANUAL )
+            if ( m_venue->getWhiteout() == WHITEOUT_STROBE_SLOW ||
+                 m_venue->getWhiteout() == WHITEOUT_STROBE_FAST ||
+                 m_venue->getWhiteout() == WHITEOUT_STROBE_MANUAL )
                 changed |= m_venue->m_whiteout_strobe.strobe( time_ms );
 
-            // BLACKOUT
+            // MUTE BLACKOUT
+
             if ( m_venue->getAutoBlackoutMS() != 0 && m_venue->isMute() && !m_venue->isMuteBlackout() ) {
                 m_venue->setMuteBlackout( true );
                 changed = true;
@@ -141,30 +136,17 @@ void AnimationTask::reloadActors() {
 
 // ----------------------------------------------------------------------------
 //
-bool AnimationTask::adjust_dimmer_channels() 
-{
-    bool changed = false;
+void AnimationTask::fadeToNextScene( ULONG fade_time, ActorPtrArray& actors ) {
+    ChaseFader* fader = new ChaseFader( m_chase_fade_uid, fade_time, actors );
 
-    for ( auto it : m_actors ) {
-        SceneActor& actor = it.second;
+    m_animations.push_back( fader );
 
-        for ( Fixture* pf : resolveActorFixtures( &actor ) ) {
-            for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
-                if ( pf->getChannel( channel )->isDimmer() ) {
-                    BYTE value = actor.getChannelValue( channel );
-                    loadChannel( m_dmx_packet, pf, channel, value );
-                    changed = true;
-                }
-            }                
-        }
-    }
-
-    return changed;
+    fader->initAnimation( this, GetCurrentTime(), m_dmx_packet );
 }
 
 // ----------------------------------------------------------------------------
 //
-void AnimationTask::stageScene( Scene* scene, SceneLoadMethod method )
+void AnimationTask::playScene( Scene* scene, SceneLoadMethod method )
 {
     CSingleLock lock( &m_animation_mutex, TRUE );
 
@@ -179,9 +161,11 @@ void AnimationTask::stageScene( Scene* scene, SceneLoadMethod method )
             break;
         
         case SLM_ADD:
+            removeChaseFadeAnimation();
             break;
         
         case SLM_MINUS:
+            removeChaseFadeAnimation();
             m_load_channels = removeScene( scene );
             return;
     }
@@ -213,37 +197,46 @@ void AnimationTask::stageScene( Scene* scene, SceneLoadMethod method )
     }
 
     m_load_channels = true;             // Make sure we load channels at least once
-
-    m_active = true;
 }
 
 // ----------------------------------------------------------------------------
 //
-void AnimationTask::stageActor( SceneActor* actor ) {
+void AnimationTask::stageActors( ActorPtrArray& actors ) {
     CSingleLock lock( &m_animation_mutex, TRUE );
     
-    for ( Fixture* pf : resolveActorFixtures( actor ) ) {
-        if ( !pf->canMove() || m_actors.find( pf->getUID() ) != m_actors.end() )
+    // Stage all future actors that require movement or gobo changes to avoid
+    // latency in future scene setup.
+
+    for ( SceneActor* future_actor : actors ) {
+        // If the actor is currently in play, then it can not be staged
+        if ( m_actors.find( future_actor->getActorUID() ) != m_actors.end() )
             continue;
+
+        for ( Fixture* pf : resolveActorFixtures( future_actor ) ) {
+            // It is possible for individual actors in a group to be in play
+            if ( future_actor->isGroup() && m_actors.find( pf->getUID() ) != m_actors.end() )
+                continue;
             
-        for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
-            Channel* cp = pf->getChannel(channel);
+            for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+                Channel* cp = pf->getChannel(channel);
 
-            if ( cp->getType() == ChannelType::CHNLT_PAN ||
-                 cp->getType() == ChannelType::CHNLT_PAN_FINE ||
-                 cp->getType() == ChannelType::CHNLT_TILT ||
-                 cp->getType() == ChannelType::CHNLT_TILT_FINE ||
-                 cp->getType() == ChannelType::CHNLT_GOBO ) {
+                if ( cp->getType() == ChannelType::CHNLT_PAN ||
+                     cp->getType() == ChannelType::CHNLT_PAN_FINE ||
+                     cp->getType() == ChannelType::CHNLT_TILT ||
+                     cp->getType() == ChannelType::CHNLT_TILT_FINE ||
+                     cp->getType() == ChannelType::CHNLT_GOBO ) {
 
-                 m_venue->loadChannel( m_dmx_packet, pf, channel, actor->getChannelValue( channel ) );
-                 m_load_channels = true;
+                     m_venue->loadChannel( m_dmx_packet, pf, channel, future_actor->getChannelValue( channel ) );
+                     m_load_channels = true;
+                }
             }
         }                
     }
 }
 
 // ----------------------------------------------------------------------------
-//
+// Remove all actors and animations associated with the given scene
+
 bool AnimationTask::removeScene( Scene* scene )
 {
     bool changed = false;
@@ -267,19 +260,27 @@ bool AnimationTask::removeScene( Scene* scene )
     }
 
     // Remove animations
-    AnimationPtrArray& animationPtrs = scene->animations();
-    for ( size_t i=0; i < animationPtrs.size(); i++ ) {
-        for ( auto it=m_animations.begin(); it != m_animations.end(); it++ ) {
-            if ( (*it)->getUID() == animationPtrs[i]->getUID() ) {
-                AbstractAnimation* anim = (*it);
+    for ( AbstractAnimation* amin : scene->animations() )
+        changed |= removeAnimation( amin->getUID() );
 
-                m_animations.erase( it );
-                anim->stopAnimation( );
-                delete anim;
+    return changed;
+}
 
-                changed = true;
-                break;
-            }
+// ----------------------------------------------------------------------------
+//
+bool AnimationTask::removeAnimation( UID amin_uid ) {
+    bool changed = true;
+
+    for ( auto it=m_animations.begin(); it != m_animations.end(); it++ ) {
+        if ( (*it)->getUID() == amin_uid ) {
+            AbstractAnimation* anim = (*it);
+
+            m_animations.erase( it );
+            anim->stopAnimation( );
+            delete anim;
+
+            changed = true;
+            break;
         }
     }
 
@@ -290,6 +291,8 @@ bool AnimationTask::removeScene( Scene* scene )
 //
 bool AnimationTask::start()
 {
+    DMXStudio::getEventBus()->addListenerFirst( this );
+
     return startThread();
 }
 
@@ -297,6 +300,8 @@ bool AnimationTask::start()
 //
 bool AnimationTask::stop()
 {
+    DMXStudio::getEventBus()->removeListener( this );
+
     clearAnimations();
 
     if ( !stopThread() )
@@ -306,7 +311,8 @@ bool AnimationTask::stop()
 }
 
 // ----------------------------------------------------------------------------
-//
+// Clear all animations, but do not change the current DMX values
+
 void AnimationTask::clearAnimations()
 {
     CSingleLock lock( &m_animation_mutex, TRUE );
@@ -320,8 +326,13 @@ void AnimationTask::clearAnimations()
     m_animations.clear();
 
     m_actors.clear();
+}
 
-    m_active = false;
+// ----------------------------------------------------------------------------
+// 
+void AnimationTask::removeChaseFadeAnimation()
+{
+    removeAnimation( m_chase_fade_uid );
 }
 
 // ----------------------------------------------------------------------------
@@ -343,5 +354,7 @@ void AnimationTask::setAnimationSampleSampleRate( DWORD sample_rate_ms )
     CSingleLock lock( &m_animation_mutex, TRUE );
 
     for ( size_t i=0; i < m_animations.size(); i++ )
-        return m_animations[0]->signal().setSampleRateMS( sample_rate_ms );
+        m_animations[i]->signal().setSampleRateMS( sample_rate_ms );
+
+    DMXStudio::fireEvent( ES_ANIMATION_SPEED, 0L, EA_CHANGED, NULL, sample_rate_ms );
 }

@@ -23,109 +23,85 @@ MA 02111-1307, USA.
 var PLAYED_PLAYLIST_LINK = "local:playlist:played";
 var QUEUED_PLAYLIST_LINK = "local:playlist:queued";
 
-var music_player_ui_ready = false;                  // Music player UI and controls intialized
-var playing_track_link = 0;                         // Current music player track
+var playing_track_link = null;                      // Current music player track
+var playing_track_name = "";
 var playing_track_position = 0;                     // Tracks play time of current track
+var playing_track_length = 0;
+var playing_track_bpm = null;
+
 var current_playlist = null;                        // Currently selected playlist (global)
-
-var cache_now_playing = null;
-var cache_track_remaining = null;
-var cache_track_length = null;
-var cache_track_status = null;
-
 var show_login_dialog = true;
 var last_player_error = null;
 
 var track_dialog_refresh = null;
 
-var track_stop_button = null;
-var track_play_button = null;
-var track_pause_button = null;
-var track_back_button = null;
-var track_forward_button = null;
-var track_back_info_button = null;
-var track_forward_info_button = null;
+var cache_now_playing = null;
+var cache_track_remaining = null;
+var cache_track_length = null;
+var cache_track_status = null;
+var cache_track_stop_button = null;
+var cache_track_play_button = null;
+var cache_track_pause_button = null;
+var cache_track_back_button = null;
+var cache_track_forward_button = null;
+var cache_track_back_info_button = null;
+var cache_track_forward_info_button = null;
 
 // ----------------------------------------------------------------------------
 //
-function init_music_player() {
-    track_stop_button = $("#track_stop");
-    track_play_button = $("#track_play");
-    track_pause_button = $("#track_pause");
-    track_back_button = $("#track_back");
-    track_forward_button = $("#track_forward");
-    track_back_info_button = $("#track_back_info");
-    track_forward_info_button = $("#track_forward_info");
+function initializeMusicPlayer() {
+    cache_track_stop_button = $("#track_stop");
+    cache_track_play_button = $("#track_play");
+    cache_track_pause_button = $("#track_pause");
+    cache_track_back_button = $("#track_back");
+    cache_track_forward_button = $("#track_forward");
+    cache_track_back_info_button = $("#track_back_info");
+    cache_track_forward_info_button = $("#track_forward_info");
+
+    cache_now_playing = $('#now_playing');
+    cache_track_remaining = $('#track_remaining');
+    cache_track_length = $('#track_length');
+    cache_track_status = $('#track_status');
+
+    cache_now_playing.text( "" );
+    cache_track_remaining.text( "" );
+    cache_track_length.text("");
+    cache_track_status.text("");
+
+    $("#playlist_play").button().click(playlistPlay);
+    $("#playlist_queue").button().click(playlistQueue);
+    $("#playlist_tracks").button().click(playlistTracks);
+    
+    cache_track_back_info_button.click(track_back_info);
+    cache_track_forward_info_button.click(track_forward_info);
+    cache_track_back_button.click(track_back);
+    cache_track_stop_button.click(track_stop);
+    cache_track_play_button.click(track_play);
+    cache_track_pause_button.click(track_pause);
+    cache_track_forward_button.click(track_forward);
+
+    cache_track_status.css('display', 'block');
+    cache_track_remaining.css('display', 'block');
+    $('#track_select').css('display', 'block');
+    $('#track_controls').css('display', 'block');
+
+    setupTrackSelect($("#playlist_list") );
 }
 
 // ----------------------------------------------------------------------------
 //
 function update_player_status(music_player_status) {
-    if (music_player_status == null)
-        return;
-
     if (music_player_status.logged_in) {
-        if (!music_player_ui_ready)
-            initialize_player_ui();
+        var playing = music_player_status.playing;
 
-        var current_track_link = null;
-        var track_name = "";
-        var track_length = "";
-        var track_remaining = "";
-        var track_status = "";
-        var paused = false;
-        var bpm = null;
-
-        if (music_player_status.playing != null) {
-            current_track_link = music_player_status.playing.link;
-            track_name = music_player_status.playing.name;
-            playing_track_position = music_player_status.playing.length - music_player_status.playing.remaining;
-            paused = music_player_status.playing.paused;
-            bpm = music_player_status.playing.bpm;
-
-            if ( current_track_link != null && current_track_link.length > 0 ) {
-                var status = trackTime(playing_track_position,false) + " / -" + trackTime(music_player_status.playing.remaining,false);
-
-                track_status = track_remaining = status;
-                track_length = trackTime(music_player_status.playing.length,false);
-            }
-            else {
-                track_status = track_length = "no track";
-            }
-
-            cache_track_remaining.text(track_remaining);        // Always update remaining time
-            cache_track_status.text(track_status);              // Always update remaining time
-        }
-
-        if (current_track_link !== playing_track_link) {
-            cache_now_playing.text(track_name);
-            cache_track_remaining.text(track_remaining);
-            cache_track_length.text(bpm == null ? track_length : track_length + " | " + Math.round(bpm) + " BPM");
-            cache_track_status.text(track_status);
-            playing_track_link = current_track_link;
-
-            if (track_dialog_refresh != null)
-                track_dialog_refresh();
-        }
-
-        if (current_track_link == 0) {
-            enable_player_button(track_stop_button, false);
-            enable_player_button(track_play_button, false);
-            enable_player_button(track_pause_button, false);
-
-            playing_track_position = 0;
+        if ( playing == null || playing.link == null || playing.link === "" ) {
+            stopTrackEvent( null );
         }
         else {
-            enable_player_button(track_stop_button, !paused);
-            enable_player_button(track_play_button, paused);
-            enable_player_button(track_pause_button, !paused);
+            startTrackEvent( playing.link, playing.length - playing.remaining );
         }
 
-        enable_player_button(track_back_button, music_player_status.played != 0);
-        enable_player_button(track_forward_button, music_player_status.queued != 0);
-
-        enable_info_button(track_back_info_button, music_player_status.played != 0);
-        enable_info_button(track_forward_info_button, music_player_status.queued != 0);
+        changeTrackQueueEvent( music_player_status.played, music_player_status.queued )
     }
     else if (show_login_dialog) {
         show_login_dialog = false;  // Only once
@@ -135,6 +111,113 @@ function update_player_status(music_player_status) {
     if ( last_player_error != music_player_status.player_error ) {
         last_player_error = music_player_status.player_error;
         $('#player_error').text( (last_player_error != null) ? last_player_error : "" );
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+function changeTrackQueueEvent( played_size, queued_size ) {
+    enable_player_button(cache_track_back_button, played_size != 0);
+    enable_player_button(cache_track_forward_button, queued_size != 0);
+
+    enable_info_button(cache_track_back_info_button, played_size != 0);
+    enable_info_button(cache_track_forward_info_button, queued_size != 0);
+}
+
+// ----------------------------------------------------------------------------
+//
+function startTrackEvent( track_link, position_ms ) {
+       $.ajax({
+            type: "GET",
+            url: "/dmxstudio/rest/query/venue/status/",
+            cache: false,
+            success: function (data) {
+                var json = jQuery.parseJSON(data);
+
+                if ( json.music_player == null || json.music_player.playing == null || json.music_player.playing == undefined )
+                    return;
+
+                playing_track_link = json.music_player.playing.link;
+                playing_track_name = json.music_player.playing.name;
+                playing_track_position = position_ms;
+                playing_track_length = json.music_player.playing.length;
+                playing_track_bpm = json.music_player.playing.bpm;
+
+                var track_length = trackTime( playing_track_length, false );
+
+                cache_now_playing.text( playing_track_name );
+                cache_track_length.text( playing_track_bpm == null ? track_length : track_length + " | " + Math.round(playing_track_bpm) + " BPM" );
+
+                timeTrackEvent( track_link, position_ms );
+
+                if ( json.music_player.playing.paused )
+                    pauseTrackEvent( track_link );
+                else
+                    resumeTrackEvent( track_link );
+
+                if (track_dialog_refresh != null)
+                    track_dialog_refresh();
+            },
+
+            error: onAjaxError
+        });
+}
+
+// ----------------------------------------------------------------------------
+//
+function stopTrackEvent( track_link ) {
+
+    if ( playing_track_link == track_link ) {
+        cache_track_remaining.text( "no track" );
+        cache_track_status.text( "no track" );
+        cache_now_playing.text( "" );
+        cache_track_length.text( "" );
+
+        enable_player_button(cache_track_stop_button, false);
+        enable_player_button(cache_track_play_button, false);
+        enable_player_button(cache_track_pause_button, false);
+
+        playing_track_link = null;
+        playing_track_name = "";
+        playing_track_position = 0;
+        playing_track_length = 0;
+        playing_track_bpm = null;
+
+        if (track_dialog_refresh != null)
+            track_dialog_refresh();
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+function pauseTrackEvent( track_link ) {
+    if ( playing_track_link == track_link ) {
+        enable_player_button(cache_track_stop_button, false );
+        enable_player_button(cache_track_play_button, true );
+        enable_player_button(cache_track_pause_button,  false );
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+function resumeTrackEvent( track_link ) {
+    if ( playing_track_link == track_link ) {
+        enable_player_button(cache_track_stop_button, true );
+        enable_player_button(cache_track_play_button, false );
+        enable_player_button(cache_track_pause_button,  true );
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+function timeTrackEvent( track_link, position_ms ) {
+    if ( playing_track_link == track_link ) {
+        playing_track_position = position_ms;
+
+        var status = trackTime(playing_track_position,false) + " / -" + trackTime(playing_track_length - position_ms,false);
+
+        cache_track_remaining.text( status );
+        cache_track_status.text( status );
     }
 }
 
@@ -233,7 +316,7 @@ function enable_info_button(info_button, enabled) {
     var current_enable = !info_button.hasClass("ui-icon-blank")
 
     if (current_enable != enabled) {
-        var icon = (info_button === track_back_info_button) ? "ui-icon-star" : "ui-icon-star";
+        var icon = (info_button === cache_track_back_info_button) ? "ui-icon-star" : "ui-icon-star";
 
         info_button.attr('disabled', !enabled);
 
@@ -242,43 +325,6 @@ function enable_info_button(info_button, enabled) {
         else
             info_button.removeClass(icon).addClass("ui-icon-blank");
     }
-}
-
-// ----------------------------------------------------------------------------
-//
-function initialize_player_ui() {
-    if (!cache_now_playing) {
-        cache_now_playing = $('#now_playing');
-        cache_track_remaining = $('#track_remaining');
-        cache_track_length = $('#track_length');
-        cache_track_status = $('#track_status');
-    }
-
-    cache_now_playing.text( "" );
-    cache_track_remaining.text( "" );
-    cache_track_length.text("");
-    cache_track_status.text("");
-
-    $("#playlist_play").button().click(playlistPlay);
-    $("#playlist_queue").button().click(playlistQueue);
-    $("#playlist_tracks").button().click(playlistTracks);
-    
-    $('#track_back_info').click(track_back_info);
-    $('#track_forward_info').click(track_forward_info);
-    $('#track_back').click(track_back);
-    $('#track_stop').click(track_stop);
-    $('#track_play').click(track_play);
-    $('#track_pause').click(track_pause);
-    $('#track_forward').click(track_forward);
-
-    $('#track_status' ).css('display', 'block');
-    $('#track_remaining').css('display', 'block');
-    $('#track_select').css('display', 'block');
-    $('#track_controls').css('display', 'block');
-
-    setupTrackSelect($("#playlist_list") );
-
-    music_player_ui_ready = true;
 }
 
 // ----------------------------------------------------------------------------
@@ -293,7 +339,7 @@ function setCurrentPlaylist(playlist) {
     current_playlist = playlist;
 
     $("#playlist_list").multiselect();
-    $('#playlist_list option').eq(current_playlist).attr("selected", true);
+    $('#playlist_list option[value="' + current_playlist + '"]').attr("selected", true);
     $("#playlist_list").multiselect("refresh");
 }
 
@@ -549,7 +595,7 @@ function trackListAction(event, track_link) {
 
     var current = $(event.currentTarget);
     var source = $(event.target);
-    var queue = (playing_track_link != 0 && source.hasClass("tl_icon") && source.hasClass("ui-icon-flag"));
+    var queue = (playing_track_link != "" && source.hasClass("tl_icon") && source.hasClass("ui-icon-flag"));
 
     if (queue) {
         source.css('rotation', 0);      // Reset rotation
@@ -807,10 +853,7 @@ function musicMatchDialog( selectionMap ) {
     $("#mmd_add").button("disable");
     $("#mmd_add_all").button("disable");
 
-    if (music_player_ui_ready)
-        setupMusicMatchTrackSelect($("#mmd_playlist_list"), $("#mmd_track_list"));
-    else
-        $("#mmd_track_div").hide();
+    setupMusicMatchTrackSelect($("#mmd_playlist_list"), $("#mmd_track_list"));
 
     $("#mmd_mappings").data("selectionMap", jQuery.extend(true, [], selectionMap));
 

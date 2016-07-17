@@ -27,6 +27,7 @@ MA 02111-1307, USA.
 #include "ColorStrobe.h"
 #include "BPMRating.h"
 #include "MusicPlayer.h"
+#include "EventBus.h"
 
 #define DMX_MAX_UNIVERSES          4
 #define DMX_PACKET_SIZE            512
@@ -71,8 +72,10 @@ R maxKeyValue( T& map ) {
 }
 
 class Venue;
+class EventBus;
+class MusicPlayer;
 
-class DMXStudio
+class DMXStudio : public EventBusListener, IPlayerEventCallback
 {
     FILE*               m_hLog;
     bool                m_debug;
@@ -86,6 +89,7 @@ class DMXStudio
     bool                m_enable_http;
     MusicPlayer*        m_music_player;
     bool                m_dmx_required;
+    EventBus            m_event_bus;                            // Studio events
 
 public:
     DMXStudio();
@@ -166,6 +170,8 @@ public:
     static void log( StudioException& ex );
     static void log( const char *fmt, ... );
     static void log_status( const char *fmt, ... );
+    static bool fireEvent( EventSource source, DWORD uid, EventAction action, LPCSTR text=NULL, DWORD val1=0L, DWORD val2=0L, DWORD val3=0L, DWORD val4=0L );
+    static EventBus* getEventBus();
 
     void writeVenueToString( CString& output_string );
 
@@ -174,9 +180,12 @@ public:
     bool loadVenueFromString( LPCSTR venue_xml );
     bool newVenue( );
 
+    bool handleEvent( const Event& event );
+    HRESULT STDMETHODCALLTYPE notify( TrackEventData* pNotify );
+
 private:
-    Venue* readVenueFromFile( const char *input_file );
-    void writeVenueToFile( const char *output_file );
+    Venue* readVenueFromFile( LPCSTR input_file );
+    void writeVenueToFile( LPCSTR output_file );
     Venue* readVenueFromString( LPCSTR venue_xml );
 
     LPCSTR getDefaultVenueFilename( void );

@@ -29,7 +29,6 @@ ChaseTask::ChaseTask( Venue* venue ) :
     Threadable( "ChaseTask" ),
     m_chase(NULL),
     m_venue( venue ),
-    m_fading( false ),
     m_chase_state(CHASE_IDLE)
 {
 }
@@ -65,6 +64,8 @@ bool ChaseTask::startChase( Chase* next_chase ) {
     m_chase = next_chase;
     m_chase_state = CHASE_INIT;
 
+    DMXStudio::fireEvent( ES_CHASE, m_chase->getUID(), EA_START );
+
     DMXStudio::log_status( "Chase %d running", m_chase->getChaseNumber() );
 
     return true;
@@ -76,6 +77,8 @@ bool ChaseTask::stopChase() {
     CSingleLock lock( &m_chase_mutex, TRUE );
 
     if ( m_chase ) {
+        DMXStudio::fireEvent( ES_CHASE, m_chase->getUID(), EA_STOP );
+
         DMXStudio::log_status( "Chase %d stopped", m_chase->getChaseNumber() );
 
         m_chase = NULL;
@@ -152,21 +155,15 @@ UINT ChaseTask::run(void) {
                     }
 
                     // Setup and fall through
-                    m_fading = true;
-                    computeChannelFade( m_fade_ms );
+                    fadeToNextScene( m_fade_ms );
+
+                    m_next_state_ms = GetTickCount() + m_fade_ms;
                     m_chase_state = CHASE_FADE;
                 }
 
                 case CHASE_FADE: {
-                    DWORD current_time = GetTickCount();
-
-                    advanceChannelFade( current_time );
-
-                    if ( current_time >= m_next_state_ms ) {
-                        m_fading = false;
+                    if ( GetTickCount() >= m_next_state_ms )
                         m_chase_state = CHASE_LOAD;
-                    }
-
                     break;
                 }
             }
@@ -180,7 +177,8 @@ UINT ChaseTask::run(void) {
                 lock.Unlock();
 
             DMXStudio::log( ex );
-            return -1;
+
+            m_chase_state = CHASE_IDLE;
         }
     }
 
@@ -196,15 +194,8 @@ void ChaseTask::prepareForNext() {
     if ( step_next->getMethod() == SLM_MINUS )
         return;
 
-    ChaseStep* step_current = m_chase->getStep( m_step_number );
-
-    Scene* currentScene = m_venue->getScene( step_current->getSceneUID() );
     Scene* futureScene = m_venue->getScene( step_next->getSceneUID() );
-
-    for ( SceneActor* future_actor : futureScene->getActors() ) {
-        if ( currentScene->getActor( future_actor->getActorUID() ) == NULL )
-             m_venue->stageActor( future_actor );
-    }
+    m_venue->stageActors( futureScene->getActors() );
 }
 
 // ----------------------------------------------------------------------------
@@ -217,64 +208,23 @@ ChaseStep* ChaseTask::advanceScene()
     if ( ++m_next_step >= m_chase->getNumSteps() )
         m_next_step = 0;
 
-    m_venue->stageScene( step->getSceneUID(), step->getMethod() );
+    m_venue->playScene( step->getSceneUID(), step->getMethod() );
 
     return step;
 }
 
 // ----------------------------------------------------------------------------
 //
-void ChaseTask::advanceChannelFade( DWORD current_time ) {
-    for ( channel_t channel=0; channel < MULTI_UNIV_PACKET_SIZE; channel++ ) {
-        if ( m_channel_delta_ms[ channel ] != 0 ) {
-            while ( current_time > m_channel_next_ms[ channel ] ) {
-                if ( m_channel_delta_ms[ channel ] < 0 ) {
-                    if ( m_dmx_fade[ channel ] > 0 )
-                        m_dmx_fade[ channel ] -= 1;
-                    m_channel_next_ms[ channel ] += -m_channel_delta_ms[ channel ];
-                }
-                else {
-                    if ( m_dmx_fade[ channel ] < 255 )
-                        m_dmx_fade[ channel ] += 1;
-                    m_channel_next_ms[ channel ] += m_channel_delta_ms[ channel ];
-                                        
-                }
-            }
-        }
-    }
-
-    m_venue->writePacket( m_dmx_fade );
-}
-
-// ----------------------------------------------------------------------------
-//
-void ChaseTask::computeChannelFade( ULONG fade_time )
+void ChaseTask::fadeToNextScene( ULONG fade_time )
 {
-    // Stop any animations, fade starts at current scene state
-    m_venue->clearAnimations();
+    ChaseStep* next_step = m_chase->getStep( m_next_step );
 
-    // Get the target channel values
-    Scene* next_scene = m_venue->getScene( m_chase->getStep( m_next_step )->getSceneUID() );
-    BYTE dmx_fade_targets[MULTI_UNIV_PACKET_SIZE];
-    memset( dmx_fade_targets, 0, MULTI_UNIV_PACKET_SIZE );
-    m_venue->setHomePositions( dmx_fade_targets );
+    if ( fade_time == 0L || next_step->getMethod() == SLM_MINUS )
+        return;
 
-    m_venue->loadSceneChannels( dmx_fade_targets, next_scene->getActors() );
-                
-    // Get the current channel values
-    m_venue->readPacket( m_dmx_fade );
+    Scene* next_scene = m_venue->getScene( next_step->getSceneUID() );
+    
+    STUDIO_ASSERT( next_scene != NULL, "Chase next step scene was not found" );
 
-    memset( m_channel_delta_ms, 0, sizeof(m_channel_delta_ms) );
-
-    DWORD current_time = GetTickCount();
-
-    for ( channel_t channel=0; channel < MULTI_UNIV_PACKET_SIZE; channel++ ) {
-        int delta = dmx_fade_targets[channel] - m_dmx_fade[channel];
-        if ( delta != 0 ) {
-            m_channel_delta_ms[ channel ] = ((long)fade_time)/delta;
-            m_channel_next_ms[ channel ] = current_time + abs(m_channel_delta_ms[ channel ]);
-        }
-    }
-
-    m_next_state_ms = current_time + fade_time;
+    m_venue->fadeToNextScene( fade_time, next_scene->getActors() );
 }

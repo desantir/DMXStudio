@@ -126,4 +126,5 @@ public:
     static RGBWA LIME;
 
     CString getColorName( );
+    CString asString( );
 };

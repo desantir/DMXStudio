@@ -147,7 +147,7 @@ function updateChases() {
             $.map(json, function (chase, index) {
                 chases.push(new Chase(chase));
             });
-            createChaseTiles();
+            createChaseTiles( true );
         },
         error: onAjaxError
     });
@@ -155,8 +155,18 @@ function updateChases() {
 
 // ----------------------------------------------------------------------------
 //
-function createChaseTiles() {
-    chase_tile_panel.empty();
+function createChaseTiles( no_wait ) {
+    if ( no_wait )
+        _createChaseTiles();
+    else
+        delayUpdate( "chaseTiles", 1,  function() {
+            chaseTileUpdateTimer = null;
+            _createChaseTiles()
+        } );
+}
+
+function _createChaseTiles() {
+   chase_tile_panel.empty();
     active_chase_id = 0;
 
     $.each( chases, function ( index, chase ) {
@@ -168,6 +178,76 @@ function createChaseTiles() {
     });
 
     setEditMode(edit_mode);         // Refresh editing icons on new tiles
+}
+
+// ----------------------------------------------------------------------------
+// Called on chase added event 
+function newChaseEvent( uid ) {
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/query/chase/" + uid,
+        cache: false,
+        async: false,
+        success: function (data) {
+            var chase = new Chase( jQuery.parseJSON(data)[0] );
+
+            for (var i = 0; i < chases.length; i++) {
+                if (chases[i].getId() == chase.getId() )
+                    return;
+                    
+                if ( chases[i].getNumber() > chase.getNumber() ) {
+                    chases.insert( i, chase );
+                    createChaseTiles( false );
+                    break;
+                }
+            }
+        },
+        error: onAjaxError
+    });
+}
+
+// ----------------------------------------------------------------------------
+// Called on chase changed event 
+function changeChaseEvent( uid ) {
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/query/chase/" + uid,
+        cache: false,
+        success: function (data) {
+            var chase = new Chase( jQuery.parseJSON(data)[0] );
+
+            for (var i = 0; i < chases.length; i++) {
+                if ( chases[i].getId() == chase.getId() ) {
+                    chases[i] = chase;
+
+                    createChaseTiles( false );
+                    break;
+                }
+            }
+        },
+        error: onAjaxError
+    });
+}
+
+// ----------------------------------------------------------------------------
+// Called on chase delete event
+function deleteChaseEvent( uid ) {
+    for (var i = 0; i < chases.length; i++) {
+        if (chases[i].getId() == uid) {
+            chases.splice( i, 1 );
+            createChaseTiles( false );
+            break;
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+// NOTE: This method is invoked by scene tile clicks only
+function playScene(event, scene_id) {
+    if (scene_id == active_scene_id)
+        scene_id = getDefaultSceneId();
+
+    selectScene( event, scene_id );
 }
 
 // ----------------------------------------------------------------------------
@@ -183,7 +263,8 @@ function playChase(event, chase_id) {
         url: "/dmxstudio/rest/control/chase/show/" + chase_id,
         cache: false,
         success: function () {
-            markActiveChase(chase_id);
+            // EVENT
+            // markActiveChase(chase_id);
         },
         error: onAjaxError
     });
@@ -288,7 +369,8 @@ function openNewChaseDialog(dialog_title, data) {
             contentType: 'application/json',
             cache: false,
             success: function (data)  {
-                updateChases();
+                // EVENT
+                // updateChases();
 
                 if ( action_callback != null ) {
                     var response = JSON.parse( data );
@@ -466,7 +548,10 @@ function deleteChase(event, chase_id) {
             type: "GET",
             url: "/dmxstudio/rest/delete/chase/" + item.getId(),
             cache: false,
-            success: updateChases,
+            success: function () {
+                // EVENT
+                //updateChases
+            },
             error: onAjaxError
         });
     });
@@ -535,11 +620,17 @@ function markActiveChase(new_chase_id) {
         return;
 
     if (active_chase_id != 0) {
+        getChaseById(active_chase_id).is_running = false;
         chase_tile_panel.selectTile(active_chase_id, false);
-        active_chase_id = null;
+        active_chase_id = 0;
     }
 
     if (new_chase_id != 0) {
+        var chase = getChaseById(new_chase_id);
+        if ( chase == null )
+            return;
+
+        chase.is_running = true;
         chase_tile_panel.selectTile(new_chase_id, true);
         active_chase_id = new_chase_id;
     }

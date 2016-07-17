@@ -537,31 +537,28 @@ void DMXTextUI::configVenue()
     if ( !form.play() || !form.isChanged() )
         return;
 
-    getVenue()->close();
+    LPCSTR name = name_field.getValue();
+    LPCSTR description = desc_field.getValue();
+    LPCSTR audio_capture_device = audio_capture_field.getValue();
+    float audio_boost = audio_scale_field.getFloatValue();
+    float audio_boost_floor = audio_floor_field.getFloatValue();
+    int audio_sample_size = audio_sample_size_field.getIntValue();
+    int auto_blackout = getVenue()->getAutoBlackoutMS();
 
-    getVenue()->setName( name_field.getValue() );
-    getVenue()->setDescription( desc_field.getValue() );
-    getVenue()->setAudioCaptureDevice( audio_capture_field.getValue() );
-    getVenue()->setAudioBoost( audio_scale_field.getFloatValue() );
-    getVenue()->setAudioBoostFloor( audio_floor_field.getFloatValue() );
-    getVenue()->setAudioSampleSize( audio_sample_size_field.getIntValue() );
-
-    getVenue()->clearAllUniverses();
+    std::vector<Universe> new_universes;
 
     for ( universe_t univ_num=0; univ_num < DMX_MAX_UNIVERSES; ++univ_num ) {
         if ( !strcmp( UNUSED_PORT, port_fields[univ_num].getValue() ) )
             continue;
 
-        getVenue()->addUniverse( 
-            new Universe( 
-                    univ_num+1, 
-                    (UniverseType)(driver_fields[univ_num].getListValue()-1),
-                    port_fields[univ_num].getValue(), 
-                    dmx_packet_delay_fields[univ_num].getIntValue(), 
-                    dmx_min_delay_fields[univ_num].getIntValue() ) );
+        new_universes.push_back( Universe(  univ_num+1, 
+                (UniverseType)(driver_fields[univ_num].getListValue()-1),
+                port_fields[univ_num].getValue(), 
+                dmx_packet_delay_fields[univ_num].getIntValue(), 
+                dmx_min_delay_fields[univ_num].getIntValue() ) );
     }
 
-    getVenue()->open();
+    getVenue()->configure( name, description, audio_capture_device, audio_boost, audio_boost_floor, audio_sample_size, auto_blackout, new_universes );
 }
 
 // ----------------------------------------------------------------------------
@@ -764,7 +761,7 @@ void DMXTextUI::createChase(void) {
     if ( !form.play() )
         return;
 
-    Chase chase( 0L, 
+    Chase chase( NOUID, 
                  chase_number_field.getChaseNumber(),
                  chase_delay.getLongValue(),
                  chase_fade.getLongValue(),
@@ -820,6 +817,7 @@ void DMXTextUI::updateChase(void) {
             chase->setDelayMS( m_chase_delay.getLongValue() );
             chase->setFadeMS( m_chase_fade.getLongValue() );
             chase->setRepeat( m_repeat_field.isSet() );
+            m_venue->chaseUpdated( chase->getUID() );
         }
 
     public:
@@ -1008,6 +1006,8 @@ bool DMXTextUI::editChaseSteps( Chase* chase, bool append_steps, UINT step_num_o
         else
             chase->appendStep( ChaseStep( scene_field->getSceneUID(), delay_field->getLongValue(), (SceneLoadMethod)method_field->getListValue() ) );
     }
+
+    getVenue()->sceneUpdated( chase->getUID() );
 
     return true;
 }
@@ -1232,7 +1232,7 @@ void DMXTextUI::selectScene( ) {
 // ----------------------------------------------------------------------------
 //
 void DMXTextUI::deleteScene( ) {
-    SceneSelectField scene_field( "Scene to load", getVenue() );
+    SceneSelectField scene_field( "Scene to delete", getVenue() );
 
     ConfirmForm form( &m_text_io );
     form.add( scene_field );
@@ -1335,6 +1335,7 @@ void DMXTextUI::updateScene( ) {
                 scene->setDescription( description_field.getValue() );
                 scene->setActs( acts_field.getActs() );
                 scene->setBPMRating( bpm_field.getRating() );
+                getVenue()->sceneUpdated( scene->getUID() );
             }
         }
     }
@@ -1388,7 +1389,7 @@ void DMXTextUI::createScene( ) {
     if ( !form.play() )
         return;
 
-    Scene scene( 0L, scene_number_field.getSceneNumber(),
+    Scene scene( NOUID, scene_number_field.getSceneNumber(),
                  name_field.getValue(), description_field.getValue() );
     scene.setActs( acts_field.getActs() );
     scene.setBPMRating( bpm_field.getRating() );
@@ -1424,6 +1425,7 @@ void DMXTextUI::copyScene(void) {
     new_scene.setSceneNumber( scene_number_field.getSceneNumber() );
     new_scene.setName( name_field.getValue() );
     new_scene.setDescription( description_field.getValue() );
+    new_scene.setUID( NOUID );
 
     getVenue()->addScene( new_scene );
     getVenue()->selectScene( new_scene.getUID() );

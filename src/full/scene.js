@@ -33,6 +33,7 @@ var BPMRatings = [
 
 var last_animation_type = null;                         // restores last select new animation type in scene edit
 var scene_update_listener = null;
+var sceneTileUpdateTimer = null;
 
 // ----------------------------------------------------------------------------
 // class Scene
@@ -180,10 +181,10 @@ function updateScenes() {
             $.map(json, function (scene, index) {
                 scenes.push(new Scene(scene));
             });
-            createSceneTiles();
+            createSceneTiles( true );
 
-            if (scene_update_listener)
-                scene_update_listener();
+        if (scene_update_listener)
+            scene_update_listener( 0 );
         },
         error: onAjaxError
     });
@@ -191,7 +192,17 @@ function updateScenes() {
 
 // ----------------------------------------------------------------------------
 //
-function createSceneTiles() {
+function createSceneTiles( no_wait ) {
+    if ( no_wait )
+        _createSceneTiles();
+    else
+        delayUpdate( "sceneTiles", 1, function() {
+            sceneTileUpdateTimer = null;
+            _createSceneTiles();
+        } );
+}
+
+function _createSceneTiles() {
     highlightSceneFixtures(active_scene_id, false);
     scene_tile_panel.empty();
     active_scene_id = 0;
@@ -206,6 +217,76 @@ function createSceneTiles() {
     });
 
     setEditMode(edit_mode);         // Refresh editing icons on new tiles
+}
+
+// ----------------------------------------------------------------------------
+// Called on scene added event 
+function newSceneEvent( uid ) {
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/query/scene/" + uid,
+        cache: false,
+        async: false,
+        success: function (data) {
+            var scene = new Scene( jQuery.parseJSON(data)[0] );
+
+            for (var i = 0; i < scenes.length; i++) {
+                if (scenes[i].getId() == scene.getId() )
+                    return;
+                    
+                if ( scenes[i].getNumber() > scene.getNumber() ) {
+                    scenes.insert( i, scene );
+                    createSceneTiles( false );
+                    break;
+                }
+            }
+        },
+        error: onAjaxError
+    });
+}
+
+// ----------------------------------------------------------------------------
+// Called on scene changed event 
+function changeSceneEvent( uid ) {
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/query/scene/" + uid,
+        cache: false,
+        success: function (data) {
+            var scene = new Scene( jQuery.parseJSON(data)[0] );
+
+            for (var i = 0; i < scenes.length; i++) {
+                if ( scenes[i].getId() == scene.getId() ) {
+                    scenes[i] = scene;
+
+                    // Special processing for default scene
+                    if ( scene.isDefault() )
+                        updateCapturedFixtures( scene.getActorIds() );
+
+                    createSceneTiles( false );
+
+                    if (scene_update_listener)
+                        scene_update_listener( scene.getId() );
+
+                    break;
+                }
+            }
+        },
+        error: onAjaxError
+    });
+}
+
+// ----------------------------------------------------------------------------
+// Called on scene delete event
+function deleteSceneEvent( uid ) {
+    for (var i = 0; i < scenes.length; i++) {
+        if (scenes[i].getId() == uid) {
+            scenes.splice( i, 1 );
+
+            createSceneTiles( false );
+            break;
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -227,7 +308,8 @@ function selectScene(event, scene_id) {
         url: "/dmxstudio/rest/control/scene/show/" + scene_id,
         cache: false,
         success: function () {
-            markActiveScene(scene_id);
+            // EVENTS
+            // markActiveScene(scene_id);
         },
         error: onAjaxError
     });
@@ -353,10 +435,10 @@ function openNewSceneDialog(dialog_title, action_title, copy, data) {
             contentType: 'application/json',
             cache: false,
             success: function () {
-                updateScenes();
-
-                if ( action != "update" )
-                    updateFixtures();
+                // EVENTS
+                // updateScenes();
+                // if ( action != "update" )
+                //    updateFixtures();
             },
             error: onAjaxError
         });
@@ -603,9 +685,9 @@ function deleteScene(event, scene_id) {
             url: "/dmxstudio/rest/delete/scene/" + item.getId(),
             cache: false,
             success: function () {
-                // TODO - remove when events are implemented
-                updateScenes();
-                updateChases();
+                // EVENTS
+                // updateScenes();
+                // updateChases();
             },
             error: onAjaxError
         });
@@ -674,8 +756,9 @@ function describeScene(event, scene_id) {
                     describe_scene_content(scene_id);
             }
 
-            scene_update_listener = function () {
-                describe_scene_content(scene_id);
+            scene_update_listener = function ( uid ) {
+                if ( uid == 0 || uid == scene_id )
+                    describe_scene_content(scene_id);
             }
         },
 
@@ -734,7 +817,7 @@ function describe_scene_content( scene_id )
     $("#describe_scene_bpm_rating").html(escapeForHTML(BPMRatings[scene.getBPMRating()].name));
 
     if ( !scene.isDefault() )
-        $("#describe_scene_number").unbind().on('click', function (event) { sceneDescribeSelectAll(event, scene_id, true); });
+        $("#describe_scene_number").unbind( "click" ).on('click', function (event) { sceneDescribeSelectAll(event, scene_id, true); });
 
     function makeFixtureTitleLine(fixture) {
         var html = "<div style='clear:both; float: left; font-size: 10pt;'>";
@@ -865,12 +948,18 @@ function markActiveScene(new_scene_id) {
         return;
 
     if (active_scene_id != 0) {
+        getSceneById(active_scene_id).is_running = false;
         scene_tile_panel.selectTile(active_scene_id, false);
         highlightSceneFixtures(active_scene_id, false);
         active_scene_id = 0;
     }
 
     if (new_scene_id != 0) {
+        var scene = getSceneById(new_scene_id);
+        if ( scene == null )
+            return;
+
+        scene.is_running = true;
         scene_tile_panel.selectTile(new_scene_id, true);
         highlightSceneFixtures(new_scene_id, true);
         active_scene_id = new_scene_id;

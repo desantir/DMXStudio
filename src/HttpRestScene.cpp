@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-2014 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -64,209 +64,46 @@ static PARSER_MAP init_animation_parsers() {
 
 static PARSER_MAP animation_parsers = init_animation_parsers();
 
+void sceneToJson( JsonBuilder& json, Scene* scene );
+
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
+bool HttpRestServices::query_scene( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
+    UID uid;
+    if ( sscanf_s( data, "%lu", &uid ) != 1 )
+        return false;
+
+    Scene* scene = studio.getVenue()->getScene( uid );
+    if ( scene == NULL )
+        return false;
+
+    JsonBuilder json( response );
+    json.startArray();
+    sceneToJson( json, scene );
+    json.endArray();
+
+    return true;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool HttpRestServices::query_scenes( DMXHttpSession* session, CString& response, LPCSTR data )
+{
+    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
+        return false;
+
+    ScenePtrArray scenes = studio.getVenue()->getScenes();
+    std::sort( scenes.begin(), scenes.end(), CompareObjectNumber );
+
     JsonBuilder json( response );
     json.startArray();
 
-    ScenePtrArray scenes = studio.getVenue()->getScenes();
-
-    std::sort( scenes.begin(), scenes.end(), CompareObjectNumber );
-
-    Scene* default_scene = studio.getVenue()->getDefaultScene();
-
-    UID active_uid = studio.getVenue()->getCurrentSceneUID();
-
     for ( ScenePtrArray::iterator it=scenes.begin(); it != scenes.end(); it++ ) {
-        Scene* scene = (*it);
-
-        json.startObject();
-        json.add( "id", scene->getUID() );
-        json.add( "number", scene->getSceneNumber() );
-        json.add( "name", scene->getName() );
-        json.add( "bpm_rating", scene->getBPMRating() );
-        json.add( "description", scene->getDescription() );
-        json.add( "created", scene->getCreated() );
-        json.add( "is_default", (scene == default_scene) );
-        json.add( "is_running", (active_uid == scene->getUID()) );
-        json.addArray<Acts>( "acts", scene->getActs() );
-
-        json.startArray( "actors" );
-
-        ActorPtrArray actors = scene->getActors();
-
-        for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
-            Fixture* fixture = NULL;
-
-            json.startObject();
-            json.add( "id", (*it)->getActorUID() );
-            json.add( "is_group", (*it)->isGroup() );
-
-            if ( (*it)->isGroup() ) {
-                fixture = studio.getVenue()->getGroupRepresentative( (*it)->getActorUID() );
-            }
-            else {
-                fixture = studio.getVenue()->getFixture( (*it)->getActorUID() );
-                json.add( "address", (int)fixture->getAddress() );
-            }
-
-            json.startArray( "channels" );
-            if ( fixture != NULL ) {
-                for ( channel_t channel=0; channel < fixture->getNumChannels(); channel++ ) {
-                    Channel* ch = fixture->getChannel( channel );
-                    BYTE value = (*it)->getChannelValue( fixture->mapChannel( channel ) );
-                    ChannelValueRange* range = ch->getRange( value );
-                    LPCSTR range_name = range ? range->getName() : "";
-
-                    json.startObject();
-                    json.add( "channel", (int)channel );
-                    json.add( "name", ch->getName() );
-                    json.add( "value", value );
-                    json.add( "range_name", range_name );
-                    json.endObject();
-                }
-            }
-            json.endArray( "channels" );
-
-            json.endObject();
-        }
-
-        json.endArray( "actors" );
-
-        json.startArray( "animations" );
-
-        for ( size_t a=0; a < scene->getNumAnimations(); a++ ) {
-            AbstractAnimation* animation = scene->getAnimation( a );
-
-            json.startObject();
-            json.add( "class_name", animation->getClassName() );
-            json.add( "name", animation->getName() );
-            json.add( "number", animation->getNumber() );
-            json.addArray<UIDArray>( "actors", animation->getActors() );
-
-            // Add common signal data
-            AnimationSignal& signal = animation->signal();
-            json.startObject( "signal" );
-            json.add( "sample_rate_ms", signal.getSampleRateMS() );
-            json.add( "input_type", signal.getInputType() );
-            json.add( "input_low", signal.getInputLow() );
-            json.add( "input_high", signal.getInputHigh() );
-            json.add( "sample_decay_ms", signal.getSampleDecayMS() );
-            json.add( "scale_factor", signal.getScaleFactor() );
-            json.add( "max_threshold", signal.getMaxThreshold() );
-            json.add( "apply_to", signal.getApplyTo() );
-            json.endObject();
-
-            // Add animation specific data
-            CString json_anim_name = JsonObject::encodeJsonString( animation->getClassName() );
-            json.startObject( json_anim_name );
-
-            if ( !strcmp( animation->getClassName(), SceneStrobeAnimator::className ) ) {
-                SceneStrobeAnimator* ssa = (SceneStrobeAnimator*)animation;
-                json.add( "strobe_neg_color", ssa->getStrobeNegColor() );
-                json.add( "strobe_pos_ms", ssa->getStrobePosMS() );
-                json.add( "strobe_neg_ms", ssa->getStrobeNegMS() );
-                json.add( "strobe_flashes", ssa->getStrobeFlashes() );
-            }
-            else if ( !strcmp( animation->getClassName(), ScenePatternDimmer::className ) ) {
-                ScenePatternDimmer* spd = (ScenePatternDimmer*)animation;
-                json.add( "dimmer_pattern", spd->getDimmerPattern() );
-            }
-            else if ( !strcmp( animation->getClassName(), SceneSoundLevel::className ) ) {
-                SceneSoundLevel* ssl = (SceneSoundLevel*)animation;
-                json.add( "fade_what", ssl->getFadeWhat() );
-            }
-            else if ( !strcmp( animation->getClassName(), SceneColorFader::className ) ) {
-                SceneColorFader* scs = (SceneColorFader*)animation;
-                json.add( "fader_effect", scs->getFaderEffect() );
-                json.add( "strobe_neg_color", scs->getStrobeNegColor() );
-                json.add( "strobe_pos_ms", scs->getStrobePosMS() );
-                json.add( "strobe_neg_ms", scs->getStrobeNegMS() );
-                json.add( "strobe_flashes", scs->getStrobeFlashes() );
-                json.addColorArray<RGBWAArray>( "color_progression", scs->getCustomColors() );
-            }
-            else if ( !strcmp( animation->getClassName(), ScenePixelAnimator::className ) ) {
-                ScenePixelAnimator* spa = (ScenePixelAnimator*)animation;
-                json.add( "pixel_effect", spa->getEffect() );
-                json.add( "generations", spa->getGenerations() );
-                json.add( "pixels", spa->getPixels() );
-                json.add( "increment", spa->getIncrement() );
-                json.add( "fade", spa->isFadeColors() );
-                json.add( "combine", spa->getCombineFixtures() );
-                json.add( "pixel_off_color", spa->getEmptyColor() );
-                json.addColorArray<RGBWAArray>( "color_progression", spa->getCustomColors() );
-            }
-            else if ( !strcmp( animation->getClassName(), SceneChannelFilter::className ) ) {
-                SceneChannelFilter* scf = (SceneChannelFilter*)animation;
-                json.add( "filter", scf->getFilter() );
-                json.add( "step", scf->getStep() );
-                json.add( "amplitude", scf->getAmplitude() );
-                json.add( "offset", scf->getOffset() );
-                json.addArray<ChannelList>( "channels", scf->getChannels() );
-            }
-            else if ( !strcmp( animation->getClassName(), SceneMovementAnimator::className ) ) {
-                SceneMovementAnimator* sma = (SceneMovementAnimator*)animation;
-                MovementAnimation& movement = sma->movement();
-
-                json.add( "movement_type", movement.m_movement_type );
-                json.add( "tilt_start_angle", movement.m_tilt_start );
-                json.add( "tilt_end_angle", movement.m_tilt_end );
-                json.add( "pan_start_angle", movement.m_pan_start );
-                json.add( "pan_end_angle", movement.m_pan_end );
-                json.add( "pan_increment", movement.m_pan_increment );
-                json.add( "speed", movement.m_speed );
-                json.add( "home_wait_periods", movement.m_home_wait_periods );
-                json.add( "dest_wait_periods", movement.m_dest_wait_periods );
-                json.add( "group_size", movement.m_group_size );
-                json.add( "positions", movement.m_positions );
-                json.add( "alternate_groups", movement.m_alternate_groups );
-                json.add( "blackout_return", movement.m_backout_home_return );
-                json.add( "run_once", movement.m_run_once );
-                json.add( "home_x", movement.m_home_x );
-                json.add( "home_y", movement.m_home_y );
-                json.add( "height", movement.m_height );
-                json.add( "fixture_spacing", movement.m_fixture_spacing );
-                json.add( "radius", movement.m_radius );
-                json.add( "head_number", movement.m_head_number );
-
-                json.startArray( "coordinates" );
-                for ( size_t index=0; index <  movement.m_coordinates.size(); index++ ) {
-                    json.startObject();
-                    json.add( "pan", movement.m_coordinates[index].m_pan );
-                    json.add( "tilt", movement.m_coordinates[index].m_tilt );
-                    json.endObject();
-                }
-                json.endArray( "coordinates" );
-            }
-            else if ( !strcmp( animation->getClassName(), SceneChannelAnimator::className ) ) {
-                SceneChannelAnimator* sca = (SceneChannelAnimator*)animation;
-                ChannelAnimationArray& chan_anims = sca->channelAnimations();
-
-                json.startArray( "channel_animations" );
-
-                for ( ChannelAnimationArray::iterator it=chan_anims.begin(); it != chan_anims.end(); ++it ) {
-                    json.startObject();
-                    json.add( "actor_uid", (*it).getActorUID() );
-                    json.add( "channel", (*it).getChannel() );
-                    json.add( "style", (*it).getAnimationStyle() );
-                    json.addArray<ChannelValueArray>( "values", (*it).getChannelValues() );
-                    json.endObject();
-                }
-
-                json.endArray( "channel_animations" );
-            }
-
-            json.endObject( json_anim_name );
-            json.endObject();
-        }
-
-        json.endArray( "animations" );
-        json.endObject();
+        sceneToJson( json, (*it) );
     }
 
     json.endArray();
@@ -276,7 +113,7 @@ bool HttpRestServices::query_scenes( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::delete_scene( CString& response, LPCSTR data ) {
+bool HttpRestServices::delete_scene( DMXHttpSession* session, CString& response, LPCSTR data ) {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
@@ -290,7 +127,7 @@ bool HttpRestServices::delete_scene( CString& response, LPCSTR data ) {
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_scene_copy_fixtures( CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
+bool HttpRestServices::edit_scene_copy_fixtures( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
 
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -321,7 +158,7 @@ bool HttpRestServices::edit_scene_copy_fixtures( CString& response, LPCSTR data,
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_scene( CString& response, LPCSTR data, EditMode mode ) {
+bool HttpRestServices::edit_scene( DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode ) {
    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
 
@@ -392,6 +229,7 @@ bool HttpRestServices::edit_scene( CString& response, LPCSTR data, EditMode mode
 
         case COPY: {
             Scene new_scene( *scene );
+            new_scene.setUID( NOUID );
             scene_id = studio.getVenue()->addScene( new_scene );
             scene = studio.getVenue()->getScene( scene_id );
         }
@@ -571,4 +409,192 @@ AbstractAnimation* ScenePixelAnimatorParser( SimpleJsonParser parser, AnimationS
 
     return new ScenePixelAnimator( NOUID, signal, actors, pixel_effect, 
                     color_progression, empty_color, generations, pixels, fade, increment, combine );
+}
+
+// ----------------------------------------------------------------------------
+//
+void sceneToJson( JsonBuilder& json, Scene* scene )
+{
+    json.startObject();
+    json.add( "id", scene->getUID() );
+    json.add( "number", scene->getSceneNumber() );
+    json.add( "name", scene->getName() );
+    json.add( "bpm_rating", scene->getBPMRating() );
+    json.add( "description", scene->getDescription() );
+    json.add( "created", scene->getCreated() );
+    json.add( "is_default", (scene == studio.getVenue()->getDefaultScene()) );
+    json.add( "is_running", (studio.getVenue()->getCurrentSceneUID() == scene->getUID()) );
+    json.addArray<Acts>( "acts", scene->getActs() );
+
+    json.startArray( "actors" );
+
+    ActorPtrArray actors = scene->getActors();
+
+    for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
+        Fixture* fixture = NULL;
+
+        json.startObject();
+        json.add( "id", (*it)->getActorUID() );
+        json.add( "is_group", (*it)->isGroup() );
+
+        if ( (*it)->isGroup() ) {
+            fixture = studio.getVenue()->getGroupRepresentative( (*it)->getActorUID() );
+        }
+        else {
+            fixture = studio.getVenue()->getFixture( (*it)->getActorUID() );
+            json.add( "address", (int)fixture->getAddress() );
+        }
+
+        json.startArray( "channels" );
+        if ( fixture != NULL ) {
+            for ( channel_t channel=0; channel < fixture->getNumChannels(); channel++ ) {
+                Channel* ch = fixture->getChannel( channel );
+                BYTE value = (*it)->getChannelValue( fixture->mapChannel( channel ) );
+                ChannelValueRange* range = ch->getRange( value );
+                LPCSTR range_name = range ? range->getName() : "";
+
+                json.startObject();
+                json.add( "channel", (int)channel );
+                json.add( "name", ch->getName() );
+                json.add( "value", value );
+                json.add( "range_name", range_name );
+                json.endObject();
+            }
+        }
+        json.endArray( "channels" );
+
+        json.endObject();
+    }
+
+    json.endArray( "actors" );
+
+    json.startArray( "animations" );
+
+    for ( size_t a=0; a < scene->getNumAnimations(); a++ ) {
+        AbstractAnimation* animation = scene->getAnimation( a );
+
+        json.startObject();
+        json.add( "class_name", animation->getClassName() );
+        json.add( "name", animation->getName() );
+        json.add( "number", animation->getNumber() );
+        json.addArray<UIDArray>( "actors", animation->getActors() );
+
+        // Add common signal data
+        AnimationSignal& signal = animation->signal();
+        json.startObject( "signal" );
+        json.add( "sample_rate_ms", signal.getSampleRateMS() );
+        json.add( "input_type", signal.getInputType() );
+        json.add( "input_low", signal.getInputLow() );
+        json.add( "input_high", signal.getInputHigh() );
+        json.add( "sample_decay_ms", signal.getSampleDecayMS() );
+        json.add( "scale_factor", signal.getScaleFactor() );
+        json.add( "max_threshold", signal.getMaxThreshold() );
+        json.add( "apply_to", signal.getApplyTo() );
+        json.endObject();
+
+        // Add animation specific data
+        CString json_anim_name = JsonObject::encodeJsonString( animation->getClassName() );
+        json.startObject( json_anim_name );
+
+        if ( !strcmp( animation->getClassName(), SceneStrobeAnimator::className ) ) {
+            SceneStrobeAnimator* ssa = (SceneStrobeAnimator*)animation;
+            json.add( "strobe_neg_color", ssa->getStrobeNegColor() );
+            json.add( "strobe_pos_ms", ssa->getStrobePosMS() );
+            json.add( "strobe_neg_ms", ssa->getStrobeNegMS() );
+            json.add( "strobe_flashes", ssa->getStrobeFlashes() );
+        }
+        else if ( !strcmp( animation->getClassName(), ScenePatternDimmer::className ) ) {
+            ScenePatternDimmer* spd = (ScenePatternDimmer*)animation;
+            json.add( "dimmer_pattern", spd->getDimmerPattern() );
+        }
+        else if ( !strcmp( animation->getClassName(), SceneSoundLevel::className ) ) {
+            SceneSoundLevel* ssl = (SceneSoundLevel*)animation;
+            json.add( "fade_what", ssl->getFadeWhat() );
+        }
+        else if ( !strcmp( animation->getClassName(), SceneColorFader::className ) ) {
+            SceneColorFader* scs = (SceneColorFader*)animation;
+            json.add( "fader_effect", scs->getFaderEffect() );
+            json.add( "strobe_neg_color", scs->getStrobeNegColor() );
+            json.add( "strobe_pos_ms", scs->getStrobePosMS() );
+            json.add( "strobe_neg_ms", scs->getStrobeNegMS() );
+            json.add( "strobe_flashes", scs->getStrobeFlashes() );
+            json.addColorArray<RGBWAArray>( "color_progression", scs->getCustomColors() );
+        }
+        else if ( !strcmp( animation->getClassName(), ScenePixelAnimator::className ) ) {
+            ScenePixelAnimator* spa = (ScenePixelAnimator*)animation;
+            json.add( "pixel_effect", spa->getEffect() );
+            json.add( "generations", spa->getGenerations() );
+            json.add( "pixels", spa->getPixels() );
+            json.add( "increment", spa->getIncrement() );
+            json.add( "fade", spa->isFadeColors() );
+            json.add( "combine", spa->getCombineFixtures() );
+            json.add( "pixel_off_color", spa->getEmptyColor() );
+            json.addColorArray<RGBWAArray>( "color_progression", spa->getCustomColors() );
+        }
+        else if ( !strcmp( animation->getClassName(), SceneChannelFilter::className ) ) {
+            SceneChannelFilter* scf = (SceneChannelFilter*)animation;
+            json.add( "filter", scf->getFilter() );
+            json.add( "step", scf->getStep() );
+            json.add( "amplitude", scf->getAmplitude() );
+            json.add( "offset", scf->getOffset() );
+            json.addArray<ChannelList>( "channels", scf->getChannels() );
+        }
+        else if ( !strcmp( animation->getClassName(), SceneMovementAnimator::className ) ) {
+            SceneMovementAnimator* sma = (SceneMovementAnimator*)animation;
+            MovementAnimation& movement = sma->movement();
+
+            json.add( "movement_type", movement.m_movement_type );
+            json.add( "tilt_start_angle", movement.m_tilt_start );
+            json.add( "tilt_end_angle", movement.m_tilt_end );
+            json.add( "pan_start_angle", movement.m_pan_start );
+            json.add( "pan_end_angle", movement.m_pan_end );
+            json.add( "pan_increment", movement.m_pan_increment );
+            json.add( "speed", movement.m_speed );
+            json.add( "home_wait_periods", movement.m_home_wait_periods );
+            json.add( "dest_wait_periods", movement.m_dest_wait_periods );
+            json.add( "group_size", movement.m_group_size );
+            json.add( "positions", movement.m_positions );
+            json.add( "alternate_groups", movement.m_alternate_groups );
+            json.add( "blackout_return", movement.m_backout_home_return );
+            json.add( "run_once", movement.m_run_once );
+            json.add( "home_x", movement.m_home_x );
+            json.add( "home_y", movement.m_home_y );
+            json.add( "height", movement.m_height );
+            json.add( "fixture_spacing", movement.m_fixture_spacing );
+            json.add( "radius", movement.m_radius );
+            json.add( "head_number", movement.m_head_number );
+
+            json.startArray( "coordinates" );
+            for ( size_t index=0; index <  movement.m_coordinates.size(); index++ ) {
+                json.startObject();
+                json.add( "pan", movement.m_coordinates[index].m_pan );
+                json.add( "tilt", movement.m_coordinates[index].m_tilt );
+                json.endObject();
+            }
+            json.endArray( "coordinates" );
+        }
+        else if ( !strcmp( animation->getClassName(), SceneChannelAnimator::className ) ) {
+            SceneChannelAnimator* sca = (SceneChannelAnimator*)animation;
+            ChannelAnimationArray& chan_anims = sca->channelAnimations();
+
+            json.startArray( "channel_animations" );
+
+            for ( ChannelAnimationArray::iterator it=chan_anims.begin(); it != chan_anims.end(); ++it ) {
+                json.startObject();
+                json.add( "actor_uid", (*it).getActorUID() );
+                json.add( "channel", (*it).getChannel() );
+                json.add( "style", (*it).getAnimationStyle() );
+                json.addArray<ChannelValueArray>( "values", (*it).getChannelValues() );
+                json.endObject();
+            }
+
+            json.endArray( "channel_animations" );
+        }
+
+        json.endObject( json_anim_name );
+        json.endObject();
+    }
+
+    json.endArray( "animations" );
+    json.endObject();
 }

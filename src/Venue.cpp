@@ -131,7 +131,7 @@ bool Venue::open(void) {
             }
         }
 
-        DMXStudio::log_status( "Venue started [%s]", m_name );
+        DMXStudio::fireEvent( ES_VENUE, 0L, EA_START, m_name );
 
         m_animation_task = new AnimationTask( this );
         m_animation_task->start();
@@ -140,7 +140,7 @@ bool Venue::open(void) {
         m_chase_task->start();
 
         try {
-            stageScene( m_current_scene, SLM_LOAD );
+            playScene( m_current_scene, SLM_LOAD );
         }
         catch ( std::exception& ex ) {
             studio.log( ex );
@@ -197,7 +197,7 @@ bool Venue::close(void) {
         m_audio = NULL;
     }
 
-    DMXStudio::log_status( "Venue stopped [%s]", m_name );
+    DMXStudio::fireEvent( ES_VENUE, 0L, EA_STOP, m_name );
 
     return true;
 }
@@ -213,6 +213,8 @@ void Venue::setWhiteout( WhiteoutMode whiteout ) {
         m_whiteout_strobe.start( GetCurrentTime(), m_whiteout_strobe_ms, m_whiteout_strobe_ms/2, 1 );
 
     m_whiteout = whiteout;
+
+    fireEvent( ES_WHITEOUT, 0L, EA_CHANGED, NULL, whiteout );
 }
 
 // ----------------------------------------------------------------------------
@@ -267,13 +269,23 @@ bool Venue::deleteFixture( UID pfuid ) {
     selectScene( getDefaultScene()->getUID() );
 
     // Remove fixture from all dependant objects
-    for ( SceneMap::iterator it=m_scenes.begin(); it != m_scenes.end(); ++it )
-        it->second.removeActor( pfuid );
+    for ( SceneMap::iterator it=m_scenes.begin(); it != m_scenes.end(); ++it ) {
+        bool removed = it->second.removeActor( pfuid );
 
-    for ( FixtureGroupMap::iterator it=m_fixtureGroups.begin(); it != m_fixtureGroups.end(); ++it )
-        it->second.removeFixture( pfuid );
+        if ( removed )
+            fireEvent( ES_SCENE, it->first, EA_CHANGED );
+    }
+
+    for ( FixtureGroupMap::iterator it=m_fixtureGroups.begin(); it != m_fixtureGroups.end(); ++it ) {
+        bool removed =  it->second.removeFixture( pfuid );
+
+        if ( removed )
+            fireEvent( ES_FIXTURE_GROUP, it->first, EA_CHANGED );
+    }
 
     m_fixtures.erase( it_del );
+
+    fireEvent( ES_FIXTURE, pfuid, EA_DELETED );
 
     // Restart chase if one was running
     if ( chase_id )
@@ -291,6 +303,8 @@ UID Venue::addFixture( Fixture& pfixture ) {
         pfixture.setUID( allocUID() );
 
     m_fixtures[ pfixture.getUID() ] = pfixture;
+
+    fireEvent( ES_FIXTURE, pfixture.getUID(), EA_NEW );
 
     return pfixture.getUID();
 }
@@ -364,6 +378,8 @@ UID Venue::addFixtureGroup( FixtureGroup& group ) {
 
     m_fixtureGroups[ group.getUID() ]= group;
 
+    fireEvent( ES_FIXTURE_GROUP, group.getUID(), EA_NEW );
+
     return group.getUID();
 }
 
@@ -377,10 +393,17 @@ bool  Venue::deleteFixtureGroup( UID group_id ) {
         return false;
 
     // Remove fixture group from all dependant objects
-    for ( SceneMap::iterator it=m_scenes.begin(); it != m_scenes.end(); ++it )
-        it->second.removeActor( group_id );
+    for ( SceneMap::iterator it=m_scenes.begin(); it != m_scenes.end(); ++it ) {
+        bool removed = it->second.removeActor( group_id );
+
+        if ( removed )
+            fireEvent( ES_SCENE, it->first, EA_CHANGED );
+    }
 
     m_fixtureGroups.erase( it );
+
+    fireEvent( ES_FIXTURE_GROUP, group_id, EA_DELETED );
+
     return true;
 }
 
@@ -394,11 +417,17 @@ void Venue::deleteAllFixtureGroups()
     for ( FixtureGroupMap::iterator fgit = m_fixtureGroups.begin(); fgit != m_fixtureGroups.end(); ++fgit ) {
         UID group_id = (*fgit).first;
 
-        for ( SceneMap::iterator it=m_scenes.begin(); it != m_scenes.end(); ++it )
-            it->second.removeActor( group_id );
+        for ( SceneMap::iterator it=m_scenes.begin(); it != m_scenes.end(); ++it ) {
+            bool removed = it->second.removeActor( group_id );
+
+            if ( removed )
+                fireEvent( ES_SCENE, it->first, EA_CHANGED );
+        }
     }
 
     m_fixtureGroups.clear();
+
+    fireEvent( ES_FIXTURE_GROUP, 0, EA_DELETED );
 }
 
 // ----------------------------------------------------------------------------
@@ -442,6 +471,8 @@ UID Venue::addChase( Chase& chase ) {
         chase.setUID( allocUID() );
 
     m_chases[ chase.getUID() ] = chase;
+
+    fireEvent( ES_CHASE, chase.getUID(), EA_NEW );
 
     return chase.getUID();
 }
@@ -493,26 +524,30 @@ ChaseNumber Venue::nextAvailableChaseNumber( void ) {
 
 // ----------------------------------------------------------------------------
 //
-bool Venue::deleteChase( UID chase_id ) {
+bool Venue::deleteChase( UID chase_uid ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    ChaseMap::iterator it = m_chases.find( chase_id );
+    ChaseMap::iterator it = m_chases.find( chase_uid );
     if ( it == m_chases.end() )
         return false;
 
-    if ( getRunningChase() == chase_id )
+    if ( getRunningChase() == chase_uid )
         stopChase();
 
     // Remove all music mappings with this chase
-    deleteMusicMappings( MST_CHASE, chase_id );
+    deleteMusicMappings( MST_CHASE, chase_uid );
 
     m_chases.erase( it );
+
+    fireEvent( ES_CHASE, chase_uid, EA_DELETED );
+
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
 void Venue::chaseUpdated( UID chase_uid ) {
+    fireEvent( ES_CHASE, chase_uid, EA_CHANGED );
 }
 
 // ----------------------------------------------------------------------------
@@ -529,6 +564,8 @@ void Venue::deleteAllChases()
     }
 
     m_chases.clear();
+
+    fireEvent( ES_CHASE, 0L, EA_DELETED );
 }
 
 // ----------------------------------------------------------------------------
@@ -567,6 +604,9 @@ bool Venue::copyChaseSteps( UID source_chase_id,
         return false;
 
     chase_target->appendStep( chase_source->getSteps() );
+
+    fireEvent( ES_CHASE, target_chase_id, EA_CHANGED );
+
     return true;
 }
 
@@ -614,13 +654,19 @@ bool Venue::deleteScene( UID scene_uid ) {
         selectScene( getDefaultScene()->getUID() );
 
     // Remove all chase steps with this scene
-    for ( ChaseMap::iterator it=m_chases.begin(); it != m_chases.end(); ++it )
-        it->second.removeScene( scene_uid );
+    for ( ChaseMap::iterator it=m_chases.begin(); it != m_chases.end(); ++it ) {
+        bool removed = it->second.removeScene( scene_uid );
+
+        if ( removed )
+            fireEvent( ES_CHASE, it->first, EA_CHANGED );
+    }
 
     // Remove all music mappings with this scene
     deleteMusicMappings( MST_SCENE, scene_uid );
 
     m_scenes.erase( it );
+
+    fireEvent( ES_SCENE, scene_uid, EA_DELETED );
 
     // Restart chase if one was running
     if ( chase_id )
@@ -631,7 +677,7 @@ bool Venue::deleteScene( UID scene_uid ) {
 
 // ----------------------------------------------------------------------------
 //
-void Venue:: deleteAllScenes()
+void Venue::deleteAllScenes()
 {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
@@ -649,6 +695,8 @@ void Venue:: deleteAllScenes()
         else
             it++;
     }
+
+    fireEvent( ES_SCENE, 0L, EA_DELETED );
 }
 
 // ----------------------------------------------------------------------------
@@ -674,8 +722,13 @@ void Venue::moveDefaultFixturesToScene( UID scene_uid, UIDArray actor_uids, bool
     if ( scene == NULL )
         return;
 
+    Scene* defaultScene = getDefaultScene();
+    STUDIO_ASSERT( defaultScene != NULL, "Default scene not found" );
+
+    bool changed = false, default_changed = false;
+
     for ( UIDArray::iterator it = actor_uids.begin(); it != actor_uids.end(); ++it ) {
-        SceneActor* actor = getDefaultScene()->getActor( *it );
+        SceneActor* actor = defaultScene->getActor( *it );
         if ( actor == NULL )
             continue;
 
@@ -692,12 +745,21 @@ void Venue::moveDefaultFixturesToScene( UID scene_uid, UIDArray actor_uids, bool
         else
             scene->addActor( *actor );
 
-        if ( clear_default )
-            getDefaultScene()->removeActor( actor->getActorUID() );
+        changed = true;
+
+        if ( clear_default ) {
+            defaultScene->removeActor( actor->getActorUID() );
+            default_changed = true;
+        }
+
     }
 
     // Restart the scene if this is the active scene
-    studio.getVenue()->sceneUpdated( scene_uid );
+    if ( changed )
+        studio.getVenue()->sceneUpdated( scene_uid );
+
+    if ( default_changed )
+        studio.getVenue()->sceneUpdated( m_default_scene_uid );
 }
 
 // ----------------------------------------------------------------------------
@@ -764,6 +826,8 @@ UID Venue::addScene( Scene& scene, bool isDefault ) {
     if ( isDefault )
         m_default_scene_uid = scene.getUID();
 
+    fireEvent( ES_SCENE, scene.getUID(), EA_NEW );
+
     return scene.getUID();
 }
 
@@ -771,14 +835,16 @@ UID Venue::addScene( Scene& scene, bool isDefault ) {
 //
 void Venue::sceneUpdated( UID scene_uid ) {
     if ( scene_uid == m_current_scene )
-        stageScene( m_current_scene, SLM_LOAD );
-    else if ( scene_uid == m_default_scene_uid )        // Reload channel values to pick up and default actir changes
+        playScene( m_current_scene, SLM_LOAD );
+    else if ( scene_uid == m_default_scene_uid )    // Reload channel values to pick up and default actir changes
         m_animation_task->updateChannels();
+
+    fireEvent( ES_SCENE, scene_uid, EA_CHANGED );
 }
 
 // ----------------------------------------------------------------------------
 //
-void Venue::stageScene( UID scene_uid, SceneLoadMethod method ) {
+void Venue::playScene( UID scene_uid, SceneLoadMethod method ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
     Scene* scene = getScene( scene_uid );
@@ -787,17 +853,18 @@ void Venue::stageScene( UID scene_uid, SceneLoadMethod method ) {
 
     if ( method == SLM_LOAD ) {
         m_current_scene = scene_uid;
+        fireEvent( ES_SCENE, scene_uid, EA_START );
     }
 
     if ( isRunning() )
-        m_animation_task->stageScene( scene, method );
+        m_animation_task->playScene( scene, method );
 }
 
 // ----------------------------------------------------------------------------
 //
-void Venue::stageActor( SceneActor* actor ) {
+void Venue::stageActors( ActorPtrArray& actors ) {
     if ( isRunning() )
-        m_animation_task->stageActor( actor );
+        m_animation_task->stageActors( actors );
 }
 
 // ----------------------------------------------------------------------------
@@ -838,6 +905,8 @@ SceneActor* Venue::captureFixture( UID fixture_uid ) {
             getDefaultScene()->addActor( SceneActor( fixture ) );
             actor = getDefaultScene()->getActor( fixture->getUID() );
             m_animation_task->updateChannels();     // Latch in the new default values
+            
+            fireEvent( ES_SCENE, m_default_scene_uid, EA_CHANGED );
         }
     }
 
@@ -862,6 +931,8 @@ SceneActor* Venue::captureFixtureGroup( UID group_uid ) {
             getDefaultScene()->addActor( SceneActor( this, group ) );
             actor = getDefaultScene()->getActor( group->getUID() );
             m_animation_task->updateChannels();     // Latch in the new default values
+
+            fireEvent( ES_SCENE, m_default_scene_uid, EA_CHANGED );
         }
     }
 
@@ -966,6 +1037,47 @@ void Venue::blackoutChannels( LPBYTE dmx_packet ) {
 
 // ----------------------------------------------------------------------------
 //
+void Venue::dimmerChannels( LPBYTE dmx_packet ) {
+    for ( FixtureMap::iterator it=m_fixtures.begin(); it != m_fixtures.end(); ++it ) {
+        Fixture* pf = &it->second;
+
+        for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+            Channel* chnl = pf->getChannel(channel);
+            if ( !chnl->isDimmer() )
+                continue;
+
+            channel_t real_address = 
+                ((pf->getUniverseId()-1) * DMX_PACKET_SIZE) + pf->getChannelAddress( channel ) - 1;
+
+            BYTE value = dmx_packet[ real_address ];
+
+            if ( value == chnl->getDimmerOffIntensity() )
+                continue;
+
+            if ( m_master_dimmer == 0 ) {
+                value = chnl->getDimmerOffIntensity();
+            }
+            else if ( chnl->getDimmerLowestIntensity() < chnl->getDimmerHighestIntensity() ) {
+                if ( value >= chnl->getDimmerLowestIntensity() && value <= chnl->getDimmerHighestIntensity() ) {
+                    value -= chnl->getDimmerLowestIntensity();
+                    value = (value * m_master_dimmer)/100;
+                    value += chnl->getDimmerLowestIntensity();
+                }
+            }
+            else if ( value >= chnl->getDimmerHighestIntensity() && value <= chnl->getDimmerLowestIntensity() ) {
+                unsigned max = chnl->getDimmerLowestIntensity()-chnl->getDimmerHighestIntensity();
+                value -= chnl->getDimmerHighestIntensity();
+                value = max - (((max-value) * m_master_dimmer)/100);
+                value += chnl->getDimmerHighestIntensity();
+            }
+
+            dmx_packet[ real_address ] = value;
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
 void Venue::loadSceneChannels( BYTE *dmx_multi_universe_packet, ActorPtrArray& actors ) {
     for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); it++ ) {
         for ( Fixture* pf : resolveActorFixtures( (*it) ) ) {
@@ -984,73 +1096,30 @@ void Venue::loadChannel( BYTE* dmx_multi_universe_packet, Fixture* pf, channel_t
     channel_t real_address = 
         ((pf->getUniverseId()-1) * DMX_PACKET_SIZE) + pf->getChannelAddress( channel ) - 1;
 
-    dmx_multi_universe_packet[ real_address ] = adjustChannelValue( pf, channel, value );
-}
-
-// ----------------------------------------------------------------------------
-//
-BYTE Venue::adjustChannelValue( Fixture* pf, channel_t channel, BYTE value )
-{
-    if ( m_master_dimmer < 100 && pf->getChannel( channel )->isDimmer() ) {
-        Channel* chnl = pf->getChannel( channel );
-
-        if ( m_master_dimmer == 0 ) {
-            value = chnl->getDimmerOffIntensity();
-        }
-        else if ( (chnl->getDimmerLowestIntensity() < chnl->getDimmerHighestIntensity()) || value == chnl->getDimmerOffIntensity() ) {
-            if ( value >= chnl->getDimmerLowestIntensity() && value <= chnl->getDimmerHighestIntensity() ) {
-                value -= chnl->getDimmerLowestIntensity();
-                value = (value * m_master_dimmer)/100;
-                value += chnl->getDimmerLowestIntensity();
-            }
-        }
-        else {
-            if ( (value >= chnl->getDimmerHighestIntensity() && value <= chnl->getDimmerLowestIntensity()) || value == chnl->getDimmerOffIntensity()  ) {
-                unsigned max = chnl->getDimmerLowestIntensity()-chnl->getDimmerHighestIntensity();
-                value -= chnl->getDimmerHighestIntensity();
-                value = max - (((max-value) * m_master_dimmer)/100);
-                value += chnl->getDimmerHighestIntensity();
-            }
-        }
-    }
-
-    return value;
+    dmx_multi_universe_packet[ real_address ] = value;
 }
 
 // ----------------------------------------------------------------------------
 //
 void Venue::captureAndSetChannelValue( SceneActor& target_actor, channel_t channel, BYTE value ) {
+    SceneActor* actor;
+
     if ( target_actor.isGroup() ) {
-        SceneActor* actor = captureFixtureGroup( target_actor.getActorUID() );
-        actor->setChannelValue( channel, value );
-
-        FixtureGroup* group = getFixtureGroup( target_actor.getActorUID() );
-        UIDSet fixtures = group->getFixtures();
-
-        for ( UIDSet::iterator it2=fixtures.begin(); it2 != fixtures.end(); ++it2 ) {
-            Fixture* pf = getFixture( *it2 );
-            STUDIO_ASSERT( pf, "Invalid fixture %lu in group %lu", (*it2), target_actor.getActorUID() );
-
-            if ( pf->getNumChannels() > channel ) {
-                value = adjustChannelValue( pf, channel, value );
-                Universe* universe = getUniverse( pf->getUniverseId() );
-                STUDIO_ASSERT( universe != NULL, "Fixture %lu belongs to unknown universe %d", (*it2), pf->getUniverseId() );
-                universe->write( pf->getChannelAddress( channel ), value );
-            }
-        }
+        actor = captureFixtureGroup( target_actor.getActorUID() );
     }
     else {
         Fixture* pf = getFixture( target_actor.getActorUID() );
         STUDIO_ASSERT( channel < pf->getNumChannels(), "Channel %d out of range for fixture %ld", channel, pf->getUID() );
 
-        SceneActor* actor = captureFixture( pf->getUID() );
-        actor->setChannelValue( channel, value );
-
-        value = adjustChannelValue( pf, channel, value );
-        Universe* universe = getUniverse( pf->getUniverseId() );
-        STUDIO_ASSERT( universe != NULL, "Fixture %lu belongs to unknown universe %d", pf->getUID(), pf->getUniverseId() );
-        universe->write( pf->getChannelAddress( channel ), value );
+        actor = captureFixture( pf->getUID() );
     }
+
+    actor->setChannelValue( channel, value );
+
+    if ( isRunning() )
+        m_animation_task->updateChannels();
+
+    DMXStudio::fireEvent( ES_CHANNEL, actor->getActorUID(), EA_CHANGED, NULL, channel, value );
 }
 
 // ----------------------------------------------------------------------------
@@ -1064,8 +1133,13 @@ void Venue::writePacket( const BYTE* dmx_multi_universe_packet ) {
 
     if ( isMuteBlackout() || isForceBlackout() )                    // Handle blackout of all venue fixtures
         blackoutChannels( multi_universe_packet );
-    else if ( getWhiteout() != WHITEOUT_OFF )                       // Handle whiteout effect (all venue fixtures)              
-        whiteoutChannels( multi_universe_packet );
+    else {
+        if ( m_master_dimmer != 100 )                               // Handle master dimmer
+            dimmerChannels( multi_universe_packet );
+
+        if ( getWhiteout() != WHITEOUT_OFF )                       // Handle whiteout effect (all venue fixtures)              
+            whiteoutChannels( multi_universe_packet );
+    }
 
     for ( UniverseMap::iterator it=m_universes.begin(); it != m_universes.end(); ++it ) {
         Universe* universe = (*it).second;
@@ -1101,6 +1175,13 @@ BYTE Venue::getChannelValue( Fixture* pfixture, channel_t channel ) {
     }
 
     return pfixture->getChannel( channel )->getDefaultValue();
+}
+
+// ----------------------------------------------------------------------------
+//
+void Venue::fadeToNextScene( ULONG fade_time, ActorPtrArray& actors ) {
+    if ( isRunning() )
+        m_animation_task->fadeToNextScene( fade_time, actors );
 }
 
 // ----------------------------------------------------------------------------
@@ -1156,6 +1237,8 @@ void Venue::addMusicMapping( MusicSceneSelector& music_scene_selector ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
     m_music_scene_select_map[ music_scene_selector.m_track_link ] = music_scene_selector;
+
+    fireEvent( ES_MUSIC_MATCH, 0L, EA_CHANGED );
 }
 
 // ----------------------------------------------------------------------------
@@ -1166,6 +1249,8 @@ void Venue::deleteMusicMapping( LPCSTR track_full_name ) {
     MusicSceneSelectMap::iterator it_del = m_music_scene_select_map.find( track_full_name );
     if ( it_del != m_music_scene_select_map.end() ) {
         m_music_scene_select_map.erase( it_del );
+
+        fireEvent( ES_MUSIC_MATCH, 0L, EA_CHANGED );
     }
 }
 
@@ -1196,6 +1281,8 @@ void Venue::deleteMusicMappings( MusicSelectorType type, UID uid  )
         else
             it++;
     }
+
+    fireEvent( ES_MUSIC_MATCH, 0L, EA_CHANGED );
 }
 
 // ----------------------------------------------------------------------------
@@ -1205,6 +1292,8 @@ void Venue::clearMusicMappings()
     CSingleLock lock( &m_venue_mutex, TRUE );
 
     m_music_scene_select_map.clear();
+
+    fireEvent( ES_MUSIC_MATCH, 0L, EA_CHANGED );
 }
 
 // ----------------------------------------------------------------------------
@@ -1214,6 +1303,8 @@ void Venue::addMusicMappings( std::vector<MusicSceneSelector>& selectors ) {
 
     for ( std::vector<MusicSceneSelector>::iterator it=selectors.begin(); it != selectors.end(); ++it )
         m_music_scene_select_map[ (*it).m_track_link] = (*it);
+
+    fireEvent( ES_MUSIC_MATCH, 0L, EA_CHANGED );
 }
 
 // ----------------------------------------------------------------------------
@@ -1343,4 +1434,32 @@ void Venue::setForceBlackout( bool hard_blackout ) {
 
     if ( isRunning() )
         m_animation_task->updateChannels();
+
+    fireEvent( ES_BLACKOUT, 0L, hard_blackout ? EA_START : EA_STOP );
+}
+
+// ----------------------------------------------------------------------------
+//
+void Venue::configure( LPCSTR name, LPCSTR description, LPCSTR audio_capture_device, float audio_boost, 
+                       float audio_boost_floor, int audio_sample_size, int auto_blackout, 
+                       std::vector<Universe>& universes )
+{
+    close();
+
+    setName( name );
+    setDescription( description );
+    setAudioCaptureDevice( audio_capture_device );
+    setAudioBoost( audio_boost );
+    setAudioBoostFloor( audio_boost_floor );
+    setAudioSampleSize( audio_sample_size );
+    setAutoBlackoutMS( auto_blackout );
+
+    clearAllUniverses();
+
+    for ( Universe& univ : universes )
+        addUniverse( new Universe( univ ) );
+
+    fireEvent( ES_VENUE, 0L, EA_CHANGED );
+
+    open();
 }

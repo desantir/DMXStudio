@@ -32,6 +32,9 @@ Use persistent song IDs rather than list offsets
 One-shot chase (no restart)
 REMOVED Chase learn mode - track time and scene transitions
 CHASE add/remove/load scene actor to allow accumulated chase effects
+CHASE Movement animation travel time (prefetch next scene/position)
+Animations are not processed during chase cross fade
+Full HTML UIs event driven with light session management (event infrastructure in studio and player)
 
 Overview
 --------

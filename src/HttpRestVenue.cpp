@@ -25,7 +25,7 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_scene_show( CString& response, LPCSTR data )
+bool HttpRestServices::control_scene_show( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -38,8 +38,6 @@ bool HttpRestServices::control_scene_show( CString& response, LPCSTR data )
     if ( scene_id == 0 )
         scene_id = studio.getVenue()->getDefaultScene() ->getUID();
 
-    studio.getVenue()->stopChase();
-
     studio.getVenue()->selectScene( scene_id );
 
     return true;
@@ -47,7 +45,7 @@ bool HttpRestServices::control_scene_show( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_scene_stage( CString& response, LPCSTR data )
+bool HttpRestServices::control_scene_stage( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -63,14 +61,14 @@ bool HttpRestServices::control_scene_stage( CString& response, LPCSTR data )
 
     studio.getVenue()->stopChase();
 
-    studio.getVenue()->stageScene( scene_id, method );
+    studio.getVenue()->playScene( scene_id, method );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_chase_show( CString& response, LPCSTR data )
+bool HttpRestServices::control_chase_show( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -95,7 +93,7 @@ bool HttpRestServices::control_chase_show( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_venue_status( CString& response, LPCSTR data )
+bool HttpRestServices::query_venue_status( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -117,52 +115,11 @@ bool HttpRestServices::query_venue_status( CString& response, LPCSTR data )
     json.add( "music_match", studio.getVenue()->isMusicSceneSelectEnabled() );
     json.add( "venue_filename", studio.getVenueFileName() );
     json.add( "dmx_max_universes", DMX_MAX_UNIVERSES );
+    json.add( "default_scene_uid", studio.getVenue()->getDefaultScene()->getUID() );
+
     json.addArray<UIDArray>( "captured_fixtures", studio.getVenue()->getDefaultScene()->getActorUIDs() );
 
-    // If we have a music player, return player status
-    if ( studio.hasMusicPlayer() ) {
-        json.startObject( "music_player" );
-        json.add( "player_name", studio.getMusicPlayer()->getPlayerName() );
-        json.add( "username", studio.getMusicPlayer()->getUsername() );
-
-        if ( studio.getMusicPlayer()->isLoggedIn() ) {
-            DWORD length, remaining;
-            UINT queued, played;
-            CString track_link;
-            bool success = studio.getMusicPlayer()->getPlayingTrack( track_link, &length, &remaining, &queued, &played );
-            
-            json.add( "logged_in", true );
-            json.add( "mapping", studio.getVenue()->isMusicSceneSelectEnabled() );
-            json.add( "queued", queued );
-            json.add( "played", played );
-
-            if ( success ) {
-                json.startObject( "playing" );
-                json.add( "link", track_link );
-                json.add( "name", studio.getMusicPlayer()->getTrackFullName( track_link ) );
-                json.add( "length", length );
-                json.add( "remaining", remaining );
-                json.add( "paused", studio.getMusicPlayer()->isTrackPaused() );
-
-                AudioInfo audio_info;
-                if ( studio.getMusicPlayer()->getTrackAudioInfo( track_link, &audio_info, 0L ) == OK ) {
-                    json.add( "bpm", audio_info.tempo );
-                    json.add( "key", audio_info.key );
-                }
-
-                json.endObject( "playing" );
-            }
-        }
-        else {
-            json.add( "logged_in", false );
-        }
-
-        CString last_error = studio.getMusicPlayer()->getLastPlayerError( );
-        if ( !last_error.IsEmpty() )
-            json.add( "player_error", last_error );
-
-        json.endObject( "music_player" );
-    }
+    musicPlayerToJson( json );
     
     json.endObject();
 
@@ -171,7 +128,7 @@ bool HttpRestServices::query_venue_status( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_venue_strobe( CString& response, LPCSTR data )
+bool HttpRestServices::control_venue_strobe( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -190,7 +147,7 @@ bool HttpRestServices::control_venue_strobe( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_venue_whiteout_color( CString& response, LPCSTR data )
+bool HttpRestServices::control_venue_whiteout_color( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -208,7 +165,7 @@ bool HttpRestServices::control_venue_whiteout_color( CString& response, LPCSTR d
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_venue_blackout( CString& response, LPCSTR data )
+bool HttpRestServices::control_venue_blackout( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -225,7 +182,7 @@ bool HttpRestServices::control_venue_blackout( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_venue_music_match( CString& response, LPCSTR data )
+bool HttpRestServices::control_venue_music_match( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -242,7 +199,7 @@ bool HttpRestServices::control_venue_music_match( CString& response, LPCSTR data
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_venue_whiteout( CString& response, LPCSTR data )
+bool HttpRestServices::control_venue_whiteout( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -261,7 +218,7 @@ bool HttpRestServices::control_venue_whiteout( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_venue_masterdimmer( CString& response, LPCSTR data )
+bool HttpRestServices::control_venue_masterdimmer( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -280,7 +237,7 @@ bool HttpRestServices::control_venue_masterdimmer( CString& response, LPCSTR dat
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_animation_speed( CString& response, LPCSTR data )
+bool HttpRestServices::control_animation_speed( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
         return false;
@@ -297,7 +254,7 @@ bool HttpRestServices::control_animation_speed( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_venue_layout( CString& response, LPCSTR data ) {
+bool HttpRestServices::query_venue_layout( DMXHttpSession* session, CString& response, LPCSTR data ) {
     Venue* venue = studio.getVenue();
     if ( !venue )
         return false;
@@ -312,7 +269,7 @@ bool HttpRestServices::query_venue_layout( CString& response, LPCSTR data ) {
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_venue_layout_save( CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
+bool HttpRestServices::edit_venue_layout_save( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
     Venue* venue = studio.getVenue();
     if ( !venue )
         return false;
@@ -324,7 +281,7 @@ bool HttpRestServices::edit_venue_layout_save( CString& response, LPCSTR data, D
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_venue_describe( CString& response, LPCSTR data ) {
+bool HttpRestServices::query_venue_describe( DMXHttpSession* session, CString& response, LPCSTR data ) {
     Venue* venue = studio.getVenue();
     if ( !venue )
         return false;
@@ -382,7 +339,7 @@ bool HttpRestServices::query_venue_describe( CString& response, LPCSTR data ) {
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_venue_update( CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
+bool HttpRestServices::edit_venue_update( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
 
     Venue* venue = studio.getVenue();
     if ( !venue )
@@ -396,26 +353,13 @@ bool HttpRestServices::edit_venue_update( CString& response, LPCSTR data, DWORD 
         CString name = parser.get<CString>( "name" );
         CString description = parser.get<CString>( "description" );
         CString audio_capture_device = parser.get<CString>( "audio_capture_device" );
-        int audio_sample_size = parser.get<int>( "audio_sample_size" );
         float audio_boost = parser.get<float>( "audio_boost" );
         float audio_boost_floor = parser.get<float>( "audio_boost_floor" );
+        int audio_sample_size = parser.get<int>( "audio_sample_size" );
         int auto_blackout = parser.get<int>( "auto_blackout" );
         PARSER_LIST universeParsers = parser.get<PARSER_LIST>("universes");
 
-        // There may be a better solution for this, but we need to kill all attached sound devices before the reset
-        m_sound_sampler.detach();
-
-        venue->close();
-
-        venue->setName( name );
-        venue->setDescription( description );
-        venue->setAudioCaptureDevice( audio_capture_device );
-        venue->setAudioBoost( audio_boost );
-        venue->setAudioBoostFloor( audio_boost_floor );
-        venue->setAudioSampleSize( audio_sample_size );
-        venue->setAutoBlackoutMS( auto_blackout );
-
-        venue->clearAllUniverses();
+        std::vector<Universe> universes;
 
         for ( PARSER_LIST::iterator it=universeParsers.begin(); it != universeParsers.end(); ++it ) {
             unsigned id = (*it).get<unsigned>( "id" );
@@ -424,10 +368,10 @@ bool HttpRestServices::edit_venue_update( CString& response, LPCSTR data, DWORD 
             unsigned dmx_packet_delay_ms = (*it).get<unsigned>( "packet_delay_ms" );
             unsigned dmx_minimum_delay_ms = (*it).get<unsigned>( "minimum_delay_ms" );
 
-            venue->addUniverse( new Universe( id, type, dmx_port, dmx_packet_delay_ms, dmx_minimum_delay_ms ) );
+            universes.push_back( Universe( id, type, dmx_port, dmx_packet_delay_ms, dmx_minimum_delay_ms ) );
         }
 
-        venue->open();
+        venue->configure( name, description, audio_capture_device, audio_boost, audio_boost_floor, audio_sample_size, auto_blackout, universes );
     }
     catch ( std::exception& e ) {
         throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
@@ -438,7 +382,7 @@ bool HttpRestServices::edit_venue_update( CString& response, LPCSTR data, DWORD 
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_venue_save( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::edit_venue_save( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
    if ( !studio.getVenue() )
         return false;
@@ -460,7 +404,7 @@ bool HttpRestServices::edit_venue_save( CString& response, LPCSTR data, DWORD si
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_venue_load( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::edit_venue_load( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     SimpleJsonParser parser;
     CString venue_filename;
@@ -479,7 +423,7 @@ bool HttpRestServices::edit_venue_load( CString& response, LPCSTR data, DWORD si
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_venue_new( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::edit_venue_new( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     SimpleJsonParser parser;
     CString reset_what;
@@ -512,7 +456,7 @@ bool HttpRestServices::edit_venue_new( CString& response, LPCSTR data, DWORD siz
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::venue_upload( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::venue_upload( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     /*
         -----------------------------7dd1a41420546

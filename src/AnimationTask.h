@@ -26,30 +26,34 @@ MA 02111-1307, USA.
 #include "Threadable.h"
 #include "Scene.h"
 #include "Venue.h"
+#include "ChaseFader.h"
 
-class AnimationTask : public Threadable
+class AnimationTask : public Threadable, public EventBusListener
 {
     CCriticalSection    m_animation_mutex;						// Protect animation objects
 
     Venue*				m_venue;
-    bool				m_active;
 
     BYTE				m_dmx_packet[MULTI_UNIV_PACKET_SIZE];
 
     ActorMap            m_actors;                               // Actors currently in play
     AnimationPtrArray	m_animations;
     bool                m_load_channels;
+    UID                 m_chase_fade_uid;
 
     AnimationTask(AnimationTask& other) {}
     AnimationTask& operator=(AnimationTask& rhs) { return *this; }
+
+    bool handleEvent( const Event& event );
 
 public:
     AnimationTask( Venue* venue );
     ~AnimationTask(void);
 
-    void stageScene( Scene* scene, SceneLoadMethod method );
+    void playScene( Scene* scene, SceneLoadMethod method );
     void clearAnimations();
-    void stageActor( SceneActor* actor );
+    void stageActors( ActorPtrArray& actors );
+    void fadeToNextScene( ULONG fade_time, ActorPtrArray& actors );
 
     bool start();
     bool stop();
@@ -128,8 +132,9 @@ protected:
     UINT run(void);
 
 private:
-    bool adjust_dimmer_channels();
     bool removeScene( Scene* scene );
     void reloadActors();
+    void removeChaseFadeAnimation();
+    bool removeAnimation( UID amin_uid );
 };
 

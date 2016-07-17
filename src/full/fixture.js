@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2012-14 Robert DeSantis
+Copyright (C) 2012-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -28,9 +28,7 @@ var group_colors = false;
 var COLOR_CHANNELS_OWNER = -1;
 var MASTER_DIMMER_OWNER = -2;
 
-var ignore_next_update = false;     // Prevent race condition when selecting fixtures
-
-var fixture_state_listener = null;  // Listern for fixture state changes
+var fixture_state_listener = null;  // Listener for fixture state changes
 
 var slider_color_channels = [
     { "channel": 1, "label": "red", "name": "Master Red", "value": 0, "max_value":255, "ranges": null, "type": 1, "color": "rgb(255,0,0)" },
@@ -217,23 +215,19 @@ function getActiveFixtures() {
 // ----------------------------------------------------------------------------
 //
 function updateCapturedFixtures(captured_fixtures) {
-    if (!ignore_next_update) {
-        for (var i = 0; i < fixtures.length; i++) {
-            var fixture = fixtures[i];
-            var captured = captured_fixtures.indexOf(fixture.id) > -1;
-            var active = fixture.isActive();
+    for (var i = 0; i < fixtures.length; i++) {
+        var fixture = fixtures[i];
+        var captured = captured_fixtures.indexOf(fixture.id) > -1;
+        var active = fixture.isActive();
 
-            if (active && !captured) {
-                slider_panel.releaseChannels(fixture.id);
-                markActiveFixture(fixture.id, false);
-            }
-            else if (!active && captured) {
-                loadFixtureChannels(fixture.id, null, false);
-            }
+        if (active && !captured) {
+            slider_panel.releaseChannels(fixture.id);
+            markActiveFixture(fixture.id, false);
+        }
+        else if (!active && captured) {
+            loadFixtureChannels(fixture.id, null, false);
         }
     }
-    else
-        ignore_next_update = false;
 }
 
 // ----------------------------------------------------------------------------
@@ -244,42 +238,138 @@ function updateFixtures() {
         url: "/dmxstudio/rest/query/fixtures/",
         cache: false,
         success: function (data) {
-            var json = jQuery.parseJSON(data);
-
-            fixture_tile_panel.empty();
             fixtures = []
-
-            $("#copy_fixtures_button").removeClass("ui-icon-white").addClass("ui-icon");
-            $("#clear_fixtures_button").removeClass("ui-icon-white").addClass("ui-icon");
-
             arrangeSliders(null);          // Reset sliders, add colors and other static channels
 
+            var json = jQuery.parseJSON(data);
             $.map(json, function (fixture, index) {
                 for (var i = 0; i < fixture.channels.length; i++)
                     fixture.channels[i].default_value = fixture.channels[i].value;
 
-                fixture = new Fixture(fixture);     // Make sure we are using the "real" object going forward
-                fixtures.push(fixture);
+                fixtures.push( new Fixture(fixture) );
+            } );
+            createFixtureTiles( true );
+        },
 
-                var tile;
-                if (fixture.is_group)
-                    tile = fixture_tile_panel.addTile(fixture.id, "G" + fixture.number, escapeForHTML(fixture.full_name), true, "FixtureGroup", "fixture group");
-                else
-                    tile = fixture_tile_panel.addTile(fixture.id, fixture.number, escapeForHTML(fixture.full_name), true);
+        error: onAjaxError
+    });
+}
 
-                if (fixture.is_active) {
-                    fixture.is_active = false;      // For the purposes of the current UI state the fixture is not active
+// ----------------------------------------------------------------------------
+//
+function createFixtureTiles( no_wait ) {
+    if ( no_wait )
+        _createFixtureTiles();
+    else
+        delayUpdate( "fixtureTiles", 1, function() {
+            fixtureTileUpdateTimer = null;
+            _createFixtureTiles();
+        } );
+}
 
-                    loadFixtureChannels(fixture.id, null, false);
+function _createFixtureTiles() {
+    fixture_tile_panel.empty();
+
+    $("#copy_fixtures_button").removeClass("ui-icon-white").addClass("ui-icon");
+    $("#clear_fixtures_button").removeClass("ui-icon-white").addClass("ui-icon");
+
+    for (var i = 0; i < fixtures.length; i++) {
+        var fixture = fixtures[i];
+
+        if ( fixture.is_group )
+            fixture_tile_panel.addTile(fixture.id, "G" + fixture.number, escapeForHTML(fixture.full_name), true, "FixtureGroup", "fixture group");
+        else
+            fixture_tile_panel.addTile(fixture.id, fixture.number, escapeForHTML(fixture.full_name), true);
+
+        if (fixture.is_active) {
+            fixture.is_active = false;      // For the purposes of the current UI state the fixture is not active
+
+            loadFixtureChannels(fixture.id, null, false);
+        }
+    }
+
+    highlightSceneFixtures(active_scene_id, true);
+
+    setEditMode(edit_mode);         // Refresh editing icons on new tiles
+}
+
+// ----------------------------------------------------------------------------
+// Called on fixture added event 
+function newFixtureEvent( uid ) {
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/query/fixture/" + uid,
+        cache: false,
+        async: false,
+        success: function (data) {
+            var fixture = new Fixture( jQuery.parseJSON(data)[0] );
+
+            for (var i = 0; i < fixtures.length; i++) {
+                if (fixtures[i].getId() == fixture.getId() )
+                    return;
+                    
+                if ( fixtures[i].getNumber() > fixture.getNumber() ) {
+                    fixtures.insert( i, fixture );
+                    createFixtureTiles( false );
+                    break;
                 }
-            });
-
-            highlightSceneFixtures(active_scene_id, true);
-
-            setEditMode(edit_mode);         // Refresh editing icons on new tiles
+            }
         },
         error: onAjaxError
     });
+}
+
+// ----------------------------------------------------------------------------
+// Called on fixture changed event 
+function changeFixtureEvent( uid ) {
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/query/fixture/" + uid,
+        cache: false,
+        success: function (data) {
+            var fixture = new Fixture( jQuery.parseJSON(data)[0] );
+
+            for (var i = 0; i < fixtures.length; i++) {
+                if (fixtures[i].getId() == fixture.getId() ) {
+                    fixtures[i] = fixture;
+                    createFixtureTiles( false );
+                    break;
+                }
+            }
+        },
+        error: onAjaxError
+    });
+}
+
+// ----------------------------------------------------------------------------
+// Called on fixture delete event
+function deleteFixtureEvent( uid ) {
+    for (var i = 0; i < fixtures.length; i++) {
+        if (fixtures[i].getId() == uid ) {
+            fixtures.splice( i, 1 );
+            createFixtureTiles( false );
+            break;
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Called on channel change event
+function changeChannelEvent( fixture_uid, channel, value ) {
+    var fixture = getFixtureById( fixture_uid ); 
+    if ( fixture == null || !fixture.isActive() )
+        return;
+
+    if ( channel >= fixture.getNumChannels() || fixture.getChannels()[channel].value == value)
+        return;
+        
+    fixture.getChannels()[channel].value = value;
+
+    var slider = slider_panel.findChannel( fixture_uid, channel );
+    if ( slider != null && !slider.isBusy() && !slider.isLinked() ) {
+        slider.setValue( value );
+        slider.changed = false;         // Don't send a chaneg event
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -398,8 +488,6 @@ function loadFixtureChannels( fixture_id, updated_channel_data, tile_clicked ) {
     if (tile_clicked)
         slider_panel.highlightChannels(fixture_id, true);
 
-    ignore_next_update = tile_clicked;      // Prevent race condition with venue status update capture list
-
     // Update colors with current values
     if (json.length > 0) {
         $.ajax({
@@ -409,8 +497,8 @@ function loadFixtureChannels( fixture_id, updated_channel_data, tile_clicked ) {
             contentType: 'application/json',
             cache: false,
             success: function () {
-                updateFixtureChannelValues(json);
             },
+
             error: onAjaxError
         });
     }
@@ -530,6 +618,8 @@ function arrangeSliders(event) {
     // Add venue master dimmer
     slider_panel.allocateChannels(MASTER_DIMMER_OWNER, "Venue Dimmer", [master_dimmer_channel], master_dimmer_callback, false );
     master_dimmer_channel.slider = slider_panel.findChannel(MASTER_DIMMER_OWNER, master_dimmer_channel.channel);
+    master_dimmer_channel.slider.setValue(master_dimmer_channel.value);
+    master_dimmer_channel.slider.changed = false
 
     // Add color masters if enabled
     if (group_colors) {
@@ -568,7 +658,7 @@ function createFixture(event) {
     var dmx_address_map = buildDmxAddressMap( 1 );
 
     for (var d = 0; d < 512; d++)
-        if (dmx_address_map[d] == 0) {
+        if (dmx_address_map[d] == null) {
             default_dmx_address = d + 1;
             break;
         }
@@ -672,7 +762,7 @@ function createNewFixtureDialog(dialog_title, data) {
             var dmx_address_map = buildDmxAddressMap(json.dmx_universe);
             
             for (var i=json.dmx_address-1; i < json.dmx_address-1 + info.num_channels; i++) {
-                if (dmx_address_map[i] != 0 && dmx_address_map[i] != json.id) {
+                if ( dmx_address_map[i] != null && dmx_address_map[i].getId() != json.id ) {
                     messageBox("DMX address overlaps existing fixture at address " + (i + 1));
                     return;
                 }
@@ -765,8 +855,9 @@ function createNewFixtureDialog(dialog_title, data) {
 
         showDmxAddressChooser(
             parseInt($("#nfd_dmx_universe").val()),
-            parseInt($("#nfd_number").val()),
-            info.num_channels);
+            data.id,
+            info.num_channels,
+            $("#nfd_allow_overlap").is(":checked") );
     });
 
     $("#new_fixture_dialog").dialog("open");
@@ -779,13 +870,13 @@ function buildDmxAddressMap(universe_id) {
     dmx_address_map = [];
 
     for (var i = 0; i < 512; i++)
-        dmx_address_map.push(0);
+        dmx_address_map.push( null );
 
     for (var i = 0; i < fixtures.length; i++) {
         if (!fixtures[i].isGroup() && fixtures[i].getUniverseId() == universe_id) {
             var address = fixtures[i].getDMXAddress() - 1;
             for (var d = address; d < address + fixtures[i].getNumChannels() ; d++)
-                dmx_address_map[d] = fixtures[i].getId();
+                dmx_address_map[d] = fixtures[i];
         }
     }
 
@@ -794,7 +885,7 @@ function buildDmxAddressMap(universe_id) {
 
 // ----------------------------------------------------------------------------
 //
-function showDmxAddressChooser(universe_id, fixture_number, num_channels) {
+function showDmxAddressChooser(universe_id, fixture_id, num_channels, allow_overlap) {
     $("#choose_dmx_address_dialog").dialog({
         autoOpen: false,
         width: 710,
@@ -806,24 +897,25 @@ function showDmxAddressChooser(universe_id, fixture_number, num_channels) {
 
     var dmx_address_map = buildDmxAddressMap(universe_id);
 
+    var addresses_div = $("#cda_addresses");
+
     var update_tiles = function ( mode ) {
-        $("#cda_addresses").empty();
+        addresses_div.empty();
 
         var html = "<div onclick='selectDmxAddress(event);'>";
         var dmx = 1;
-        var allow_overlap = $("#nfd_allow_overlap").is(":checked");
-        var fixture = null;
 
         for (var row = 0; row < 32; row++) {
             for (var col = 0; col < 16; col++) {
                 var tile_locked = false;
-                var clazz = (dmx_address_map[dmx - 1] == 0) ? "dmx_tile_unused" : "dmx_tile_used";
+                var fixture = dmx_address_map[dmx - 1];
+                var clazz = (fixture == null) ? "dmx_tile_unused" : "dmx_tile_used";
 
                 if (!allow_overlap) {
                     for (var i = 0; i < num_channels; i++) {
                         var index = dmx - 1 + i;
                         if (index >= 512 ||
-                             (dmx_address_map[index] != 0 && dmx_address_map[index] != fixture_number)) { // Does not fit
+                             (dmx_address_map[index] != null && dmx_address_map[index].getId() != fixture_id) ) { // Does not fit
                             tile_locked = true;
                             break;
                         }
@@ -845,20 +937,13 @@ function showDmxAddressChooser(universe_id, fixture_number, num_channels) {
                 if (col == 0)
                     style += "clear:both;";
 
-                if (dmx_address_map[dmx - 1] != 0) {
-                    if (fixture == null || fixture.getId() != dmx_address_map[dmx - 1])
-                        fixture = getFixtureById(dmx_address_map[dmx - 1])
+                var contents = mode == 0 ? dmx : "";
 
-                    html += "title='" + escapeForHTML(fixture.getFullName()) + "' ";
+                if ( fixture != null ) {
+                    html += "title='" + escapeForHTML( fixture.getFullName() ) + "' ";
+                    if (mode == 1)
+                        contents = fixture.getNumber();
                 }
-                else
-                    fixture = null;
-
-                var contents = "";
-                if (mode == 0)
-                    contents = dmx;
-                else if ( fixture != null )
-                    contents = fixture.getNumber();
 
                 html += "style='" + style + "'>" + contents + "</div>";
                 dmx++;
@@ -867,11 +952,12 @@ function showDmxAddressChooser(universe_id, fixture_number, num_channels) {
 
         html += "</div>";
 
-        $("#cda_addresses").html(html);
+        addresses_div.html(html);
     }
 
-    $("#cda_show_buttons").buttonset();
+    $("#cda_show_buttons").buttonset().unbind( "change" );;
     $("#cda_show_buttons").change(function () {
+        stopEventPropagation(event);
         update_tiles($('input[name=cda_show]:checked').val());
     });
 
@@ -1486,7 +1572,6 @@ function PanelProxy() {
 // ----------------------------------------------------------------------------
 //
 var panTiltInit = true;
-var panTimer = null;
 
 function panTilt(event) {
     stopEventPropagation(event);
@@ -1538,10 +1623,7 @@ function panTilt(event) {
                 $("#ptp_pan").val(location.pan);
                 $("#ptp_tilt").val(location.tilt);
 
-                if (panTimer)
-                    clearTimeout(panTimer);
-
-                panTimer = setTimeout(function () { setPanTiltChannels(location.pan, location.tilt) }, 250);
+                delayUpdate( "pan", 250, function () { setPanTiltChannels(location.pan, location.tilt) } );
             }
         });
 

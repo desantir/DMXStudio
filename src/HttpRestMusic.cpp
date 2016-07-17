@@ -26,7 +26,7 @@
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::player_login( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::player_login( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
    if ( !studio.getVenue() )
         return false;
@@ -67,7 +67,7 @@ bool HttpRestServices::player_login( CString& response, LPCSTR data, DWORD size,
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_master_volume( CString& response, LPCSTR data )
+bool HttpRestServices::control_master_volume( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     UINT master_volume;
         
@@ -81,7 +81,7 @@ bool HttpRestServices::control_master_volume( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_mute_volume( CString& response, LPCSTR data )
+bool HttpRestServices::control_mute_volume( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     UINT mute_volume;
         
@@ -95,7 +95,7 @@ bool HttpRestServices::control_mute_volume( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_queue_track( CString& response, LPCSTR data )
+bool HttpRestServices::control_music_queue_track( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -112,7 +112,7 @@ bool HttpRestServices::control_music_queue_track( CString& response, LPCSTR data
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_play_track( CString& response, LPCSTR data )
+bool HttpRestServices::control_music_play_track( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -131,7 +131,7 @@ bool HttpRestServices::control_music_play_track( CString& response, LPCSTR data 
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_music_track_analysis( CString& response, LPCSTR data )
+bool HttpRestServices::query_music_track_analysis( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -166,7 +166,7 @@ bool HttpRestServices::query_music_track_analysis( CString& response, LPCSTR dat
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_play_playlist( CString& response, LPCSTR data )
+bool HttpRestServices::control_music_play_playlist( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -185,7 +185,7 @@ bool HttpRestServices::control_music_play_playlist( CString& response, LPCSTR da
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_music_playlists( CString& response, LPCSTR data )
+bool HttpRestServices::query_music_playlists( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -259,7 +259,7 @@ bool json_track_list( PlayerItems& tracks, CString& response )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_music_queued( CString& response, LPCSTR data )
+bool HttpRestServices::query_music_queued( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -272,7 +272,7 @@ bool HttpRestServices::query_music_queued( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_music_played( CString& response, LPCSTR data )
+bool HttpRestServices::query_music_played( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -285,7 +285,7 @@ bool HttpRestServices::query_music_played( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_music_playlist_tracks( CString& response, LPCSTR data )
+bool HttpRestServices::query_music_playlist_tracks( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -303,7 +303,7 @@ bool HttpRestServices::query_music_playlist_tracks( CString& response, LPCSTR da
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_track_back( CString& response, LPCSTR data )
+bool HttpRestServices::control_music_track_back( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -314,7 +314,7 @@ bool HttpRestServices::control_music_track_back( CString& response, LPCSTR data 
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_track_forward( CString& response, LPCSTR data )
+bool HttpRestServices::control_music_track_forward( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -325,7 +325,7 @@ bool HttpRestServices::control_music_track_forward( CString& response, LPCSTR da
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_track_stop( CString& response, LPCSTR data )
+bool HttpRestServices::control_music_track_stop( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -336,7 +336,7 @@ bool HttpRestServices::control_music_track_stop( CString& response, LPCSTR data 
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_track_pause( CString& response, LPCSTR data )
+bool HttpRestServices::control_music_track_pause( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -347,7 +347,7 @@ bool HttpRestServices::control_music_track_pause( CString& response, LPCSTR data
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_track_play( CString& response, LPCSTR data )
+bool HttpRestServices::control_music_track_play( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.hasMusicPlayer() )
         return false;
@@ -358,7 +358,7 @@ bool HttpRestServices::control_music_track_play( CString& response, LPCSTR data 
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_music_matcher( CString& response, LPCSTR data )
+bool HttpRestServices::query_music_matcher( DMXHttpSession* session, CString& response, LPCSTR data )
 {
    if ( !studio.getVenue() )
         return false;
@@ -425,7 +425,7 @@ bool HttpRestServices::query_music_matcher( CString& response, LPCSTR data )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_music_matcher_search( CString& response, LPCSTR data )
+bool HttpRestServices::query_music_matcher_search( DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !studio.getVenue() )
         return false;
@@ -498,14 +498,67 @@ static bool music_matcher_load( LPCSTR data, boolean clearFirst ) {
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_music_matcher_load( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::edit_music_matcher_load( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     return music_matcher_load( data, true );
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_music_matcher_update( CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::edit_music_matcher_update( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     return music_matcher_load( data, false );
+}
+
+// ----------------------------------------------------------------------------
+//
+void HttpRestServices::musicPlayerToJson( JsonBuilder& json )
+{
+    // If we have a music player, return player status
+    if ( studio.hasMusicPlayer() ) {
+        json.startObject( "music_player" );
+        json.add( "player_name", studio.getMusicPlayer()->getPlayerName() );
+        json.add( "username", studio.getMusicPlayer()->getUsername() );
+
+        if ( studio.getMusicPlayer()->isLoggedIn() ) {
+            DWORD length, remaining;
+            UINT queued, played;
+            CString track_link;
+            bool success = studio.getMusicPlayer()->getPlayingTrack( track_link, &length, &remaining, &queued, &played );
+
+            json.add( "logged_in", true );
+            json.add( "queued", queued );
+            json.add( "played", played );
+
+            if ( success ) {
+                json.startObject( "playing" );
+                json.add( "link", track_link );
+                json.add( "name", studio.getMusicPlayer()->getTrackFullName( track_link ) );
+                json.add( "length", length );
+                json.add( "remaining", remaining );
+                json.add( "paused", studio.getMusicPlayer()->isTrackPaused() );
+
+                AudioInfo audio_info;
+                if ( studio.getMusicPlayer()->getTrackAudioInfo( track_link, &audio_info, 0L ) == OK ) {
+                    json.add( "bpm", audio_info.tempo );
+                    json.add( "key", audio_info.key );
+                }
+
+                json.endObject( "playing" );
+            }
+            else
+                json.addNull( "playing" );
+        }
+        else {
+            json.add( "logged_in", false );
+        }
+
+        CString last_error = studio.getMusicPlayer()->getLastPlayerError( );
+        if ( !last_error.IsEmpty() )
+            json.add( "player_error", last_error );
+
+        json.endObject( "music_player" );
+    }
+    else
+        json.addNull( "music_player" );
 }

@@ -26,9 +26,14 @@
 
 // ----------------------------------------------------------------------------
 //
-HttpRestServices::HttpRestServices(void) :
-    m_sound_sampler( 2 )
+HttpRestServices::HttpRestServices(void)
 {
+    m_rest_get_handlers[ DMX_URL_EVENTS ] = &HttpRestServices::fetch_events;
+
+    m_rest_get_handlers[ DMX_URL_QUERY_SCENE ] = &HttpRestServices::query_scene;
+    m_rest_get_handlers[ DMX_URL_QUERY_CHASE ] = &HttpRestServices::query_chase;
+    m_rest_get_handlers[ DMX_URL_QUERY_FIXTURE ] = &HttpRestServices::query_fixture;
+
     m_rest_get_handlers[ DMX_URL_QUERY_SCENES ] = &HttpRestServices::query_scenes;
     m_rest_get_handlers[ DMX_URL_QUERY_CHASES ] = &HttpRestServices::query_chases;
     m_rest_get_handlers[ DMX_URL_QUERY_FIXTURES ] = &HttpRestServices::query_fixtures;
@@ -81,6 +86,7 @@ HttpRestServices::HttpRestServices(void) :
     m_rest_get_handlers[ DMX_URL_QUERY_MUSIC_MATCHER_SEARCH ] = &HttpRestServices::query_music_matcher_search;
 
     // POST request handlers
+
     m_rest_post_handlers[ DMX_URL_CONTROL_FIXTURE_CHANNELS ] = &HttpRestServices::control_fixture_channels;
     m_rest_post_handlers[ DMX_URL_CONTROL_FIXTURE ] = &HttpRestServices::control_fixture;
     m_rest_post_handlers[ DMX_URL_CONTROL_FIXTUREGROUP ] = &HttpRestServices::control_fixture_group;
@@ -117,7 +123,6 @@ HttpRestServices::HttpRestServices(void) :
 //
 HttpRestServices::~HttpRestServices(void)
 {
-    m_sound_sampler.detach();
 }
 
 // ----------------------------------------------------------------------------
@@ -146,9 +151,10 @@ DWORD HttpRestServices::processGetRequest( HttpWorkerThread* worker )
 
         if ( func != NULL ) {
             CString response;
-            if ( (this->*func)( response, path.Mid( len ) ) )
-                return worker->sendResponse( 200, "OK", response.GetLength() > 0 ? (LPCSTR)response : NULL );
-            return worker->error_501();
+            if ( !(this->*func)( worker->getSession(), response, path.Mid( len ) ) )
+                return worker->error_501();
+
+            return worker->sendResponse( 200, "OK", response.GetLength() > 0 ? (LPCSTR)response : NULL );
         }
 
         // Perhaps this is a file request
@@ -206,7 +212,7 @@ DWORD HttpRestServices::processPostRequest( HttpWorkerThread* worker, BYTE* cont
 
         if ( func != NULL ) {
             CString response;
-            if ( (this->*func)( response, (LPCSTR)contents, size, (LPCSTR)contentType ) )
+            if ( (this->*func)( worker->getSession(), response, (LPCSTR)contents, size, (LPCSTR)contentType ) )
                 return worker->sendResponse( 200, "OK", response.GetLength() > 0 ? (LPCSTR)response : NULL );
         }
 

@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2012,2013 Robert DeSantis
+Copyright (C) 2012,2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -164,6 +164,7 @@ function Slider(panel, number, slider_frame) {
             this.value = new_value;
             this.changed = true;
         }
+        this.typedValue = 0;
     }
 
     // method isChanged
@@ -221,6 +222,7 @@ function Slider(panel, number, slider_frame) {
         this.tooltip = header_tip;
         this.busy = false;
         this.linkable = linkable;
+        this.typedValue = 0;
 
         this.getHeader().text(slider_data.label);
         this.getHeader().attr("title", header_tip);
@@ -267,6 +269,7 @@ function Slider(panel, number, slider_frame) {
         this.value = 0;
         this.tooltip = "";
         this.busy = false;
+        this.typedValue = 0;
 
         this.getHeader().text("");
         this.getLabel().text("");
@@ -348,6 +351,35 @@ function Slider(panel, number, slider_frame) {
 
         if ( panel.isTrackSlider() )
             slider_object.changeEvent(ui.value);
+    });
+
+    slider.keydown( function( event ) {
+        var slider_object = $(this).get(0).slider_object;
+
+        if ( event.which == 13 ) {
+            if ( slider_object.typedValue > 255 )
+                slider_object.typedValue = 255;
+            
+            if ( slider_object.isLinked() )
+                slider_object.changeEvent(slider_object.typedValue);
+            else
+                slider_object.setValue(slider_object.typedValue);
+        }
+        else if ( event.char >= '0' && event.char <= '9' ) {
+             slider_object.typedValue = slider_object.typedValue * 10 + ( event.char - '0');
+        }
+        else if ( event.which == 27 )
+            slider_object.typedValue = 0;
+        else if ( event.which == 8 || event.which == 46 ) {
+            if (event.stopPropagation != null)
+                event.stopPropagation();
+            else
+                event.cancelBubble = true;
+
+            slider_object.typedValue = ( slider_object.typedValue  / 10 ) | 0;      // Convert to integer
+        }
+        else if ( event.which == 32 )
+            slider_object.setLinked(!slider_object.isLinked());
     });
 
     var linked = $(this.getLinked());
@@ -470,7 +502,7 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
     // method findChannel
     this.findChannel = function ( owner, channel_id ) {
         for (var i = 0; i < this.num_sliders; i++) {
-            if (this.sliders[i].isUsed() && this.sliders[i].getOwner() == owner && this.sliders[i].getOwnerChannel())
+            if (this.sliders[i].isUsed() && this.sliders[i].getOwner() == owner && this.sliders[i].getOwnerChannel() == channel_id)
                 return this.sliders[i];
         }
 
@@ -588,7 +620,7 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
         }
 
         var _this = this;
-        this.update_timer = setTimeout(function () { _this.sendUpdates(); }, 50);
+        this.update_timer = setTimeout(function () { _this.sendUpdates(); }, 100);
     }
 
     // Constructor

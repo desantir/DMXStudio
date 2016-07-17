@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -47,21 +47,30 @@ DMXHttpServer::DMXHttpServer(void) :
     m_mime_map[ "html" ] = "text/html";
     m_mime_map[ "js" ] = "text/html";
     m_mime_map[ "xml" ] = "text/xml";
+
+    DMXStudio::getEventBus()->addListener( this );
 }
 
 // ----------------------------------------------------------------------------
 //
 DMXHttpServer::~DMXHttpServer(void)
 {
+    DMXStudio::getEventBus()->removeListener( this );
+
     freeWorkers();
     stopThread();
+
+    // Release sessions
+    for ( SessionMap::iterator it=m_sessions.begin(); it != m_sessions.end(); it++ ) {
+        delete it->second;
+    }
+    m_sessions.clear();
 
     // Release all handlers
     for ( RequestHandlerPtrArray::iterator it=m_request_handlers.begin();
         it != m_request_handlers.end(); ++it ) {
         delete (*it);
     }
-
     m_request_handlers.clear();
 }
 
@@ -153,10 +162,38 @@ UINT DMXHttpServer::run()
             DMXStudio::log_status( "HTTP request listener started on '%s'", listener_url );
         }
 
-        createThreadPool( 2, hReqQueue );
+        createThreadPool( 4, hReqQueue );
+
+        CSingleLock lock( &m_session_lock, FALSE );
+        DWORD session_purge = 0L;
 
         while ( isRunning() ) {
-            // Hopefully we can do something more useful here in the future
+            DWORD now = GetTickCount();
+
+            // Purge expired sessions
+            if ( now > session_purge ) {
+                lock.Lock();
+
+                try {
+                    for ( SessionMap::iterator it=m_sessions.begin(); it != m_sessions.end(); ) {
+                        if ( it->second->isExpired( now ) ) {
+                            DMXStudio::log_status( "Session expired %s", it->second->getId() );
+                            delete it->second;
+                            it = m_sessions.erase( it );
+                        }
+                        else
+                            it++;
+                    }
+                }
+                catch ( std::exception& e ) {
+                    DMXStudio::log( e );
+                }
+                
+                lock.Unlock();
+
+                session_purge = now + (1000 * 60);
+            }
+
             Sleep( 1000 );
         }
 
@@ -180,495 +217,45 @@ UINT DMXHttpServer::run()
 
 // ----------------------------------------------------------------------------
 //
-HttpWorkerThread::HttpWorkerThread( DMXHttpServer* httpServer, UINT worker_id, 
-                                    HANDLE hReqQueue, LPCSTR docroot ) :
-    Threadable( "HttpWorkerThread" ),
-    m_httpServer( httpServer ),
-    m_worker_id( worker_id ),
-    m_hReqQueue( hReqQueue ),
-    m_docroot( docroot ),
-    m_RequestBufferLength( 0 ),
-    m_pRequest( NULL )
-{    
-    resizeRequestBuffer( sizeof(HTTP_REQUEST) + 2048 );
-}
-
-// ----------------------------------------------------------------------------
-//
-HttpWorkerThread::~HttpWorkerThread(void) {
-    stop();
-
-    if ( m_pRequest )
-        FREE_MEM( m_pRequest );
-}
-
-// ----------------------------------------------------------------------------
-//
-void HttpWorkerThread::resizeRequestBuffer( DWORD new_size ) {
-    m_RequestBufferLength = new_size;
-
-    if ( m_pRequest )
-        FREE_MEM( m_pRequest );
-
-    m_pRequest = (PHTTP_REQUEST)ALLOC_MEM( m_RequestBufferLength );
-    if ( m_pRequest == NULL )
-        throw StudioException( "Out of memory" );
-}
-
-// ----------------------------------------------------------------------------
-//
-CString encodeHtmlString( LPCSTR string )
+DMXHttpSession* DMXHttpServer::getSession( LPCSTR sessionId )
 {
-    CString result( string );
-    result.Replace( "<", "&lt;" );
-    result.Replace( ">", "&gt;" );
-    result.Replace( "\"", "&quot;" );
-    return result;
+    CSingleLock lock( &m_session_lock, TRUE );
+
+    auto it = m_sessions.find( sessionId );
+
+    return ( it == m_sessions.end() ) ? NULL : it->second;
 }
 
 // ----------------------------------------------------------------------------
 //
-UINT HttpWorkerThread::run() 
+DMXHttpSession* DMXHttpServer::createSession()
 {
-    HTTP_REQUEST_ID     requestId;
-    OVERLAPPED          overlapped;
+    CSingleLock lock( &m_session_lock, TRUE );
 
-    DMXStudio::log_status( "HTTP worker thread %d started", m_worker_id );
+    DMXHttpSession* session = new DMXHttpSession();
+     
+    m_sessions[ session->getId() ] = session;
 
-    CEvent event;
+    DMXStudio::log_status( "Created session %s", session->getId() );
 
-    BOOL new_request = true;
+    return session;
+}
 
-    while ( isRunning() ) {
-        if ( new_request ) {
-            memset( &overlapped, 0, sizeof(OVERLAPPED) );
-            overlapped.hEvent = event.m_hObject;
+// ----------------------------------------------------------------------------
+//
+bool DMXHttpServer::handleEvent( const Event& event )
+{
+    CSingleLock lock( &m_session_lock, TRUE );
 
-            memset( m_pRequest, 0, m_RequestBufferLength);
-            HTTP_SET_NULL_ID( &requestId );
-            new_request = false;
+    for ( SessionMap::iterator it=m_sessions.begin(); it != m_sessions.end(); it++ ) {
+        // If the venus has stopped, release beat and sound detectors
+        if ( event.m_source == ES_VENUE && event.m_action == EA_STOP ) {
+            it->second->getBeatDetector().detach();
+            it->second->getSoundSampler().detach();
         }
 
-        try {
-            DWORD bytes_transferred = 0;
-
-            ULONG result = HttpReceiveHttpRequest(
-                        m_hReqQueue,                                // Req Queue
-                        requestId,                                  // Req ID
-                        0,                                          // Flags
-                        m_pRequest,                                 // HTTP request buffer
-                        m_RequestBufferLength,                      // req buffer length
-                        NULL,                                       // bytes received (NULL for overlapped)
-                        &overlapped );                              // LPOVERLAPPED
-
-            // Overlapped will return ERROR_IO_PENDING
-            if ( ERROR_IO_PENDING == result ) {
-                for ( bool pending=true; pending; ) {
-                    BOOL success = GetOverlappedResult( m_hReqQueue, &overlapped, &bytes_transferred, false );
-                    if ( success ) {
-                        result = NO_ERROR;
-                        break;
-                    }
-
-                    result = GetLastError();
-
-                    switch ( result ) { 
-                        case ERROR_IO_INCOMPLETE:
-                            if ( !isRunning() )
-                                return 0;
-                            Sleep(10);
-                            break;
-
-                        case ERROR_MORE_DATA:
-                        case ERROR_HANDLE_EOF: 
-                        default:
-                            pending = false;
-                            break;
-                    } 
-                }
-            }
-
-            switch ( result ) {
-                case NO_ERROR:
-                    switch ( m_pRequest->Verb ) {
-                        case HttpVerbGET:
-                            result = processGetRequest( );
-                            break;
-
-                        case HttpVerbPOST:
-                            result = processPostRequest( );
-                            break;
-
-                        default:
-                            result = sendResponse( 503, "Not Implemented", NULL );
-                            break;
-                    }
-
-                    new_request = true;
-                    break;
-  
-                case ERROR_MORE_DATA:
-                    requestId = m_pRequest->RequestId;
-                    resizeRequestBuffer( bytes_transferred );
-                    break;
-
-                case ERROR_CONNECTION_INVALID:
-                default:
-                    // The TCP connection was corrupted by the peer when
-                    // attempting to handle a request with more buffer. 
-                    new_request = true;
-                    break;
-            }
-        }
-        catch( std::exception& ex ) {
-            DMXStudio::log( ex );
-            new_request = true;
-        }
+        it->second->queueEvent( event );
     }
 
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-//
-DWORD HttpWorkerThread::sendAttachment( LPBYTE contents, DWORD size, LPCSTR mime, LPCSTR attachment_name )
-{
-    CString content_disposition;
-    content_disposition.Format( "attachment; filename=%s", attachment_name );
-
-    DWORD result = sendResponse( 200, "OK", (LPBYTE)contents, size, true, "text/xml", (LPCSTR)content_disposition );
-    return result;
-}
-
-// ----------------------------------------------------------------------------
-//
-DWORD HttpWorkerThread::sendFile( LPCSTR file_name, IRequestHandler* handler )
-{
-    CString full_file_path( m_docroot );
-    full_file_path += file_name;
-    full_file_path.Replace( "/", "\\" );
-
-    FILE* pFile = NULL;
-    fopen_s( &pFile, full_file_path, "rb" );
-    if ( pFile == NULL ) {
-        DMXStudio::log( "%d: HTTP file not found (404) '%s'", m_worker_id, (LPCSTR)full_file_path );
-        return error_404( );
-    }
-
-    long size;
-    LPBYTE contents;
-    LPCSTR mime = NULL;
-    bool no_cache = false;
-
-    // Get MIME type
-    CString extention;
-    int position = full_file_path.ReverseFind( '.' );
-    if ( position != -1 ) {
-        mime = m_httpServer->lookupMimeForExtension( full_file_path.Mid( position+1 ) );
-    }
-    if ( mime == NULL )
-        mime = "text/html";
-
-    // Obtain file size:
-    fseek( pFile, 0 , SEEK_END );
-    size = ftell( pFile );
-    rewind( pFile );
-
-    // copy the file into a buffer
-    contents = (LPBYTE)malloc( size+1 );
-    STUDIO_ASSERT( contents != NULL, "Out of memory" );
-    size = fread( contents, 1, size, pFile );
-    contents[size] = '\0';
-
-    if ( strncmp( mime, "text/", 5 ) == 0 ) {
-        if ( handler && strstr( (LPCSTR)contents, "[$[" ) != NULL ) {   // TODO ONLY DO THIS FOR TEXT TYPES
-            CString file_contents( contents );
-
-            int start = 0;
-            bool changed = false;
-
-            while ( start < file_contents.GetLength() ) {
-                int marker_begin = file_contents.Find( "[$[", start );
-                if ( marker_begin == -1 )
-                    break;
-                int marker_end = file_contents.Find( "]$]", marker_begin );
-                if ( marker_end == -1 )
-                    break;
-
-                CString marker = file_contents.Mid( marker_begin+3, marker_end-marker_begin-3 );
-                CString data;
-
-                int pos = marker.Find( ':' );
-                if ( pos > -1 ) {
-                    data = marker.Mid( pos+1 );
-                    marker = marker.Left( pos );
-                }
-
-                CString marker_content;
-                
-                if ( handler->substitute( marker, data, marker_content ) ) {
-                    file_contents = file_contents.Left( marker_begin ) + marker_content + file_contents.Mid( marker_end+3 );
-                    start = marker_begin + marker_content.GetLength();
-                    changed = true;
-                }
-                else {
-                    start = marker_begin+1;
-                }
-            }
-
-            if ( changed ) {
-                size = file_contents.GetLength();
-                contents = (LPBYTE)realloc( contents, size+1 );
-                STUDIO_ASSERT( contents != NULL, "Out of memory" );
-                memcpy( contents, file_contents, size );
-            }
-        }
-    }
-
-    fclose( pFile );
-    
-    try {
-        DWORD result = sendResponse( 200, "OK", contents, size, no_cache, mime );
-        free( contents );
-        return result;
-    }
-    catch ( ... ) {
-        free( contents );
-        throw;
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
-DWORD HttpWorkerThread::sendRedirect( LPCSTR location )
-{
-    HTTP_RESPONSE   response;
-    DWORD           result;
-
-    INITIALIZE_HTTP_RESPONSE( &response, 302, "Moved Temporarily" );
-
-    CString host( m_pRequest->CookedUrl.pHost );
-    int pos = host.Find( "/" );
-    if ( pos != -1 )
-        host = host.Left( pos );
-
-    if ( location[0] != '/' )
-        host += "/";
-
-    CString full_location( "http://" );
-    full_location += host;
-    full_location += location;
-
-    // Add headers
-    ADD_KNOWN_HEADER(response, HttpHeaderLocation, (LPCSTR)full_location );
-   
-    DMXStudio::log( "WORKER %d: HTTP response %d '%s'", m_worker_id, response.StatusCode, response.pReason );
-
-    result = HttpSendHttpResponse(
-                    m_hReqQueue,           // ReqQueueHandle
-                    m_pRequest->RequestId, // Request ID
-                    0,                   // Flags
-                    &response,           // HTTP response
-                    NULL,                // pReserved1
-                    NULL,                // bytes sent  (OPTIONAL)
-                    NULL,                // pReserved2  (must be NULL)
-                    0,                   // Reserved3   (must be 0)
-                    NULL,                // LPOVERLAPPED(OPTIONAL)
-                    NULL                 // pReserved4  (must be NULL)
-                    ); 
-
-    if ( result != NO_ERROR )
-        throw StudioException( "%d: HttpSendHttpResponse 302 failed with %lu \n", m_worker_id, result);
-
-    return result;
-}
-
-// ----------------------------------------------------------------------------
-//
-DWORD HttpWorkerThread::sendResponse( 
-    IN USHORT        StatusCode,
-    IN LPCSTR        pReason,
-    IN LPCSTR        pEntityString )
-{
-    ULONG length = 0;
-
-    if ( pEntityString )
-        length = strlen( pEntityString );
-
-    return sendResponse( StatusCode, pReason, (LPBYTE)pEntityString, length, true, "text/html" );
-}
-
-// ----------------------------------------------------------------------------
-//
-DWORD HttpWorkerThread::sendResponse(
-    IN USHORT        StatusCode,
-    IN LPCSTR        pReason,
-    IN LPBYTE        pEntity,
-    IN ULONG         entityLength,
-    IN BOOL          bNoCache,
-    IN LPCSTR        mime,
-    IN LPCSTR        disposition
-    )
-{
-    HTTP_RESPONSE           response;
-    HTTP_DATA_CHUNK         dataChunk;
-    DWORD                   result;
-    DWORD                   bytesSent;
-    HTTP_UNKNOWN_HEADER     unknown_header;
-
-    // Initialize the HTTP response structure.
-    INITIALIZE_HTTP_RESPONSE( &response, StatusCode, pReason );
-
-    // Add headers
-    ADD_KNOWN_HEADER( response, HttpHeaderContentType, mime );
-
-    if ( bNoCache ) {
-        ADD_KNOWN_HEADER( response, HttpHeaderPragma, "no-cache" );
-        ADD_KNOWN_HEADER( response, HttpHeaderCacheControl, "no-cache" );
-    }
-    else {
-        ADD_KNOWN_HEADER( response, HttpHeaderExpires, "Thu, 27 Dec 2015 16:00:00 GMT" );       // TODO - Compute this
-    }
-
-    if ( disposition != NULL ) {
-        unknown_header.pName = "Content-Disposition";
-        unknown_header.NameLength = (USHORT)strlen(unknown_header.pName);
-        unknown_header.pRawValue = disposition;
-        unknown_header.RawValueLength = (USHORT)strlen( unknown_header.pRawValue );
-        response.Headers.UnknownHeaderCount = 1;
-        response.Headers.pUnknownHeaders = &unknown_header;
-    }
-
-    DMXStudio::log( "WORKER %d: HTTP response %d '%s'", m_worker_id, response.StatusCode, response.pReason );
-
-    if ( entityLength ) {
-        // Add an entity chunk.
-        dataChunk.DataChunkType           = HttpDataChunkFromMemory;
-        dataChunk.FromMemory.pBuffer      = (LPVOID)pEntity;
-        dataChunk.FromMemory.BufferLength = entityLength;
-
-        response.EntityChunkCount         = 1;
-        response.pEntityChunks            = &dataChunk;
-    }
-
-    // Because the entity body is sent in one call, it is not
-    // required to specify the Content-Length.
-    result = HttpSendHttpResponse(
-                    m_hReqQueue,         // ReqQueueHandle
-                    m_pRequest->RequestId, // Request ID
-                    0,                   // Flags
-                    &response,           // HTTP response
-                    NULL,                // pReserved1
-                    &bytesSent,          // bytes sent  (OPTIONAL)
-                    NULL,                // pReserved2  (must be NULL)
-                    0,                   // Reserved3   (must be 0)
-                    NULL,                // LPOVERLAPPED(OPTIONAL)
-                    NULL                 // pReserved4  (must be NULL)
-                    ); 
-
-    if ( result != NO_ERROR )
-        throw StudioException( "%d: HttpSendHttpResponse %d failed with %lu \n",  m_worker_id, StatusCode, result);
-
-    return result;
-}
-
-// ----------------------------------------------------------------------------
-//
-DWORD HttpWorkerThread::processGetRequest()
-{
-    CString path( CW2A( m_pRequest->CookedUrl.pAbsPath ) );
-
-    DMXStudio::log( "WORKER %d: HTTP GET request '%s'", m_worker_id, (LPCSTR)path );
-
-    IRequestHandler* handler = m_httpServer->getHandler( path, getRequestPort() );
-    if ( handler != NULL )
-        return handler->processGetRequest( this );
-
-    return error_404( );
-}
-
-// ----------------------------------------------------------------------------
-//
-DWORD HttpWorkerThread::processPostRequest()
-{
-    LPBYTE          pEntityBuffer;
-    ULONG           EntityBufferLength = 4096;
-    ULONG           TotalBytesRead = 0;
-    ULONG           BufferOffset = 0;
-    DWORD           result;
-    
-    CString path( CW2A( m_pRequest->CookedUrl.pAbsPath ) );
-    DMXStudio::log( "WORKER %d: HTTP POST request '%s'", m_worker_id, (LPCSTR)path );
-
-    pEntityBuffer = (LPBYTE)ALLOC_MEM( EntityBufferLength+1 );  // +1 in case we read _exactly_ EntityBufferLength (need room for null)
-    if (pEntityBuffer == NULL) 
-        throw StudioException( "Unable to allocate memory for POST request buffer" );
-    *pEntityBuffer = '\0';
-
-    try {
-        if ( m_pRequest->Flags & HTTP_REQUEST_FLAG_MORE_ENTITY_BODY_EXISTS ) {
-            bool done = false;
-
-            // The entity body is sent over multiple calls.
-            while ( !done ) {
-                ULONG BytesRead = 0; 
-
-                // Read the entity chunk from the request.
-                result = HttpReceiveRequestEntityBody(
-                            m_hReqQueue,
-                            m_pRequest->RequestId,
-                            0,
-                            &pEntityBuffer[BufferOffset],
-                            EntityBufferLength-BufferOffset,
-                            &BytesRead,
-                            NULL );
-
-                switch ( result ) {
-                    case NO_ERROR:
-                        if ( BytesRead != 0 ) {
-                            BYTE* pNewBuffer = NULL;
-                            BufferOffset += BytesRead;
-                            EntityBufferLength *= 2;
-
-                            pNewBuffer = (LPBYTE) REALLOC_MEM( pEntityBuffer, EntityBufferLength+1 );
-                            if ( pNewBuffer == NULL ) 
-                                throw StudioException( "Unable to allocate memory for POST request buffer" );
-
-                            pEntityBuffer = pNewBuffer;
-                            TotalBytesRead += BytesRead;
-                        }
-                        break;
-
-                    case ERROR_HANDLE_EOF:
-                       pEntityBuffer[TotalBytesRead] = '\0';    // Add a complementary null
-                       done = true;
-                       break;
-
-                    default:
-                      throw StudioException( "HttpReceiveRequestEntityBody failed with %lu",  result);
-                }
-            }
-        }
-    }
-    catch ( ... ) {
-          FREE_MEM( pEntityBuffer );
-          throw;
-    }
-
-    // Send post results to the appropriate handler
-    try {
-        IRequestHandler* handler = m_httpServer->getHandler( path, getRequestPort() );
-        if ( handler != NULL )
-            result = handler->processPostRequest( this, pEntityBuffer, TotalBytesRead );
-        else
-            result =  error_501( );
-
-        FREE_MEM( pEntityBuffer );
-    }
-    catch ( ... ) {
-        FREE_MEM( pEntityBuffer );
-        throw;
-    }
-
-    return result;
+    return false;
 }

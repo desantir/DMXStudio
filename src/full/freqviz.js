@@ -54,7 +54,7 @@ function showFrequencyVisualizer() {
 
     update_frequency_sample_rate();
 
-    $("#frequency_sample_rate").on("slide slidestop", update_frequency_sample_rate);
+    $("#frequency_sample_rate").unbind("slide slidestop").on("slide slidestop", update_frequency_sample_rate);
 
     $("#show_frequency_visualizer").addClass("lg-icon-white").removeClass("lg-icon-grey");
 

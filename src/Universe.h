@@ -61,6 +61,15 @@ public:
         m_dmx_packet_min_delay( min_delay_ms ), 
         m_driver( NULL )
     {}
+
+    Universe( Universe& other ) :
+        m_id( other.m_id ),
+        m_type( other.m_type ),
+        m_dmx_port( other.m_dmx_port ),
+        m_dmx_packet_delay( other.m_dmx_packet_delay ),
+        m_dmx_packet_min_delay( other.m_dmx_packet_min_delay ), 
+        m_driver( NULL )
+    {}
    
     ~Universe() {
         stop();

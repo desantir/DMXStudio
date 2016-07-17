@@ -1,0 +1,166 @@
+<?xml version="1.0" ?>
+<fixture_definitions>
+    <author>Robert DeSantis</author>
+    <version>1</version>
+
+  <fixture type="par" channels="6">
+    <manufacturer>Chauvet</manufacturer>
+    <model>SlimPAR H6</model>
+    <channels>
+      <channel index="1" type="red" color="true" blackout="true">
+        <name>Red</name>
+      </channel>
+      <channel index="2" type="green" color="true" blackout="true">
+        <name>Green</name>
+      </channel>
+      <channel index="3" type="blue" color="true" blackout="true">
+        <name>Blue</name>
+      </channel>
+      <channel index="4" type="amber" color="true" blackout="true">
+        <name>Amber</name>
+      </channel>
+      <channel index="5" type="white" color="true" blackout="true">
+        <name>White</name>
+      </channel>
+      <channel index="6" type="UV" color="true" blackout="true">
+        <name>UV</name>
+      </channel>
+    </channels>
+  </fixture>
+  
+  <fixture type="par" channels="8">
+        <manufacturer>Chauvet</manufacturer>
+        <model>SlimPAR H6</model>
+        <channels>
+          <channel index="1" type="dimmer" color="false" blackout="true" value="255">
+              <name>Dimmer</name>
+          </channel>
+          <channel index="2" type="red" color="true" blackout="true">
+            <name>Red</name>
+          </channel>
+          <channel index="3" type="green" color="true" blackout="true">
+            <name>Green</name>
+          </channel>
+          <channel index="4" type="blue" color="true" blackout="true">
+            <name>Blue</name>
+          </channel>
+          <channel index="5" type="amber" color="true" blackout="true">
+            <name>Amber</name>
+          </channel>
+          <channel index="6" type="white" color="true" blackout="true">
+            <name>White</name>
+          </channel>
+          <channel index="7" type="UV" color="true" blackout="true">
+            <name>UV</name>
+          </channel>
+          <channel index="8" type="strobe" color="false" blackout="false">
+            <name>Strobe</name>
+            <ranges>
+              <range start="0" end="10">
+                  <name>No Function</name>
+              </range>
+              <range start="11" end="255">
+                  <name>0-100% (slow-fast)</name>
+              </range>
+            </ranges>
+          </channel>
+      </channels>
+    </fixture>
+  
+    <fixture type="pixel" channels="12">
+      <manufacturer>Chauvet</manufacturer>
+      <model>SlimPAR H6</model>
+        <channels>
+          <channel index="1" type="dimmer" color="false" blackout="true" value="255">
+            <name>Dimmer</name>
+          </channel>
+          <channel index="2" type="red" color="true" blackout="true">
+            <name>Red</name>
+          </channel>
+          <channel index="3" type="green" color="true" blackout="true">
+            <name>Green</name>
+          </channel>
+          <channel index="4" type="blue" color="true" blackout="true">
+            <name>Blue</name>
+          </channel>
+          <channel index="5" type="amber" color="true" blackout="true">
+            <name>Amber</name>
+          </channel>
+          <channel index="6" type="white" color="true" blackout="true">
+            <name>White</name>
+          </channel>
+          <channel index="7" type="UV" color="true" blackout="true">
+            <name>UV</name>
+          </channel>
+          <channel index="8" type="strobe" color="false" blackout="false">
+            <name>Strobe</name>
+            <ranges>
+              <range start="0" end="10">
+                <name>No Function</name>
+              </range>
+              <range start="11" end="255">
+                <name>0-100% (slow-fast)</name>
+              </range>
+            </ranges>
+          </channel>
+          <channel index="9" type="color macro" color="false" blackout="true">
+            <name>Color Macros</name>
+          </channel>
+          <channel index="10" type="auto program" color="false" blackout="false">
+            <name>Mode</name>
+            <ranges>
+              <range start="0" end="10">
+                <name>No function</name>
+              </range>
+              <range start="11" end="50">
+                <name>Auto program 1</name>
+              </range>
+              <range start="51" end="100">
+                <name>Auto program 2</name>
+              </range>
+              <range start="101" end="150">
+                <name>Auto program 3</name>
+              </range>
+              <range start="151" end="200">
+                <name>Auto program 4</name>
+              </range>
+              <range start="201" end="225">
+                <name>Sound triggered mode (6 color)</name>
+              </range>
+              <range start="226" end="255">
+                <name>Sound triggered mode (21 color)</name>
+              </range>
+            </ranges>
+          </channel>
+          <channel index="11" type="control" color="false" blackout="false">
+            <name>Program Speed / Sensitivity</name>
+            <ranges>
+              <range start="0" end="255">
+                <name>Slow to Fast / Low to High</name>
+              </range>
+            </ranges>
+          </channel>
+          <channel index="12" type="control" color="false" blackout="false">
+            <name>Dimmer Speed</name>
+            <ranges>
+              <range start="0" end="51">
+                <name>Default speed (from fixture)</name>
+              </range>
+              <range start="52" end="101">
+                <name>Off</name>
+              </range>
+              <range start="102" end="152">
+                <name>Fast</name>
+              </range>
+              <range start="153" end="203">
+                <name>Medium</name>
+              </range>
+              <range start="204" end="255">
+                <name>Slow</name>
+              </range>
+            </ranges>
+          </channel>
+
+        </channels>
+    </fixture>
+</fixture_definitions>

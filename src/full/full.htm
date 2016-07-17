@@ -41,6 +41,8 @@ MA 02111-1307, USA.
     <script src="jquery.container.js"></script>
     <script src="jquery.pan-tilt.js"></script>
     <script src="jquery.track-visualize.js"></script>
+    <link rel="stylesheet" href="jquery-toastmessage/css/jquery.toastmessage.css" />    
+    <script src="jquery-toastmessage/jquery.toastmessage.js"></script>
 
     <script src="slider-panel.js"></script>
     <script src="tile-scroll-panel.js"></script>
@@ -54,6 +56,7 @@ MA 02111-1307, USA.
     <script src="beatviz.js"></script>
     <script src="freqviz.js"></script>
     <script src="chase-track.js"></script>
+    <script src="events.js"></script>
 
     <link rel="stylesheet" href="full.css" />
 
@@ -82,9 +85,10 @@ MA 02111-1307, USA.
             </div>
         </div>
         <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
-            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px 0px 4px 0px;" >Whiteout
+            <div class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px 0px 4px 0px;" >Whiteout
+                <div id="whiteout_colorchip" style="display: inline-block;" class="whiteout_colorchip"></div>
                 <span id="whiteout_colorpicker" class="ui-icon ui-icon-lightbulb" title="whiteout color" style="float:right; cursor:pointer; margin-right: 5px;"></span>
-            </p>
+            </div>
             <div id="whiteout_buttons">
                 <input type="radio" id="whiteout_0" name="whiteout" value="0" checked="checked" /><label for="whiteout_0">Off</label>
                 <input type="radio" id="whiteout_1" name="whiteout" value="1" /><label for="whiteout_1">Slow</label>

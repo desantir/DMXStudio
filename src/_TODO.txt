@@ -2,31 +2,13 @@ TODO ------------------------------------------------------------------------ TO
 
 Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 
-	H Animations:
-		H   All animations should be shared across scenes and globally defined
-		H   Animations are scene-based and do not track well across chase sequences
-		H   Animations are not processed during chase cross fade
-		H   Improved sound animation affects (currently they are not very exact and are hard to setup)
-
-		M 5 Simplify animations (must be easier to create animations from the UI)
-		M   Incorporate track audio info to music match scene selection
-
-		L   Movement animation travel time (prefetch next scene/position)
-		L   Multiple animations per fixture (deal with channel contention)
-		L   Loadable, scripted, self contained animations with specific properties (versus the current rat's nest)
-
-   H Scene / Chase / Act Improvements
-		L   Chase crossfade = % of time cues fading into each other (kill fade time change to crossfade model)?
-		L   Name acts and easier act selection in UI
-
    L Web Full UI - music controller
-		H 3 Use events to drive UI updates not polling (event infrastructure in studio and player, HTTP event channel, event processing)
-		H   Implement search for tracks and other objects, reduce/remove dialogs used to control track selection
+		H   Implement search for tracks, scenes, and other objects, reduce/remove dialogs used to control track selection
+			- Live search jquery control
 
 		M 5 Workspace channel management (re-arrange channels, hidden channels, save channel sets)
-        M 1 Mobile UI that can automatically find DMX servers
 
-		L 5 Positional "map" of fixtures (with icons showing type and direction) for easy capture
+        L 1 Mobile UI that can automatically find DMX servers
 		L 5 Alternative to dialogs
 		L 1 Improved error responses (e.g. "<item> not found")
 		L 1 Handle disconnected server state (disable UI, startup errors out if no COM)
@@ -41,16 +23,32 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L   Song blending / beat matching
 		L   Handle music format changes (must be some event)
 
+	H Animations:
+		H   All animations should be shared across scenes and globally defined (need to copy/update across scenes)
+		H   Improved sound animation effects (currently they are not very exact and are hard to setup)
+
+		M 5 Simplify animations (must be easier to create animations from the UI)
+		M   Incorporate track audio info to music match scene selection
+
+		L   Multiple animations per fixture (deal with channel contention)
+		L   Loadable, scripted, self contained animations with specific properties (versus the current rat's nest)
+
+   H Scene / Chase / Act Improvements
+		L   Chase crossfade = % of time cues fading into each other (kill fade time change to crossfade model)?
+		L   Name acts and easier act selection in UI
+
 	L Fixtures / Fixture Definitions
-        H   Palettes for location, color, intensity
+        H   Palettes for location, color, intensity (fixe whiteout pallet)
 		H   Fan channel values in a group
 
 		L   Simple angle->value options (angle*xx) == DMX code
 		L   Movement speed abstraction
 		L   Park moving heads - stop moving back to home?
             Pan/tilt word size
+		L   Controllable master dimmer curve (like H6)
 
 	L General Enhancements
+	    L   Multiple object changes (add act to all, change animation time in all, etc
 	    M   Read/convert pre-existing fixture metadata files such as Chauvet
 		L   MIDI fogger control with ready indicator (auto fog timer?)
 		L   Video support
@@ -97,5 +95,6 @@ ATTIC ------------------------------------------------------------------------ A
 		L   Dimmer curve (LEDs can fall off fast at the end)
 		L   Minimum dimmer setting
 		L   Midi controller support ( tablet support )
+		L 5 Positional "map" of fixtures (with icons showing type and direction) for easy capture
 
 ATTIC ------------------------------------------------------------------------ ATTIC

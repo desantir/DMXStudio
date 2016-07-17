@@ -49,17 +49,11 @@ class ChaseTask : public Threadable
     DWORD				m_next_state_ms;
     DWORD               m_fade_ms;
     unsigned			m_next_step;
-    bool				m_fading;
     bool                m_next_prep;            // Prepare for next chase step
-
-    BYTE				m_dmx_fade[ MULTI_UNIV_PACKET_SIZE ];					// DMX fade packet current values
-    long				m_channel_delta_ms[ MULTI_UNIV_PACKET_SIZE ];			// DMX fade packet ms deltas
-    DWORD				m_channel_next_ms[ MULTI_UNIV_PACKET_SIZE ];			// DMX fade packet ms next
 
     UINT run(void);
 
-    void computeChannelFade( ULONG fade_time );
-    void advanceChannelFade( DWORD current_time );
+    void fadeToNextScene( ULONG fade_time );
     ChaseStep* advanceScene( void );
     void prepareForNext();
 
@@ -78,7 +72,7 @@ public:
     }
 
     bool isFading() const {
-        return m_fading;
+        return m_chase_state == CHASE_FADE;
     }
 
     Chase* getChase() const {

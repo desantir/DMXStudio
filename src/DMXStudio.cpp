@@ -76,6 +76,8 @@ void DMXStudio::runStudio()
 
     srand( (unsigned)time( NULL ) );
 
+    DMXHttpServer server;
+
     try {
         openStudioLogFile();
 
@@ -89,17 +91,25 @@ void DMXStudio::runStudio()
         // Load all available audio capture devices
         AudioInputStream::collectAudioCaptureDevices();
 
+        // Start event bus
+        m_event_bus.startThread();
+        m_event_bus.addListener( this );
+
         // Enumerate the IP addresses
         showIpAddress();
 
         // Connect to the music player if available
         if ( hasMusicPlayer() ) {
             getMusicPlayer()->initialize( );
+
+            DMXStudio::log_status( "Loaded music controller '%s'", getMusicPlayer()->getPlayerName() );
+
             getMusicPlayer()->connect();
+            getMusicPlayer()->registerEventListener( this );
         }
         
         // Start the request server
-        DMXHttpServer server;
+
         if ( m_enable_http )
             server.start();
 
@@ -112,9 +122,6 @@ void DMXStudio::runStudio()
         // Start the console UI
         DMXTextUI ui;
         ui.run();
-
-        if ( m_enable_http )
-            server.stop();
     }
     catch ( StudioException& ex ) {
         log( ex );
@@ -125,17 +132,96 @@ void DMXStudio::runStudio()
         getchar();
     }
 
+    if ( m_enable_http )
+        server.stop();
+
     if ( m_venue )
         delete m_venue;
 
-    if ( hasMusicPlayer() && getMusicPlayer()->isLoaded() )
-        getMusicPlayer()->disconnect( );
+    if ( hasMusicPlayer() ) {
+        getMusicPlayer()->unregisterEventListener( this );
+
+        if ( getMusicPlayer()->isLoaded() )
+            getMusicPlayer()->disconnect( );
+    }
+
+    m_event_bus.stopThread();
 
     closeStudioLogFile();
 
     //writeIniFile();
 
     CoUninitialize();
+}
+
+// ----------------------------------------------------------------------------
+//
+bool DMXStudio::handleEvent( const Event& event )
+{
+    CString output( "EVENT: " );
+    output.Append( (LPCSTR)EventBus::eventAsString( event ) );
+
+    if ( isDebug() )
+        log_status( output );
+    else
+        log( output );
+
+    if ( event.m_source == ES_VENUE ) {
+        if ( event.m_action == EA_START )
+            log_status( "Venue started [%s]", event.m_text );
+        else if ( event.m_action == EA_STOP )
+            log_status( "Venue stopped [%s]", event.m_text );
+        else if ( event.m_action == EA_ERROR )
+            log( StudioException( event.m_text ) );
+    }
+
+    return false;
+}
+
+// ----------------------------------------------------------------------------
+//
+HRESULT STDMETHODCALLTYPE DMXStudio::notify( TrackEventData* pNotify )
+{
+    switch ( pNotify->m_event ) {
+        case TRACK_PLAY:
+            fireEvent( ES_TRACK, 0L, EA_START, pNotify->m_link );
+            break;
+
+        case TRACK_STOP:
+            fireEvent( ES_TRACK, 0L, EA_STOP, pNotify->m_link );
+            break;
+
+        case TRACK_PAUSE:
+            fireEvent( ES_TRACK, 0L, EA_PAUSE, pNotify->m_link, pNotify->m_event_ms  );
+            break;
+
+        case TRACK_RESUME:
+            fireEvent( ES_TRACK, 0L, EA_RESUME, pNotify->m_link, pNotify->m_event_ms  );
+            break;
+
+        case TRACK_POSITION:
+            fireEvent( ES_TRACK, 0L, EA_TIME, pNotify->m_link, pNotify->m_event_ms );
+            break;
+
+        case TRACK_QUEUES:
+            fireEvent( ES_TRACK_QUEUES, 0L, EA_CHANGED, NULL, pNotify->m_played_size, pNotify->m_queued_size );
+            break;
+    }
+
+    return S_OK;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool DMXStudio::fireEvent( EventSource source, DWORD uid, EventAction action, LPCSTR text, DWORD val1, DWORD val2, DWORD val3, DWORD val4 )
+{
+    return studio.m_event_bus.fireEvent( source, uid, action, text, val1, val2, val3, val4 );
+}
+
+// ----------------------------------------------------------------------------
+//
+EventBus* DMXStudio::getEventBus() {
+    return &studio.m_event_bus;
 }
 
 // ----------------------------------------------------------------------------
@@ -154,7 +240,7 @@ bool DMXStudio::loadVenueFromFile( LPCSTR venue_filename )
     CString full_filename;
     full_filename.Format( "%s\\%s", m_venue_container, venue_filename );
 
-    Venue* new_venue = DMXStudio::readVenueFromFile( full_filename );
+    Venue* new_venue = readVenueFromFile( full_filename );
     if ( !new_venue )
         return false;
 

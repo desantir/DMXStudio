@@ -41,6 +41,11 @@ public:
         m_animation_task(NULL)
     {}
 
+    AbstractAnimation( UID animation_uid ) :
+        DObject( animation_uid, 0, NULL, NULL ),
+        m_animation_task(NULL)
+    {}
+
     AbstractAnimation( UID animation_uid, AnimationSignal signal ) :
         DObject( animation_uid, 0, NULL, NULL ),
         m_signal( signal ),

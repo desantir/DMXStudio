@@ -137,6 +137,8 @@ public:
     }
     void setMusicSceneSelectEnabled( bool music_scene_select_enabled ) {
         m_music_scene_select_enabled = music_scene_select_enabled;
+
+        fireEvent( ES_MUSIC_MATCH, 0L, music_scene_select_enabled ? EA_START : EA_STOP );
     }
 
     MusicSceneSelectMap& music_scene_select_map() {
@@ -162,16 +164,18 @@ public:
         return ( m_volume ) ? m_volume->getMasterVolume() : 0;
     }
     inline void setMasterVolume( UINT volume ) {
-        if ( m_volume )
+        if ( m_volume ) {
             m_volume->setMasterVolume( volume );
+        }
     }
 
     bool isMasterVolumeMute(void) const {
         return ( m_volume ) ? m_volume->isMute() : false;
     }
     inline void setMasterVolumeMute( bool mute ) {
-        if ( m_volume )
+        if ( m_volume ) {
             m_volume->setMute( mute );
+        }
     }
 
     void setHomePositions( LPBYTE dmx_packet );
@@ -195,6 +199,8 @@ public:
         m_whiteout_strobe_ms = strobe_ms;
         if ( m_whiteout == WHITEOUT_STROBE_MANUAL )     // Need to reset strobe timer
             setWhiteout( WHITEOUT_STROBE_MANUAL );
+
+        fireEvent( ES_WHITEOUT_STROBE, 0L, EA_CHANGED, NULL, strobe_ms );
     }
     UINT getWhiteoutStrobeMS() const {
         return m_whiteout_strobe_ms;
@@ -207,6 +213,11 @@ public:
         m_whiteout_color = color;
         if ( color.red() == 0xFF && color.blue() == 0xFF && color.green() == 0xFF )
             m_whiteout_color.white( 0xFF );             // For fixtures with white channel
+
+        CString hex_color;
+        hex_color.AppendFormat( "%06lX", (ULONG)color );
+
+        fireEvent( ES_WHITEOUT_COLOR, 0L, EA_CHANGED, (LPCSTR)hex_color, (ULONG)color );
     }
 
     void setAudioBoostFloor( float boost_floor ) {
@@ -227,6 +238,8 @@ public:
             m_venue_layout = layout;
         else
             m_venue_layout.Empty();
+
+        fireEvent( ES_VENUE, 0L, EA_CHANGED );
     }
 
     const char* getAudioCaptureDevice( ) const {
@@ -267,6 +280,8 @@ public:
     void setMasterDimmer( BYTE dimmer ) {
         STUDIO_ASSERT( dimmer <= 100, "Master dimmer level must be between 0 and 100" );
         m_master_dimmer = dimmer;
+
+        fireEvent( ES_MASTER_DIMMER, 0L, EA_CHANGED, NULL, dimmer );
     }
     BYTE getMasterDimmer( ) const {
         return m_master_dimmer;
@@ -274,6 +289,8 @@ public:
 
     inline void setMuteBlackout( bool blackout ) {
         m_mute_blackout = blackout;
+
+        fireEvent( ES_MUTE_BLACKOUT, 0L, blackout ? EA_START : EA_STOP );
     }
     inline bool isMuteBlackout( ) const {
         return m_mute_blackout;
@@ -290,6 +307,7 @@ public:
         if ( isRunning() ) {
             getSoundDetector()->setMuteMS( black_out );
         }
+        fireEvent( ES_MUTE_BLACKOUT, 0L, EA_CHANGED, NULL, black_out );
     }
     DWORD getAutoBlackoutMS( ) const {
         return m_auto_backout_ms;
@@ -325,8 +343,8 @@ public:
     ScenePtrArray getScenes();
     bool deleteScene( UID scene_uid );
     UID addScene( Scene& scene, bool isDefault=false );
-    void stageScene( UID scene_uid, SceneLoadMethod method );
-    void stageActor( SceneActor* actor );
+    void playScene( UID scene_uid, SceneLoadMethod method );
+    void stageActors( ActorPtrArray& actors );
     void clearAnimations();
     Scene *getSceneByNumber( SceneNumber scene_number );
     SceneNumber nextAvailableSceneNumber( void );
@@ -334,9 +352,13 @@ public:
     UID getRandomScene();
     void populateSceneRatingsMap( SceneRatingsMap& map );
     void sceneUpdated( UID scene_uid );
+    void fadeToNextScene( ULONG fade_time, ActorPtrArray& actors );
 
     inline void selectScene( UID scene_uid ) {
-        stageScene( scene_uid, SLM_LOAD );
+        // Stop any running chases and load the new object
+        stopChase();
+
+        playScene( scene_uid, SLM_LOAD );
     }
 
     inline UID getCurrentSceneUID() const {
@@ -401,6 +423,17 @@ public:
         return m_chase_task->getChase()->getUID();
     }
 
+    void configure( LPCSTR name, LPCSTR description, LPCSTR audio_capture_device, float audio_boost, 
+                    float audio_boost_floor, int audio_sample_size, int auto_blackout, 
+                    std::vector<Universe>& universes );
+
+    inline bool fireEvent( EventSource source, DWORD uid, EventAction action, LPCSTR text=NULL, DWORD val1=0L, DWORD val2=0L, DWORD val3=0L, DWORD val4=0L ) {
+        if ( isRunning() )
+            return DMXStudio::fireEvent( source, uid, action, text, val1, val2, val3, val4 );
+
+        return false;
+    }
+
 private:
     inline UID allocUID() {
         return m_uid_pool++;
@@ -411,5 +444,5 @@ private:
     void loadChannel( BYTE *dmx_packet, Fixture* pf, channel_t channel, BYTE value );
     void whiteoutChannels( LPBYTE dmx_packet );
     void blackoutChannels( LPBYTE dmx_packet );
-    BYTE adjustChannelValue( Fixture* pf, channel_t channel, BYTE value );
+    void dimmerChannels( LPBYTE dmx_packe );
 };

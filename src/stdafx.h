@@ -41,6 +41,8 @@ MA 02111-1307, USA.
 #include <vector>
 #include <map>
 #include <set>
+#include <list>
+#include <queue>
 #include <algorithm>
 #include <iterator>
 #include <exception>

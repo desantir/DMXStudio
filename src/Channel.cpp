@@ -51,6 +51,7 @@ static int populateChannelTypes() {
     channelTypeToNameMap[CHNLT_DIMMER_AND_STROBE] = "Dimmer/Strobe";
     channelTypeToNameMap[CHNLT_PROG_SPEED] = "Program Speed";
     channelTypeToNameMap[CHNLT_LASER] = "Laser";
+    channelTypeToNameMap[CHNLT_UV] = "UV";
 
     return 0;
 }

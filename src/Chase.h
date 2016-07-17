@@ -49,6 +49,7 @@ public:
         DObject()
     {}
 
+    Chase( Chase& other );
     Chase( UID uid, ChaseNumber chase_number, ULONG delay_ms, ULONG fade_ms, const char * name, const char *description, bool repeat );
     ~Chase(void);
 

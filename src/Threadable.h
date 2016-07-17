@@ -20,10 +20,9 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 
 extern UINT __cdecl _run( LPVOID object );
 

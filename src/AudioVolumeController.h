@@ -24,10 +24,14 @@ MA 02111-1307, USA.
 
 #include "DMXStudio.h"
 
-class AudioVolumeController
+class AudioVolumeController : public IAudioEndpointVolumeCallback 
 {
     IAudioEndpointVolume*   m_endpointVolume;
     CString                 m_render_name;
+    ULONG                   m_reference_count;
+
+    UINT                    m_volume;
+    BOOL                    m_mute;
 
 protected:
     AudioVolumeController( IAudioEndpointVolume*, LPCSTR endpoint_name );
@@ -45,6 +49,30 @@ public:
 
     LPCSTR getRenderDeviceName( ) const {
         return m_render_name;
+    }
+
+    HRESULT STDMETHODCALLTYPE OnNotify( PAUDIO_VOLUME_NOTIFICATION_DATA pNotify );
+
+    ULONG STDMETHODCALLTYPE AddRef() {
+        return ++m_reference_count;
+    }
+
+    ULONG STDMETHODCALLTYPE Release() {
+        return --m_reference_count;
+    }
+
+    HRESULT STDMETHODCALLTYPE QueryInterface( REFIID riid, void **ppvObject ) {
+        if ( ppvObject == NULL )
+            return E_POINTER;
+
+        if ( riid == IID_IAudioEndpointVolume )
+            return E_NOINTERFACE;
+
+        *ppvObject = this;
+
+        AddRef();
+        
+        return S_OK;
     }
 };
 

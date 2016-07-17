@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -20,7 +20,6 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "AudioVolumeController.h"
 #include "Functiondiscoverykeys_devpkey.h"
 
@@ -36,14 +35,28 @@ MA 02111-1307, USA.
 //
 AudioVolumeController::AudioVolumeController( IAudioEndpointVolume* endpointVolume, LPCSTR endpoint_name ) :
     m_endpointVolume( endpointVolume ),
-    m_render_name( endpoint_name )
+    m_render_name( endpoint_name ),
+    m_reference_count( 0L )
 {
+    m_endpointVolume->RegisterControlChangeNotify( this );
+
+    HRESULT hr;
+    float currentVolume = 0;
+
+    hr = m_endpointVolume->GetMasterVolumeLevelScalar( &currentVolume );
+    AUDIO_VOLUME_ASSERT( hr, "Cannot get current volume" );
+    m_volume = static_cast<UINT>( (currentVolume + .005) * 100 );
+
+    hr = m_endpointVolume->GetMute( &m_mute );
+    AUDIO_VOLUME_ASSERT( hr, "Cannot get mute state" );
 }
 
 // ----------------------------------------------------------------------------
 //
 AudioVolumeController::~AudioVolumeController(void)
 {
+    m_endpointVolume->UnregisterControlChangeNotify( this );
+
     SAFE_RELEASE( m_endpointVolume ); 
 }
 
@@ -121,13 +134,7 @@ void AudioVolumeController::releaseVolumeController( AudioVolumeController* volu
 //
 UINT AudioVolumeController::getMasterVolume( )
 {
-    HRESULT hr;
-    float currentVolume = 0;
-
-    hr = m_endpointVolume->GetMasterVolumeLevelScalar( &currentVolume );
-    AUDIO_VOLUME_ASSERT( hr, "Cannot get current volume" );
-
-    return static_cast<UINT>( (currentVolume + .005) * 100 );
+    return m_volume;
 }
 
 // ----------------------------------------------------------------------------
@@ -147,13 +154,7 @@ void AudioVolumeController::setMasterVolume( UINT volume )
 //
 bool AudioVolumeController::isMute( )
 {
-    HRESULT hr;
-    BOOL mute = false;
-
-    hr = m_endpointVolume->GetMute( &mute );
-    AUDIO_VOLUME_ASSERT( hr, "Cannot get mute state" );
-
-    return mute != 0;
+    return m_mute ? true : false;
 }
 
 // ----------------------------------------------------------------------------
@@ -165,4 +166,25 @@ void AudioVolumeController::setMute( bool mute )
 
     hr = m_endpointVolume->SetMute( mute, NULL );
     AUDIO_VOLUME_ASSERT( hr, "Cannot set mute" );
+}
+
+// ----------------------------------------------------------------------------
+// Get master volume
+//
+HRESULT AudioVolumeController::OnNotify( PAUDIO_VOLUME_NOTIFICATION_DATA pNotify )
+{
+    UINT volume = static_cast<UINT>( (pNotify->fMasterVolume + .005) * 100 );
+    BOOL mute = pNotify->bMuted;
+
+    if ( volume != m_volume ) {
+        m_volume = volume;
+        DMXStudio::fireEvent( ES_VOLUME, 0L, EA_CHANGED, NULL, volume );
+    }
+
+    if ( mute != m_mute ) {
+        m_mute = mute;
+        DMXStudio::fireEvent( ES_VOLUME_MUTE, 0L, mute ? EA_START : EA_STOP );
+    }
+
+    return S_OK;
 }

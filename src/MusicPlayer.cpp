@@ -20,7 +20,7 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "MusicPlayer.h"
 
 #define VERIFY_LIBRARY_LOADED \
@@ -60,6 +60,8 @@ void MusicPlayer::initialize( )
     m_GetPlayerName = getAddress<GetPlayerName>( "GetPlayerName" );
     m_Connect = getAddress<Connect>( "Connect" );
     m_Disconnect = getAddress<Disconnect>( "Disconnect" );
+    m_RegisterEventListener = getAddress<RegisterEventListener>( "RegisterEventListener" );
+    m_UnregisterEventListener = getAddress<UnregisterEventListener>( "UnregisterEventListener" );
     m_Signon = getAddress<Signon>( "Signon" );
     m_GetPlaylists = getAddress<GetPlaylists>( "GetPlaylists" );
     m_GetPlaylistName = getAddress<GetPlaylistName>( "GetPlaylistName" );
@@ -81,8 +83,6 @@ void MusicPlayer::initialize( )
     m_GetLastPlayerError = getAddress<GetLastPlayerError>( "GetLastPlayerError" );
     m_WaitOnTrackEvent = getAddress<WaitOnTrackEvent>( "WaitOnTrackEvent" );
     m_GetTrackAnalysis = getAddress<GetTrackAnalysis>( "GetTrackAnalysis" );
-
-    studio.log_status( "Loaded music controller '%s'", getPlayerName() );
 }
 
 // ----------------------------------------------------------------------------
@@ -121,6 +121,24 @@ bool MusicPlayer::disconnect( )
     m_library = NULL;
 
     return result;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool MusicPlayer::registerEventListener( IPlayerEventCallback* listener )
+{
+    VERIFY_LIBRARY_LOADED;
+
+    return (*m_RegisterEventListener)( listener );
+}
+
+// ----------------------------------------------------------------------------
+//
+bool MusicPlayer::unregisterEventListener( IPlayerEventCallback* listener )
+{
+    VERIFY_LIBRARY_LOADED;
+
+    return (*m_UnregisterEventListener)( listener );
 }
 
 // ----------------------------------------------------------------------------

@@ -31,6 +31,7 @@ var client_config_update = false;                   // Client layou has changed 
 var current_act = 0;                                // All acts
 var whiteout_color = '#FFFFFF';                     // Whiteout color
 var num_universes = 1;
+var default_scene_uid = 0;                          // Default scene UID
 
 var scene_tile_panel;
 var chase_tile_panel;
@@ -62,6 +63,23 @@ var client_config = null;
         }
     };
 */
+
+// No need to keep looking these up on every update and it seems expensive
+var cache_master_volume = null;
+var cache_whiteout_custom_value = null;
+var cache_master_volume_value = null;
+var cache_master_volume_handle = null;
+var cache_volume_mute = null;
+var cache_animation_speed = null;
+var cache_blackout_buttons = null;
+var cache_whiteout_buttons = null;
+var cache_music_match_buttons = null;
+var cache_animation_speed = null;
+var cache_blackout_on = null;
+var cache_blackout_off = null;
+var cache_music_match_on = null;
+var cache_music_match_off = null;
+var cache_status_icon = null;
 
 // ----------------------------------------------------------------------------
 //
@@ -256,8 +274,7 @@ function initializeUI() {
 
     });
 
-    init_music_player();
-
+    // Appear after setup because some require initialization (such as sliders)
     cache_master_volume = $('#master_volume');
     cache_whiteout_custom_value = $('#whiteout_custom_value');
     cache_master_volume_value = $('#master_volume_value');
@@ -273,20 +290,206 @@ function initializeUI() {
     cache_music_match_off = $('#music_match_0');
     cache_status_icon = $("#system_status_icon");
 
+    initializeMusicPlayer();
+
+    // START THE VENUE
+
+    startUserInterface();
+}
+
+// ----------------------------------------------------------------------------
+//
+function startUserInterface() {
     // Update the UI from server's current state
     updateVenueLayout();
     updateScenes();
     updateChases();
     updateFixtures();
 
-    // Start background updates, but allow all data loads to finish
-    setTimeout( updateUI(), 100 );
+    var one_shot_updated = function() {
+        $.ajax({
+            type: "GET",
+            url: "/dmxstudio/rest/query/venue/status/",
+            cache: false,
+            success: function (data) {
+                var json = jQuery.parseJSON(data);
+
+                DMX_MAX_UNIVERSES = json.dmx_max_universes;
+
+                default_scene_uid = json.default_scene_uid;
+                venue_filename = json.venue_filename;
+
+                updateMasterDimmer( json.dimmer );
+                updateVolume( json.master_volume );
+                updateMuteBlackout( json.auto_blackout );
+                updateWhiteoutStrobe( json.whiteout_strobe );
+                updateWhiteoutColor( json.whiteout_color );
+                updateBlackout( json.blackout );
+                updateWhiteout( json.whiteout );
+                updateMusicMatch( json.music_match );
+                updateVolumeMute( json.mute );
+                updateAnimationSpeed( json.animation_speed );
+                updateCapturedFixtures( json.captured_fixtures );
+
+                cache_status_icon.addClass("ui-icon-green").removeClass("ui-icon-red");
+                cache_status_icon.attr("title", "status: running");
+                system_status = true;
+
+                if ( json.music_player != null )
+                    update_player_status( json.music_player );
+
+                // Start event processing if needed
+                start_event_processing();
+            },
+
+            error: function () {
+                toastError( "VENUE UPDATE FAILED" );
+            }
+        })
+    };
+    
+    setTimeout( one_shot_updated, 100 );
 }
 
+// ----------------------------------------------------------------------------
+//
+function updateBlackout( blackout ) {
+    var blackout = blackout ? cache_blackout_on :cache_blackout_off;
+    if (!blackout.prop("checked") && !cache_blackout_buttons.is(":focus"))
+        blackout.prop("checked", true).button("refresh");
+}
+
+// ----------------------------------------------------------------------------
+//
+function updateWhiteout( whiteout ) {
+    var whiteout_button = $("#whiteout_" + whiteout);
+    if (!whiteout_button.prop("checked") && !cache_whiteout_buttons.is(":focus"))
+        whiteout_button.prop("checked", true).button("refresh");
+}
+
+// ----------------------------------------------------------------------------
+//
+function updateWhiteoutColor( hex_color ) {
+    whiteout_color = hex_color;
+    $("#whiteout_colorchip").css( 'background-color', "#" + hex_color );
+}
+
+// ----------------------------------------------------------------------------
+//
+function updateMusicMatch( music_match ) {
+    var mm = music_match ? cache_music_match_on : cache_music_match_off;
+    if (!mm.prop("checked") && !cache_music_match_buttons.is(":focus"))
+            mm.prop("checked", true).button("refresh");
+}
+
+// ----------------------------------------------------------------------------
+//
+function updateMuteBlackout( blackout ) {
+    if (auto_blackout != blackout) {
+        auto_blackout = blackout;
+
+        if (auto_blackout)
+            $("#system_blackout_icon").show();
+        else
+            $("#system_blackout_icon").hide();
+
+        toastNotice( auto_blackout ? "auto blackout on" : "auto blackout off" );
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+function updateVolumeMute( mute ) {
+    if (mute != cache_volume_mute.hasClass("ui-icon-volume-off")) {
+        if (!mute) {
+            cache_volume_mute.attr('class', "ui-icon ui-icon-volume-on");
+            cache_volume_mute.attr('title', 'mute');
+        }
+        else {
+            cache_volume_mute.attr('class', "ui-icon-red ui-icon-volume-off");
+            cache_volume_mute.attr('title', 'unmute');
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+function updateAnimationSpeed( animation_speed ) {
+    if (cache_animation_speed.val() != animation_speed && !cache_animation_speed.multiselect("isOpen")) {
+        var o = cache_animation_speed.find("option[value='" + animation_speed + "']");
+
+        if (o != null && o.length == 1 )
+            o.attr("selected", true);
+        else {
+            cache_animation_speed.append($('<option>', {
+                value: animation_speed,
+                text: "custom: " + animation_speed + " ms",
+                selected: true
+            }));
+        }
+
+        cache_animation_speed.multiselect('refresh');
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+function updateVolume( master_volume ) {
+    if (cache_master_volume.slider("value") != master_volume && !cache_master_volume_handle.is(':focus') ) {
+        cache_master_volume_value.html(master_volume);
+        cache_master_volume.slider("value", master_volume);
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+function updateWhiteoutStrobe( whiteout_strobe ) {
+    if (cache_whiteout_custom_value.val() != whiteout_strobe && !cache_whiteout_custom_value.multiselect( "isOpen" )) {
+        cache_whiteout_custom_value.empty();
+        var found = false;
+        for (var i = 0; i < whiteout_ms.length; i++) {
+            if (whiteout_ms[i] == whiteout_strobe)
+                found = true;
+            cache_whiteout_custom_value.append($('<option>', {
+                value: whiteout_ms[i],
+                text: whiteout_ms[i] + " ms",
+                selected: whiteout_ms[i] == whiteout_strobe
+            }));
+        }
+        if (!found) {
+            cache_whiteout_custom_value.append($('<option>', {
+                value: whiteout_strobe,
+                text: whiteout_strobe + " ms",
+                selected: true
+            }));
+        }
+        cache_whiteout_custom_value.multiselect("refresh");
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+function updateMasterDimmer( master_dimmer ) {
+    if (  master_dimmer_channel.value != master_dimmer  ) {
+        var slider = master_dimmer_channel.slider;
+            if ( slider != null && !slider.isBusy() ) {
+                slider.setValue(master_dimmer);
+                slider.changed = false;
+            }
+    
+        // Always set as the dimmer may not yet be setup on startup
+        master_dimmer_channel.value = master_dimmer;
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
 function update_current_act() {
     $("#current_act").text(current_act == 0 ? "all acts" : ("act " + current_act));
 }
 
+// ----------------------------------------------------------------------------
+//
 function messageBox(message) {
     $("#message_box_dialog").dialog({
         title: "DMXStudio",
@@ -314,150 +517,40 @@ function messageBox(message) {
 
 // ----------------------------------------------------------------------------
 //
-// No need to keep looking these up on every update and it seems expensive
-var cache_master_volume = null;
-var cache_whiteout_custom_value = null;
-var cache_master_volume_value = null;
-var cache_master_volume_handle = null;
-var cache_volume_mute = null;
-var cache_animation_speed = null;
-var cache_blackout_buttons = null;
-var cache_whiteout_buttons = null;
-var cache_music_match_buttons = null;
-var cache_animation_speed = null;
-var cache_blackout_on = null;
-var cache_blackout_off = null;
-var cache_music_match_on = null;
-var cache_music_match_off = null;
-var cache_status_icon = null;
+function toastNotice( message ) {
+    $().toastmessage( 'showToast', {
+        text     : message,
+        stayTime : 3000,
+        sticky   : false,
+        position : 'top-right',
+        type     : 'notice',
+        close    : null
+    });
+}
 
-function updateUI() {
-    // See if we need to push configuration updates to the server
-    if (client_config_update) {
-        saveVenueLayout();
-    }
+// ----------------------------------------------------------------------------
+//
+function toastWarning( message ) {
+    $().toastmessage( 'showToast', {
+        text     : message,
+        stayTime : 10000,
+        sticky   : false,
+        position : 'top-right',
+        type     : 'warning',
+        close    : null
+    });
+}
 
-    $.ajax({
-        type: "GET",
-        url: "/dmxstudio/rest/query/venue/status/",
-        cache: false,
-        success: function (data) {
-            var json = jQuery.parseJSON(data);
-
-            DMX_MAX_UNIVERSES = parseInt(json.dmx_max_universes);
-
-            markActiveScene(json.current_scene);
-            markActiveChase(json.current_chase);
-
-            if (master_dimmer_channel.slider != null && master_dimmer_channel.value != json.dimmer) {
-                var slider = master_dimmer_channel.slider;
-                
-                if (slider != null && !slider.isBusy()) {
-                    master_dimmer_channel.value = json.dimmer;
-                    master_dimmer_channel.slider.setValue(json.dimmer);
-                }
-            }
-
-            if (cache_master_volume.slider("value") != json.master_volume && !cache_master_volume_handle.is(':focus') ) {
-                cache_master_volume_value.html(json.master_volume);
-                cache_master_volume.slider("value", json.master_volume);
-            }
-
-            if (auto_blackout != json.auto_blackout) {
-                auto_blackout = json.auto_blackout;
-
-                if (auto_blackout)
-                    $("#system_blackout_icon").show();
-                else
-                    $("#system_blackout_icon").hide();
-            }
-
-            if (cache_whiteout_custom_value.val() != json.whiteout_strobe && !cache_whiteout_custom_value.multiselect( "isOpen" )) {
-                cache_whiteout_custom_value.empty();
-                var found = false;
-                for (var i = 0; i < whiteout_ms.length; i++) {
-                    if (whiteout_ms[i] == json.whiteout_strobe)
-                        found = true;
-                    cache_whiteout_custom_value.append($('<option>', {
-                        value: whiteout_ms[i],
-                        text: whiteout_ms[i] + " ms",
-                        selected: whiteout_ms[i] == json.whiteout_strobe
-                    }));
-                }
-                if (!found) {
-                    cache_whiteout_custom_value.append($('<option>', {
-                        value: json.whiteout_strobe,
-                        text: json.whiteout_strobe + " ms",
-                        selected: true
-                    }));
-                }
-                cache_whiteout_custom_value.multiselect("refresh");
-            }
-
-            whiteout_color = json.whiteout_color;
-
-            var blackout = json.blackout ? cache_blackout_on :cache_blackout_off;
-            if (!blackout.prop("checked") && !cache_blackout_buttons.is(":focus"))
-                blackout.prop("checked", true).button("refresh");
-
-            var whiteout_button = $("#whiteout_" + json.whiteout);
-            if (!whiteout_button.prop("checked") && !cache_whiteout_buttons.is(":focus"))
-                whiteout_button.prop("checked", true).button("refresh");
-
-            var mm = json.music_match ? cache_music_match_on : cache_music_match_off;
-            if (!mm.prop("checked") && !cache_music_match_buttons.is(":focus"))
-                    mm.prop("checked", true).button("refresh");
-
-            if (json.mute != cache_volume_mute.hasClass("ui-icon-volume-off")) {
-                if (!json.mute) {
-                    cache_volume_mute.attr('class', "ui-icon ui-icon-volume-on");
-                    cache_volume_mute.attr('title', 'mute');
-                }
-                else {
-                    cache_volume_mute.attr('class', "ui-icon-red ui-icon-volume-off");
-                    cache_volume_mute.attr('title', 'unmute');
-                }
-            }
-
-            if (cache_animation_speed.val() != json.animation_speed && !cache_animation_speed.multiselect("isOpen")) {
-                var o = cache_animation_speed.find("option[value='" + json.animation_speed + "']");
-
-                if (o != null && o.length == 1 )
-                    o.attr("selected", true);
-                else {
-                    cache_animation_speed.append($('<option>', {
-                        value: json.animation_speed,
-                        text: "custom: " + json.animation_speed + " ms",
-                        selected: true
-                    }));
-                }
-
-                cache_animation_speed.multiselect('refresh');
-            }
-
-            venue_filename = json.venue_filename;
-
-            update_player_status( json.music_player );
-
-            if (!system_status) {
-                cache_status_icon.addClass("ui-icon-green").removeClass("ui-icon-red");
-                cache_status_icon.attr("title", "status: running");
-                system_status = true;
-            }
-
-            updateCapturedFixtures(json.captured_fixtures);
-
-            setTimeout(updateUI, 500);
-        },
-        error: function () {
-            if (system_status) {
-                cache_status_icon.removeClass("ui-icon-green").addClass("ui-icon-red");
-                cache_status_icon.attr("title", "status: disconnected");
-                system_status = false;
-            }
-
-            setTimeout(updateUI, 2000);
-        }
+// ----------------------------------------------------------------------------
+//
+function toastError( message ) {
+    $().toastmessage( 'showToast', {
+        text     : message,
+        stayTime : 3000,
+        sticky   : true,
+        position : 'top-right',
+        type     : 'error',
+        close    : null
     });
 }
 
@@ -477,23 +570,41 @@ function setWhiteoutColor(rgb) {
 // ----------------------------------------------------------------------------
 //
 function sendMasterVolumeUpdate() {
-    $.ajax({
-        type: "GET",
-        url: "/dmxstudio/rest/control/venue/volume/master/" + $("#master_volume").slider("value"),
-        cache: false,
-        error: onAjaxError
+    delayUpdate( "volume", 10, function() {
+        $.ajax({
+            type: "GET",
+            url: "/dmxstudio/rest/control/venue/volume/master/" + $("#master_volume").slider("value"),
+            cache: false,
+            error: onAjaxError
+        });
     });
 }
 
 // ----------------------------------------------------------------------------
 //
 function sendMasterDimmerUpdate() {
-    $.ajax({
-        type: "GET",
-        url: "/dmxstudio/rest/control/venue/masterdimmer/" + $("#master_dimmer").slider("value"),
-        cache: false,
-        error: onAjaxError
+    delayUpdate( "dimmer", 10, function() {
+        $.ajax({
+            type: "GET",
+            url: "/dmxstudio/rest/control/venue/masterdimmer/" + $("#master_dimmer").slider("value"),
+            cache: false,
+            error: onAjaxError
+        });
     });
+}
+
+// ----------------------------------------------------------------------------
+//
+var pendingUpdates = [];
+
+function delayUpdate( id, timeout_ms, func ) {
+    if ( pendingUpdates[ id ] != null )
+        clearTimeout( pendingUpdates[ id ] );
+
+    pendingUpdates[ id ] = setTimeout( function () {
+        pendingUpdates[ id ] = null;
+        func();
+    }, timeout_ms );
 }
 
 // ----------------------------------------------------------------------------

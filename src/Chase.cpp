@@ -35,6 +35,18 @@ Chase::Chase( UID uid, ChaseNumber chase_number, ULONG delay_ms, ULONG fade_ms, 
 
 // ----------------------------------------------------------------------------
 //
+Chase::Chase( Chase& other ) :
+    DObject( other ),
+    m_delay_ms( other.m_delay_ms ),
+    m_fade_ms( other.m_fade_ms ),
+    m_repeat( other.m_repeat ),
+    m_acts( other.m_acts ),
+    m_chase_steps( other.m_chase_steps )
+{
+}
+
+// ----------------------------------------------------------------------------
+//
 Chase::~Chase(void)
 {
 }

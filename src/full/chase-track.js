@@ -275,9 +275,9 @@ function chaseTrack( event ) {
         generateChase();
     });
 
-    $("#ctd_bar_widths").buttonset().on("change", function() {
-        var value = $("input[name=ctd_width]:checked").val();
-        $("#ctd_visualizer").track_visualize_control( "option", "BAR_BOX_WIDTH", parseInt(value) );
+    $("#ctd_bar_widths").buttonset().unbind().on("change", function() {
+        barWidth = parseInt( $("input[name=ctd_width]:checked").val() );
+        $("#ctd_visualizer").track_visualize_control( "option", "BAR_BOX_WIDTH", barWidth );
     });
 
     $("#ctd_method_div").buttonset();

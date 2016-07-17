@@ -339,7 +339,7 @@ function loadSaveVenue(event) {
         }
     }
 
-    $("#lsd_accordion").accordion({ heightStyle: "fill" }).on("accordionactivate", function (event, ui) {
+    $("#lsd_accordion").accordion({ heightStyle: "fill" }).unbind().on("accordionactivate", function (event, ui) {
         setupButtons();
     });
 

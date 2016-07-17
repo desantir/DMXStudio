@@ -108,9 +108,6 @@ UINT MusicWatcher::run(void) {
                 method_of_selection = "re-";
             }
 
-            // Stop any running chases and load the new object
-            m_venue->stopChase();
-
             if ( type == MST_SCENE ) {
                 Scene* scene = m_venue->getScene( type_uid );
                 STUDIO_ASSERT( scene, "Music match scene %lu does not exist for %s", type_uid, track_full_name );
@@ -139,8 +136,6 @@ UINT MusicWatcher::run(void) {
             return -1;
         }
     }
-
-    DMXStudio::log_status( "Music match stopped" );
 
     return 0;
 }
