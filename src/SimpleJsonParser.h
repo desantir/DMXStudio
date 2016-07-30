@@ -23,79 +23,130 @@ MA 02111-1307, USA.
 #pragma once
 
 #include "stdafx.h"
-#include "AbstractAnimation.h"
+
+#ifdef COLOR_SUPPORT
+#include "RGBWA.h"
+#endif
 
 // This is the simplest of JSON parsers - handles a single level of various typed objects
 
-class SimpleJsonParser
-{
-    typedef std::map< CString, CString > NAME_VALUE_PAIR;
+enum JsonNodeType {
+    JSONROOT,
+    JSONOBJECT,
+    JSONARRAY,
+    JSONCONSTANT,
+    JSONNULL
+};
 
-    enum ParseState {
-        OPENING_BRACE=1,
-        TAG_NAME,
-        COLON,
-        TAG_VALUE,
-        TAG_SEPARATOR,
-        ARRAY_VALUE_OR_SEPARATOR,
-        ARRAY_VALUE,
-        ARRAY_SEPARATOR,
-        ARRAY_OF_OBJECTS,
-        OBJECT,
-        DONE
-     };
-          
-    NAME_VALUE_PAIR         m_values;
+class SimpleJsonParser;
+struct JsonNode;;
 
-public:
-    SimpleJsonParser(void);
-    ~SimpleJsonParser(void);
+typedef std::vector<JsonNode*> JsonNodePtrArray;
 
-    void parse( LPCSTR json_data );
+struct JsonNode {
+    typedef std::map< CString, JsonNode > NAME_VALUE_PAIR;
 
-    bool has_key( LPCSTR key ) {
+    JsonNodeType        m_type;
+    CString             m_constant;
+    NAME_VALUE_PAIR     m_values;
+
+    JsonNode() {}
+    ~JsonNode() {}
+
+    JsonNode( JsonNodeType type ) :
+        m_type( type )
+    {}
+
+    JsonNode( LPCSTR constant )
+    {
+        if ( constant == NULL || !strcmp( constant, "null" ) )
+            m_type = JSONNULL;
+        else {
+            m_type = JSONCONSTANT;
+            m_constant = constant;
+        }
+    }
+
+    inline bool isNull() {
+        return m_type == JSONNULL;
+    }
+
+    inline bool isConstant() {
+        return m_type == JSONARRAY;
+    }
+
+    inline bool isArray() {
+        return m_type == JSONCONSTANT;
+    }
+
+    void dump();
+
+    inline bool has_key( LPCSTR key ) {
         NAME_VALUE_PAIR::iterator it = m_values.find( key );
         return it != m_values.end();
     }
 
-    bool is_null( ) {
+    inline bool is_null( ) {
         return m_values.size() == 0;
     }
 
-    bool is_null( LPCSTR key ) {
-        return findPair( key )->second == "null";
+    inline bool is_null( LPCSTR key ) {
+        return findPair( key )->second.isNull();
     }
 
     template <class T>
     T get( LPCSTR key ) {
-        LPCSTR value = (LPCSTR)findPair( key )->second;
+        JsonNode& node = findPair( key )->second;
 
         T converted_value;
 
-        convert( value, converted_value );
+        convert( node, converted_value );
 
         return converted_value;
     }
 
+    JsonNodePtrArray getObjects( LPCSTR key ) {
+        return findPair( key )->second.getObjects();
+    }
+
+    JsonNodePtrArray getObjects() {
+        if ( m_type != JSONARRAY ) {
+            CString error;
+            error.Format( "Requested JSON node is not an object array" );
+            throw std::exception( (LPCSTR)error );
+        }
+
+        JsonNodePtrArray values;
+
+        for ( NAME_VALUE_PAIR::value_type& child : m_values )
+            values.push_back( &child.second );
+
+        return values;
+    }
+
+    template <class T>
+    T get( LPCSTR key, T default_value ) {
+        if ( !has_key( key ) )
+            return default_value;
+
+        return get<T>( key );
+    }
+
     template <class T>
     std::vector<T> getArray( LPCSTR key ) {
+        JsonNode& node = findPair( key )->second;        
+
+        if ( !node.isArray() ) {
+            CString error;
+            error.Format( "Requested JSON tag '%s' is not an array", key );
+            throw std::exception( (LPCSTR)error );
+        }
+
         std::vector<T> converted_array;
 
-        // Array items will be quote delimited
-        std::vector<CString> array_items = get<std::vector<CString>>(key);
-        SimpleJsonParser parser;
-
-        for ( std::vector<CString>::iterator it=array_items.begin(); it != array_items.end(); ++it ) {
-            CString& value = strip_quotes(*it);
+        for ( auto child : node.m_values ) {
             T converted_value;
-
-            if ( value[0] == '{' || value [0] == '[' ) {
-                parser.parse( value );
-                converted_value = parser.get<T>( "" );
-            }
-            else        // Assume scalar values
-                convert( value, converted_value );
-
+            convert( child.second, converted_value );
             converted_array.push_back( converted_value );
         }
 
@@ -104,20 +155,21 @@ public:
 
     template <class T>
     T getHex( LPCSTR key ) {
-        LPCSTR value = (LPCSTR)findPair( key )->second;
+        JsonNode& node = findPair( key )->second;        
+
+        if ( !node.isConstant() ) {
+            CString error;
+            error.Format( "Requested JSON tag '%s' is not a constant", key );
+            throw std::exception( (LPCSTR)error );
+        }
 
         T converted_value;
 
-        convertHex( value, converted_value );
+        convertHex( node, converted_value );
 
         return converted_value;
     }
 
-    void dump() {
-        for ( NAME_VALUE_PAIR::iterator it = m_values.begin(); it != m_values.end(); ++it )
-            printf( "%s = %s\n", (LPCSTR)it->first, (LPCSTR)it->second );
-    }
-    
 private:
     NAME_VALUE_PAIR::iterator findPair( LPCSTR key ) {
         NAME_VALUE_PAIR::iterator it = m_values.find( key );
@@ -128,117 +180,123 @@ private:
         }
         return it;
     }
-    
-    std::vector<CString> tokenize( LPCSTR value, LPCSTR break_chars=",",  bool store_breaks=false );
-    CString&  SimpleJsonParser::strip_quotes( CString& value );
 
-    void convert( LPCSTR value, SimpleJsonParser& parser ) {
-        CString unescaped( value );
-        unescaped.Replace( "\\\\", "\\" );
-        unescaped.Replace( "\\\"", "\"" );
-        strip_quotes( unescaped );
-        parser.parse( unescaped );
+    void convert( JsonNode& node, JsonNode& result ) {
+        if ( node.m_type != JSONOBJECT )
+            throw std::exception( "Requested value is not a JSON object" );
+
+        result = node;
     }
 
-    void convert( LPCSTR value, CString& result ) {
-        result = value;
+    void convert( JsonNode& node, CString& result ) {
+        result = node.m_constant;
         result.Replace( "\\\"", "\"" );
     }
 
-    void convert( LPCSTR value, unsigned long& result ) {
-        if ( sscanf_s( value, "%lu", &result ) != 1 ) {
+    void convert( JsonNode& node, unsigned long& result ) {
+        if ( sscanf_s( node.m_constant, "%lu", &result ) != 1 ) {
             CString error;
-            error.Format( "Value '%s' is not an unsigned long", value );
+            error.Format( "Value '%s' is not an unsigned long", node.m_constant );
             throw std::exception( (LPCSTR)error );
         }
     }
 
-    void convert( LPCSTR value, unsigned& result ) {
-        if ( sscanf_s( value, "%u", &result ) != 1 ) {
+    void convert( JsonNode& node, unsigned& result ) {
+        if ( sscanf_s( node.m_constant, "%u", &result ) != 1 ) {
             CString error;
-            error.Format( "Value '%s' is not an unsigned", value );
+            error.Format( "Value '%s' is not an unsigned", node.m_constant );
             throw std::exception( (LPCSTR)error );
         }
     }
 
-    void convert( LPCSTR value, long& result ) {
-        if ( sscanf_s( value, "%ld", &result ) != 1 ) {
+    void convert( JsonNode& node, long& result ) {
+        if ( sscanf_s( node.m_constant, "%ld", &result ) != 1 ) {
             CString error;
-            error.Format( "Value '%s' is not a long", value );
+            error.Format( "Value '%s' is not a long", node.m_constant );
             throw std::exception( (LPCSTR)error );
         }
     }
 
-    void convert( LPCSTR value, int& result ) {
-        if ( sscanf_s( value, "%d", &result ) != 1 ) {
+    void convert( JsonNode& node, int& result ) {
+        if ( sscanf_s( node.m_constant, "%d", &result ) != 1 ) {
             CString error;
-            error.Format( "Value '%s' is not an int", value );
+            error.Format( "Value '%s' is not an int", node.m_constant );
             throw std::exception( (LPCSTR)error );
         }
     }
 
-    void convert( LPCSTR value, WORD& result ) {
-        if ( sscanf_s( value, "%hu", &result ) != 1 ) {
+    void convert( JsonNode& node, WORD& result ) {
+        if ( sscanf_s( node.m_constant, "%hu", &result ) != 1 ) {
             CString error;
-            error.Format( "Value '%s' is not a WORD", value );
+            error.Format( "Value '%s' is not a WORD", node.m_constant );
             throw std::exception( (LPCSTR)error );
         }
     }
 
-    void convert( LPCSTR value, BYTE& result ) {
-        result = (BYTE)atoi( value );
+    void convert( JsonNode& node, BYTE& result ) {
+        result = (BYTE)atoi( node.m_constant );
     }
 
-    void convert( LPCSTR value, bool& result ) {
-        result = !( !strcmp( value, "0" ) || !_strcmpi( value, "false" ) );
+    void convert( JsonNode& node, bool& result ) {
+        result = !( !strcmp( node.m_constant, "0" ) || !_strcmpi( node.m_constant, "false" ) );
     }
 
-    void convert( LPCSTR value, float& result ) {
-        if ( sscanf_s( value, "%f", &result ) != 1 ) {
+    void convert( JsonNode& node, float& result ) {
+        if ( sscanf_s( node.m_constant, "%f", &result ) != 1 ) {
             CString error;
-            error.Format( "Value '%s' is not a float", value );
+            error.Format( "Value '%s' is not a float", node.m_constant );
             throw std::exception( (LPCSTR)error );
         }
     }
 
-    void convert( LPCSTR value, double& result ) {
-        if ( sscanf_s( value, "%lf", &result ) != 1 ) {
+    void convert( JsonNode& node, double& result ) {
+        if ( sscanf_s( node.m_constant, "%lf", &result ) != 1 ) {
             CString error;
-            error.Format( "Value '%s' is not a double", value );
+            error.Format( "Value '%s' is not a double", node.m_constant );
             throw std::exception( (LPCSTR)error );
         }
     }
 
     template <class T>
-    void convert( LPCSTR value, std::vector<T>& result ) {
-        std::vector<CString> tokens = tokenize( value, "[],", false );
-        for ( std::vector<CString>::iterator it=tokens.begin(); it != tokens.end(); ++it ) {
+    void convert( JsonNode& node, std::vector<T>& result ) {
+        for ( NAME_VALUE_PAIR::value_type& pair : node.m_values ) {
             T lvalue;
-            convert( (LPCSTR)(*it), lvalue );
+            convert( pair.second, lvalue );
             result.push_back( lvalue );
         }
     }
 
     template <class T>
-    void convert( LPCSTR value, std::set<T>& result ) {
-        std::vector<CString> tokens = tokenize( value, "[],", false );
-        for ( std::vector<CString>::iterator it=tokens.begin(); it != tokens.end(); ++it ) {
+    void convert( JsonNode& node, std::set<T>& result ) {
+        for ( NAME_VALUE_PAIR::value_type& pair : node.m_values ) {
             T lvalue;
-            convert( (LPCSTR)(*it), lvalue );
+            convert( pair.second, lvalue );
             result.insert( lvalue );
         }
     }
 
-    void convertHex( LPCSTR value, unsigned long& result ) {
-        if ( sscanf_s( value, "%lx", &result ) != 1 ) {
+    template <class T>
+    void convertHex( JsonNode& node, std::vector<T>& result ) {
+        for ( NAME_VALUE_PAIR::value_type& pair : node.m_values ) {
+            T lvalue;
+            convertHex( pair.second, lvalue );
+            result.push_back( lvalue );
+        }
+    }
+
+    void convertHex( JsonNode& node, unsigned long& result ) {
+        if ( sscanf_s( node.m_constant, "%lx", &result ) != 1 ) {
             CString error;
-            error.Format( "Value '%s' is not a hex value", value );
+            error.Format( "Value '%s' is not a hex value", node.m_constant );
             throw std::exception( (LPCSTR)error );
         };
     }
 
-    void convertHex( LPCSTR value, RGBWA& result ) {
+#ifdef COLOR_SUPPORT
+    void convertHex( JsonNode& node, RGBWA& result ) {
         ULONG rgbwa;
+        LPCSTR value = node.m_constant;
+
         if ( value && value[0] == '#' )
             value++;
         if ( sscanf_s( value, "%lx", &rgbwa ) != 1 ) {
@@ -248,17 +306,23 @@ private:
         }
         result = RGBWA(rgbwa);
     }
-
-    template <class T>
-    void convertHex( LPCSTR value, std::vector<T>& result ) {
-        std::vector<CString> tokens = tokenize( value, "[],", false );
-        for ( std::vector<CString>::iterator it=tokens.begin(); it != tokens.end(); ++it ) {
-            T lvalue;
-            convertHex( (LPCSTR)(*it), lvalue );
-            result.push_back( lvalue );
-        }
-    }
+#endif
 };
 
-typedef std::vector<SimpleJsonParser> PARSER_LIST;
+class SimpleJsonParser : public JsonNode
+{
+public:
+    SimpleJsonParser(void);
+    ~SimpleJsonParser(void);
+
+    void parse( LPCSTR json_data );
+    void parse( FILE* fp );
+
+    void parse_old( std::vector<CString>& tokens );
+
+private:
+    void parse( std::vector<CString>& tokens );
+    std::vector<CString> tokenize( LPCSTR value, LPCSTR break_chars=",",  bool store_breaks=false );
+    CString& strip_quotes( CString& value );
+};
 

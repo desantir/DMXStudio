@@ -32,7 +32,8 @@ class BeatBin
     unsigned    m_end_freq;
     CEvent      m_beat;
 
-    BeatBin& operator=( BeatBin& rhs );
+private:
+    BeatBin& operator=( BeatBin& rhs ) {}
 
 public:
     BeatBin( unsigned start_freq, unsigned end_freq ) :
@@ -134,4 +135,3 @@ public:
     }
 };
 
-typedef std::map<CString, DMXHttpSession*> SessionMap;

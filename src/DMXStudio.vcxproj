@@ -361,6 +361,7 @@ xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\d
     <Xml Include="FixtureDefinitions\Chauvet\chauvet_swarm_4.xml" />
     <Xml Include="FixtureDefinitions\Chauvet\chauvet_swarm_5fx.xml" />
     <Xml Include="FixtureDefinitions\Chauvet\chauvet_vue_1_1.xml" />
+    <Xml Include="FixtureDefinitions\Custom\generic.xml" />
     <Xml Include="FixtureDefinitions\Custom\led_array.xml">
       <SubType>Designer</SubType>
     </Xml>

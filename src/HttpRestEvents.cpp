@@ -25,11 +25,8 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::fetch_events( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::fetch_events( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     ULONG now = GetTickCount();
 
     // Wait up to 5 seconds for an event then release

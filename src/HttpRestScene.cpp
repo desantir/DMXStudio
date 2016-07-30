@@ -31,21 +31,21 @@ MA 02111-1307, USA.
 #include "ScenePixelAnimator.h"
 #include "SceneChannelFilter.h"
 
-typedef AbstractAnimation* (*ANIMATION_PARSER_FUNC)(SimpleJsonParser, AnimationSignal, UIDArray );
+typedef AbstractAnimation* (*ANIMATION_PARSER_FUNC)(JsonNode&, AnimationSignal&, UIDArray& );
 typedef std::map<CString, ANIMATION_PARSER_FUNC> PARSER_MAP;
 
-AbstractAnimation* SceneSequenceParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
-AbstractAnimation* SoundLevelParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
-AbstractAnimation* ScenePatternDimmerParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
-AbstractAnimation* SceneChannelAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
-AbstractAnimation* SceneColorFaderParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
-AbstractAnimation* SceneMovementAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
-AbstractAnimation* SceneStrobeAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
-AbstractAnimation* ScenePixelAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
-AbstractAnimation* SceneChannelFilterParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors );
+AbstractAnimation* SceneSequenceParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors );
+AbstractAnimation* SoundLevelParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors );
+AbstractAnimation* ScenePatternDimmerParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors );
+AbstractAnimation* SceneChannelAnimatorParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors );
+AbstractAnimation* SceneColorFaderParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors );
+AbstractAnimation* SceneMovementAnimatorParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors );
+AbstractAnimation* SceneStrobeAnimatorParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors );
+AbstractAnimation* ScenePixelAnimatorParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors );
+AbstractAnimation* SceneChannelFilterParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors );
 
-AnimationSignal parseAnimationSignal( SimpleJsonParser parser );
-AbstractAnimation* parseAnimation( SimpleJsonParser parser );
+AnimationSignal parseAnimationSignal( JsonNode parser );
+AbstractAnimation* parseAnimation( JsonNode parser );
 
 static PARSER_MAP init_animation_parsers() {
     PARSER_MAP animation_parsers;
@@ -64,26 +64,23 @@ static PARSER_MAP init_animation_parsers() {
 
 static PARSER_MAP animation_parsers = init_animation_parsers();
 
-void sceneToJson( JsonBuilder& json, Scene* scene );
+void sceneToJson( Venue* venue, JsonBuilder& json, Scene* scene );
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_scene( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::query_scene( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     UID uid;
     if ( sscanf_s( data, "%lu", &uid ) != 1 )
         return false;
 
-    Scene* scene = studio.getVenue()->getScene( uid );
+    Scene* scene = venue->getScene( uid );
     if ( scene == NULL )
         return false;
 
     JsonBuilder json( response );
     json.startArray();
-    sceneToJson( json, scene );
+    sceneToJson( venue, json, scene );
     json.endArray();
 
     return true;
@@ -91,19 +88,16 @@ bool HttpRestServices::query_scene( DMXHttpSession* session, CString& response, 
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_scenes( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::query_scenes( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    ScenePtrArray scenes = studio.getVenue()->getScenes();
+    ScenePtrArray scenes = venue->getScenes();
     std::sort( scenes.begin(), scenes.end(), CompareObjectNumber );
 
     JsonBuilder json( response );
     json.startArray();
 
     for ( ScenePtrArray::iterator it=scenes.begin(); it != scenes.end(); it++ ) {
-        sceneToJson( json, (*it) );
+        sceneToJson( venue, json, (*it) );
     }
 
     json.endArray();
@@ -113,25 +107,20 @@ bool HttpRestServices::query_scenes( DMXHttpSession* session, CString& response,
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::delete_scene( DMXHttpSession* session, CString& response, LPCSTR data ) {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
+bool HttpRestServices::delete_scene( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
+{
     UID scene_id;
         
     if ( sscanf_s( data, "%lu", &scene_id ) != 1 )
         return false;
 
-    return studio.getVenue()->deleteScene( scene_id );
+    return venue->deleteScene( scene_id );
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_scene_copy_fixtures( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
-
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
+bool HttpRestServices::edit_scene_copy_fixtures( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+{
     SimpleJsonParser parser;
     bool clear;
     bool keep_groups;
@@ -151,17 +140,15 @@ bool HttpRestServices::edit_scene_copy_fixtures( DMXHttpSession* session, CStrin
         return false;
     }
 
-    studio.getVenue()->moveDefaultFixturesToScene(scene_id, actors, keep_groups, clear );
+    venue->moveDefaultFixturesToScene(scene_id, actors, keep_groups, clear );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_scene( DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode ) {
-   if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
+bool HttpRestServices::edit_scene( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode )
+{
     SimpleJsonParser parser;
     UID scene_id;
     CString name, description;
@@ -170,7 +157,7 @@ bool HttpRestServices::edit_scene( DMXHttpSession* session, CString& response, L
     bool keep_groups;
     Scene* scene = NULL;
     UIDArray actors;
-    PARSER_LIST animationParsers;
+    JsonNodePtrArray animationParsers;
     std::vector<AbstractAnimation*> animations;
     Acts acts;
      
@@ -184,14 +171,14 @@ bool HttpRestServices::edit_scene( DMXHttpSession* session, CString& response, L
         bpm_rating = (BPMRating)parser.get<UINT>( "bpm_rating" );
         keep_groups = parser.get<bool>( "keep_groups" );
         actors = parser.get<UIDArray>( "actors" );
-        animationParsers = parser.get<PARSER_LIST>("animations");
+        animationParsers = parser.getObjects("animations");
         acts = parser.get<Acts>( "acts" );
 
-        for ( PARSER_LIST::iterator it=animationParsers.begin(); it != animationParsers.end(); ++it ) {
-            CString class_name = (*it).get<CString>( "class_name" );
-            UIDArray animation_actors = (*it).get<UIDArray>( "actors" );
-            SimpleJsonParser signalParser = (*it).get<SimpleJsonParser>( "signal" );
-            SimpleJsonParser animationParser = (*it).get<SimpleJsonParser>( class_name );
+        for (  JsonNode* anim : animationParsers ) {
+            CString class_name = anim->get<CString>( "class_name" );
+            UIDArray animation_actors = anim->get<UIDArray>( "actors" );
+            JsonNode signalParser = anim->get<JsonNode>( "signal" );
+            JsonNode animationParser = anim->get<JsonNode>( class_name );
             AnimationSignal signal = parseAnimationSignal( signalParser );
 
             ANIMATION_PARSER_FUNC anim_parser_func = animation_parsers[ class_name ];
@@ -207,31 +194,31 @@ bool HttpRestServices::edit_scene( DMXHttpSession* session, CString& response, L
     }
 
     if ( scene_id != 0 ) {
-        scene = studio.getVenue()->getScene( scene_id );
+        scene = venue->getScene( scene_id );
         if ( !scene )
             return false;
     }
 
     // Make sure number is unique
     if ( mode != UPDATE || (scene && number != scene->getNumber()) ) {
-        if ( studio.getVenue()->getSceneByNumber( number ) != NULL ) 
+        if ( venue->getSceneByNumber( number ) != NULL ) 
             return false;
     }
 
     switch ( mode ) {
         case NEW: {
             Scene new_scene;
-            scene_id = studio.getVenue()->addScene( new_scene );
-            scene = studio.getVenue()->getScene( scene_id );
-            studio.getVenue()->moveDefaultFixturesToScene( scene_id, actors, keep_groups, true );
+            scene_id = venue->addScene( new_scene );
+            scene = venue->getScene( scene_id );
+            venue->moveDefaultFixturesToScene( scene_id, actors, keep_groups, true );
             break;
         }
 
         case COPY: {
             Scene new_scene( *scene );
             new_scene.setUID( NOUID );
-            scene_id = studio.getVenue()->addScene( new_scene );
-            scene = studio.getVenue()->getScene( scene_id );
+            scene_id = venue->addScene( new_scene );
+            scene = venue->getScene( scene_id );
         }
         
         // Fall through 
@@ -257,16 +244,16 @@ bool HttpRestServices::edit_scene( DMXHttpSession* session, CString& response, L
         scene->addAnimation( *it );
 
     if ( mode != UPDATE )            // Switch to new scene
-        studio.getVenue()->selectScene( scene->getUID() );
+        venue->selectScene( scene->getUID() );
     else
-        studio.getVenue()->sceneUpdated( scene->getUID() );
+        venue->sceneUpdated( scene->getUID() );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-AnimationSignal parseAnimationSignal( SimpleJsonParser parser ) {
+AnimationSignal parseAnimationSignal( JsonNode parser ) {
     return AnimationSignal(
         parser.get<DWORD>( "sample_rate_ms" ),
         (AnimationSignalInput)parser.get<int>( "input_type" ),
@@ -281,25 +268,25 @@ AnimationSignal parseAnimationSignal( SimpleJsonParser parser ) {
 
 // ----------------------------------------------------------------------------
 //
-AbstractAnimation* SceneSequenceParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
+AbstractAnimation* SceneSequenceParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors ) {
     return new SceneSequence( NOUID, signal, actors );
 }
 
 // ----------------------------------------------------------------------------
 //
-AbstractAnimation* SoundLevelParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
+AbstractAnimation* SoundLevelParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors ) {
     return new SceneSoundLevel( NOUID, signal, actors, parser.get<WORD>( "fade_what" ) );
 }
 
 // ----------------------------------------------------------------------------
 //
-AbstractAnimation* ScenePatternDimmerParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
+AbstractAnimation* ScenePatternDimmerParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors ) {
     return new ScenePatternDimmer( NOUID, signal, actors, (DimmerPattern)parser.get<int>( "dimmer_pattern" ) );
 }
 
 // ----------------------------------------------------------------------------
 //
-AbstractAnimation* SceneStrobeAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
+AbstractAnimation* SceneStrobeAnimatorParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors ) {
     RGBWA strobe_neg_color = parser.getHex<RGBWA>( "strobe_neg_color" );
     unsigned long strobe_pos_ms = parser.get<unsigned>( "strobe_pos_ms" );
     unsigned long strobe_neg_ms = parser.get<unsigned>( "strobe_neg_ms" );
@@ -311,7 +298,7 @@ AbstractAnimation* SceneStrobeAnimatorParser( SimpleJsonParser parser, Animation
 
 // ----------------------------------------------------------------------------
 //
-AbstractAnimation* SceneColorFaderParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
+AbstractAnimation* SceneColorFaderParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors ) {
     FaderEffect fader_effect = (FaderEffect)parser.get<unsigned>( "fader_effect" );
     RGBWA strobe_neg_color = parser.getHex<RGBWA>( "strobe_neg_color" );
     unsigned long strobe_pos_ms = parser.get<unsigned>( "strobe_pos_ms" );
@@ -326,7 +313,7 @@ AbstractAnimation* SceneColorFaderParser( SimpleJsonParser parser, AnimationSign
 
 // ----------------------------------------------------------------------------
 //
-AbstractAnimation* SceneMovementAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
+AbstractAnimation* SceneMovementAnimatorParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors ) {
     MovementAnimation movement;
 
     movement.m_movement_type = (MovementAnimationType)parser.get<unsigned>( "movement_type" );
@@ -350,12 +337,11 @@ AbstractAnimation* SceneMovementAnimatorParser( SimpleJsonParser parser, Animati
     movement.m_radius = parser.get<float>( "radius" );
     movement.m_head_number = parser.get<unsigned>( "head_number" );
 
-    PARSER_LIST coordinates = parser.get<PARSER_LIST>("coordinates");
+    JsonNodePtrArray coordinates = parser.getObjects("coordinates");
 
-    for (PARSER_LIST::iterator it = coordinates.begin(); it != coordinates.end(); ++it ) {
-        SimpleJsonParser& cparser =  (*it);
-        unsigned pan = cparser.get<unsigned>( "pan" );
-        unsigned tilt = cparser.get<unsigned>( "tilt" );
+    for ( JsonNode* cparser : coordinates ) {
+        unsigned pan = cparser->get<unsigned>( "pan" );
+        unsigned tilt = cparser->get<unsigned>( "tilt" );
         movement.m_coordinates.push_back( FixtureCoordinate( pan, tilt ) );
     }
 
@@ -364,18 +350,16 @@ AbstractAnimation* SceneMovementAnimatorParser( SimpleJsonParser parser, Animati
 
 // ----------------------------------------------------------------------------
 //
-AbstractAnimation* SceneChannelAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) { 
+AbstractAnimation* SceneChannelAnimatorParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors ) { 
     ChannelAnimationArray channel_animations;
 
-    PARSER_LIST animations = parser.get<PARSER_LIST>("channel_animations");
+    JsonNodePtrArray animations = parser.getObjects("channel_animations");
 
-    for (PARSER_LIST::iterator it = animations.begin(); it != animations.end(); ++it ) {
-        SimpleJsonParser& aparser = (*it);
-
-        UID actor = aparser.get<unsigned long>( "actor_uid" );
-        unsigned channel = aparser.get<unsigned>( "channel" );
-        ChannelAnimationStyle style = (ChannelAnimationStyle)aparser.get<unsigned>( "style" );
-        ChannelValueArray value_list = aparser.get<ChannelValueArray>( "values" );
+    for ( JsonNode* aparser : animations ) {
+        UID actor = aparser->get<unsigned long>( "actor_uid" );
+        unsigned channel = aparser->get<unsigned>( "channel" );
+        ChannelAnimationStyle style = (ChannelAnimationStyle)aparser->get<unsigned>( "style" );
+        ChannelValueArray value_list = aparser->get<ChannelValueArray>( "values" );
     
         channel_animations.push_back( ChannelAnimation( actor, channel, style, value_list ) );
     }
@@ -385,7 +369,7 @@ AbstractAnimation* SceneChannelAnimatorParser( SimpleJsonParser parser, Animatio
 
 // ----------------------------------------------------------------------------
 //
-AbstractAnimation* SceneChannelFilterParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
+AbstractAnimation* SceneChannelFilterParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors ) {
     ChannelFilter filter = (ChannelFilter)parser.get<unsigned>( "filter" );
     unsigned step = parser.get<unsigned>( "step" );
     unsigned amplitude= parser.get<unsigned>( "amplitude" );
@@ -397,7 +381,7 @@ AbstractAnimation* SceneChannelFilterParser( SimpleJsonParser parser, AnimationS
 
 // ----------------------------------------------------------------------------
 //
-AbstractAnimation* ScenePixelAnimatorParser( SimpleJsonParser parser, AnimationSignal signal, UIDArray actors ) {
+AbstractAnimation* ScenePixelAnimatorParser( JsonNode& parser, AnimationSignal& signal, UIDArray& actors ) {
     PixelEffect pixel_effect = (PixelEffect)parser.get<unsigned>( "pixel_effect" );
     RGBWA empty_color = parser.getHex<RGBWA>( "pixel_off_color" );
     bool combine = parser.get<bool>( "combine" );
@@ -413,7 +397,7 @@ AbstractAnimation* ScenePixelAnimatorParser( SimpleJsonParser parser, AnimationS
 
 // ----------------------------------------------------------------------------
 //
-void sceneToJson( JsonBuilder& json, Scene* scene )
+void sceneToJson( Venue* venue, JsonBuilder& json, Scene* scene )
 {
     json.startObject();
     json.add( "id", scene->getUID() );
@@ -422,8 +406,8 @@ void sceneToJson( JsonBuilder& json, Scene* scene )
     json.add( "bpm_rating", scene->getBPMRating() );
     json.add( "description", scene->getDescription() );
     json.add( "created", scene->getCreated() );
-    json.add( "is_default", (scene == studio.getVenue()->getDefaultScene()) );
-    json.add( "is_running", (studio.getVenue()->getCurrentSceneUID() == scene->getUID()) );
+    json.add( "is_default", (scene == venue->getDefaultScene()) );
+    json.add( "is_running", (venue->getCurrentSceneUID() == scene->getUID()) );
     json.addArray<Acts>( "acts", scene->getActs() );
 
     json.startArray( "actors" );
@@ -438,10 +422,10 @@ void sceneToJson( JsonBuilder& json, Scene* scene )
         json.add( "is_group", (*it)->isGroup() );
 
         if ( (*it)->isGroup() ) {
-            fixture = studio.getVenue()->getGroupRepresentative( (*it)->getActorUID() );
+            fixture = venue->getGroupRepresentative( (*it)->getActorUID() );
         }
         else {
-            fixture = studio.getVenue()->getFixture( (*it)->getActorUID() );
+            fixture = venue->getFixture( (*it)->getActorUID() );
             json.add( "address", (int)fixture->getAddress() );
         }
 

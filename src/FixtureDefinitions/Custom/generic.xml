@@ -1,0 +1,168 @@
+<?xml version="1.0" ?>
+<fixture_definitions>
+    <author>Robert DeSantis</author>
+    <version>1</version>
+  
+    <fixture type="unknown" channels="1">
+        <manufacturer>Custom</manufacturer>
+        <model>Generic</model>
+        <channels>
+            <channel index="1" type="unknown" color="false" blackout="false" value="0" />
+        </channels>
+    </fixture>
+
+  <fixture type="unknown" channels="2">
+    <manufacturer>Custom</manufacturer>
+    <model>Generic</model>
+    <channels>
+      <channel index="1" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="2" type="unknown" color="false" blackout="false" value="0" />
+    </channels>
+  </fixture>
+
+  <fixture type="unknown" channels="3">
+    <manufacturer>Custom</manufacturer>
+    <model>Generic</model>
+    <channels>
+      <channel index="1" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="2" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="3" type="unknown" color="false" blackout="false" value="0" />
+    </channels>
+  </fixture>
+
+  <fixture type="unknown" channels="4">
+    <manufacturer>Custom</manufacturer>
+    <model>Generic</model>
+    <channels>
+      <channel index="1" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="2" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="3" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="4" type="unknown" color="false" blackout="false" value="0" />
+    </channels>
+  </fixture>
+
+  <fixture type="unknown" channels="5">
+    <manufacturer>Custom</manufacturer>
+    <model>Generic</model>
+    <channels>
+      <channel index="1" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="2" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="3" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="4" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="5" type="unknown" color="false" blackout="false" value="0" />
+    </channels>
+  </fixture>
+
+  <fixture type="unknown" channels="6">
+    <manufacturer>Custom</manufacturer>
+    <model>Generic</model>
+    <channels>
+      <channel index="1" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="2" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="3" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="4" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="5" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="6" type="unknown" color="false" blackout="false" value="0" />
+    </channels>
+  </fixture>
+
+  <fixture type="unknown" channels="7">
+    <manufacturer>Custom</manufacturer>
+    <model>Generic</model>
+    <channels>
+      <channel index="1" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="2" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="3" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="4" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="5" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="6" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="7" type="unknown" color="false" blackout="false" value="0" />
+    </channels>
+  </fixture>
+
+  <fixture type="unknown" channels="8">
+    <manufacturer>Custom</manufacturer>
+    <model>Generic</model>
+    <channels>
+      <channel index="1" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="2" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="3" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="4" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="5" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="6" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="7" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="8" type="unknown" color="false" blackout="false" value="0" />
+    </channels>
+  </fixture>
+
+  <fixture type="unknown" channels="9">
+    <manufacturer>Custom</manufacturer>
+    <model>Generic</model>
+    <channels>
+      <channel index="1" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="2" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="3" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="4" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="5" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="6" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="7" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="8" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="9" type="unknown" color="false" blackout="false" value="0" />
+    </channels>
+  </fixture>
+
+  <fixture type="unknown" channels="10">
+    <manufacturer>Custom</manufacturer>
+    <model>Generic</model>
+    <channels>
+      <channel index="1" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="2" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="3" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="4" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="5" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="6" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="7" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="8" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="9" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="10" type="unknown" color="false" blackout="false" value="0" />
+    </channels>
+  </fixture>
+
+  <fixture type="unknown" channels="11">
+    <manufacturer>Custom</manufacturer>
+    <model>Generic</model>
+    <channels>
+      <channel index="1" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="2" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="3" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="4" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="5" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="6" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="7" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="8" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="9" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="10" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="11" type="unknown" color="false" blackout="false" value="0" />
+    </channels>
+  </fixture>
+
+  <fixture type="unknown" channels="12">
+    <manufacturer>Custom</manufacturer>
+    <model>Generic</model>
+    <channels>
+      <channel index="1" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="2" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="3" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="4" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="5" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="6" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="7" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="8" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="9" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="10" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="11" type="unknown" color="false" blackout="false" value="0" />
+      <channel index="12" type="unknown" color="false" blackout="false" value="0" />
+    </channels>
+  </fixture>
+
+</fixture_definitions>

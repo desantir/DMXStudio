@@ -22,7 +22,6 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "DMXStudio.h"
 #include "RGBWA.h"
 
 struct StrobeTime {

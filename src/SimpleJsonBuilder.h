@@ -62,16 +62,88 @@ public:
     }
 };
 
+class JsonWriter
+{
+    public:
+        virtual void Append( LPCSTR value ) = 0;
+        virtual void AppendFormat( LPCSTR format, ... ) = 0;
+};
+
+class JsonStringWriter : public JsonWriter
+{
+    CString*        m_buffer;
+
+public:
+    JsonStringWriter() : 
+        m_buffer( NULL )
+    {}
+
+    JsonStringWriter( CString& buffer ) : 
+        m_buffer( &buffer )
+    {}
+
+    inline void Append( LPCSTR value ) {
+        m_buffer->Append( value );
+    }
+
+    void AppendFormat( LPCSTR format, ... ) {
+        va_list _ArgList;
+        __crt_va_start(_ArgList, format);
+        m_buffer->AppendFormatV( format, _ArgList );
+        __crt_va_end(_ArgList);    
+    }
+};
+
+class JsonFileWriter : public JsonWriter
+{
+    FILE*       m_fp;
+
+public:
+    JsonFileWriter( LPCSTR file_name ) {
+        errno_t err = fopen_s( &m_fp, file_name, "w" );
+
+        if ( err || !m_fp ) {
+            CString error;
+            error.Format( "Unable to open file %s for write", file_name );
+            throw std::exception( error );
+        }
+    }
+
+    ~JsonFileWriter() {
+        fflush( m_fp );
+        fclose( m_fp );
+    }
+
+    inline void Append( LPCSTR value ) {
+        fwrite( value, 1, strlen( value ), m_fp );
+    }
+
+    void AppendFormat( LPCSTR format, ... ) {
+        va_list _ArgList;
+        __crt_va_start(_ArgList, format);
+        vfprintf_s( m_fp, format, _ArgList );
+        __crt_va_end(_ArgList);    
+    }
+};
+
 class JsonBuilder
 {
-    CString&       m_buffer;
+    JsonStringWriter    m_stringWriter;
+    JsonWriter&         m_buffer;
+    bool                m_pretty;
 
     std::vector<JsonObject> m_stack;
 
-
 public:
-    JsonBuilder( CString& buffer ) : 
-        m_buffer( buffer )
+    JsonBuilder( CString& buffer, bool pretty = false ) : 
+        m_stringWriter( buffer ),
+        m_pretty( pretty ),
+        m_buffer( m_stringWriter )
+    {}
+
+    JsonBuilder( JsonWriter& writer, bool pretty = false ) : 
+        m_pretty( pretty ),
+        m_buffer( writer )
     {}
 
     ~JsonBuilder() {
@@ -87,7 +159,7 @@ public:
 
     void startObject( LPCSTR name ) {
         addSeparator();
-        m_buffer.AppendFormat( "\"%s\":{", name );
+        m_buffer.AppendFormat( "\"%s\": {", name );
         m_stack.push_back( JsonObject( false, name ) );
     }
 
@@ -95,11 +167,12 @@ public:
         addSeparator();
         m_buffer.Append( "[" );
         m_stack.push_back( JsonObject( true, "" ) );
+        indent();
     }
 
     void startArray( LPCSTR name ) {
         addSeparator();
-        m_buffer.AppendFormat( "\"%s\":[", name );
+        m_buffer.AppendFormat( "\"%s\": [", name );
         m_stack.push_back( JsonObject( true, name ) );
     }
 
@@ -115,8 +188,10 @@ public:
                 error.Format( "EXPECTING ARRAY NAME %s", name );
                 throw std::exception( error );
             }
-            m_buffer.Append( "]" );
+
             m_stack.pop_back();
+            indent();
+            m_buffer.Append( "]" );
         }
     }
 
@@ -136,8 +211,10 @@ public:
                 error.Format( "EXPECTING OBJECT NAME %s", name );
                 throw std::exception( error );
             }
-            m_buffer.Append( "}" );
+
             m_stack.pop_back();
+            indent();
+            m_buffer.Append( "}" );
        }
     }
 
@@ -147,42 +224,42 @@ public:
 
     void addNull( LPCSTR name) {
         addSeparator();
-        m_buffer.AppendFormat( "\"%s\":null", name );
+        m_buffer.AppendFormat( "\"%s\": null", name );
     }
 
     void add( LPCSTR name, int value ) {
         addSeparator();
-        m_buffer.AppendFormat( "\"%s\":%d", name, value );
+        m_buffer.AppendFormat( "\"%s\": %d", name, value );
     }
 
     void add( LPCSTR name, unsigned value ) {
         addSeparator();
-        m_buffer.AppendFormat( "\"%s\":%u", name, value );
+        m_buffer.AppendFormat( "\"%s\": %u", name, value );
     }
 
     void add( LPCSTR name, double value ) {
         addSeparator();
-        m_buffer.AppendFormat( "\"%s\":%lf", name, value );
+        m_buffer.AppendFormat( "\"%s\": %lf", name, value );
     }
     
     void add( LPCSTR name, LPCSTR value ) {
         addSeparator();
-        m_buffer.AppendFormat( "\"%s\":\"%s\"", name, JsonObject::encodeJsonString(value) );
+        m_buffer.AppendFormat( "\"%s\": \"%s\"", name, JsonObject::encodeJsonString(value) );
     } 
 
     void add( LPCSTR name, RGBWA value ) {
         addSeparator();
-        m_buffer.AppendFormat( "\"%s\":\"%06lX\"", name, (ULONG)value );
+        m_buffer.AppendFormat( "\"%s\": \"%06lX\"", name, (ULONG)value );
     } 
 
     void add( LPCSTR name, ULONG value ) {
         addSeparator();
-        m_buffer.AppendFormat( "\"%s\":%lu", name, value );
+        m_buffer.AppendFormat( "\"%s\": %lu", name, value );
     } 
 
     void add( LPCSTR name, bool value ) {
         addSeparator();
-        m_buffer.AppendFormat( "\"%s\":%s", name, (value) ? "true" : "false" );
+        m_buffer.AppendFormat( "\"%s\": %s", name, (value) ? "true" : "false" );
     }
     
     void add( int value ) {
@@ -243,7 +320,19 @@ public:
 
 private:
     inline void addSeparator() {
-        if ( m_stack.size() > 0 && m_stack.back().needSeparator() )
+        if ( m_stack.size() > 0 && m_stack.back().needSeparator() ) {
             m_buffer.Append( "," );
+        }
+
+        indent();
+    }
+
+    inline void indent() {
+        if ( m_pretty ) {
+            m_buffer.Append( "\n" );
+
+            for ( int i=m_stack.size(); i--; )
+                m_buffer.Append( "    " );
+        }
     }
 };

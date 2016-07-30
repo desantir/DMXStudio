@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2012 Robert DeSantis
+Copyright (C) 2012-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -120,17 +120,41 @@ MA 02111-1307, USA.
 
 class HttpRestServices : public IRequestHandler
 {
-    typedef bool (HttpRestServices::*RestGetHandlerFunc)( DMXHttpSession* session, CString& response, LPCSTR data );
-    typedef std::map<CString, RestGetHandlerFunc> RestGetHandlerMap;
-
-    typedef bool (HttpRestServices::*RestPostHandlerFunc)( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
-    typedef std::map<CString, RestPostHandlerFunc> RestPostHandlerMap;
+    enum ServiceFlags {
+        VENUE_NOT_REQUIRED = 0x00,
+        VENUE_REQUIRED = 0x01,
+        RUNNING_REQUIRED = 0x02,
+        RUNNING_VENUE = 0x03,
+        PLAYER_REQUIRED = 0x04,
+        PLAYER_AND_VENUE_REQUIRED = 0x07
+    };
 
     enum EditMode {
         NEW = 1,
         UPDATE = 2,
         COPY = 3
     };
+
+    typedef bool (HttpRestServices::*RestGetHandlerFunc)( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    typedef bool (HttpRestServices::*RestPostHandlerFunc)( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+
+    template <class T>
+    struct RestService 
+    {
+        ServiceFlags    m_flags;
+        T               m_handler;
+
+        RestService()
+        {}
+
+        RestService( T handler, ServiceFlags flags = RUNNING_VENUE ) :
+            m_flags( flags ),
+            m_handler( handler )
+        {}
+    };
+
+    typedef std::map<CString, RestService<RestPostHandlerFunc>> RestPostHandlerMap;
+    typedef std::map<CString, RestService<RestGetHandlerFunc>> RestGetHandlerMap;
 
     RestGetHandlerMap       m_rest_get_handlers;
     RestPostHandlerMap      m_rest_post_handlers;
@@ -152,107 +176,108 @@ public:
     bool substitute( LPCSTR marker, LPCSTR data, CString& marker_content ) { return false; }
 
 protected:
-    bool fetch_events( DMXHttpSession* session, CString& response, LPCSTR data );
+    bool fetch_events( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
 
-    bool query_scene( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_chase( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_fixture( DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_scene( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_chase( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_fixture( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
 
-    bool query_venue_status( DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_venue_status( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
 
-    bool control_venue_blackout( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_venue_whiteout( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_venue_masterdimmer( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_venue_music_match( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_scene_show( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_scene_stage( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_chase_show( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_venue_strobe( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_venue_whiteout_color( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_fixture_release( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_fixture_channel( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_master_volume( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_mute_volume( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_fixture_capture( DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_venue_blackout( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_venue_whiteout( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_venue_masterdimmer( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_venue_music_match( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_scene_show( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_scene_stage( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_chase_show( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_venue_strobe( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_venue_whiteout_color( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_fixture_release( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_fixture_channel( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_master_volume( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_mute_volume( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_fixture_capture( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
 
-    bool control_music_track_back( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_music_track_forward( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_music_track_stop( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_music_track_pause( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_music_track_play( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_music_playlists( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_music_queued( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_music_played( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_music_playlist_tracks( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_music_play_track( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_music_queue_track( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_music_play_playlist( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_music_track_analysis( DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_music_track_back( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_music_track_forward( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_music_track_stop( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_music_track_pause( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_music_track_play( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_music_playlists( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_music_queued( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_music_played( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_music_playlist_tracks( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_music_play_track( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_music_queue_track( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_music_play_playlist( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_music_track_analysis( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
 
-    bool control_animation_speed( DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_animation_speed( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
 
-    bool query_scenes( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_fixtures( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_chases( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_venue_describe( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_fixture_definitions( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_venue_layout( DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_scenes( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_fixtures( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_chases( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_venue_describe( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_fixture_definitions( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_venue_layout( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
 
-    bool control_soundsampler_start( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool control_soundsampler_stop( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_soundsampler( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_music_matcher( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_music_matcher_search( DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_soundsampler_start( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_soundsampler_stop( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_soundsampler( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_music_matcher( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_music_matcher_search( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
 
-    bool control_beatsampler_start( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
-    bool control_beatsampler_stop( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool query_beatsampler( DMXHttpSession* session, CString& response, LPCSTR data );
+    bool control_beatsampler_start( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool control_beatsampler_stop( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool query_beatsampler( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
 
-    bool delete_scene( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool delete_chase( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool delete_fixture( DMXHttpSession* session, CString& response, LPCSTR data );
-    bool delete_fixturegroup( DMXHttpSession* session, CString& response, LPCSTR data );
+    bool delete_scene( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool delete_chase( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool delete_fixture( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
+    bool delete_fixturegroup( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data );
 
     // POST handlers
 
-    bool control_fixture_channels( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
-    bool control_fixture( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
-    bool control_fixture_group( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool control_fixture_channels( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool control_fixture( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool control_fixture_group( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
 
-    bool edit_scene_copy_fixtures( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
-    bool edit_venue_update( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool edit_scene_copy_fixtures( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool edit_venue_update( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
 
-    bool edit_scene( DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode );
-    bool edit_scene_create( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_scene( session, response, data, NEW );  }
-    bool edit_scene_update( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_scene( session, response, data, UPDATE );  }
-    bool edit_scene_copy( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_scene( session, response, data, COPY );  }
+    bool edit_scene( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode );
+    bool edit_scene_create( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_scene( venue, session, response, data, NEW );  }
+    bool edit_scene_update( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_scene( venue, session, response, data, UPDATE );  }
+    bool edit_scene_copy( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_scene( venue, session, response, data, COPY );  }
 
-    bool edit_fixturegroup( DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode );
-    bool edit_fixturegroup_create( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_fixturegroup( session, response, data, NEW );  }
-    bool edit_fixturegroup_update( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_fixturegroup( session, response, data, UPDATE );  }
+    bool edit_fixturegroup( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode );
+    bool edit_fixturegroup_create( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_fixturegroup( venue, session, response, data, NEW );  }
+    bool edit_fixturegroup_update( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_fixturegroup( venue, session, response, data, UPDATE );  }
 
-    bool edit_chase( DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode );
-    bool edit_chase_create( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_chase( session, response, data, NEW );  }
-    bool edit_chase_update( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_chase( session, response, data, UPDATE );  }
-    bool edit_chase_copy( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_chase( session, response, data, COPY );  }
+    bool edit_chase( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode );
+    bool edit_chase_create( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_chase( venue, session, response, data, NEW );  }
+    bool edit_chase_update( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_chase( venue, session, response, data, UPDATE );  }
+    bool edit_chase_copy( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_chase( venue, session, response, data, COPY );  }
 
-    bool edit_fixture( DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode );
-    bool edit_fixture_create( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_fixture( session, response, data, NEW );  }
-    bool edit_fixture_update( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_fixture( session, response, data, UPDATE );  }
+    bool edit_fixture( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode );
+    bool edit_fixture_create( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_fixture( venue, session, response, data, NEW );  }
+    bool edit_fixture_update( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) { return edit_fixture( venue, session, response, data, UPDATE );  }
 
-    bool edit_venue_save( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
-    bool edit_venue_load( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
-    bool edit_venue_new( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
-    bool edit_venue_layout_save( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool edit_venue_save( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool edit_venue_load( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool edit_venue_new( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool edit_venue_layout_save( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
 
-    bool edit_music_matcher_load( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
-    bool edit_music_matcher_update( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool edit_music_matcher_load( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool edit_music_matcher_update( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
 
-    bool player_login( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool player_login( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
 
-    bool venue_upload( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
+    bool venue_upload( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type );
 
 private:
+    Venue* getStudio( ServiceFlags flags );
     void musicPlayerToJson( JsonBuilder& json );
 };
 

@@ -670,6 +670,9 @@
     <Xml Include="FixtureDefinitions\Chauvet\chauvet_slimpar_h6.xml">
       <Filter>Fixture Definition Files</Filter>
     </Xml>
+    <Xml Include="FixtureDefinitions\Custom\generic.xml">
+      <Filter>Fixture Definition Files</Filter>
+    </Xml>
   </ItemGroup>
   <ItemGroup>
     <Text Include=".\full\full.htm">

@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -21,6 +21,8 @@ MA 02111-1307, USA.
 */
 
 #include "IniFile.h"
+#include "SimpleJsonParser.h"
+#include "SimpleJsonBuilder.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -46,42 +48,53 @@ IniFile::~IniFile(void)
 //
 bool IniFile::read( )
 {
-    TiXmlDocument doc;
-    if ( !doc.LoadFile( m_ini_filename ) ) {
-        m_last_error = doc.ErrorDesc();
+    FILE* fp;
+
+    errno_t err = fopen_s( &fp, m_ini_filename, "r" );
+    if ( err || !fp )   // Assume it does not exist
         return false;
+        
+    SimpleJsonParser parser;
+
+    try {
+        parser.parse( fp );
+
+        fclose( fp );
+    }
+    catch ( std::exception& e ) {
+        fclose( fp );
+        throw e;
+    }
+    
+    m_dmx_required = parser.get<bool>( "dmx_required", true );
+    m_debug = parser.get<bool>( "debug", false );
+    m_venue_filename = parser.get<CString>( "venue_filename", "" );
+    m_venue_container = parser.get<CString>( "venue_container", "" );
+
+    if ( parser.has_key( "remote" ) ) {
+        JsonNode remote = parser.get<JsonNode>( "remote" );
+        m_http_port = parser.get<unsigned>( "http_port", 80 );
+        m_http_enabled = parser.get<bool>( "enable", true );
     }
 
-    TiXmlElement* dmx_studio = doc.FirstChildElement( "dmx_studio" );
-    m_dmx_required = read_bool_attribute( dmx_studio, "dmx_required", true );
-    m_debug = read_bool_attribute( dmx_studio, "debug", false );
-
-    m_venue_filename = read_text_element( dmx_studio, "venue_filename" );
-    m_venue_container = read_text_element( dmx_studio, "venue_container" );
-
-    TiXmlElement* remote = dmx_studio->FirstChildElement( "remote" );
-    if ( remote ) {
-        m_http_port = read_unsigned_attribute( remote, "http_port" );
-        m_http_enabled = read_bool_attribute( remote, "enable", true );
+    if ( parser.has_key( "whiteout_slow" ) ) {
+        JsonNode whiteout_slow = parser.get<JsonNode>( "whiteout_slow" );
+        m_whiteout_strobe_slow.m_on_ms = whiteout_slow.get<unsigned>( "on_ms" );
+        m_whiteout_strobe_slow.m_off_ms = whiteout_slow.get<unsigned>( "off_ms" );
     }
 
-    TiXmlElement* whiteout_slow = dmx_studio->FirstChildElement( "whiteout_slow" );
-    if ( whiteout_slow ) {
-        m_whiteout_strobe_slow.m_on_ms = read_unsigned_attribute( whiteout_slow, "on_ms" );
-        m_whiteout_strobe_slow.m_off_ms = read_unsigned_attribute( whiteout_slow, "of_ms" );
+    if ( parser.has_key( "whiteout_fast" ) ) {
+        JsonNode whiteout_fast = parser.get<JsonNode>( "whiteout_fast" );
+        m_whiteout_strobe_fast.m_on_ms = whiteout_fast.get<unsigned>( "on_ms" );
+        m_whiteout_strobe_fast.m_off_ms = whiteout_fast.get<unsigned>( "off_ms" );
     }
 
-    TiXmlElement* whiteout_fast = dmx_studio->FirstChildElement( "whiteout_fast" );
-    if ( whiteout_slow ) {
-        m_whiteout_strobe_fast.m_on_ms = read_unsigned_attribute( whiteout_fast, "on_ms" );
-        m_whiteout_strobe_fast.m_off_ms = read_unsigned_attribute( whiteout_fast, "of_ms" );
-    }
+    if ( parser.has_key( "music_player" ) ) {
+        JsonNode music_player = parser.get<JsonNode>( "music_player" );
+        m_music_player_ddl = music_player.get<CString>( "library" );
+        m_music_player_username = music_player.get<CString>( "username" );
 
-    TiXmlElement* music_player = dmx_studio->FirstChildElement( "music_player" );
-    if ( music_player ) {
         m_music_player_enabled = true;
-        m_music_player_ddl = read_text_element( music_player, "library" );
-        m_music_player_username = read_text_element( music_player, "username" );
     }
 
     return true;
@@ -91,29 +104,35 @@ bool IniFile::read( )
 //
 void IniFile::write( )
 {
-    TiXmlDocument doc;
+    JsonFileWriter ini( m_ini_filename );
+    JsonBuilder json( ini, true );
 
-    TiXmlElement dmx_studio( "dmx_studio" );
-    add_attribute( dmx_studio, "dmx_required", m_dmx_required );
-    
-    add_text_element( dmx_studio, "venue_filename", m_venue_filename );
+    json.startObject();
 
-    TiXmlElement mobile( "remote" );
-    add_attribute( mobile, "enable", m_http_enabled );
-    add_attribute( mobile, "http_port", m_http_port );
-    dmx_studio.InsertEndChild( mobile );
+    json.add( "dmx_required", m_dmx_required );
+    json.add( "debug", m_debug );
+    json.add( "venue_filename", m_venue_filename );
+    json.add( "venue_container", m_venue_container );
 
-    TiXmlElement whiteout_slow( "whiteout_slow" );
-    add_attribute( whiteout_slow, "on_ms", m_whiteout_strobe_slow.m_on_ms );
-    add_attribute( whiteout_slow, "of_ms", m_whiteout_strobe_slow.m_off_ms );
-    dmx_studio.InsertEndChild( whiteout_slow );
+    json.startObject( "remote" );
+    json.add( "enable", m_http_enabled );
+    json.add( "http_port", m_http_port );
+    json.endObject( "remote" );
 
-    TiXmlElement whiteout_fast( "whiteout_fast" );
-    add_attribute( whiteout_fast, "on_ms", m_whiteout_strobe_fast.m_on_ms );
-    add_attribute( whiteout_fast, "of_ms", m_whiteout_strobe_fast.m_off_ms );
-    dmx_studio.InsertEndChild( whiteout_fast );
+    json.startObject( "whiteout_slow" );
+    json.add( "on_ms", m_whiteout_strobe_slow.m_on_ms );
+    json.add( "off_ms", m_whiteout_strobe_slow.m_off_ms );
+    json.endObject( "whiteout_slow" );
 
-    doc.InsertEndChild( dmx_studio );
+    json.startObject( "whiteout_fast" );
+    json.add( "on_ms", m_whiteout_strobe_fast.m_on_ms );
+    json.add( "off_ms", m_whiteout_strobe_fast.m_off_ms );
+    json.endObject( "whiteout_fast" );
 
-    doc.SaveFile( m_ini_filename );
+    json.startObject( "music_player" );
+    json.add( "library", m_music_player_ddl );
+    json.add( "username", m_music_player_username );
+    json.endObject( "music_player" );
+
+    json.endObject();
 }

@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-15 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -25,31 +25,25 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_scene_show( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_scene_show( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     UID scene_id;
 
     if ( sscanf_s( data, "%lu", &scene_id ) != 1 )
         return false;
 
     if ( scene_id == 0 )
-        scene_id = studio.getVenue()->getDefaultScene() ->getUID();
+        scene_id = venue->getDefaultScene() ->getUID();
 
-    studio.getVenue()->selectScene( scene_id );
+    venue->selectScene( scene_id );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_scene_stage( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_scene_stage( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     UID scene_id;
     SceneLoadMethod method;
 
@@ -57,67 +51,61 @@ bool HttpRestServices::control_scene_stage( DMXHttpSession* session, CString& re
         return false;
 
     if ( scene_id == 0 )
-        scene_id = studio.getVenue()->getDefaultScene()->getUID();
+        scene_id = venue->getDefaultScene()->getUID();
 
-    studio.getVenue()->stopChase();
+    venue->stopChase();
 
-    studio.getVenue()->playScene( scene_id, method );
+    venue->playScene( scene_id, method );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_chase_show( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_chase_show( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     UID chase_id;
         
     if ( sscanf_s( data, "%lu", &chase_id ) != 1 )
         return false;
 
     if ( chase_id > 0 ) {
-        Chase* chase = studio.getVenue()->getChase( chase_id );
+        Chase* chase = venue->getChase( chase_id );
         if ( !chase )
             return false;
 
-        studio.getVenue()->startChase( chase_id );
+        venue->startChase( chase_id );
     }
     else
-        studio.getVenue()->stopChase();
+        venue->stopChase();
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_venue_status( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::query_venue_status( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     JsonBuilder json( response );
     json.startObject();
-    json.add( "blackout", studio.getVenue()->isForceBlackout() );
-    json.add( "auto_blackout", studio.getVenue()->isMuteBlackout() );
-    json.add( "dimmer", studio.getVenue()->getMasterDimmer() );
-    json.add( "whiteout", studio.getVenue()->getWhiteout() );
-    json.add( "whiteout_strobe", studio.getVenue()->getWhiteoutStrobeMS() );
-    json.add( "whiteout_color", studio.getVenue()->getWhiteoutColor() );
-    json.add( "animation_speed", studio.getVenue()->getAnimationSampleRate() );
-    json.add( "current_scene", studio.getVenue()->getCurrentSceneUID() );
-    json.add( "current_chase", studio.getVenue()->getRunningChase() );
-    json.add( "master_volume", studio.getVenue()->getMasterVolume() );
-    json.add( "mute", studio.getVenue()->isMasterVolumeMute() );
+    json.add( "blackout", venue->isForceBlackout() );
+    json.add( "auto_blackout", venue->isMuteBlackout() );
+    json.add( "dimmer", venue->getMasterDimmer() );
+    json.add( "whiteout", venue->getWhiteout() );
+    json.add( "whiteout_strobe", venue->getWhiteoutStrobeMS() );
+    json.add( "whiteout_color", venue->getWhiteoutColor() );
+    json.add( "animation_speed", venue->getAnimationSampleRate() );
+    json.add( "current_scene", venue->getCurrentSceneUID() );
+    json.add( "current_chase", venue->getRunningChase() );
+    json.add( "master_volume", venue->getMasterVolume() );
+    json.add( "mute", venue->isMasterVolumeMute() );
     json.add( "has_music_player", studio.hasMusicPlayer() );
-    json.add( "music_match", studio.getVenue()->isMusicSceneSelectEnabled() );
+    json.add( "music_match", venue->isMusicSceneSelectEnabled() );
     json.add( "venue_filename", studio.getVenueFileName() );
     json.add( "dmx_max_universes", DMX_MAX_UNIVERSES );
-    json.add( "default_scene_uid", studio.getVenue()->getDefaultScene()->getUID() );
+    json.add( "default_scene_uid", venue->getDefaultScene()->getUID() );
 
-    json.addArray<UIDArray>( "captured_fixtures", studio.getVenue()->getDefaultScene()->getActorUIDs() );
+    json.addArray<UIDArray>( "captured_fixtures", venue->getDefaultScene()->getActorUIDs() );
 
     musicPlayerToJson( json );
     
@@ -128,11 +116,8 @@ bool HttpRestServices::query_venue_status( DMXHttpSession* session, CString& res
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_venue_strobe( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_venue_strobe( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     UINT whiteout_strobe_ms;
 
     if ( sscanf_s( data, "%u", &whiteout_strobe_ms ) != 1 )
@@ -140,70 +125,58 @@ bool HttpRestServices::control_venue_strobe( DMXHttpSession* session, CString& r
     if ( whiteout_strobe_ms < 25 || whiteout_strobe_ms > 10000)
         return false;
 
-    studio.getVenue()->setWhiteoutStrobeMS( whiteout_strobe_ms );
+    venue->setWhiteoutStrobeMS( whiteout_strobe_ms );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_venue_whiteout_color( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_venue_whiteout_color( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     ULONG rgbwa;
     if ( data[0] == '#' )
         data++;
     if ( sscanf_s( data, "%lx", &rgbwa ) != 1 )
         return false;
 
-    studio.getVenue()->setWhiteoutColor( RGBWA(rgbwa) );
+    venue->setWhiteoutColor( RGBWA(rgbwa) );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_venue_blackout( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_venue_blackout( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     unsigned blackout;
         
     if ( sscanf_s( data, "%u", &blackout ) != 1 )
         return false;
 
-    studio.getVenue()->setForceBlackout( blackout ? true : false );
+    venue->setForceBlackout( blackout ? true : false );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_venue_music_match( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_venue_music_match( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     unsigned music_match;
         
     if ( sscanf_s( data, "%u", &music_match ) != 1 )
         return false;
 
-    studio.getVenue()->setMusicSceneSelectEnabled( music_match ? true : false );
+    venue->setMusicSceneSelectEnabled( music_match ? true : false );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_venue_whiteout( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_venue_whiteout( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     int whiteout;
 
     if ( sscanf_s( data, "%d", &whiteout ) != 1 )
@@ -211,18 +184,15 @@ bool HttpRestServices::control_venue_whiteout( DMXHttpSession* session, CString&
     if ( whiteout < 0 || whiteout > 4)
         return false;
 
-    studio.getVenue()->setWhiteout( (WhiteoutMode)whiteout );
+    venue->setWhiteout( (WhiteoutMode)whiteout );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_venue_masterdimmer( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_venue_masterdimmer( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     int dimmer;
 
     if ( sscanf_s( data, "%d", &dimmer ) != 1 )
@@ -230,35 +200,28 @@ bool HttpRestServices::control_venue_masterdimmer( DMXHttpSession* session, CStr
     if ( dimmer < 0 || dimmer > 100 )
         return false;
 
-    studio.getVenue()->setMasterDimmer( dimmer );
+    venue->setMasterDimmer( dimmer );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_animation_speed( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_animation_speed( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     DWORD sample_rate_ms;
         
     if ( sscanf_s( data, "%lu", &sample_rate_ms ) != 1 )
         return false;
 
-    studio.getVenue()->setAnimationSampleRate( sample_rate_ms );
+    venue->setAnimationSampleRate( sample_rate_ms );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_venue_layout( DMXHttpSession* session, CString& response, LPCSTR data ) {
-    Venue* venue = studio.getVenue();
-    if ( !venue )
-        return false;
-
+bool HttpRestServices::query_venue_layout( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data ) {
     LPCSTR layout = venue->getVenueLayout();
     if ( layout == NULL )
         return false;
@@ -269,23 +232,14 @@ bool HttpRestServices::query_venue_layout( DMXHttpSession* session, CString& res
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_venue_layout_save( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
-    Venue* venue = studio.getVenue();
-    if ( !venue )
-        return false;
-
+bool HttpRestServices::edit_venue_layout_save( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
     venue->setVenueLayout( data );
-
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_venue_describe( DMXHttpSession* session, CString& response, LPCSTR data ) {
-    Venue* venue = studio.getVenue();
-    if ( !venue )
-        return false;
-
+bool HttpRestServices::query_venue_describe( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data ) {
     JsonBuilder json( response );
 
     json.startObject();
@@ -339,12 +293,8 @@ bool HttpRestServices::query_venue_describe( DMXHttpSession* session, CString& r
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_venue_update( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type ) {
-
-    Venue* venue = studio.getVenue();
-    if ( !venue )
-        return false;
-
+bool HttpRestServices::edit_venue_update( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+{
     SimpleJsonParser parser;
 
     try {
@@ -357,16 +307,16 @@ bool HttpRestServices::edit_venue_update( DMXHttpSession* session, CString& resp
         float audio_boost_floor = parser.get<float>( "audio_boost_floor" );
         int audio_sample_size = parser.get<int>( "audio_sample_size" );
         int auto_blackout = parser.get<int>( "auto_blackout" );
-        PARSER_LIST universeParsers = parser.get<PARSER_LIST>("universes");
+        JsonNodePtrArray universeParsers = parser.getObjects("universes");
 
         std::vector<Universe> universes;
 
-        for ( PARSER_LIST::iterator it=universeParsers.begin(); it != universeParsers.end(); ++it ) {
-            unsigned id = (*it).get<unsigned>( "id" );
-            UniverseType type = (UniverseType)(*it).get<unsigned>( "type" );
-            CString dmx_port = (*it).get<CString>( "dmx_port" );
-            unsigned dmx_packet_delay_ms = (*it).get<unsigned>( "packet_delay_ms" );
-            unsigned dmx_minimum_delay_ms = (*it).get<unsigned>( "minimum_delay_ms" );
+        for (  JsonNode* univ : universeParsers ) {
+            unsigned id = univ->get<unsigned>( "id" );
+            UniverseType type = (UniverseType)univ->get<unsigned>( "type" );
+            CString dmx_port = univ->get<CString>( "dmx_port" );
+            unsigned dmx_packet_delay_ms = univ->get<unsigned>( "packet_delay_ms" );
+            unsigned dmx_minimum_delay_ms = univ->get<unsigned>( "minimum_delay_ms" );
 
             universes.push_back( Universe( id, type, dmx_port, dmx_packet_delay_ms, dmx_minimum_delay_ms ) );
         }
@@ -382,11 +332,8 @@ bool HttpRestServices::edit_venue_update( DMXHttpSession* session, CString& resp
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_venue_save( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::edit_venue_save( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
-   if ( !studio.getVenue() )
-        return false;
-
     SimpleJsonParser parser;
     CString venue_filename;
 
@@ -404,7 +351,7 @@ bool HttpRestServices::edit_venue_save( DMXHttpSession* session, CString& respon
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_venue_load( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::edit_venue_load( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     SimpleJsonParser parser;
     CString venue_filename;
@@ -423,7 +370,7 @@ bool HttpRestServices::edit_venue_load( DMXHttpSession* session, CString& respon
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_venue_new( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::edit_venue_new( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     SimpleJsonParser parser;
     CString reset_what;
@@ -440,13 +387,13 @@ bool HttpRestServices::edit_venue_new( DMXHttpSession* session, CString& respons
         studio.newVenue();
     }
     else if ( reset_what == "chases" ) {
-        studio.getVenue()->deleteAllChases();
+        venue->deleteAllChases();
     }
     else if ( reset_what == "groups" ) {
-        studio.getVenue()->deleteAllFixtureGroups();
+        venue->deleteAllFixtureGroups();
     }
     else if ( reset_what == "scenes" ) {
-        studio.getVenue()->deleteAllScenes();
+        venue->deleteAllScenes();
     }
     else
         return false;
@@ -456,7 +403,7 @@ bool HttpRestServices::edit_venue_new( DMXHttpSession* session, CString& respons
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::venue_upload( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::venue_upload( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     /*
         -----------------------------7dd1a41420546

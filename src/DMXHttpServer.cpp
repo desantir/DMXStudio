@@ -61,16 +61,9 @@ DMXHttpServer::~DMXHttpServer(void)
     stopThread();
 
     // Release sessions
-    for ( SessionMap::iterator it=m_sessions.begin(); it != m_sessions.end(); it++ ) {
-        delete it->second;
-    }
     m_sessions.clear();
 
     // Release all handlers
-    for ( RequestHandlerPtrArray::iterator it=m_request_handlers.begin();
-        it != m_request_handlers.end(); ++it ) {
-        delete (*it);
-    }
     m_request_handlers.clear();
 }
 
@@ -93,7 +86,7 @@ void DMXHttpServer::createThreadPool( UINT thread_count, HANDLE hReqQueue )
     for ( UINT i=0; i < thread_count; i++ ) {
         HttpWorkerThread* worker = new HttpWorkerThread( this, m_worker_threads.size()+1, hReqQueue, docroot );
         worker->start();
-        m_worker_threads.push_back( worker );
+        m_worker_threads.push_back( std::unique_ptr<HttpWorkerThread>( worker ) );
     }
 }
 
@@ -101,10 +94,6 @@ void DMXHttpServer::createThreadPool( UINT thread_count, HANDLE hReqQueue )
 //
 void DMXHttpServer::freeWorkers()
 {
-    for ( ThreadArray::iterator it=m_worker_threads.begin(); it != m_worker_threads.end(); ++it ) {
-        (*it)->stop();
-        delete (*it);
-    }
     m_worker_threads.clear();
 }
 
@@ -119,11 +108,10 @@ IRequestHandler* DMXHttpServer::getHandler( LPCSTR prefix, UINT port )
     IRequestHandler* func = NULL;
     UINT len = 0;
 
-    for ( RequestHandlerPtrArray::iterator it=m_request_handlers.begin();
-            it != m_request_handlers.end(); ++it ) {
-        if ( (*it)->getPort() == port && path.Find( (*it)->getPrefix() ) == 0 && strlen((*it)->getPrefix()) > len ) {
-            func = (*it);
-            len = strlen((*it)->getPrefix());
+    for ( std::unique_ptr<IRequestHandler>& handler : m_request_handlers ) {
+        if ( handler->getPort() == port && path.Find( handler->getPrefix() ) == 0 && strlen( handler->getPrefix()) > len ) {
+            func = handler.get();
+            len = strlen( handler->getPrefix() );
         }
     }
 
@@ -178,7 +166,6 @@ UINT DMXHttpServer::run()
                     for ( SessionMap::iterator it=m_sessions.begin(); it != m_sessions.end(); ) {
                         if ( it->second->isExpired( now ) ) {
                             DMXStudio::log_status( "Session expired %s", it->second->getId() );
-                            delete it->second;
                             it = m_sessions.erase( it );
                         }
                         else
@@ -223,7 +210,7 @@ DMXHttpSession* DMXHttpServer::getSession( LPCSTR sessionId )
 
     auto it = m_sessions.find( sessionId );
 
-    return ( it == m_sessions.end() ) ? NULL : it->second;
+    return ( it == m_sessions.end() ) ? NULL : it->second.get();
 }
 
 // ----------------------------------------------------------------------------
@@ -234,9 +221,9 @@ DMXHttpSession* DMXHttpServer::createSession()
 
     DMXHttpSession* session = new DMXHttpSession();
      
-    m_sessions[ session->getId() ] = session;
+    m_sessions[ session->getId() ] = std::unique_ptr<DMXHttpSession>( session );
 
-    DMXStudio::log_status( "Created session %s", session->getId() );
+    DMXStudio::log_status( "Create session %s", session->getId() );
 
     return session;
 }

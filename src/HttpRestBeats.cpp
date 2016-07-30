@@ -26,23 +26,17 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_soundsampler_start( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_soundsampler_start( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
-    session->getSoundSampler().attach( studio.getVenue()->getAudio() );
+    session->getSoundSampler().attach( venue->getAudio() );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_soundsampler_stop( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_soundsampler_stop( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     session->getSoundSampler().detach();
 
     return true;
@@ -50,13 +44,10 @@ bool HttpRestServices::control_soundsampler_stop( DMXHttpSession* session, CStri
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_soundsampler( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::query_soundsampler( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     if ( !session->getSoundSampler().isAttached() )
-        session->getSoundSampler().attach( studio.getVenue()->getAudio() );
+        session->getSoundSampler().attach( venue->getAudio() );
 
     ULONG sample_number;
     SampleSet samples = session->getSoundSampler().getSampleSet( sample_number );
@@ -83,29 +74,23 @@ bool HttpRestServices::query_soundsampler( DMXHttpSession* session, CString& res
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_beatsampler_start( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::control_beatsampler_start( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     SimpleJsonParser parser;
-    PARSER_LIST bins;
 
     session->getBeatDetector().removeAllFrequencyEvents();
     session->getBeats().clear();
 
-    session->getBeatDetector().attach( studio.getVenue()->getAudio(), 64 );
+    session->getBeatDetector().attach( venue->getAudio(), 64 );
 
     try {
         parser.parse( data );
 
-        bins = parser.get<PARSER_LIST>( "" );
+        JsonNodePtrArray bins = parser.getObjects();
 
-        for ( PARSER_LIST::iterator it=bins.begin(); it != bins.end(); ++it ) {
-            SimpleJsonParser& bin_parser = (*it);
-
-            unsigned start_freq = bin_parser.get<unsigned>( "start_freq" );
-            unsigned end_freq = bin_parser.get<unsigned>( "end_freq" );
+        for ( JsonNode* bin : bins ) {
+            unsigned start_freq = bin->get<unsigned>( "start_freq" );
+            unsigned end_freq = bin->get<unsigned>( "end_freq" );
 
             session->getBeats().push_back( BeatBin( start_freq, end_freq ) );
         }
@@ -122,11 +107,8 @@ bool HttpRestServices::control_beatsampler_start( DMXHttpSession* session, CStri
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_beatsampler_stop( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_beatsampler_stop( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     session->getBeatDetector().removeAllFrequencyEvents();
     session->getBeatDetector().detach();
     session->getBeats().clear();
@@ -136,11 +118,8 @@ bool HttpRestServices::control_beatsampler_stop( DMXHttpSession* session, CStrin
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_beatsampler( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::query_beatsampler( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() || !studio.getVenue()->isRunning() )
-        return false;
-
     if ( !session->getBeatDetector().isAttached() )
          return false;
 

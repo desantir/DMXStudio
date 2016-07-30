@@ -1,5 +1,5 @@
 /* 
-    Copyright (C) 2012-14 Robert DeSantis
+    Copyright (C) 2012-2016 Robert DeSantis
     hopluvr at gmail dot com
 
     This file is part of DMX Studio.
@@ -26,11 +26,8 @@
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::player_login( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::player_login( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
-   if ( !studio.getVenue() )
-        return false;
-
     SimpleJsonParser parser;
     CString username;
     CString password;
@@ -67,39 +64,36 @@ bool HttpRestServices::player_login( DMXHttpSession* session, CString& response,
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_master_volume( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_master_volume( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
     UINT master_volume;
         
     if ( sscanf_s( data, "%u", &master_volume ) != 1 )
         return false;
 
-    studio.getVenue()->setMasterVolume( master_volume );
+    venue->setMasterVolume( master_volume );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_mute_volume( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_mute_volume( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
     UINT mute_volume;
         
     if ( sscanf_s( data, "%u", &mute_volume ) != 1 )
         return false;
 
-    studio.getVenue()->setMasterVolumeMute( mute_volume ? true : false );
+    venue->setMasterVolumeMute( mute_volume ? true : false );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_queue_track( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_music_queue_track( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.hasMusicPlayer() )
-        return false;
-
     char        track_link[MAX_LINK_SIZE];
 
     if ( sscanf_s( data, "%s", track_link, MAX_LINK_SIZE ) != 1 )
@@ -112,11 +106,8 @@ bool HttpRestServices::control_music_queue_track( DMXHttpSession* session, CStri
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_play_track( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_music_play_track( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.hasMusicPlayer() )
-        return false;
-
     char        track_link[MAX_LINK_SIZE];
     DWORD       seek_ms = 0L;
 
@@ -131,11 +122,8 @@ bool HttpRestServices::control_music_play_track( DMXHttpSession* session, CStrin
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_music_track_analysis( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::query_music_track_analysis( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.hasMusicPlayer() )
-        return false;
-
     char        track_link[MAX_LINK_SIZE];
 
     if ( sscanf_s( data, "%s", track_link, MAX_LINK_SIZE ) != 1 )
@@ -166,11 +154,8 @@ bool HttpRestServices::query_music_track_analysis( DMXHttpSession* session, CStr
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_play_playlist( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_music_play_playlist( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.hasMusicPlayer() )
-        return false;
-
     char        playlist_link[MAX_LINK_SIZE];
     unsigned    queue;
 
@@ -185,11 +170,8 @@ bool HttpRestServices::control_music_play_playlist( DMXHttpSession* session, CSt
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_music_playlists( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::query_music_playlists( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.hasMusicPlayer() )
-        return false;
-
     JsonBuilder json( response );
     json.startObject();
 
@@ -259,11 +241,8 @@ bool json_track_list( PlayerItems& tracks, CString& response )
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_music_queued( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::query_music_queued( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.hasMusicPlayer() )
-        return false;
-
     PlayerItems tracks;
     studio.getMusicPlayer()->getQueuedTracks(tracks);
 
@@ -272,11 +251,8 @@ bool HttpRestServices::query_music_queued( DMXHttpSession* session, CString& res
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_music_played( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::query_music_played( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.hasMusicPlayer() )
-        return false;
-
     PlayerItems tracks;
     studio.getMusicPlayer()->getPlayedTracks(tracks);
 
@@ -285,11 +261,8 @@ bool HttpRestServices::query_music_played( DMXHttpSession* session, CString& res
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_music_playlist_tracks( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::query_music_playlist_tracks( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.hasMusicPlayer() )
-        return false;
-
     char playlist_link[MAX_LINK_SIZE];
 
     if ( sscanf_s( data, "%s", playlist_link, MAX_LINK_SIZE ) != 1 )
@@ -303,67 +276,49 @@ bool HttpRestServices::query_music_playlist_tracks( DMXHttpSession* session, CSt
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_track_back( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_music_track_back( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.hasMusicPlayer() )
-        return false;
-
     studio.getMusicPlayer()->backTrack( );
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_track_forward( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_music_track_forward( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.hasMusicPlayer() )
-        return false;
-
     studio.getMusicPlayer()->forwardTrack( );
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_track_stop( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_music_track_stop( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.hasMusicPlayer() )
-        return false;
-
     studio.getMusicPlayer()->stopTrack( );
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_track_pause( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_music_track_pause( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.hasMusicPlayer() )
-        return false;
-
     studio.getMusicPlayer()->pauseTrack( true );
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_music_track_play( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::control_music_track_play( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.hasMusicPlayer() )
-        return false;
-
     studio.getMusicPlayer()->pauseTrack( false );
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_music_matcher( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::query_music_matcher( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-   if ( !studio.getVenue() )
-        return false;
-
-    MusicSceneSelectMap& mm = studio.getVenue()->music_scene_select_map();
+    MusicSceneSelectMap& mm = venue->music_scene_select_map();
     JsonBuilder json( response );
 
     json.startArray( );
@@ -379,7 +334,7 @@ bool HttpRestServices::query_music_matcher( DMXHttpSession* session, CString& re
     }
     else {
         json.add( "track", SILENCE_TRACK_NAME );
-        json.add( "id", studio.getVenue()->getDefaultScene()->getUID() );
+        json.add( "id", venue->getDefaultScene()->getUID() );
         json.add( "type", MST_SCENE );
         json.add( "link", SILENCE_TRACK_LINK );
         json.add( "special", true );
@@ -425,24 +380,21 @@ bool HttpRestServices::query_music_matcher( DMXHttpSession* session, CString& re
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_music_matcher_search( DMXHttpSession* session, CString& response, LPCSTR data )
+bool HttpRestServices::query_music_matcher_search( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
-    if ( !studio.getVenue() )
-        return false;
-
     char playlist_link[MAX_LINK_SIZE];
 
     if ( sscanf_s( data, "%s", playlist_link, MAX_LINK_SIZE ) != 1 )
         return false;
 
-    MusicSceneSelectMap& mm = studio.getVenue()->music_scene_select_map();
+    MusicSceneSelectMap& mm = venue->music_scene_select_map();
     JsonBuilder json( response );
 
     json.startArray( );
 
     MusicSceneSelector selector;
 
-    if ( studio.getVenue()->findMusicMapping( playlist_link, selector ) ) {
+    if ( venue->findMusicMapping( playlist_link, selector ) ) {
         json.startObject();
 
         json.add( "track", selector.m_track_full_name );
@@ -461,10 +413,7 @@ bool HttpRestServices::query_music_matcher_search( DMXHttpSession* session, CStr
 
 // ----------------------------------------------------------------------------
 //
-static bool music_matcher_load( LPCSTR data, boolean clearFirst ) {
-    if ( !studio.getVenue() )
-        return false;
-
+static bool music_matcher_load( Venue* venue, LPCSTR data, boolean clearFirst ) {
     SimpleJsonParser parser;
 
     std::vector<MusicSceneSelector> selections;
@@ -472,13 +421,13 @@ static bool music_matcher_load( LPCSTR data, boolean clearFirst ) {
     try {
         parser.parse( data );
 
-        PARSER_LIST selection_parsers = parser.get<PARSER_LIST>( "" );
+        JsonNodePtrArray selection_parsers = parser.getObjects();
 
-        for ( PARSER_LIST::iterator it=selection_parsers.begin(); it != selection_parsers.end(); ++it ) {
-            UID selection_id = (*it).get<UID>( "id" );
-            CString selection_name = (*it).get<CString>( "track" );
-            CString selection_link = (*it).get<CString>( "link" );
-            MusicSelectorType selection_type = (MusicSelectorType)(*it).get<int>( "type" );
+        for ( JsonNode* selection : selection_parsers ) {
+            UID selection_id = selection->get<UID>( "id" );
+            CString selection_name = selection->get<CString>( "track" );
+            CString selection_link = selection->get<CString>( "link" );
+            MusicSelectorType selection_type = (MusicSelectorType)selection->get<int>( "type" );
 
             selections.push_back( MusicSceneSelector( selection_name, selection_link, selection_type, selection_id ) );
         }
@@ -489,25 +438,25 @@ static bool music_matcher_load( LPCSTR data, boolean clearFirst ) {
 
     // Reload the selection map
     if ( clearFirst )
-        studio.getVenue()->clearMusicMappings();
+        venue->clearMusicMappings();
 
-    studio.getVenue()->addMusicMappings( selections );
+    venue->addMusicMappings( selections );
 
     return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_music_matcher_load( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::edit_music_matcher_load( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
-    return music_matcher_load( data, true );
+    return music_matcher_load( venue, data, true );
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_music_matcher_update( DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+bool HttpRestServices::edit_music_matcher_update( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
-    return music_matcher_load( data, false );
+    return music_matcher_load( venue, data, false );
 }
 
 // ----------------------------------------------------------------------------

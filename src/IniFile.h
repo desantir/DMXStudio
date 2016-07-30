@@ -23,9 +23,8 @@ MA 02111-1307, USA.
 #pragma once
 
 #include "DMXStudio.h"
-#include "ISerializable.h"
 
-class IniFile : public ISerializable
+class IniFile
 {
     CString         m_ini_filename;
     CString         m_last_error;

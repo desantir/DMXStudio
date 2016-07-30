@@ -1399,7 +1399,7 @@ void Venue::clearAllUniverses() {
 void Venue::addUniverse( Universe* universe ) {
     CSingleLock lock( &m_venue_mutex, TRUE );
 
-    STUDIO_ASSERT( universe->getId() > 0, "Attempt to add invalid universe ID 0" );
+    STUDIO_ASSERT( universe->getId() > 0, "Attempt to add invalid universe ID %d", universe->getId() );
     STUDIO_ASSERT( m_universes.find(universe->getId()) == m_universes.end(), "Universe %d already defined", universe->getId() );
 
     m_universes[universe->getId()] = universe;

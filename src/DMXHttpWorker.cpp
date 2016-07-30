@@ -144,7 +144,7 @@ UINT HttpWorkerThread::run()
 
             switch ( result ) {
                 case NO_ERROR:
-                    manageSession( );
+                    manageSession();
 
                     switch ( m_pRequest->Verb ) {
                         case HttpVerbGET:

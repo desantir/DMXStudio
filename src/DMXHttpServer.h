@@ -31,9 +31,10 @@ MA 02111-1307, USA.
 
 #include <http.h>
 
-typedef std::vector<HttpWorkerThread *> ThreadArray;
-typedef std::vector<IRequestHandler *> RequestHandlerPtrArray;
+typedef std::vector<std::unique_ptr<HttpWorkerThread>> ThreadArray;
+typedef std::vector<std::unique_ptr<IRequestHandler>> RequestHandlerPtrArray;
 typedef std::map<CString, CString> MimeMap;
+typedef std::map<CString, std::unique_ptr<DMXHttpSession>> SessionMap;
 
 class DMXHttpServer : public Threadable, EventBusListener
 {
@@ -61,7 +62,7 @@ public:
     }
 
     void registerHandler( IRequestHandler* handler ) {
-        m_request_handlers.push_back( handler );
+        m_request_handlers.push_back( std::unique_ptr<IRequestHandler>( handler ) );
     }
 
     IRequestHandler* getHandler( LPCSTR prefix, UINT port );

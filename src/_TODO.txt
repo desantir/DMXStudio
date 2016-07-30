@@ -10,6 +10,7 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 
         L 1 Mobile UI that can automatically find DMX servers
 		L 5 Alternative to dialogs
+	    L   Multiple object changes (add act to all, change animation time in all, etc
 		L 1 Improved error responses (e.g. "<item> not found")
 		L 1 Handle disconnected server state (disable UI, startup errors out if no COM)
 		L 2 Authentication & session control
@@ -24,7 +25,11 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L   Handle music format changes (must be some event)
 
 	H Animations:
-		H   All animations should be shared across scenes and globally defined (need to copy/update across scenes)
+		H 5 Animations shared across scenes and globally defined (need to copy/update across scenes)
+				- Define named animations separately from scenes
+				- Assign animations to scenes (1-n)
+				- If fixture is not in current scene, animation just ignores
+
 		H   Improved sound animation effects (currently they are not very exact and are hard to setup)
 
 		M 5 Simplify animations (must be easier to create animations from the UI)
@@ -48,7 +53,6 @@ Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 		L   Controllable master dimmer curve (like H6)
 
 	L General Enhancements
-	    L   Multiple object changes (add act to all, change animation time in all, etc
 	    M   Read/convert pre-existing fixture metadata files such as Chauvet
 		L   MIDI fogger control with ready indicator (auto fog timer?)
 		L   Video support

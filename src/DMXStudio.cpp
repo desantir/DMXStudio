@@ -158,7 +158,7 @@ void DMXStudio::runStudio()
 //
 bool DMXStudio::handleEvent( const Event& event )
 {
-    CString output( "EVENT: " );
+    CString output( "EVENT " );
     output.Append( (LPCSTR)EventBus::eventAsString( event ) );
 
     if ( isDebug() )

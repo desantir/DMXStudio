@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,14 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -43,9 +43,11 @@ MA 02111-1307, USA.
 #include <set>
 #include <list>
 #include <queue>
+#include <stack>
 #include <algorithm>
 #include <iterator>
 #include <exception>
+#include <memory>
 #include <afxmt.h>
 #include <Mmdeviceapi.h>
 #include <Audioclient.h>
@@ -55,3 +57,5 @@ MA 02111-1307, USA.
 #include <math.h>
 
 // TODO: reference additional headers your program requires here
+
+#define COLOR_SUPPORT
