@@ -20,7 +20,7 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
+#include "DMXStudio.h"
 #include "DefinitionWriter.h"
 #include "FixtureDefinition.h"
 
@@ -108,16 +108,22 @@ void DefinitionWriter::visit( Channel* channel )
         add_attribute( channel_element, "head", channel->m_head_number );
 
     // Add dimmer
-    if ( channel->isDimmer() && 
-         (channel->getType() != CHNLT_DIMMER ||
-          channel->m_lowest_intensity != 0 || 
-          channel->m_highest_intensity != 255) ) {
+    if ( channel->isDimmer() ) {
         TiXmlElement dimmer( "dimmer" );
+        add_attribute( dimmer, "strobe", channel->m_dimmer_can_strobe );
         add_attribute( dimmer, "lowest_intensity", channel->m_lowest_intensity );
         add_attribute( dimmer, "highest_intensity", channel->m_highest_intensity );
         add_attribute( dimmer, "off_intensity", channel->m_off_intensity );
         channel_element.InsertEndChild( dimmer );
     }
+
+	// Add strobe
+	if ( channel->isStrobe() ) {
+		TiXmlElement strobe( "strobe" );
+		add_attribute( strobe, "speed_slow", channel->m_strobe_slow );
+		add_attribute( strobe, "speed_fast", channel->m_strobe_fast );
+		add_attribute( strobe, "off", channel->m_strobe_off );
+	}
 
     add_text_element( channel_element, "name", channel->m_name );
 
@@ -129,7 +135,7 @@ void DefinitionWriter::visit( Channel* channel )
 
     if ( channel->m_angles.size() > 0 ) {
         TiXmlElement angles( "angles" );
-        visit_map<ChannelAngleMap>( angles, channel->m_angles );
+        visit_array<ChannelAngleArray>( angles, channel->m_angles );
         channel_element.InsertEndChild( angles );
     }
 

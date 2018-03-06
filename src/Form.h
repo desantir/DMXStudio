@@ -23,7 +23,7 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "TextIO.h"
 
 class Form;
@@ -181,9 +181,10 @@ public:
         m_fields.resize( num_fields );
     }
 
-    void addAuto( Field* fieldp ) {
+    size_t addAuto( Field* fieldp ) {
         STUDIO_ASSERT( m_auto_delete, "Auto delete field added, but not deleting" );
         m_fields.push_back( fieldp );
+        return m_fields.size()-1;
     }
 
     template<class T>
@@ -197,6 +198,15 @@ public:
 
     void stop() {
         m_playing = false;
+    }
+
+    void resize( size_t new_size ) {
+        while ( size() > new_size ) {
+            FormFields::iterator it = m_fields.end()-1;
+            if ( m_auto_delete )
+                delete (*it);
+            m_fields.erase( it );
+        }
     }
 
     virtual void clear() {
@@ -287,8 +297,8 @@ public:
         return true;
     }
 
-    void setDefaultValue( LPCSTR value ) {
-        m_default_value = value;
+    virtual void setDefaultValue( LPCSTR value ) {
+        m_default_value = m_current_value = value;
     }
 
     bool isChanged() const {
@@ -431,9 +441,16 @@ public:
     }
 
     bool setValue( long value ) {
+        if ( !isValid( value ) )
+            return false;
+
         CString value_str;
         value_str.Format( "%ld", value );
         return setValue( value_str );
+    }
+
+    virtual bool isValid( long value ) {
+        return ( value >= m_low && value <= m_high );
     }
 
     void setHigh( long high ) {
@@ -452,10 +469,10 @@ public:
 protected:
     bool parse( LPCSTR value, long& result ) {
         for ( LPCSTR c=value; *c; c++ )
-            if ( !isdigit( *c ) )
+            if ( !isdigit( *c ) && *c != '-' )
                 return false;
         long l = atol( value );
-        if ( l < m_low || l > m_high )
+        if ( !isValid( l ) )
             return false;
         result = l;
         return true;
@@ -561,9 +578,8 @@ public:
     }
 };
 
-class KeyListComparator
+struct KeyListComparator
 {
-public:
     bool operator() ( const CString& k1, const CString& k2 ) const {
         if ( k1.GetLength() < k2.GetLength() )
             return true;
@@ -576,7 +592,17 @@ public:
 class KeyListField : public InputField 
 {
 protected:
-    typedef std::map<CString,CString,KeyListComparator> KeyListMap;
+    struct KeyValue {
+        CString value;
+        DWORD context;
+
+        KeyValue( LPCSTR v, DWORD c ) :
+            value( v ),
+            context( c )
+        {}
+    };
+
+    typedef std::map<CString,KeyValue,KeyListComparator> KeyListMap;
     
     KeyListMap		m_selections;
 
@@ -585,12 +611,22 @@ protected:
     {}
 
 public:
-    void addKeyValue( LPCSTR key, LPCSTR value ) {
-        m_selections[ key ] = value;
+    void addKeyValue( LPCSTR key, LPCSTR value, DWORD context = 0L ) {
+        m_selections.emplace( key, KeyValue( value, context ) );
     }
 
-    LPCSTR getKeyValue( ) {
-        return m_selections[ getValue() ];
+    LPCSTR getKeyValue( ) const {
+        KeyListMap::const_iterator it = m_selections.find( getValue() );
+        if ( it == m_selections.end() )
+            throw FieldException( "Key value context not available" );
+        return it->second.value;
+    }
+
+    DWORD getKeyValueContext() const {
+        KeyListMap::const_iterator it = m_selections.find( getValue() );
+        if ( it == m_selections.end() )
+            throw FieldException( "Key value context not available" );
+        return it->second.context;
     }
 
     void clear() {
@@ -615,14 +651,10 @@ public:
         return setValue( (*it).first );
     }
 
-    void setDefaultListValue( CString selection ) {
-        m_default_value = m_current_value = selection;
-    }
-
     void getLabelValue( CString& labelValue ) {
         KeyListMap::iterator it = m_selections.find( m_current_value );
         if ( it != m_selections.end() ) {
-            labelValue.Format( "%s-%s", (*it).first, (LPCSTR)(*it).second );
+            labelValue.Format( "%s-%s", (*it).first, (LPCSTR)(*it).second.value );
             return;
         }
         labelValue = "INTERNAL ERROR";
@@ -672,6 +704,16 @@ public:
         return strtoul( (LPCSTR)getValue(), NULL, 10 );
     }
 
+    DWORD getListValueContext() const {
+        return getKeyValueContext();
+    }
+
+    void addKeyValue( DWORD key, LPCSTR value, DWORD context = 0L ) {
+        CString key_value;
+        key_value.Format( "%lu", key );
+        KeyListField::addKeyValue( key_value, value, context );
+    }
+
     void setDefaultListValue( DWORD selection ) {
         CString current_selection;
         current_selection.Format( "%lu", selection );
@@ -682,12 +724,6 @@ public:
         catch ( ... ) {
             setValue( m_selections.begin()->first );
         }
-    }
-
-    void addKeyValue( DWORD key, LPCSTR value ) {
-        CString key_value;
-        key_value.Format( "%lu", key );
-        KeyListField::addKeyValue( key_value, value );
     }
 };
 
@@ -709,12 +745,16 @@ public:
         setDefaultListValue( selected );
     }
 
-    void addKeyValue( LPCSTR key, LPCSTR value ) {
-        m_selections[ key ] = value;
+    void addKeyValue( LPCSTR key, LPCSTR value, DWORD context = 0L ) {
+        m_selections.emplace( key, KeyValue( value, context ) );
     }
 
     std::vector<CString> getSelections( ) const {
         return m_selected;
+    }
+
+    bool hasSelections() const {
+        return m_selected.size() > 0;
     }
 
     bool nextValue() {

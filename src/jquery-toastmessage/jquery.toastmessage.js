@@ -98,7 +98,9 @@
                 imageName = "ui-icon-red ui-icon-circle-close";
             else if ( localSettings.type === 'warning' )
                 imageName = "ui-icon-white ui-icon-alert";
-            
+            else
+                imageName = "ui-icon-white ui-icon-blank";
+
             toastItemImage  = $('<div></div>').addClass('toast-item-image').addClass('ui-icon ' + imageName ).prependTo(toastItemInner);
 
             if(navigator.userAgent.match(/MSIE 6/i))

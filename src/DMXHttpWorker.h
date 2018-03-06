@@ -22,7 +22,7 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "Threadable.h"
 
 #include <http.h>
@@ -104,8 +104,8 @@ public:
         return sendResponse( 500, "INTERNAL SERVER ERROR", "500 - Server error" );
     }
 
-    DWORD error_501( void ) {
-        return sendResponse( 501, "Not Implemented", NULL );
+    DWORD error_501( LPCSTR reason = "Not Implemented" ) {
+        return sendResponse( 501, reason, NULL );
     }
 
     DWORD sendResponse( 
@@ -141,11 +141,21 @@ protected:
 
 class IRequestHandler
 {
+    UINT        m_port;
+
 public:
+    IRequestHandler( UINT port ) :
+        m_port( port )
+    {}
+
     virtual ~IRequestHandler() {}
 
+    virtual UINT getPort() {
+        return m_port;
+    }
+
     virtual LPCSTR getPrefix() = 0;
-    virtual UINT getPort() = 0;
+
     virtual DWORD processGetRequest( HttpWorkerThread* worker ) = 0;
     virtual DWORD processPostRequest( HttpWorkerThread* worker, BYTE* contents, DWORD size  ) = 0;
     virtual bool substitute( LPCSTR marker, LPCSTR data, CString& marker_content ) = 0;

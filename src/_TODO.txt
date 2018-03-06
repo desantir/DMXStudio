@@ -1,104 +1,99 @@
+
 TODO ------------------------------------------------------------------------ TODO
 
 Key:  Priority L M H (low to high)		Effort   1 2 3 4 5 (easy to hard)
 
-   L Web Full UI - music controller
-		H   Implement search for tracks, scenes, and other objects, reduce/remove dialogs used to control track selection
+   H Current Priority
+
+   H BUGS
+   		H	Very rare Philips Hue driver lpContext invalid sig11 (verify timing too)
+		H	Very rare FTDI "freeze" - seems unrelated to studio - can it be detected and reset?
+		
+   L General Enhancements
+		U   Nod/rotate offsets (non-unison)
+
+		L	Full support for white (amber/UV) color channels
+
+        H   Color correct RGB colors representing fixture color states (deal with white and amber channels)
+				- With Hue, blues are white, minimal color is visible, G2 build color issues
+
+*		H   Implement search for scenes, and other objects
 			- Live search jquery control
+			- Replace multiselect where possible with select & filter control
+			
+			Multiple quick effects on different sets of fixtures
+			Separate quick effect selection from slider selection
+			Full video analysis for color changes (rather than YouTube storyboard)
 
-		M 5 Workspace channel management (re-arrange channels, hidden channels, save channel sets)
+		L   Move group of fixtures, grid settings, snap, etc
 
-        L 1 Mobile UI that can automatically find DMX servers
-		L 5 Alternative to dialogs
-	    L   Multiple object changes (add act to all, change animation time in all, etc
-		L 1 Improved error responses (e.g. "<item> not found")
-		L 1 Handle disconnected server state (disable UI, startup errors out if no COM)
-		L 2 Authentication & session control
-		L 4 Album artwork
+   L Web Full UI - music controller
+		L   Track seek
+        L 1 Mobile UI that can automatically find DMX servers (support uPNP)
+	    L   Multiple object changes and group movement/align (add act to all, change animation time in all, delete multiple, etc)
+		L 2 Authentication
 
 	L Sound processing
-		H   Beat detector scaling, improved detection algorithm, logarithmic scaling
+*		H   Beat detector scaling, improved detection algorithm, logarithmic scaling
 
-		L   Other sound analysis for chase track http://www.smartjava.org/content/exploring-html5-web-audio-visualizing-sound
-		L   Add channel mixing to audio stream class
-		L   Song blending / beat matching
-		L   Handle music format changes (must be some event)
+		M   Scale amplitude and dB values to volume or can we get a constant signal?
 
-	H Animations:
-		H 5 Animations shared across scenes and globally defined (need to copy/update across scenes)
-				- Define named animations separately from scenes
-				- Assign animations to scenes (1-n)
-				- If fixture is not in current scene, animation just ignores
+	H Animations
+		M	All basic animation properties should be store in AnimationDefinition as name/value pairs
+				- Add DObject name/value pair storage?
+		M   Fader support for mixed fixure effects
 
-		H   Improved sound animation effects (currently they are not very exact and are hard to setup)
+		L	Channel program needs optional start-up channel(s) set outside of main program (see nod movement for example)
+		L   Movement animation's affect of the dimmer channel messing up other animations
 
-		M 5 Simplify animations (must be easier to create animations from the UI)
-		M   Incorporate track audio info to music match scene selection
-
-		L   Multiple animations per fixture (deal with channel contention)
-		L   Loadable, scripted, self contained animations with specific properties (versus the current rat's nest)
-
-   H Scene / Chase / Act Improvements
-		L   Chase crossfade = % of time cues fading into each other (kill fade time change to crossfade model)?
-		L   Name acts and easier act selection in UI
+    H Scene / Chase / Act Improvements
 
 	L Fixtures / Fixture Definitions
-        H   Palettes for location, color, intensity (fixe whiteout pallet)
-		H   Fan channel values in a group
-
-		L   Simple angle->value options (angle*xx) == DMX code
-		L   Movement speed abstraction
-		L   Park moving heads - stop moving back to home?
-            Pan/tilt word size
-		L   Controllable master dimmer curve (like H6)
+		H   Spread channel values in a group
 
 	L General Enhancements
 	    M   Read/convert pre-existing fixture metadata files such as Chauvet
-		L   MIDI fogger control with ready indicator (auto fog timer?)
-		L   Video support
-		L   New Spotify C API when available
 
-	L Code Maintainence
-		M   Bullet proof error detection and automatic restart
-		L   Introduce studio fault to kill and restart program (vs error based execeptions)
+		L   Support video in Music Match (i.e. play specific scene with video)
+		L   New Spotify C API for track playback when available
 
 TODO ------------------------------------------------------------------------ TODO
 
-IDEA ------------------------------------------------------------------------ IDEA
-
-- Console concepts
-	      Mark cue
-		  Block cue
-	      Tracking vs non tracking
-		  Cross fade channel values
-		  Bump control single channel value
-
-- Higher level abstraction for fixture behaviors. For Example:
-		- ROTATE TO 180
-		- PAN TO 180
-		- STROBE AT <rate>
-		- INTENSITY <intensity>
-		- SPECIAL EFFECT <args>
-		- PLAY <song>
-
-- Wrap behaviors in LUA or Python
-
-- Attach behaviors to fixures and allow easy selection from UI
-
-IDEA ------------------------------------------------------------------------ IDEA
-
 ATTIC ------------------------------------------------------------------------ ATTIC
 
-	Things we wanted but now don't
+	Things we wanted but now we don't
+		M   Track queue/forward/back still seems wonky
+		L   Controllable master dimmer curve (like H6) - see Scene FixtureDimmer
+		L   Park moving heads - stop moving back to home
+            Pan/tilt word size
+		L   Handle music format changes (must be some event)
 		L   Chase random scene from all/pool
 		L 1 BPM with chase for music match?
 		L   Programs should control travel time rather than fixed signal input
 		L   Animation speed changes based on beat detection
 		L   Chase changed based on beat, time or track transition
 		L 1 Scrolling text plugin for playing track name
-		L   Dimmer curve (LEDs can fall off fast at the end)
 		L   Minimum dimmer setting
 		L   Midi controller support ( tablet support )
 		L 5 Positional "map" of fixtures (with icons showing type and direction) for easy capture
+		M 5 Workspace channel management (re-arrange channels, hidden channels, save channel sets)
+		M   Incorporate track audio info to music match scene selection
+		- Wrap behaviors in LUA or Python
+		- Attach behaviors to fixures and allow easy selection from UI (palettes should do this)
+		L   Song blending / beat matching
+		L   Add channel mixing to audio stream class
+		M   Bullet proof error detection and automatic restart
+		L   Introduce studio fault to kill and restart program (vs error based execeptions)
+		L   Chase crossfade = % of time cues fading into each other (kill fade time change to crossfade model)?
+*		L   Other sound analysis for chase track http://www.smartjava.org/content/exploring-html5-web-audio-visualizing-sound
+		L   Loadable, scripted, self contained animations with specific properties
+		L   Name acts and easier act selection in UI
+		L   Multiple animations per fixture (deal with channel contention)
+			- perhaps each animation has  priority and are ordered by priority?
+			- in priority order, animation suggest a channel value? Pulse after color changer for exmple
+			- reason: animations only deal with specific channels or channel types
+		L	Video preview window
+				L   Simple angle->value options (angle*xx) == DMX code
+		L   Movement speed abstraction
 
 ATTIC ------------------------------------------------------------------------ ATTIC

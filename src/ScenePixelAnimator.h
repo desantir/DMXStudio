@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2014-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -22,78 +22,14 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "IVisitor.h"
-#include "SceneChannelAnimator.h"
+#include "AnimationDefinition.h"
 
-class PixelEngine
-{
-    enum { COLOR_CHANNELS = 4 };
+enum PixelEffect { MOVING=1, STACKED=2, STACKED_LEFT=3, STACKED_RIGHT=4, BEAM=5, RANDOM=6, CHASE=7, COLOR_CHASE=8 };
 
-    size_t                          m_pixels;
-    ChannelAnimationArray           m_animation_array;
-
-public:
-    PixelEngine( ) :
-        m_pixels(0)
-    {}
-
-    ~PixelEngine() {
-    }
-
-    void clear() {
-        m_pixels = 0;
-        m_animation_array.clear();
-    }
-
-    void loadPixels( UID actor_uid,  PixelArray* pixels ) {
-        for ( size_t index=0; index < pixels->size(); index++ ) {
-            m_animation_array.push_back( ChannelAnimation( actor_uid, pixels->at( index ).red(), CAM_LIST ) );
-            m_animation_array.push_back( ChannelAnimation( actor_uid, pixels->at( index ).green(), CAM_LIST ) );
-            m_animation_array.push_back( ChannelAnimation( actor_uid, pixels->at( index ).blue(), CAM_LIST ) );
-            m_animation_array.push_back( ChannelAnimation( actor_uid, pixels->at( index ).white(), CAM_LIST ) );
-
-            m_pixels++;
-        }
-    }
-
-    inline size_t getNumPixels( ) const {
-        return m_pixels;
-    }
-
-    inline void addPixel( size_t pixel, RGBWA& color ) {
-        size_t offset = pixel * COLOR_CHANNELS;
-
-        m_animation_array[offset + 0].addChannelValue( color.red() );
-        m_animation_array[offset + 1].addChannelValue( color.green() );
-        m_animation_array[offset + 2].addChannelValue( color.blue() );
-        m_animation_array[offset + 3].addChannelValue( color.white() );
-    }
-
-    inline void loadChannelAnimations( ChannelAnimationArray& target ) {
-        target.insert( target.end(), m_animation_array.begin(), m_animation_array.end() );
-    }
-};
-
-enum PixelEffect { MOVING=1, STACKED=2, STACKED_LEFT=3, STACKED_RIGHT=4, BEAM=5, RANDOM=6, CHASE=7 };
-
-class ScenePixelAnimator : public SceneChannelAnimator
+class ScenePixelAnimator : public AnimationDefinition
 {
     friend class VenueWriter;
     friend class VenueReader;
-
-    enum ExitDirection { NO_EXIT=1, RIGHT_EXIT=2, LEFT_EXIT=3 };
-
-    struct Participant {
-        PixelArray*         m_pixels;
-        UID                 m_actor_uid;
-
-        Participant( UID actor_uid, PixelArray* pixels ) :
-            m_actor_uid( actor_uid ),
-            m_pixels( pixels )
-        {}
-    };
-
-    RGBWAArray                  m_colors;
 
     // Configuration
     PixelEffect                 m_effect;
@@ -111,9 +47,8 @@ public:
 
     ScenePixelAnimator() {}
 
-    ScenePixelAnimator( UID animation_uid, 
+    ScenePixelAnimator( UID animation_uid, bool shared, UID reference_fixture,  
                         AnimationSignal signal,
-                        UIDArray actors,
                         PixelEffect effect,
                         RGBWAArray custom_colors,
                         RGBWA empty_color,
@@ -125,16 +60,12 @@ public:
 
     ~ScenePixelAnimator(void);
 
-    AbstractAnimation* clone();
-
-    const char* getName() { return ScenePixelAnimator::animationName; }
+    const char* getPrettyName() { return ScenePixelAnimator::animationName; }
     const char* getClassName() { return ScenePixelAnimator::className; }
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
-
-    void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
 
     virtual CString getSynopsis(void);
 
@@ -194,12 +125,8 @@ public:
         m_custom_colors = colors;
     }
 
-private:
-    void generateEffect( PixelEngine& engine );
-    void genMovingDots( PixelEngine& engine );
-    void genStackedDots( PixelEngine& engine, ExitDirection exit_direction );
-    void genBeam( PixelEngine& engine );
-    void genRandomDots( PixelEngine& engine );
-    void genChase( PixelEngine& engine );
+    AnimationTask* createTask( AnimationEngine* engine, ActorList& actors, UID owner_uid );
+
+	AnimationDefinition* clone();
 };
 

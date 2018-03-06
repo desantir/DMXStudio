@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-15 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -21,8 +21,6 @@ MA 02111-1307, USA.
 */
 
 #include "DMXTextUI.h"
-#include "TextIO.h"
-#include "AudioVolumeController.h"
 
 static const char * LINE_CLEAR = "\r                                                                                                    \r";
 
@@ -47,7 +45,7 @@ DMXTextUI::DMXTextUI(void)
     function_map[ "scp" ] = HandlerInfo( &DMXTextUI::copyScene,                 true,   "Scene CoPy" );
     function_map[ "sd" ] = HandlerInfo( &DMXTextUI::deleteScene,                true,   "Scene Delete" );
     function_map[ "su" ] = HandlerInfo( &DMXTextUI::updateScene,                true,   "Scene Update" );
-    function_map[ "sx" ] = HandlerInfo( &DMXTextUI::describeScene,              true,   "Scene describe" );
+    function_map[ "sx" ] = HandlerInfo( &DMXTextUI::describeScene,              true,   "Scene Describe" );
     function_map[ "saa" ] = HandlerInfo( &DMXTextUI::sceneAddAnimation,         true,   "Scene Animation Add" );
     function_map[ "sau" ] = HandlerInfo( &DMXTextUI::sceneUpdateAnimation,      true,   "Scene Animation Update" );
     function_map[ "sac" ] = HandlerInfo( &DMXTextUI::sceneDeleteAllAnimations,  true,   "Scene Clear all Animations" );
@@ -68,6 +66,7 @@ DMXTextUI::DMXTextUI(void)
     function_map[ "cv" ] = HandlerInfo( &DMXTextUI::copyChaseSteps,             true,   "Chase copy steps" );
     function_map[ "csd" ] = HandlerInfo( &DMXTextUI::deleteChaseSteps,          true,   "Chase delete steps" );
     function_map[ "csa" ] = HandlerInfo( &DMXTextUI::addChaseSteps,             true,   "Chase add steps" );
+    function_map[ "ca" ] = HandlerInfo( &DMXTextUI::advanceChase,               true,   "Chase advance" );
 
     function_map[ "r" ] = HandlerInfo( &DMXTextUI::resetDefaultFixtures,        true,   "Reset workspace fixtures" );
     function_map[ "f" ] = HandlerInfo( &DMXTextUI::controlFixture,              true,   "Fixture control (copy to workspace)" );
@@ -89,18 +88,34 @@ DMXTextUI::DMXTextUI(void)
     function_map[ "w" ] = HandlerInfo( &DMXTextUI::whiteout,                    true,   "Whiteout" );
     function_map[ "wo" ] = HandlerInfo( &DMXTextUI::whiteout_options,           true,   "Whiteout options" );
 
-    function_map[ "a" ] = HandlerInfo( &DMXTextUI::animationSpeed,              true,   "Animation Speed" );
+    function_map[ "as" ] = HandlerInfo( &DMXTextUI::animationSpeed,	            true,   "Animation Speed" );
+    function_map[ "ac" ] = HandlerInfo( &DMXTextUI::createAnimation,            true,   "Create Animation" );
+    function_map[ "ax" ] = HandlerInfo( &DMXTextUI::describeAnimation,          true,   "Describe Animation" );
+    function_map[ "ad" ] = HandlerInfo( &DMXTextUI::deleteAnimation,            true,   "Delete Animation" );
+    function_map[ "au" ] = HandlerInfo( &DMXTextUI::updateAnimation,            true,   "Update Animation" );
 
     function_map[ "v" ] = HandlerInfo( &DMXTextUI::masterVolume,                true,   "Master Volume" );
     function_map[ "vm" ] = HandlerInfo( &DMXTextUI::muteVolume,                 true,   "Mute Volume" );
 
+    function_map[ "px" ] = HandlerInfo( &DMXTextUI::describePalette,            true,   "Palette Describe" ); 
+    function_map[ "pc" ] = HandlerInfo( &DMXTextUI::createPalette,              true,   "Palette Create" ); 
+    function_map[ "pd" ] = HandlerInfo( &DMXTextUI::deletePalette,              true,   "Palette Delete" ); 
+    function_map[ "pu" ] = HandlerInfo( &DMXTextUI::updatePalette,              true,   "Palette Update" ); 
+
+    function_map[ "pfu" ] = HandlerInfo( &DMXTextUI::updatePaletteFixture,      true,   "Palett Add/Update Fixture" ); 
+    function_map[ "pfd" ] = HandlerInfo( &DMXTextUI::deletePaletteFixture,      true,   "Palette Delete Fixture" ); 
+    function_map[ "pfdu" ] = HandlerInfo( &DMXTextUI::updatePaletteFixtureDef,  true,   "Palette Add/Update Fixture Definition" );
+    function_map[ "pfdd" ] = HandlerInfo( &DMXTextUI::deletePaletteFixtureDef,  true,   "Palette Delete Fixture Definition" );
+
+    function_map[ "psu" ] = HandlerInfo( &DMXTextUI::updateScenePalettes,	    true,   "Scene Actor And/Update Palettes" );
+
     if ( studio.hasMusicPlayer() ) {
-        function_map[ "px" ] = HandlerInfo( &DMXTextUI::listPlaylists,          false,  "List Playlists" );
+        function_map[ "plx" ] = HandlerInfo( &DMXTextUI::listPlaylists,          false,  "List Playlists" );
         function_map[ "tx" ] = HandlerInfo( &DMXTextUI::listTracks,             false,  "List Tracks" );
         function_map[ "tp" ] = HandlerInfo( &DMXTextUI::playTrack,	    		false,  "Play Track" );
         function_map[ "tq" ] = HandlerInfo( &DMXTextUI::queueTrack,             false,  "Queue Track" );
-        function_map[ "pq" ] = HandlerInfo( &DMXTextUI::queuePlaylist,          false,  "Queue Playlist" );
-        function_map[ "pp" ] = HandlerInfo( &DMXTextUI::playPlaylist,           false,  "Play Playlist" );
+        function_map[ "plq" ] = HandlerInfo( &DMXTextUI::queuePlaylist,          false,  "Queue Playlist" );
+        function_map[ "plp" ] = HandlerInfo( &DMXTextUI::playPlaylist,           false,  "Play Playlist" );
         function_map[ "p" ] = HandlerInfo( &DMXTextUI::pauseTrack,              false,  "Track pause" );
         function_map[ "ts" ] = HandlerInfo( &DMXTextUI::stopTrack,              false,  "Stop track" );
         function_map[ "tf" ] = HandlerInfo( &DMXTextUI::forwardTrack,           false,  "Forward track" );
@@ -112,7 +127,10 @@ DMXTextUI::DMXTextUI(void)
         function_map[ "ma" ] = HandlerInfo( &DMXTextUI::musicMapTrack,          false,  "Map music to scene or chase" );
         function_map[ "mr" ] = HandlerInfo( &DMXTextUI::musicRemoveMapping,     false,  "Remove music mapping" );
         function_map[ "mx" ] = HandlerInfo( &DMXTextUI::musicMapShow,           false,  "Show music mappings" );
+        function_map[ "mpl" ] = HandlerInfo( &DMXTextUI::musicPlayerLogin,      false,  "Show player login" );
     }
+
+    // function_map[ "test" ] = HandlerInfo( &DMXTextUI::test,                     false,  "Test" );
 
     initializeAnimationEditors();
 }
@@ -130,10 +148,6 @@ void DMXTextUI::run()
     m_running = true;
 
     m_text_io.printf( "\n\nDMXStudio text UI - type ? for command list\n" );
-
-    // If we have a music player - see if we need to login
-    if ( studio.hasMusicPlayer() && !studio.getMusicPlayer()->isLoggedIn() )
-        musicPlayerLogin( );
 
     while ( m_running ) {
         CString light_status( "LIGHT | " );
@@ -154,6 +168,8 @@ void DMXTextUI::run()
                     light_status.Append( "STROBE FAST " );
                 else if ( getVenue()->getWhiteout() == WHITEOUT_STROBE_MANUAL )
                     light_status.AppendFormat( "STROBE %dms ", getVenue()->getWhiteoutStrobeMS() );
+                else if ( getVenue()->getWhiteout() == WHITEOUT_PULSE )
+                    light_status.Append( "PULSE " );
 
                 if ( getVenue()->getWhiteoutColor() != RGBWA::WHITE )
                     light_status.AppendFormat( "COLOR %s ", getVenue()->getWhiteoutColor().getColorName().MakeUpper() ); 
@@ -170,21 +186,32 @@ void DMXTextUI::run()
             light_status.AppendFormat( "Scene #%d %s | ", getVenue()->getScene()->getSceneNumber(), getVenue()->getScene()->getName() );
 
             Scene* workspace = getVenue()->getDefaultScene();
-            if ( workspace->getNumActors() > 0 ) {
+            if ( workspace->getNumActors() > 0 || workspace->getNumAnimations() > 0 ) {
                 light_status.AppendFormat( "Workspace: " );
-                ActorPtrArray actors = workspace->getActors();
-                for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
-                    if ( (*it)->isGroup() ) {
-                        FixtureGroup* group = getVenue()->getFixtureGroup( (*it)->getActorUID() );
-                        light_status.AppendFormat( "G%u ", group->getNumber() );
+                for ( SceneActor* actor : workspace->getActors() ) {
+                    if ( actor->isGroup() ) {
+                        FixtureGroup* group = getVenue()->getFixtureGroup( actor->getActorUID() );
+                        if ( group != NULL )
+                            light_status.AppendFormat( "G%u ", group->getNumber() );
                     }
                     else {
-                        Fixture* pf = getVenue()->getFixture( (*it)->getActorUID() );
-                        light_status.AppendFormat( "F%u ", pf->getFixtureNumber() );
+                        Fixture* pf = getVenue()->getFixture( actor->getActorUID() );
+                        if ( pf != NULL )
+                            light_status.AppendFormat( "F%u ", pf->getFixtureNumber() );
                     }
                 }
+
+                for (AnimationReference& ref : workspace->animations() ) {
+                    AnimationDefinition* animation = getVenue()->getAnimation( ref.getUID() );
+                    if ( animation != NULL ) {
+                        light_status.AppendFormat( "A%u ", animation->getNumber() );
+                    }
+                }
+
                 light_status.AppendFormat( "| " );
             }
+
+            light_status.AppendFormat( "Anim Speed: %d%% | ", getVenue()->getAnimationSpeed() );
         }
         else {
             light_status.AppendFormat( "Venue STOPPED | " );
@@ -197,9 +224,9 @@ void DMXTextUI::run()
 
         // If we have a music player and it has status, display that
         if ( studio.hasMusicPlayer() && studio.getMusicPlayer()->isLoggedIn() ) {
-            DWORD length, remaining;
-            CString track_link;
-            bool success = studio.getMusicPlayer()->getPlayingTrack( track_link, &length, &remaining );
+            PlayingInfo playing_info;
+
+            bool success = studio.getMusicPlayer()->getPlayingTrack( &playing_info );
             
             if ( getVenue()->isMusicSceneSelectEnabled() )
                 music_status.AppendFormat( " | Music Match ON" );
@@ -207,13 +234,13 @@ void DMXTextUI::run()
                 music_status.AppendFormat( " | Music Match OFF" );
 
             if ( success ) {
-                music_status.AppendFormat( " | %s", studio.getMusicPlayer()->getTrackFullName( track_link ) );
+                music_status.AppendFormat( " | %s", studio.getMusicPlayer()->getTrackFullName( playing_info.track_link ) );
 
-                if ( length ) {
-                    music_status.AppendFormat( " | length %s", track_time(length) );
+                if ( playing_info.track_length ) {
+                    music_status.AppendFormat( " | length %s", track_time(playing_info.track_length) );
 
-                    if ( remaining )
-                        music_status.AppendFormat( " | remaining %s", track_time(remaining) );
+                    if ( playing_info.time_remaining )
+                        music_status.AppendFormat( " | remaining %s", track_time(playing_info.time_remaining) );
                 }
 
                 if ( studio.getMusicPlayer()->isTrackPaused() )
@@ -250,10 +277,12 @@ void DMXTextUI::run()
             try {
                 (this->*(*it).second.m_funcptr)();
             }
-            catch ( FieldException& ex ) {
+            catch ( StudioException& ex ) {
+                m_text_io.printf( "\n" );
                 DMXStudio::log( ex );
             }
-            catch ( StudioException& ex ) {
+            catch ( std::exception& ex ) {
+                m_text_io.printf( "\n" );
                 DMXStudio::log( ex );
             }
         }
@@ -354,38 +383,37 @@ void DMXTextUI::whiteout(void)
 void DMXTextUI::whiteout_options()
 {
     NumberedListField whiteout_field( "Whiteout" );
-    IntegerField whiteout_ms_field( "Strobe MS", getVenue()->getWhiteoutStrobeMS(), 25, 10000 );
+    IntegerField whiteout_strobe_ms_field( "Strobe MS", getVenue()->getWhiteoutStrobeMS(), 25, 10000 );
+    IntegerField whiteout_fade_ms_field( "Fade MS", getVenue()->getWhiteoutFadeMS(), 25, 10000 );
     ColorSelectField whiteout_color_field( "Whiteout Color", getVenue()->getWhiteoutColor() );
+    NumberedListField whiteout_effect( "Whiteout Palette Effect" );
 
     whiteout_field.addKeyValue( 0, "Off" );
     whiteout_field.addKeyValue( 1, "Strobe Slow" );
     whiteout_field.addKeyValue( 2, "Strobe Fast" );
     whiteout_field.addKeyValue( 3, "Strobe Manual" );
     whiteout_field.addKeyValue( 4, "On" );
+    whiteout_field.addKeyValue( 5, "Pulse" );
     whiteout_field.setDefaultListValue( getVenue()->getWhiteout() );
+
+    whiteout_effect.addKeyValue( WhiteoutEffect::WHITEOUT_EFFECT_SINGLE_COLOR, "Single Color" );
+    whiteout_effect.addKeyValue( WhiteoutEffect::WHITEOUT_EFFECT_MULTI_COLOR, "Multi-Color (palettes only)" );
+    whiteout_effect.addKeyValue( WhiteoutEffect::WHITEOUT_EFFECT_SMART_COLOR, "Smart Color (palettes only)" );
+
+    whiteout_effect.setDefaultListValue( getVenue()->getWhiteoutEffect() );
 
     Form form( &m_text_io );
     form.add( whiteout_field );
-    form.add( whiteout_ms_field );
+    form.add( whiteout_strobe_ms_field );
+    form.add( whiteout_fade_ms_field );
     form.add( whiteout_color_field );
+    form.add( whiteout_effect );
 
     if ( form.play() && form.isChanged() ) {
         getVenue()->setWhiteout( (WhiteoutMode)(whiteout_field.getListValue()) );
-        getVenue()->setWhiteoutStrobeMS( whiteout_ms_field.getIntValue() );
+        getVenue()->setWhiteoutStrobeMS( whiteout_strobe_ms_field.getIntValue(), whiteout_fade_ms_field.getIntValue() );
         getVenue()->setWhiteoutColor( whiteout_color_field.getColor() );
-    }
-}
-// ----------------------------------------------------------------------------
-//
-void DMXTextUI::animationSpeed(void)
-{
-    IntegerField speed_field( "Animation speed", getVenue()->getAnimationSampleRate(), 1, 25000 );
-
-    Form form( &m_text_io );
-    form.add( speed_field );
-
-    if ( form.play() ) {
-        getVenue()->setAnimationSampleRate( speed_field.getIntValue() );
+        getVenue()->setWhiteoutEffect( (WhiteoutEffect)whiteout_effect.getListValue() );
     }
 }
 
@@ -460,10 +488,7 @@ void DMXTextUI::writeVenue()
 //
 void DMXTextUI::configVenue()
 {
-    const static char * UNUSED_PORT = "OFF";
-
     SelectionList port_selections;
-    port_selections.push_back( UNUSED_PORT );
     for ( UINT port_num=1; port_num <= 12; port_num++ ) {
         CString port;
         port.Format( "com%d", port_num );
@@ -476,12 +501,13 @@ void DMXTextUI::configVenue()
     FloatField audio_scale_field( "Audio boost", getVenue()->getAudioBoost(), "%3.1f" );
     FloatField audio_floor_field( "Audio boost sample floor", getVenue()->getAudioBoostFloor(), "%5.3f" );
     IntegerField audio_sample_size_field( "Audio sample size (multiple of 1024)", getVenue()->getAudioSampleSize(), 1024 );
+    BooleanField enable_track_fixtures_field( "Fixture color live tracking (experimental)", getVenue()->isTrackFixtures() );
 
     SelectionField port_fields[DMX_MAX_UNIVERSES] = {
-        SelectionField( "DMX Universe 1: Port", UNUSED_PORT, port_selections ),
-        SelectionField( "DMX Universe 2: Port", UNUSED_PORT, port_selections ),
-        SelectionField( "DMX Universe 3: Port", UNUSED_PORT, port_selections ),
-        SelectionField( "DMX Universe 4: Port", UNUSED_PORT, port_selections )
+        SelectionField( "DMX Universe 1: Port", "com1", port_selections ),
+        SelectionField( "DMX Universe 2: Port", "com1", port_selections ),
+        SelectionField( "DMX Universe 3: Port", "com1", port_selections ),
+        SelectionField( "DMX Universe 4: Port", "com1", port_selections )
     };
 
     NumberedListField driver_fields[DMX_MAX_UNIVERSES] = {
@@ -513,23 +539,29 @@ void DMXTextUI::configVenue()
     form.add( audio_scale_field );
     form.add( audio_floor_field );
     form.add( audio_sample_size_field );
+    form.add( enable_track_fixtures_field );
+
+
+    for (  unsigned id=0; id < DMX_MAX_UNIVERSES; ++id ) {
+        driver_fields[id].addKeyValue( 0, "UNUSED" );
+        driver_fields[id].addKeyValue( 1, "USB PRO" );
+        driver_fields[id].addKeyValue( 2, "OPEN DMX" );
+        driver_fields[id].addKeyValue( 3, "PHILIPS HUE" );
+        driver_fields[id].setDefaultListValue( 0 );
+    }
 
     UniversePtrArray universes = getVenue()->getUniverses();
     for ( UniversePtrArray::iterator it=universes.begin(); it != universes.end(); ++it ) {
         Universe* universe = (*it);
-        port_fields[universe->getId()-1].setValue( universe->getDmxPort() );
-        
-        driver_fields[universe->getId()-1].addKeyValue( 1, "OPEN DMX" );
-        driver_fields[universe->getId()-1].addKeyValue( 2, "USB PRO" );
-        driver_fields[universe->getId()-1].setDefaultListValue( universe->getType()+1 );
-
+        port_fields[universe->getId()-1].setValue( universe->getDmxConfig() );
+        driver_fields[universe->getId()-1].setDefaultListValue( universe->getType() );
         dmx_packet_delay_fields[universe->getId()-1].setValue( universe->getDmxPacketDelayMS() );
         dmx_min_delay_fields[universe->getId()-1].setValue( universe->getDmxMinimumDelayMS() ); 
     }
 
     for (  unsigned id=0; id < DMX_MAX_UNIVERSES; ++id ) {
-        form.add( port_fields[id] );
         form.add( driver_fields[id] );
+        form.add( port_fields[id] );
         form.add( dmx_packet_delay_fields[id] );
         form.add( dmx_min_delay_fields[id] );
     }
@@ -544,21 +576,25 @@ void DMXTextUI::configVenue()
     float audio_boost_floor = audio_floor_field.getFloatValue();
     int audio_sample_size = audio_sample_size_field.getIntValue();
     int auto_blackout = getVenue()->getAutoBlackoutMS();
+    bool track_fixtures = enable_track_fixtures_field.isSet();
 
     std::vector<Universe> new_universes;
 
     for ( universe_t univ_num=0; univ_num < DMX_MAX_UNIVERSES; ++univ_num ) {
-        if ( !strcmp( UNUSED_PORT, port_fields[univ_num].getValue() ) )
+        UniverseType type = (UniverseType)(driver_fields[univ_num].getListValue());
+
+        if ( type  == UniverseType::NONE )
             continue;
 
-        new_universes.push_back( Universe(  univ_num+1, 
-                (UniverseType)(driver_fields[univ_num].getListValue()-1),
+        new_universes.emplace_back( univ_num+1, 
+                type,
                 port_fields[univ_num].getValue(), 
                 dmx_packet_delay_fields[univ_num].getIntValue(), 
-                dmx_min_delay_fields[univ_num].getIntValue() ) );
+                dmx_min_delay_fields[univ_num].getIntValue() );
     }
 
-    getVenue()->configure( name, description, audio_capture_device, audio_boost, audio_boost_floor, audio_sample_size, auto_blackout, new_universes );
+    getVenue()->configure( name, description, audio_capture_device, audio_boost, audio_boost_floor, 
+                           audio_sample_size, auto_blackout, track_fixtures, new_universes );
 }
 
 // ----------------------------------------------------------------------------
@@ -582,17 +618,19 @@ void DMXTextUI::soundDetect( )
 {
     static const char* level_meter = "====================";
 
-    SoundDetector* detector = getVenue()->getSoundDetector();
+    SoundLevel levels;
 
     while ( true ) {
         if ( _kbhit() && _getch() == 27 )
             break;
 
-        unsigned amp = getVenue()->getSoundDetector()->getAmplitude();
+        getVenue()->getSoundLevels( levels );
+
+        unsigned amp = levels.amplitude;
         const char *meter = &level_meter[ 20 - amp/5 ];
 
         m_text_io.printf( "%4d %s %s                       \r", 
-            detector->getAmplitude(), meter, detector->isMute() ? "MUTE" : "     " );
+            levels.amplitude, meter, getVenue()->isMute() ? "MUTE" : "     " );
 
         Sleep( 10 );
     }
@@ -740,14 +778,19 @@ void DMXTextUI::soundDb(void) {
 // ----------------------------------------------------------------------------
 //
 void DMXTextUI::createChase(void) {
+    UniqueNumberField<ChaseNumber, Chase> 
+        chase_number_field( "Create chase number", getVenue(), &Venue::getChaseByNumber, getVenue()->nextAvailableChaseNumber() );
 
-    UniqueChaseNumberField chase_number_field( "Create chase number", getVenue() );
     InputField name_field( "Chase name", "New chase" );
     InputField description_field( "Chase description", "" );
     ActsField acts_field;
     IntegerField chase_delay( "Chase delay (ms)", 0, 0 );
     IntegerField chase_fade( "Chase fade (ms)", 0, 0 );
     BooleanField repeat_field( "Repeat scene steps", true );
+    NumberedListField trigger_field( "Chase advance trigger" );
+
+    trigger_field.addKeyValue( ChaseStepTrigger::CT_MANUAL, "Manual (user controlled)" );
+    trigger_field.addKeyValue( ChaseStepTrigger::CT_TIMER, "Timer" );
 
     Form form( &m_text_io );
     form.add( chase_number_field );
@@ -757,17 +800,19 @@ void DMXTextUI::createChase(void) {
     form.add( chase_delay );
     form.add( chase_fade );
     form.add( repeat_field );
+    form.add( trigger_field );
 
     if ( !form.play() )
         return;
 
     Chase chase( NOUID, 
-                 chase_number_field.getChaseNumber(),
+                 chase_number_field.getNumber(),
                  chase_delay.getLongValue(),
                  chase_fade.getLongValue(),
                  name_field.getValue(),
                  description_field.getValue(),
-                 repeat_field.isSet() );
+                 repeat_field.isSet(),
+                 (ChaseStepTrigger)trigger_field.getListValue() );
 
     chase.setActs( acts_field.getActs() );
 
@@ -782,6 +827,7 @@ void DMXTextUI::createChase(void) {
 void DMXTextUI::updateChase(void) {
     class MyForm : public Form {
         Venue*				m_venue;
+        UniqueNumberField<ChaseNumber, Chase> m_number_field;
         ChaseSelectField	m_chase_field;
         InputField			m_name_field;
         InputField			m_description_field;
@@ -789,17 +835,20 @@ void DMXTextUI::updateChase(void) {
         IntegerField		m_chase_fade;
         ActsField           m_acts_field;
         BooleanField        m_repeat_field;
-        
+        NumberedListField   m_trigger_field;
+                
         void fieldLeaveNotify( size_t field_num ) {
             if ( field_num == 0 ) {
                 Chase* chase = getChase();
+
+                m_number_field.setNumber( chase->getChaseNumber() );
                 m_name_field.setValue( chase->getName() );
                 m_description_field.setValue( chase->getDescription() );
                 m_acts_field.setActs( chase->getActs() );
                 m_chase_delay.setValue( chase->getDelayMS() );
                 m_chase_fade.setValue( chase->getFadeMS() );
                 m_repeat_field.setValue( chase->isRepeat() );
-
+                m_trigger_field.setDefaultListValue( chase->getStepTrigger() );
             }
             else if ( field_num == 3 ) {
                 getChase()->setDelayMS( m_chase_delay.getLongValue() );
@@ -811,26 +860,32 @@ void DMXTextUI::updateChase(void) {
 
         void formCompleteNotify() {
             Chase* chase = getChase();
+            chase->setChaseNumber( m_number_field.getNumber() );
             chase->setName( m_name_field.getValue() );
             chase->setDescription( m_description_field.getValue() );
             chase->setActs( m_acts_field.getActs() );
             chase->setDelayMS( m_chase_delay.getLongValue() );
             chase->setFadeMS( m_chase_fade.getLongValue() );
             chase->setRepeat( m_repeat_field.isSet() );
-            m_venue->chaseUpdated( chase->getUID() );
+            chase->setStepTrigger( (ChaseStepTrigger)m_trigger_field.getListValue() );
         }
 
     public:
         MyForm( TextIO* input_stream, Venue* venue ) :
             Form( input_stream ),
             m_venue( venue ),
+            m_number_field( "Chase number", m_venue, &Venue::getChaseByNumber ),
             m_chase_field( "Select chase to update", m_venue ),
             m_name_field( "Chase name", "" ),
             m_description_field( "Chase description", "" ),
             m_chase_delay( "Chase default duration (ms)", 0, 0 ),
             m_chase_fade( "Chase fade (ms)", 0, 0  ),
-            m_repeat_field( "Repeat scene steps", true )
+            m_repeat_field( "Repeat scene steps", true ),
+            m_trigger_field( "Chase advance trigger" )
         {
+            m_trigger_field.addKeyValue( ChaseStepTrigger::CT_MANUAL, "Manual (user controlled)" );
+            m_trigger_field.addKeyValue( ChaseStepTrigger::CT_TIMER, "Timer" );
+
             add( m_chase_field );
             add( m_name_field );
             add( m_description_field );
@@ -838,6 +893,7 @@ void DMXTextUI::updateChase(void) {
             add( m_chase_delay );
             add( m_chase_fade );
             add( m_repeat_field );
+            add( m_trigger_field );
         }
 
         Chase* getChase() const {
@@ -887,7 +943,7 @@ void DMXTextUI::addChaseSteps(void) {
 
     m_text_io.printf( "\nAdd chase scene steps (select scene 0 to finish)\n\n" );
 
-    Chase dummy( 0, 0, 0, 0, "", "", false );
+    Chase dummy( 0, 0, 0, 0, "", "", false, ChaseStepTrigger::CT_TIMER );
     UINT position = position_field.getIntValue()-1;
 
     if ( editChaseSteps( &dummy, true, position ) ) {
@@ -1007,7 +1063,7 @@ bool DMXTextUI::editChaseSteps( Chase* chase, bool append_steps, UINT step_num_o
             chase->appendStep( ChaseStep( scene_field->getSceneUID(), delay_field->getLongValue(), (SceneLoadMethod)method_field->getListValue() ) );
     }
 
-    getVenue()->sceneUpdated( chase->getUID() );
+    getVenue()->chaseUpdated( chase->getUID() );
 
     return true;
 }
@@ -1043,6 +1099,19 @@ void DMXTextUI::deleteChase(void) {
 
 // ----------------------------------------------------------------------------
 //
+void DMXTextUI::advanceChase() {
+    IntegerField steps_field( "Chase steps", 1, -1, 1 );
+
+    Form form( &m_text_io );
+    form.add( steps_field );
+    if ( !form.play() )
+        return;
+
+    getVenue()->chaseStep( steps_field.getIntValue() );
+}
+
+// ----------------------------------------------------------------------------
+//
 void DMXTextUI::describeChase(void) {
     ChaseSelectField chase_field( "Chase to describe", getVenue() );
 
@@ -1052,26 +1121,41 @@ void DMXTextUI::describeChase(void) {
         return;
 
     Chase *chase = getVenue()->getChase( chase_field.getChaseUID() );
-    m_text_io.printf( "\nChase #%d: %s Duration=%lums Fade=%lums Repeat=%s\n\n  Acts: ", 
-        chase->getChaseNumber(), chase->getName(), chase->getDelayMS(), chase->getFadeMS(),
-        chase->isRepeat() ? "true" : "false" );
+    m_text_io.printf( "\nChase #%d: %s Fade=%lums %s", 
+        chase->getChaseNumber(), chase->getName(), chase->getFadeMS(),
+        chase->isRepeat() ? "Repeating" : "Non-repeating" );
 
+    switch ( chase->getStepTrigger() ) {
+        case CT_TIMER:
+            m_text_io.printf( " Step Duration=%lums" , chase->getDelayMS() );
+            break;
+
+        case CT_MANUAL:
+            m_text_io.printf( " Manual Advance" );
+            break;
+    }
+
+    m_text_io.printf( "\n\n  Acts: " );
     if ( !chase->getActs().empty() ) {
         for ( ActNumber act : chase->getActs() )
             m_text_io.printf( "%u ", act );
     }
     else
-        m_text_io.printf( "None" );
+        m_text_io.printf( "Default Act" );
     m_text_io.printf( "\n\n" );
-
 
 
     for ( unsigned index=0; index < chase->getNumSteps(); index++ ) {
         ChaseStep* step = chase->getStep( index );
-        m_text_io.printf( "  Step %2d: %s scene %lu %s (duration %lums)\n", index+1,
+        m_text_io.printf( "  Step %2d: %s scene %lu %s", index+1,
                 sceneLoadMethods[ (int)step->getMethod() ],
                 getVenue()->getScene( step->getSceneUID() )->getSceneNumber(),
-                getVenue()->getScene( step->getSceneUID() )->getName(), step->getDelayMS() );
+                getVenue()->getScene( step->getSceneUID() )->getName() );
+
+        if ( chase->getStepTrigger() == CT_TIMER && step->getDelayMS() > 0 )
+            m_text_io.printf( "  Duration %lums", index+1 );
+
+        m_text_io.printf( "\n" );
     }
 }
 
@@ -1153,9 +1237,23 @@ void DMXTextUI::masterDimmer(void) {
 
 // ----------------------------------------------------------------------------
 //
+void DMXTextUI::animationSpeed(void) {
+    IntegerField animation_speed_field( "Animation Speed %", getVenue()->getAnimationSpeed(), 25, 2000 );
+
+    Form form( &m_text_io );
+    form.add( animation_speed_field );
+    if ( !form.play() )
+        return;
+
+    if ( form.isChanged() ) {
+        getVenue()->setAnimationSpeed( animation_speed_field.getIntValue() );
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
 void DMXTextUI::describeFixture(void) {
     ActorSelectField fixture_field( "Fixture to describe", getVenue(), false );
-    fixture_field.allowMultiple( false );
 
     Form form( &m_text_io );
     form.add( fixture_field );
@@ -1165,9 +1263,19 @@ void DMXTextUI::describeFixture(void) {
     SceneActor actor = fixture_field.getActor( );
     if ( !actor.isGroup() ) { 
         Fixture* pf = getVenue()->getFixture( actor.getActorUID() );
-        m_text_io.printf( "%2d: %s @ %d - %d\n", pf->getFixtureNumber(), pf->getFullName(), pf->getUniverseId(), pf->getAddress() );
+        m_text_io.printf( "%2d: %s @ %d - %d", pf->getFixtureNumber(), pf->getFullName(), pf->getUniverseId(), pf->getAddress() );
 
-        for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+        if ( pf->canWhiteout() && pf->getAllowWhiteout() )
+            m_text_io.printf( ", WHITEOUT" );
+
+        if ( pf->hasDimmer() && pf->getAllowMasterDimming() )
+            m_text_io.printf( ", DIM" );
+
+        if ( pf->hasDimmer() && pf->getAllowMasterDimming() )
+            m_text_io.printf( ", ID=%u", pf->getUID() );
+
+        m_text_io.printf( "\n" );
+        for ( size_t channel=0; channel < pf->getNumChannels(); channel++ ) {
             Channel* cp = pf->getChannel( channel );
 
             m_text_io.printf( "   %d->%d @ %d - %s\n", channel+1, pf->getChannel(channel)->getOffset()+1, pf->getChannelAddress( channel ), cp->getName() );
@@ -1186,14 +1294,13 @@ void DMXTextUI::describeFixture(void) {
 //
 void DMXTextUI::controlFixture( ) {
     ActorSelectField fixture_field( "Fixture to control", getVenue(), true );
-    fixture_field.allowMultiple( false );
 
     Form form( &m_text_io );
     form.add( fixture_field );
     if ( !form.play() )
         return;
 
-    channel_t channel = 0;
+	channel_address channel = 0;
     size_t num_channels = 0;
 
     SceneActor actor = fixture_field.getActor();
@@ -1257,13 +1364,10 @@ void DMXTextUI::describeScene( ) {
         if ( scene->getNumActors() == 0 )
             m_text_io.printf( "\n   NO FIXTURES\n" );
 
-        ActorPtrArray actors = scene->getActors();
-
-        for ( ActorPtrArray::iterator it=actors.begin(); it != actors.end(); ++it ) {
-            SceneActor* actor = (*it);
+        for ( SceneActor* actor : scene->getActors() ) {
             Fixture* fixture = NULL;
 
-            if ( (*it)->isGroup() ) {
+            if ( actor->isGroup() ) {
                 FixtureGroup * group = getVenue()->getFixtureGroup( actor->getActorUID() );
 
                 m_text_io.printf( " Group %d %s UID=%lu\n", group->getNumber(), group->getName(), group->getUID() );
@@ -1277,11 +1381,19 @@ void DMXTextUI::describeScene( ) {
             }
 
             if ( fixture != NULL ) {
-                for ( channel_t channel=0; channel < fixture->getNumChannels(); channel++ ) {
+                if ( actor->hasPaletteReferences() ) {
+                    for ( UID palette_id : actor->getPaletteReferences() ) {
+                        Palette palette;
+                        if ( getVenue()->getPalette( palette_id, palette ) )
+                            m_text_io.printf( "      Palette: %s\n", palette.getName() );
+                    }
+                }
+
+                for ( size_t channel=0; channel < fixture->getNumChannels(); channel++ ) {
                     m_text_io.printf( "      %2u - %s [%d]\n", 
                         channel+1,
                         fixture->getChannel( channel )->getName(),
-                        actor->getChannelValue( fixture->mapChannel( channel ) ) );
+                        actor->getBaseChannelValue( channel ) );
                 }
             }
         }
@@ -1292,17 +1404,42 @@ void DMXTextUI::describeScene( ) {
                 m_text_io.printf( "%u ", act );
         }
         else
-            m_text_io.printf( "NONE" );
+            m_text_io.printf( "Default Act" );
         m_text_io.printf( "\n" );
 
-        for ( size_t i=0; i < scene->getNumAnimations(); i++ ) {
-            AbstractAnimation* animation = scene->getAnimation(i);
-            CString animimation_synopsis = animation->getSynopsis();
-            animimation_synopsis.Replace( "\n", "\n      " );
+        for ( AnimationReference& animation_ref : scene->animations() ) {
+            AnimationDefinition* animation = getVenue()->getAnimation( animation_ref.getUID() );
+            STUDIO_ASSERT( animation, "Unable to find animation UID %lu in scene %s", animation_ref.getUID(), scene->getName() );
 
-            m_text_io.printf( "  Animation: %s (ID %d)\n", animation->getName(), animation->getUID());
-            m_text_io.printf( "      %s\n", (LPCTSTR)animimation_synopsis );
+            if ( animation->isShared() )
+                m_text_io.printf( "  Animation %d: %s (ID %d)\n", animation->getNumber(), animation->getName(), animation->getUID());
+            else
+                m_text_io.printf( "  Private Animation: %s (ID %d)\n", animation->getName(), animation->getUID());
+
+            CString animimation_synopsis = animation->getSynopsis();
+            if ( animimation_synopsis.GetLength() > 0 ) {
+                if ( animimation_synopsis[animimation_synopsis.GetLength()-1] == '\n' )
+                    animimation_synopsis = animimation_synopsis.Mid( 0, animimation_synopsis.GetLength()-1 );
+                animimation_synopsis.Replace( "\n", "\n      " );
+                m_text_io.printf( "      %s\n", (LPCTSTR)animimation_synopsis );
+            }
+
             m_text_io.printf( "      Signal( %s )\n", (LPCTSTR)animation->signal().getSynopsis() );
+
+            CString fixture_list;
+
+            for ( UID actor : animation_ref.getActors() ) {
+                Fixture *pf = studio.getVenue()->getFixture( actor );
+                if ( pf != NULL )
+                    fixture_list.AppendFormat( "F%lu ", pf->getNumber() );
+                else {
+                    FixtureGroup* group = studio.getVenue()->getFixtureGroup( actor );
+                    if ( group != NULL )
+                        fixture_list.AppendFormat( "G%lu ", group->getNumber() );
+                }
+            }
+
+            m_text_io.printf( "      Fixtures( %s )\n", (LPCTSTR)fixture_list );
         }
     }
 }
@@ -1319,18 +1456,22 @@ void DMXTextUI::updateScene( ) {
         Scene* scene = getVenue()->getScene( scene_field.getSceneUID() );
 
         if ( scene->getSceneNumber() != DEFAULT_SCENE_NUMBER ) {
+            UniqueNumberField<SceneNumber, Scene> 
+                scene_number_field( "Scene number", getVenue(), &Venue::getSceneByNumber, scene->getSceneNumber() );
             InputField name_field( "Scene name", scene->getName() );
             InputField description_field( "Scene description", scene->getDescription() );
             ActsField acts_field( scene->getActs() );
             BPMRatingField bpm_field( scene->getBPMRating() );
 
             form.clear();
+            form.add( scene_number_field );
             form.add( name_field );
             form.add( description_field );
             form.add( acts_field );
             form.add( bpm_field );
 
             if ( form.play() ) {
+            scene->setSceneNumber( scene_number_field.getNumber() );
                 scene->setName( name_field.getValue() );
                 scene->setDescription( description_field.getValue() );
                 scene->setActs( acts_field.getActs() );
@@ -1353,26 +1494,32 @@ void DMXTextUI::copyWorkspaceToScene()
     SceneSelectField scene_field( "Copy workspace fixtures to scene", getVenue() );
     BooleanField remove_from_ws_field( "Remove from workspace", true );
     BooleanField keep_groups( "Preserve fixture groups", true );
+    BooleanField keep_animations( "Include current animations", true );
 
     Form form( &m_text_io );
     form.add( scene_field );
     form.add( keep_groups );
+    form.add( keep_animations );
     form.add( remove_from_ws_field );
 
     if ( form.play() ) {
         getVenue()->moveDefaultFixturesToScene( scene_field.getSceneUID(), 
                                                 keep_groups.isSet(),
-                                                remove_from_ws_field.isSet() );
+                                                remove_from_ws_field.isSet(),
+                                                keep_animations.isSet() );
     }
 }
 
 // ----------------------------------------------------------------------------
 //
 void DMXTextUI::createScene( ) {
-    UniqueSceneNumberField scene_number_field( "Create scene number", getVenue() );
+    UniqueNumberField<SceneNumber, Scene> 
+        scene_number_field( "Create scene number", getVenue(), &Venue::getSceneByNumber, getVenue()->nextAvailableSceneNumber() );
+
     InputField name_field( "Scene name", "New scene" );
     InputField description_field( "Scene description", "" );
     BooleanField copy_field( "Copy current fixtures", true );
+    BooleanField keep_animations( "Include current animations", true );
     ActsField acts_field;
     BooleanField keep_groups( "Preserve fixture groups", true );
     BPMRatingField bpm_field( BPM_MEDIUM );
@@ -1385,11 +1532,12 @@ void DMXTextUI::createScene( ) {
     form.add( acts_field );
     form.add( bpm_field );
     form.add( keep_groups );
+    form.add( keep_animations );
 
     if ( !form.play() )
         return;
 
-    Scene scene( NOUID, scene_number_field.getSceneNumber(),
+    Scene scene( NOUID, scene_number_field.getNumber(),
                  name_field.getValue(), description_field.getValue() );
     scene.setActs( acts_field.getActs() );
     scene.setBPMRating( bpm_field.getRating() );
@@ -1397,7 +1545,7 @@ void DMXTextUI::createScene( ) {
     getVenue()->addScene( scene );
 
     if ( copy_field.isSet() )
-        getVenue()->moveDefaultFixturesToScene( scene.getUID(), keep_groups.isSet(), true );
+        getVenue()->moveDefaultFixturesToScene( scene.getUID(), keep_groups.isSet(), true, keep_animations.isSet() );
 
     getVenue()->clearAllCapturedActors();
     getVenue()->selectScene( scene.getUID() );
@@ -1407,7 +1555,10 @@ void DMXTextUI::createScene( ) {
 //
 void DMXTextUI::copyScene(void) {
     SceneSelectField scene_field( "Scene to copy", getVenue() );
-    UniqueSceneNumberField scene_number_field( "New scene number", getVenue() );
+
+    UniqueNumberField<SceneNumber, Scene> 
+        scene_number_field( "New scene number", getVenue(), &Venue::getSceneByNumber, getVenue()->nextAvailableSceneNumber() );
+
     InputField name_field( "New scene name", "New scene" );
     InputField description_field( "New scene description", "" );
 
@@ -1422,12 +1573,21 @@ void DMXTextUI::copyScene(void) {
 
     Scene new_scene( *getVenue()->getScene( scene_field.getSceneUID() ) );
         
-    new_scene.setSceneNumber( scene_number_field.getSceneNumber() );
+    new_scene.setSceneNumber( scene_number_field.getNumber() );
     new_scene.setName( name_field.getValue() );
     new_scene.setDescription( description_field.getValue() );
     new_scene.setUID( NOUID );
 
-    getVenue()->addScene( new_scene );
+    AnimationReferenceArray animation_refs = new_scene.animations();
+
+    // Re-add animation references to the scene and handle private animations
+    getVenue()->setSceneAnimationReferences( &new_scene, animation_refs, true );
+
+    UID new_scene_uid = getVenue()->addScene( new_scene );
+
+    // Compute final channel values for all actors
+    getVenue()->computeActorFinalValues( getVenue()->getScene( new_scene_uid ) );
+
     getVenue()->selectScene( new_scene.getUID() );
 }
 
@@ -1450,7 +1610,7 @@ void DMXTextUI::copyFixture(void) {
 
     SceneSelectField scene_select_field( "Scene to copy from", getVenue(), 0, true );
     ActorSelectField scene_fixture_field( "Scene fixture to copy", getVenue() );
-    scene_fixture_field.allowMultiple( false );
+    scene_fixture_field.allowMultiple( true );
 
     MyForm form( &m_text_io );
     form.add( scene_select_field );
@@ -1482,7 +1642,6 @@ void DMXTextUI::deleteFixtureFromScene(void) {
 
     SceneSelectField scene_select_field( "Delete fixture from scene", getVenue(), 0, true );
     ActorSelectField scene_fixture_field( "Delete scene fixture", getVenue() );
-    scene_fixture_field.allowMultiple( false );
 
     MyForm form( &m_text_io );
     form.add( scene_select_field );
@@ -1492,67 +1651,6 @@ void DMXTextUI::deleteFixtureFromScene(void) {
 
     Scene* scene = getVenue()->getScene( scene_select_field.getSceneUID() );
     scene->removeActor( scene_fixture_field.getActorUID() );
-
-    getVenue()->sceneUpdated( scene->getUID() );
-}
-
-// ----------------------------------------------------------------------------
-//
-void DMXTextUI::sceneDeleteAllAnimations(void)
-{
-    SceneSelectField scene_field( "Clear all animations from scene", getVenue() );
-
-    ConfirmForm form( &m_text_io );
-    form.add( scene_field );
-    if ( form.play() ) {
-        Scene * scene = getVenue()->getScene( scene_field.getSceneUID() );
-
-        if ( scene->getUID() == getVenue()->getCurrentSceneUID() )
-            getVenue()->clearAnimations();
-
-        scene->clearAnimations();
-
-        getVenue()->sceneUpdated( scene->getUID() );
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
-void DMXTextUI::sceneDeleteAnimation(void)
-{
-    class MyForm : public ConfirmForm {
-        Venue*	m_venue;
-
-        void fieldLeaveNotify( size_t field_num ) {
-            if ( field_num == 0 ) {
-                SceneSelectField* scene_field = getField<SceneSelectField>( field_num );
-                SceneAnimationSelectField* anim_field = getField<SceneAnimationSelectField>( 1 );
-                Scene* scene = m_venue->getScene( scene_field->getSceneUID() );
-                anim_field->selectAnimations( scene );
-            }
-        }
-
-    public:
-        MyForm( TextIO* input_stream, Venue* venue ) :
-            ConfirmForm( input_stream ), 
-            m_venue(venue) {}
-    };
-
-    SceneSelectField scene_field( "Delete animation from scene", getVenue() );
-    SceneAnimationSelectField animation_select_field( "Scene animation" );
-
-    MyForm form( &m_text_io, getVenue() );
-    form.add( scene_field );
-    form.add( animation_select_field );
-    if ( !form.play() )
-        return;
-
-    Scene* scene = getVenue()->getScene( scene_field.getSceneUID() );
-
-    if ( getVenue()->getCurrentSceneUID() == scene->getUID() )
-        getVenue()->clearAnimations();
-
-    scene->removeAnimation( animation_select_field.getAnimationUID() );
 
     getVenue()->sceneUpdated( scene->getUID() );
 }
@@ -1609,7 +1707,6 @@ void DMXTextUI::deleteFixtureGroup( ) {
 //
 void DMXTextUI::deleteFixture(void) {
     ActorSelectField fixture_select_field( "Fixture to delete", getVenue(), false );
-    fixture_select_field.allowMultiple( false );
 
     ConfirmForm form( &m_text_io );
     form.add( fixture_select_field );
@@ -1625,11 +1722,15 @@ void DMXTextUI::updateFixture(void) {
     {
     public:
         ActorSelectField fixture_select_field;
+        UniqueNumberField<FixtureNumber, Fixture> fixture_number_field;
         InputField name_field;
         InputField description_field;
         BooleanField address_overlap_field;
         DmxAddressField dmx_address_field;
         DmxUniverseField dmx_universe;
+        BooleanField allow_whiteout_field;
+        BooleanField allow_dimming_field;
+        
         Venue* m_venue;
         Fixture* m_fixture;
 
@@ -1641,11 +1742,17 @@ void DMXTextUI::updateFixture(void) {
                 dmx_universe.setUniverse( m_fixture->getUniverseId() );
 
                 name_field.setValue( m_fixture->getName() );
+                fixture_number_field.setNumber( m_fixture->getFixtureNumber() );
                 description_field.setValue( m_fixture->getDescription() );
+                allow_whiteout_field.setValue( m_fixture->getAllowWhiteout() );
+                allow_dimming_field.setValue( m_fixture->getAllowMasterDimming() );
+
+                allow_whiteout_field.setHidden( !m_fixture->canWhiteout() );
+                allow_dimming_field.setHidden( !m_fixture->hasDimmer() );
            }
            else if ( getField<Field>( field_num ) == &dmx_universe ) {
                 if ( dmx_universe.getUniverseId() != m_fixture->getUniverseId() ) {
-                    channel_t base_address = m_venue->findFreeAddressRange( dmx_universe.getUniverseId(), m_fixture->getNumChannels() ); 
+					channel_address base_address = m_venue->findFreeAddressRange( dmx_universe.getUniverseId(), m_fixture->getNumChannels() ); 
                     if ( base_address == INVALID_CHANNEL )
                         throw FieldException( "There are no empty address ranges available for %d channels", m_fixture->getNumChannels() );
 
@@ -1660,23 +1767,27 @@ void DMXTextUI::updateFixture(void) {
 
     public:
         MyForm( TextIO* input_stream, Venue* venue ) :
-            Form( input_stream, "Create Fixture" ),
+            Form( input_stream, "Update Fixture" ),
             m_venue(venue),
+            fixture_number_field( "Fixture number", venue, &Venue::getFixtureByNumber ),
             fixture_select_field( "Fixture to update", venue, false ),
             name_field( "Fixture location", "Somewhere" ),
             description_field( "Fixture description", "" ),
             address_overlap_field( "Allow DMX addresses to overlap", false ),  
             dmx_address_field( "DMX base address", venue, NULL ),
-            dmx_universe( "DMX universe", venue, 0 )
+            dmx_universe( "DMX universe", venue, 0 ),
+            allow_whiteout_field( "Whiteout affects this fixture", true ),
+            allow_dimming_field( "Master dimmer affects this fixture", true )
         {
-            fixture_select_field.allowMultiple( false );
-
             add( fixture_select_field ),
+            add( fixture_number_field ),
             add( name_field );
             add( description_field );
             add( dmx_universe );
             add( address_overlap_field );
             add( dmx_address_field );
+            add( allow_whiteout_field );
+            add( allow_dimming_field );
         }
     };
 
@@ -1688,6 +1799,10 @@ void DMXTextUI::updateFixture(void) {
     form.m_fixture->setDescription( form.description_field.getValue() );
     form.m_fixture->setAddress( form.dmx_address_field.getIntValue() );
     form.m_fixture->setUniverseId( form.dmx_universe.getUniverseId() );
+    form.m_fixture->setAllowMasterDimming( form.allow_dimming_field.isSet() );
+    form.m_fixture->setAllowWhiteout( form.allow_whiteout_field.isSet() );
+
+    getVenue()->fixtureUpdated( form.m_fixture->getUID() );
 }
 
 // ----------------------------------------------------------------------------
@@ -1700,12 +1815,15 @@ void DMXTextUI::createFixture(void)
         FixtureManufacturerSelectField manufacturer_field;
         FixtureModelSelectField model_field;
         FixturePersonalitySelectField personality_field;
-        UniqueFixtureNumberField fixture_number_field;
+        UniqueNumberField<FixtureNumber, Fixture> fixture_number_field;
         InputField name_field;
         InputField description_field;
         BooleanField address_overlap_field;
         DmxAddressField dmx_address_field;
         DmxUniverseField dmx_universe;
+        BooleanField allow_whiteout_field;
+        BooleanField allow_dimming_field;
+
         Venue*	m_venue;
 
         void fieldLeaveNotify( size_t field_num ) {
@@ -1719,13 +1837,16 @@ void DMXTextUI::createFixture(void)
                 FixtureDefinition* fixdef = 
                     &FixtureDefinition::FixtureDefinitions[personality_field.getFUID()];
 
-                channel_t base_address = m_venue->findFreeAddressRange( dmx_universe.getUniverseId(), fixdef->getNumChannels() ); 
+				channel_address base_address = m_venue->findFreeAddressRange( dmx_universe.getUniverseId(), fixdef->getNumChannels() ); 
                 if ( base_address == INVALID_CHANNEL )
                     throw FieldException( "There are no empty address ranges available for %d channels", fixdef->getNumChannels() );
 
                 dmx_address_field.setNumChannels( fixdef->getNumChannels() );
                 dmx_address_field.setUniverseId( dmx_universe.getUniverseId() );
                 dmx_address_field.setInitialValue( base_address ); 
+
+                allow_whiteout_field.setHidden( !fixdef->canWhiteout() );
+                allow_dimming_field.setHidden( !fixdef->hasDimmer() );
             }
             else if ( getField<Field>( field_num ) == &address_overlap_field ) {
                 dmx_address_field.setAllowAddressOverlap( address_overlap_field.isSet() );
@@ -1739,12 +1860,14 @@ void DMXTextUI::createFixture(void)
             manufacturer_field( "Manufacturer" ),
             model_field( "Model" ),
             personality_field( "Personality" ),
-            fixture_number_field( "Fixture number", venue ),
+            fixture_number_field( "Fixture number", venue, &Venue::getFixtureByNumber, venue->nextAvailableFixtureNumber() ),
             name_field( "Fixture location", "Somewhere" ),
             description_field( "Fixture description", "" ),
             address_overlap_field( "Allow DMX addresses to overlap", false ),  
             dmx_address_field( "DMX base address", venue, NULL ),
-            dmx_universe( "DMX universe", venue, 0 )
+            dmx_universe( "DMX universe", venue, 0 ),
+            allow_whiteout_field( "Whiteout affects this fixture", true ),
+            allow_dimming_field( "Master dimmer affects this fixture", true )
         {
             add( manufacturer_field );
             add( model_field );
@@ -1755,6 +1878,8 @@ void DMXTextUI::createFixture(void)
             add( fixture_number_field );
             add( name_field );
             add( description_field );
+            add( allow_whiteout_field );
+            add( allow_dimming_field );
         }
     };
 
@@ -1763,12 +1888,14 @@ void DMXTextUI::createFixture(void)
         return;
 
     Fixture fixture( 0L,
-                     form.fixture_number_field.getFixtureNumber(), 
+                     form.fixture_number_field.getNumber(), 
                      form.dmx_universe.getUniverseId(),  
                      form.dmx_address_field.getIntValue(),
                      form.personality_field.getFUID(),
                      form.name_field.getValue(), 
-                     form.description_field.getValue() );
+                     form.description_field.getValue(),
+                     form.allow_dimming_field.isSet(),
+                     form.allow_whiteout_field.isSet() );
 
     getVenue()->addFixture( fixture );
 }
@@ -1783,7 +1910,7 @@ void DMXTextUI::createFixtureGroup( ) {
     public:
         std::vector<ChannelControllerField> m_channel_fields;
 
-        UniqueGroupNumberField group_number_field;
+        UniqueNumberField<GroupNumber, FixtureGroup> group_number_field;
         InputField name_field;
         InputField description_field;
         ActorSelectField actor_select;
@@ -1802,7 +1929,7 @@ void DMXTextUI::createFixtureGroup( ) {
                         SceneActor actor( pf );
 
                         for ( size_t channel=0; channel < pf->getNumChannels(); channel++ )
-                            m_channel_fields.push_back( ChannelControllerField( m_venue, actor, channel, false ) );
+                            m_channel_fields.emplace_back( m_venue, actor, channel, false );
 
                         for ( size_t channel=0; channel < pf->getNumChannels(); channel++ )
                             add( m_channel_fields[channel] );
@@ -1848,13 +1975,15 @@ void DMXTextUI::createFixtureGroup( ) {
         MyForm( TextIO* input_stream, Venue* venue ) :
             Form( input_stream, "Create Fixture Group" ),
             m_venue(venue),
-            group_number_field( "Create group number", venue ),
+            group_number_field( "Create group number", venue, &Venue::getFixtureGroupByNumber, venue->nextAvailableFixtureGroupNumber() ),
             name_field( "Group name", "New group" ),
             description_field( "Group description", "" ),
             actor_select( "Fixtures (comma separated)", venue, false ),
             load_channel_defaults( "Set default channel values", false )
 
         {
+            actor_select.allowMultiple( true );
+
             add( group_number_field );
             add( name_field );
             add( description_field );
@@ -1868,16 +1997,874 @@ void DMXTextUI::createFixtureGroup( ) {
         return;
 
     FixtureGroup group( 0L, 
-                        form.group_number_field.getGroupNumber(),
+                        form.group_number_field.getNumber(),
                         form.name_field.getValue(), 
                         form.description_field.getValue() );
 
     group.setFixtures( UIDArrayToSet( form.actor_select.getActorUIDs() ) );
 
-    BYTE channel_values[DMX_PACKET_SIZE];
+    channel_value channel_values[DMX_PACKET_SIZE];
     size_t num_channels = form.getChannelValues( channel_values );
     if ( num_channels > 0 )
         group.setChannelValues( num_channels, channel_values );
 
     getVenue()->addFixtureGroup( group );
+}
+
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::sceneDeleteAllAnimations(void)
+{
+    SceneSelectField scene_field( "Clear all animations from scene", getVenue() );
+
+    ConfirmForm form( &m_text_io );
+    form.add( scene_field );
+    if ( form.play() ) {
+        Scene * scene = getVenue()->getScene( scene_field.getSceneUID() );
+
+        if ( scene->getUID() == getVenue()->getCurrentSceneUID() )
+            getVenue()->clearAllAnimations();
+
+        // Reset scene references to empty and release private animations
+        getVenue()->setSceneAnimationReferences( scene, AnimationReferenceArray(), false );
+
+        getVenue()->sceneUpdated( scene->getUID() );
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::sceneDeleteAnimation(void)
+{
+    class MyForm : public ConfirmForm {
+        Venue*	m_venue;
+
+        void fieldLeaveNotify( size_t field_num ) {
+            if ( field_num == 0 ) {
+                SceneSelectField* scene_field = getField<SceneSelectField>( field_num );
+                SceneAnimationSelectField* anim_field = getField<SceneAnimationSelectField>( 1 );
+                Scene* scene = m_venue->getScene( scene_field->getSceneUID() );
+                anim_field->loadAnimations( scene );
+            }
+        }
+
+    public:
+        MyForm( TextIO* input_stream, Venue* venue ) :
+            ConfirmForm( input_stream ), 
+            m_venue(venue) {}
+    };
+
+    SceneSelectField scene_field( "Delete animation from scene", getVenue() );
+    SceneAnimationSelectField animation_select_field( "Scene animation", getVenue()  );
+
+    MyForm form( &m_text_io, getVenue() );
+    form.add( scene_field );
+    form.add( animation_select_field );
+    if ( !form.play() )
+        return;
+
+    Scene* scene = getVenue()->getScene( scene_field.getSceneUID() );
+
+    if ( getVenue()->getCurrentSceneUID() == scene->getUID() )
+        getVenue()->clearAllAnimations();
+
+    AnimationReferenceArray animation_refs = scene->animations();
+    animation_refs.erase( animation_refs.begin() + animation_select_field.getAnimationIndex() );
+
+    // Reset scene references to empty and release private animations
+    getVenue()->setSceneAnimationReferences( scene, animation_refs, false );
+
+    getVenue()->sceneUpdated( scene->getUID() );
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::sceneAddAnimation(void)
+{
+    class MyForm : public Form {
+        Venue*	m_venue;
+
+        void fieldLeaveNotify( size_t field_num ) {
+            if ( field_num == 0 ) {
+                SceneSelectField* scene_field = getField<SceneSelectField>( field_num );
+                ActorSelectField* actor_field = getField<ActorSelectField>( 2 );
+
+                Scene* scene = m_venue->getScene( scene_field->getSceneUID() );
+                actor_field->selectScene( scene_field->getSceneUID(), scene->getActorUIDs() );
+            }
+        }
+
+    public:
+        MyForm( TextIO* input_stream, LPCSTR title, Venue* venue ) :
+            Form( input_stream, title ),
+            m_venue(venue)
+        {}
+    };
+
+    SceneSelectField scene_field( "Add animation to scene", getVenue() );
+    AnimationSelectField anim_field( "Animation", getVenue() );
+    ActorSelectField actor_select( "Fixtures (comma separated)",  getVenue()  );
+    actor_select.allowMultiple( true );
+
+    MyForm form( &m_text_io, "Add Animation to Scene", getVenue() );
+    form.add( scene_field );
+    form.add( anim_field );
+    form.add( actor_select );
+    if ( !form.play() )
+        return;
+
+    Scene* scene = getVenue()->getScene( scene_field.getSceneUID() );
+    
+    if ( getVenue()->getCurrentSceneUID() == scene->getUID() )
+        getVenue()->clearAllAnimations();
+    
+    scene->addAnimation( AnimationReference( anim_field.getAnimationUID(), actor_select.getActorUIDs() ) );
+
+    getVenue()->sceneUpdated( scene->getUID() );
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::sceneUpdateAnimation(void)
+{
+    class MyForm : public Form {
+        Venue*	m_venue;
+
+        void fieldLeaveNotify( size_t field_num ) {
+            if ( field_num == 0 ) {
+                SceneSelectField* scene_field = getField<SceneSelectField>( 0 );
+                Scene* scene = m_venue->getScene( scene_field->getSceneUID() );
+
+                SceneAnimationSelectField* scene_animation_select_field = getField<SceneAnimationSelectField>( 1 );
+                scene_animation_select_field->loadAnimations( scene );
+            }
+            else if ( field_num == 1 ) {
+                SceneSelectField* scene_field = getField<SceneSelectField>( 0 );
+                SceneAnimationSelectField* scene_animation_select_field = getField<SceneAnimationSelectField>( 1 );
+                AnimationSelectField* anim_field = getField<AnimationSelectField>( 2 );
+                ActorSelectField* actor_select = getField<ActorSelectField>( 3 );
+
+                Scene* scene = m_venue->getScene( scene_field->getSceneUID() );
+                AnimationReference* ref = scene->getAnimationByUID( scene_animation_select_field->getAnimationUID() );
+
+                anim_field->reloadAnimations( scene );
+
+
+                anim_field->setAnimationUID( ref->getUID() );
+
+
+                actor_select->selectScene( scene_field->getSceneUID(), ref != NULL ? ref->getActors() : UIDArray() );
+            }
+        }
+
+    public:
+        MyForm( TextIO* input_stream, Venue* venue ) : 
+            Form( input_stream, "Update Scene Animation" ),
+            m_venue(venue) {}
+    };
+
+    SceneSelectField scene_field( "Scene", getVenue() );
+    SceneAnimationSelectField scene_animation_select_field( "Scene animation", getVenue() );
+    AnimationSelectField anim_field( "Animation", getVenue() );
+    ActorSelectField actor_select( "Fixtures (comma separated)",  getVenue()  );
+    actor_select.allowMultiple( true );
+
+    MyForm form( &m_text_io, getVenue() );
+    form.add( scene_field );
+    form.add( scene_animation_select_field );
+    form.add( anim_field );
+    form.add( actor_select );
+    if ( !form.play() )
+        return;
+
+    Scene* scene = getVenue()->getScene( scene_field.getSceneUID() );
+
+    if ( getVenue()->getCurrentSceneUID() == scene->getUID() )
+        getVenue()->clearAllAnimations();
+
+    scene->replaceAnimation( scene_animation_select_field.getAnimationIndex(), 
+                AnimationReference( anim_field.getAnimationUID(), actor_select.getActorUIDs() ) );
+
+    getVenue()->sceneUpdated( scene->getUID() );
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::deletePalette(void)
+{
+    PaletteSelectField palette_field( "Palette to delete", getVenue() );
+
+    ConfirmForm form( &m_text_io );
+    form.add( palette_field );
+
+    if ( form.play() )
+        getVenue()->deletePalette( palette_field.getPaletteUID() );
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::describePalette(void)
+{
+    PaletteSelectField palette_field( "Palette to describe", getVenue() );
+
+    Form form( &m_text_io );
+    form.add( palette_field );
+
+    if ( form.play() ) {
+        Palette palette;
+            
+        getVenue()->getPalette( palette_field.getPaletteUID(), palette );
+
+        m_text_io.printf( "Palette #%d '%s':\n", palette.getNumber(), palette.getName() );
+
+        if ( palette.getType( ) == PT_COLOR_PALETTE ) {
+            size_t color_number = 1;
+
+            for ( auto color : palette.getPaletteColors() )
+                m_text_io.printf( "   Color % 3u: %s\n", color_number++, color.getColorName() );
+        }
+
+        if ( palette.getFixtureMap().size() > 0 ) {
+            for ( PaletteEntryMap::value_type& pair : palette.getFixtureMap() ) {
+                Fixture* fixture = getVenue()->getFixture( pair.first );
+                if ( fixture != NULL ) {
+                    m_text_io.printf( "   Fixture: %s\n", fixture->getFullName() );
+                    describePaletteEntry( fixture->getFixtureDefinition(), pair.second );
+                }
+            }
+        }
+              
+        if ( palette.getFixtureDefinitionMap().size() > 0 ) {
+            for ( PaletteEntryMap::value_type& pair : palette.getFixtureDefinitionMap() ) {
+                FixtureDefinition* definition = FixtureDefinition::lookupFixture( pair.first );
+
+                if ( definition != NULL ) {
+                    m_text_io.printf( "   %s %s %d channel\n", definition->getManufacturer(), definition->getModel(), definition->getNumChannels() );
+                    describePaletteEntry( definition, pair.second );
+                }
+            }
+        }
+
+        if ( palette.getGlobalEntry()->hasValues() ) {
+            m_text_io.printf( "   Global:\n" );        
+        
+            describePaletteEntry( NULL, *palette.getGlobalEntry() );
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::describePaletteEntry( FixtureDefinition* def, PaletteEntry& entry )
+{
+    for ( PaletteValues::value_type& pair : entry.getValues() ) {
+        unsigned channel = pair.first;
+        BYTE value = pair.second;
+        
+        if ( entry.getAddressing() == EntryAddressing::BY_TYPE ) {
+            m_text_io.printf( "      %s [%d]\n", Channel::getTypeName( (ChannelType)channel ), value );   
+        }
+        else {
+            m_text_io.printf( "      %2u - %s [%d]\n", channel+1, def->getChannel( channel )->getName(), value );
+        }    
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::createPalette(void)
+{
+    Palette new_palette;
+
+    new_palette.setPaletteNumber( getVenue()->nextAvailablePaletteNumber() );
+
+    editPalette( new_palette, true );
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::updatePalette(void)
+{
+    PaletteSelectField palette_field( "Palette to update", getVenue() );
+
+    Form form( &m_text_io );
+    form.add( palette_field );
+
+    if ( form.play() ) {
+        Palette palette;
+        getVenue()->getPalette( palette_field.getPaletteUID(), palette );
+        editPalette( palette, false );
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::editPalette( Palette& palette, bool create )
+{
+    class MyForm : public Form {
+        Venue*	m_venue;
+        Palette& m_palette;
+
+        void fieldLeaveNotify( size_t field_num ) {
+            if ( field_num == 0 ) {
+                Palette palette;
+                bool success = m_venue->getPalette( getField<InputField>( field_num )->getValue(), palette );
+                if ( success && m_palette.getUID() != palette.getUID() )
+                    throw FieldException( "Palette name already exists" );
+            }
+            if ( field_num == 1 ) {
+                InputField* name_field = getField<InputField>( field_num );
+                CString name( name_field->getValue() );
+                if ( name.Trim().GetLength() == 0 )
+                    throw FieldException( "Palette name is required" );
+            }
+            else if ( field_num == 3 && size() == 5 ) {
+                NumberedListField* palette_type_field = getField<NumberedListField>( field_num );
+                ChannelTypeSelectField* type_field = getField<ChannelTypeSelectField>( field_num+1 );
+
+                switch ( (PaletteType)palette_type_field->getListValue() ) {
+                    case PT_LOCATION:
+                        type_field->setDefaultListValue( CHNLT_PAN );
+                        addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+                        addAuto( new ChannelTypeSelectField( "Channel type", CHNLT_PAN_FINE ) );
+                        addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+                        addAuto( new ChannelTypeSelectField( "Channel type", CHNLT_TILT ) );
+                        addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+                        addAuto( new ChannelTypeSelectField( "Channel type", CHNLT_TILT_FINE ) );
+                        addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+                        addAuto( new ChannelTypeSelectField( "Channel type" ) );
+                        break;
+
+                    case PT_DIMMER:
+                        type_field->setDefaultListValue( CHNLT_DIMMER );
+                        addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+                        addAuto( new ChannelTypeSelectField( "Channel type" ) );
+                        break;
+
+                    case PT_STROBE:
+                        type_field->setDefaultListValue( CHNLT_STROBE );
+                        addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+                        addAuto( new ChannelTypeSelectField( "Channel type" ) );
+                        break;
+
+                    case PT_COLOR:
+                        type_field->setDefaultListValue( CHNLT_RED );
+                        addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+                        addAuto( new ChannelTypeSelectField( "Channel type", CHNLT_GREEN ) );
+                        addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+                        addAuto( new ChannelTypeSelectField( "Channel type", CHNLT_BLUE ) );
+                        addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+                        addAuto( new ChannelTypeSelectField( "Channel type", CHNLT_WHITE ) );
+                        addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+                        addAuto( new ChannelTypeSelectField( "Channel type", CHNLT_AMBER ) );
+                        addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+                        addAuto( new ChannelTypeSelectField( "Channel type" ) );
+                        break;
+
+                    case PT_GOBO:
+                        type_field->setDefaultListValue( CHNLT_GOBO );
+                        addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+                        addAuto( new ChannelTypeSelectField( "Channel type" ) );
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+            else if ( field_num == size()-1 ) {
+                ChannelTypeSelectField* type_field = getField<ChannelTypeSelectField>( field_num );
+                if ( type_field->getChannelType() != CHNLT_UNKNOWN ) {
+                    addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+                    addAuto( new ChannelTypeSelectField( "Channel type" ) );
+                }
+            }
+        }
+
+        public:
+            MyForm( TextIO* input_stream, Venue* venue, Palette& palette, bool create ) :
+                Form( input_stream, (create) ? "Create Palette" : "Update Palette" ),
+                m_venue(venue),
+                m_palette(palette)
+            {
+                setAutoDelete( true );
+
+                InputField* name_field = new InputField( "Palette name", palette.getName() );
+                InputField* description_field = new InputField( "Palette description", palette.getDescription() );
+                NumberedListField* type_field = new NumberedListField( "Palette type" ) ;
+                UniqueNumberField<PaletteNumber, Palette>* palette_number_field =
+                     new UniqueNumberField<PaletteNumber, Palette>( "Palette number", m_venue, &Venue::getPaletteByNumber, palette.getPaletteNumber() );
+
+                type_field->addKeyValue( PaletteType::PT_UNSPECIFIED, "Generic" );
+                type_field->addKeyValue( PaletteType::PT_LOCATION, "Location (pan/tilt)" );
+                type_field->addKeyValue( PaletteType::PT_COLOR, "Color" );
+                type_field->addKeyValue( PaletteType::PT_DIMMER, "Dimmer" );
+                type_field->addKeyValue( PaletteType::PT_STROBE, "Strobe" );
+                type_field->addKeyValue( PaletteType::PT_GOBO, "Gobo" ); 
+				type_field->addKeyValue( PaletteType::PT_FIXTURE_PRESET, "Fixture preset" );
+				type_field->addKeyValue( PaletteType::PT_COLOR_PALETTE, "Color Palette" );
+
+                type_field->setDefaultListValue( palette.getType() );
+
+                addAuto( palette_number_field );
+                addAuto( name_field );
+                addAuto( description_field );
+                addAuto( type_field );
+
+                for ( PaletteValues::value_type& pair : palette.getGlobalEntry()->getValues() ) {
+                    addAuto( new ChannelTypeSelectField( "Channel type", (ChannelType)pair.first ) );
+                    addAuto( new IntegerField( "Channel value", (BYTE)pair.second, 0, 255 ) );
+                }
+
+                addAuto( new ChannelTypeSelectField( "Channel type" ) );
+            }
+    };
+
+    MyForm form( &m_text_io, getVenue(), palette, create );
+    if ( !form.play() )
+        return;
+
+    palette.setPaletteNumber( (PaletteNumber)form.getField<UniqueNumberField<PaletteNumber, Palette>>( 0 )->getNumber() );
+    palette.setName( form.getField<InputField>( 1 )->getValue() );
+    palette.setDescription( form.getField<InputField>( 2 )->getValue() );
+    palette.setType( (PaletteType)form.getField<NumberedListField>( 3 )->getListValue() );
+
+    PaletteEntry global( 0L, BY_TYPE );
+
+    for ( size_t field_num=4; field_num < form.size()-1; field_num += 2 ) {
+        ChannelTypeSelectField* type_field = form.getField<ChannelTypeSelectField>( field_num );
+        if ( type_field->getChannelType() == CHNLT_UNKNOWN )
+            continue;
+
+        IntegerField* value_field = form.getField<IntegerField>( field_num+1 );    
+        global.addValue( type_field->getChannelType(), (BYTE)value_field->getIntValue() );
+    }
+
+    palette.setGlobalEntry( global );
+
+    if ( create ) 
+        getVenue()->addPalette( palette );
+    else {
+        getVenue()->updatePalette( palette );
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::deletePaletteFixture(void)
+{
+    class MyForm : public Form {
+        Venue*	m_venue;
+
+        void fieldLeaveNotify( size_t field_num ) {
+            if ( field_num == 0 ) {
+                Palette palette;
+                STUDIO_ASSERT( m_venue->getPalette( getField<PaletteSelectField>( 0 )->getPaletteUID(), palette ), "Expecting a valid palette" );
+
+                NumberedListField* fixture_field = getField<NumberedListField>( 1 );
+                fixture_field->clear();
+
+                bool selected = false;
+                for ( PaletteEntryMap::value_type& pair : palette.getFixtureMap() ) {
+                    Fixture* fixture = m_venue->getFixture( pair.first );
+                    if ( fixture != NULL ) {
+                        fixture_field->addKeyValue( fixture->getNumber(), fixture->getFullName(), fixture->getUID() );
+                        if ( !selected ) {
+                            fixture_field->setDefaultListValue( fixture->getNumber() );
+                            selected = false;
+                        }
+                    }
+                }
+            }
+        }
+
+        public:
+            MyForm( TextIO* input_stream, Venue* venue ) :
+                Form( input_stream ),
+                m_venue(venue)
+            {
+                setAutoDelete( true );
+
+                addAuto( new PaletteSelectField( "Palette to add/update fixture", m_venue ) );
+                addAuto( new NumberedListField( "Fixture to remove" ) );
+            }
+    };
+
+    MyForm form( &m_text_io, getVenue() );
+    if ( !form.play() )
+        return;
+
+    Palette palette;
+    STUDIO_ASSERT( getVenue()->getPalette( form.getField<PaletteSelectField>( 0 )->getPaletteUID(), palette ), "Expecting a valid palette" );
+    
+    UID uid = form.getField<NumberedListField>( 1 )->getListValueContext();
+
+    palette.getFixtureMap().erase( uid );
+    getVenue()->updatePalette( palette );
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::deletePaletteFixtureDef(void)
+{
+    class MyForm : public Form {
+        Venue*	m_venue;
+
+        void fieldLeaveNotify( size_t field_num ) {
+            if ( field_num == 0 ) {
+                Palette palette;
+                STUDIO_ASSERT( m_venue->getPalette( getField<PaletteSelectField>( 0 )->getPaletteUID(), palette ), "Expecting a valid palette" );
+
+                NumberedListField* fixture_field = getField<NumberedListField>( 1 );
+                fixture_field->clear();
+
+                size_t index = 1;
+                CString name;
+                bool selected = false;
+
+                for ( PaletteEntryMap::value_type& pair : palette.getFixtureDefinitionMap() ) {
+                    FixtureDefinition* fd = FixtureDefinition::lookupFixture( pair.first );
+                    if ( fd != NULL ) {
+                        name.Format( "%s %s", fd->getManufacturer(), fd->getModel() );
+                        fixture_field->addKeyValue( index, name, fd->getFUID() );
+                        if ( !selected ) {
+                            fixture_field->setDefaultListValue( index );
+                            selected = false;
+                        }
+                        index++;
+                    }
+                }
+            }
+        }
+
+        public:
+            MyForm( TextIO* input_stream, Venue* venue ) :
+                Form( input_stream ),
+                m_venue(venue)
+            {
+                setAutoDelete( true );
+
+                addAuto( new PaletteSelectField( "Palette to add/update fixture definition", m_venue ) );
+                addAuto( new NumberedListField( "Fixture definition to remove" ) );
+            }
+    };
+
+    MyForm form( &m_text_io, getVenue() );
+    if ( !form.play() )
+        return;
+
+    Palette palette;
+    STUDIO_ASSERT( getVenue()->getPalette( form.getField<PaletteSelectField>( 0 )->getPaletteUID(), palette ), "Expecting a valid palette" );
+    
+    FUID fuid = form.getField<NumberedListField>( 1 )->getListValueContext();
+    palette.getFixtureDefinitionMap().erase( fuid );
+
+    getVenue()->updatePalette( palette );
+}
+
+// ----------------------------------------------------------------------------
+//
+void addFieldIfExists( Form* form, FixtureDefinition *fd,  ChannelType type )
+{
+    for ( channel_address channel : fd->getChannelsByType( type ) ) {
+        form->addAuto( new ChannelSelectField( "Channel", fd->getFUID(), channel+1 ) );
+        form->addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+void autoAddPaletteFields( Form* form, FixtureDefinition *fd, PaletteType type )
+{
+    switch ( type ) {
+        case PT_LOCATION:
+            addFieldIfExists( form, fd, CHNLT_PAN );
+            addFieldIfExists( form, fd, CHNLT_PAN_FINE );
+            addFieldIfExists( form, fd, CHNLT_TILT );
+            addFieldIfExists( form, fd, CHNLT_TILT_FINE );
+            break;
+
+        case PT_DIMMER:
+            addFieldIfExists( form, fd, CHNLT_DIMMER );
+            break;
+
+        case PT_STROBE:
+            addFieldIfExists( form, fd, CHNLT_STROBE );
+            break;
+
+        case PT_COLOR:
+            addFieldIfExists( form, fd, CHNLT_RED );
+            addFieldIfExists( form, fd, CHNLT_GREEN );
+            addFieldIfExists( form, fd, CHNLT_BLUE );
+            addFieldIfExists( form, fd, CHNLT_WHITE );
+            addFieldIfExists( form, fd, CHNLT_AMBER );
+            break;        
+        
+        case PT_GOBO:
+            addFieldIfExists( form, fd, CHNLT_GOBO );
+            break;
+
+        default:
+            break;
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::updatePaletteFixtureDef(void)
+{
+    class MyForm : public Form {
+        Venue*	m_venue;
+        FUID m_fuid;
+        Palette m_palette;
+
+        void fieldLeaveNotify( size_t field_num ) {
+            if ( field_num == 1 ) {
+                STUDIO_ASSERT( m_venue->getPalette( getField<PaletteSelectField>( 0 )->getPaletteUID(), m_palette ), "Expecting a valid palette" );
+
+                FixtureDefinition* fd = FixtureDefinition::lookupFixture( getField<FixtureDefSelectField>( 1 )->getFUID() );
+                STUDIO_ASSERT( fd != NULL, "Expecting a valid fixture definition" );
+
+                if ( fd->getFUID() != m_fuid ) {                // Remove all extra fields
+                    resize( 2 );
+                    m_fuid = fd->getFUID();
+                }   
+                
+                if ( size() == 2 ) {                   
+                    PaletteEntryMap::iterator it = m_palette.getFixtureDefinitionMap().find( m_fuid );
+                    if ( it != m_palette.getFixtureDefinitionMap().end() ) {
+                        for ( PaletteValues::value_type& pair : it->second.getValues() ) {
+                            addAuto( new ChannelSelectField( "Channel", m_fuid, pair.first+1 ) );
+                            addAuto( new IntegerField( "Channel value", (BYTE)pair.second, 0, 255 ) );
+                        }
+                    }
+                    else {
+                        Palette palette;
+                        m_venue->getPalette( getField<PaletteSelectField>( 0 )->getPaletteUID(), palette );                    
+                        autoAddPaletteFields( this, fd, palette.getType() );
+                    }
+
+                    addAuto( new ChannelSelectField( "Channel", fd->getFUID() ) );
+                }
+            }
+            else if ( field_num == size()-1 ) {
+                ChannelSelectField* channel_field = getField<ChannelSelectField>( field_num );
+                if ( channel_field->getChannel() != -0 ) {
+                    addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+                    addAuto( new ChannelSelectField( "Channel", m_fuid ) );
+                }
+            }
+        }
+
+        public:
+            MyForm( TextIO* input_stream, Venue* venue ) :
+                Form( input_stream ),
+                m_venue(venue),
+                m_fuid( 0L )
+            {
+                setAutoDelete( true );
+
+                addAuto( new PaletteSelectField( "Palette to add/update fixture definition", m_venue ) );
+                addAuto( new FixtureDefSelectField( "Fixture definition to add/update" ) );
+            }
+    };
+
+    MyForm form( &m_text_io, getVenue() );
+    if ( !form.play() )
+        return;
+
+    Palette palette;
+    STUDIO_ASSERT( getVenue()->getPalette( form.getField<PaletteSelectField>( 0 )->getPaletteUID(), palette ), "Expecting a valid palette" );
+
+    FUID fuid = form.getField<FixtureDefSelectField>( 1 )->getFUID();
+
+    PaletteEntry entry( fuid, BY_CHANNEL );
+    
+    for ( size_t field_num=2; field_num < form.size()-1; field_num += 2 ) {
+        ChannelSelectField* channel_field = form.getField<ChannelSelectField>( field_num );
+        if ( channel_field->getChannel() == 0 )
+            continue;
+
+        IntegerField* value_field = form.getField<IntegerField>( field_num+1 ); 
+        entry.addValue( channel_field->getChannel()-1, (BYTE)value_field->getIntValue() );
+    }
+
+    if ( entry.hasValues() )
+        palette.getFixtureDefinitionMap()[fuid] = entry;
+    else
+        palette.getFixtureDefinitionMap().erase( fuid );
+
+    getVenue()->updatePalette( palette );
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::updatePaletteFixture(void)
+{
+    class MyForm : public Form {
+        Venue*	m_venue;
+        UID m_fixture_id;
+        FUID m_fuid;
+        Palette m_palette;
+
+        void fieldLeaveNotify( size_t field_num ) {
+            if ( field_num == 1 ) {
+                STUDIO_ASSERT( m_venue->getPalette( getField<PaletteSelectField>( 0 )->getPaletteUID(), m_palette ), "Expecting a valid palette" );
+
+                Fixture* pf = m_venue->getFixture( getField<ActorSelectField>( 1 )->getActorUID() );
+                STUDIO_ASSERT( pf != NULL, "Expecting a valid fixture" );
+
+                if ( pf->getUID() != m_fixture_id ) {                // Remove all extra fields
+                    resize( 2 );
+                    m_fixture_id = pf->getUID();
+                    m_fuid = pf->getFixtureDefinition()->getFUID(); 
+                }      
+
+                if ( size() == 2 ) {
+                    PaletteEntryMap::iterator it = m_palette.getFixtureMap().find( pf->getUID() );
+                    if ( it != m_palette.getFixtureMap().end() ) {
+                        for ( PaletteValues::value_type& pair : it->second.getValues() ) {
+                            addAuto( new ChannelSelectField( "Channel", m_fuid, pair.first+1 ) );
+                            addAuto( new IntegerField( "Channel value", (BYTE)pair.second, 0, 255 ) );
+                        }
+                    }
+                    else {
+                        Palette palette;
+                        m_venue->getPalette( getField<PaletteSelectField>( 0 )->getPaletteUID(), palette );                    
+                        FixtureDefinition* fd = FixtureDefinition::lookupFixture( pf->getFUID() );
+                        STUDIO_ASSERT( fd != NULL, "Expecting a valid fixture definition" );
+                        autoAddPaletteFields( this, fd, palette.getType() );
+                    }
+                    
+                    addAuto( new ChannelSelectField( "Channel", m_fuid ) );
+                }
+            }
+            else if ( field_num == size()-1 ) {
+                ChannelSelectField* channel_field = getField<ChannelSelectField>( field_num );
+                if ( channel_field->getChannel() != 0 ) {
+                    addAuto( new IntegerField( "Channel value", 0, 0, 255 ) );
+                    addAuto( new ChannelSelectField( "Channel", m_fuid ) );
+                }
+            }
+        }
+
+    public:
+        MyForm( TextIO* input_stream, Venue* venue ) :
+            Form( input_stream ),
+            m_venue(venue),
+            m_fixture_id( 0L )
+        {
+            setAutoDelete( true );
+
+            addAuto( new PaletteSelectField( "Palette to add/update fixture", m_venue ) );
+            addAuto( new ActorSelectField( "Fixture to add/update", m_venue, false ) );
+        }
+    };
+
+    MyForm form( &m_text_io, getVenue() );
+    if ( !form.play() )
+        return;
+
+    Palette palette;
+    STUDIO_ASSERT( getVenue()->getPalette( form.getField<PaletteSelectField>( 0 )->getPaletteUID(), palette ), "Expecting a valid palette" );
+
+    UID fixture_id = form.getField<ActorSelectField>( 1 )->getActorUID();
+
+    PaletteEntry entry( fixture_id, BY_CHANNEL );
+
+    for ( size_t field_num=2; field_num < form.size()-1; field_num += 2 ) {
+        ChannelSelectField* channel_field = form.getField<ChannelSelectField>( field_num );
+        if ( channel_field->getChannel() == 0 )
+            continue;
+
+        IntegerField* value_field = form.getField<IntegerField>( field_num+1 ); 
+        entry.addValue( channel_field->getChannel()-1, (BYTE)value_field->getIntValue() );
+    }
+
+    if ( entry.hasValues() )
+        palette.getFixtureMap()[fixture_id] = entry;
+    else
+        palette.getFixtureMap().erase( fixture_id );
+
+    getVenue()->updatePalette( palette );
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::updateScenePalettes(void)
+{
+    class MyForm : public Form {
+        Venue*	m_venue;
+        UID m_scene_uid;
+        UID m_actor_uid;
+
+        void fieldLeaveNotify( size_t field_num ) {
+            if ( field_num == 0 ) {
+                m_scene_uid = getField<SceneSelectField>( 0 )->getSceneUID();
+                resize(2);
+
+                ActorSelectField* actor_field = getField<ActorSelectField>( 1 );
+                actor_field->selectScene( m_scene_uid );
+
+                m_actor_uid = 0;
+            }
+            else if ( field_num == 1 ) {
+                m_scene_uid = getField<SceneSelectField>( 0 )->getSceneUID();
+                m_actor_uid = getField<ActorSelectField>( 1 )->getActorUID();
+
+                Scene* scene = m_venue->getScene( m_scene_uid );
+                STUDIO_ASSERT( scene != NULL, "Expecting a valid scene" );
+                SceneActor* actor = scene->getActor( m_actor_uid );
+                STUDIO_ASSERT( actor != NULL, "Expecting a valid scene actor" );
+
+                resize(2);
+
+               for ( UID palette_uid : actor->getPaletteReferences() )
+                    addAuto( new PaletteSelectField( "Palette", m_venue, true, palette_uid ) );
+
+               addAuto( new PaletteSelectField( "Palette", m_venue, true ) );
+            }
+            else if ( size() > 2 && field_num == size()-1 ) {
+                PaletteSelectField* palette_field = getField<PaletteSelectField>( size()-1 );
+                if ( palette_field->getPaletteUID() != 0 )
+                    addAuto( new PaletteSelectField( "Palette", m_venue, true ) );
+            }
+        }
+
+    public:
+        MyForm( TextIO* input_stream, Venue* venue ) :
+            Form( input_stream ),
+            m_venue(venue),
+            m_scene_uid(0),
+            m_actor_uid(0)
+        {
+            setAutoDelete( true );
+
+            addAuto( new SceneSelectField( "Scene to set palettes", m_venue ) );
+            addAuto( new ActorSelectField( "Select actor", m_venue, false ) );
+        }
+    };
+
+    MyForm form( &m_text_io, getVenue() );
+    if ( !form.play() )
+        return;
+
+    Scene* scene = getVenue()->getScene( form.getField<SceneSelectField>( 0 )->getSceneUID() );
+    STUDIO_ASSERT( scene != NULL, "Expecting a valid scene" );
+    SceneActor* actor = scene->getActor( form.getField<ActorSelectField>( 1 )->getActorUID() );
+    STUDIO_ASSERT( actor != NULL, "Expecting a valid scene actor" );
+
+    actor->removeAllPaletteReferences();
+
+    for ( size_t index=2; index < form.size(); index++ ) {
+        PaletteSelectField* palette_field = form.getField<PaletteSelectField>( index );
+        actor->addPaletteReference( palette_field->getPaletteUID() );
+    }
+
+    getVenue()->sceneUpdated( scene->getUID() );
+}
+
+// ----------------------------------------------------------------------------
+//
+void DMXTextUI::test(void) {
 }

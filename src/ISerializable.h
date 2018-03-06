@@ -35,6 +35,12 @@ public:
         element.SetAttribute( name, buffer );
     }
 
+    static void add_attribute( TiXmlElement& element, const char *name, UINT64 value ) {
+        char buffer[128];
+        sprintf_s( buffer, "%llu", value );
+        element.SetAttribute( name, buffer );
+    }
+
     static void add_attribute( TiXmlElement& element, const char *name, WORD value ) {
         char buffer[128];
         sprintf_s( buffer, "%u", value );
@@ -101,16 +107,16 @@ public:
     }
 
     template <class T>
-    static void add_pfuids_element( TiXmlElement& element, T &uids  ) {
-        TiXmlElement pfuids( "pfuids" );
+    static void add_uid_element( TiXmlElement& container, LPCSTR container_name, T &uids  ) {
+        TiXmlElement xml_array( container_name );
 
         for ( T::iterator it=uids.begin(); it != uids.end(); ++it ) {
             TiXmlElement uidElement( "uid" );
             add_attribute( uidElement, "value", (*it) );
-            pfuids.InsertEndChild( uidElement );
+            xml_array.InsertEndChild( uidElement );
         }
 
-        element.InsertEndChild( pfuids );
+        container.InsertEndChild( xml_array );
     }
 
     template <class T>
@@ -149,14 +155,25 @@ public:
             sscanf_s( value, "%lu", &result );
         return result;
     }
+    
+    static const UINT64 read_uint64_attribute( TiXmlElement *self, const char * attribute_name, UINT64 default_value=0UL ) {
+        const char *value = self->Attribute( attribute_name );
+        UINT64 result = default_value;
+
+        if ( value != NULL )
+            sscanf_s( value, "%llu", &result );
+        return result;
+    }
 
     static const RGBWA read_rgbw_attribute( TiXmlElement *self, const char * attribute_name, RGBWA default_value=RGBWA::BLACK ) {
         const char *value = self->Attribute( attribute_name );
-        RGBWA result = default_value;
 
-        if ( value != NULL )
-            sscanf_s( value, "#%lx", (ULONG *)&result );
-        return result;
+        if ( value == NULL )
+            return default_value;
+            
+        ULONG result;
+        sscanf_s( value, "#%lx", &result );
+        return RGBWA( result );
     }
 
     static const long read_long_attribute( TiXmlElement *self, const char * attribute_name, LONG default_value=0L ) {
@@ -242,8 +259,8 @@ public:
         }
     }
 
-    static void read_uids( TiXmlElement *self, const char * element_name, UIDArray& uids ) {
-        TiXmlElement * container = self->FirstChildElement( "pfuids" );
+    static void read_uids( TiXmlElement *self, LPCSTR element_name, UIDArray& uids ) {
+        TiXmlElement * container = self->FirstChildElement( element_name );
         uids.clear();
 
         if ( container ) {
@@ -255,13 +272,26 @@ public:
         }
     }
 
-    template <class T, class S>
-    static T read_value_list( TiXmlElement* container, const char* item_name ) {
+    template <class T>
+    static T read_unsigned_value_list( TiXmlElement* container, const char* item_name ) {
         T value_list;
 
         TiXmlElement* element = container->FirstChildElement( item_name );
         while ( element ) {
-            value_list.push_back( static_cast<S>( read_word_attribute( element, "value" ) ) );
+            value_list.push_back( read_unsigned_attribute( element, "value" ) );
+            element = element->NextSiblingElement();
+        }
+
+        return value_list;
+    }
+
+    template <class T>
+    static T read_double_value_list( TiXmlElement* container, const char* item_name ) {
+        T value_list;
+
+        TiXmlElement* element = container->FirstChildElement( item_name );
+        while ( element ) {
+            value_list.push_back( read_double_attribute( element, "value" ) );
             element = element->NextSiblingElement();
         }
 

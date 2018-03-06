@@ -1,0 +1,111 @@
+/*
+	Copyright (C) 2017 Robert DeSantis
+	hopluvr at gmail dot com
+
+	This file is part of DMX Studio.mm_track_container
+ 
+	DMX Studio is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or (at your
+	option) any later version.
+ 
+	DMX Studio is distributed in the hope that it will be useful, but
+	WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+	or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+	License for more details.
+ 
+	You should have received a copy of the GNU General Public License
+	along with DMX Studio; see the file _COPYING.txt.  If not, write to
+	the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+	MA 02111-1307, USA.
+*/
+
+.titlelessDialog { }
+
+.titlelessDialog > .ui-dialog-titlebar { display: none; }
+
+.video_search { 
+    width: 100px; 
+    font-size: 10pt;
+    box-sizing: border-box;
+    border: 1px solid #444444;
+    border-radius: 4px;
+    margin: 16px 0px 0px 0px;
+
+    /*background-color: white;
+    background-image: url('searchicon.png');
+    background-position: 10px 10px; 
+    background-repeat: no-repeat; */
+
+    padding: 3px 6px 3px 6px;
+    -webkit-transition: width 0.4s ease-in-out;
+    transition: width 0.4s ease-in-out;
+}
+.video_search:focus { width: 400px; }
+
+.video_search_run { height: 22px; width: 48px; border: 1px solid #444444; background-color: #222222; cursor:pointer; margin: 16px 0px 0px 8px;  padding-top: 2px; }
+.video_search_run:hover { border: 1px solid #0b93d5; background-color: #0972a5 !important;}
+
+.video_frame { margin: 2px 2px 2px 2px; padding: 6px 10px 6px 10px; width: 322px; height: 260px; border: 1px solid #707070;}
+
+.playing_video_title {
+    font-size: 10pt;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+.playing_video_state {
+    font-size: 8pt;
+    font-family: Arial, sans-serif;
+    color: white;
+    font-weight: bold;
+    width: 40px;
+}
+
+.playing_video_queued {
+    font-size: 8pt;
+    font-family: Arial, sans-serif;
+    color: #ff6a00;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+.video_time {
+    cursor: pointer;
+    text-align: center;
+    z-index: 100;
+    position: absolute;
+    top: 160px;
+    left: 274px;
+    display: none;
+    height: 14px;
+    width: 40px;
+    background-color: black;
+    color: white;
+    font-family: Arial;
+    padding: 2px 2px 2px 2px;
+    font-size: 8pt;
+    font-weight: bold;
+    opacity: .5;
+}
+
+.video_palette_sample {
+    height: 30px;
+    width: 98px;
+    border: 1px solid #444444;
+    cursor: pointer;
+    margin: 6px 4px 0px 20px;
+    overflow: hidden;
+}
+
+.video_palette_debug {
+    height: 30px;
+    border: 1px solid #444444;
+    overflow: hidden;
+}
+
+.palette_visualizer_title {
+    font-size: 10pt;
+    font-family: Arial, sans-serif;
+    color: white;
+}

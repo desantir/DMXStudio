@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-14 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -23,27 +23,13 @@ MA 02111-1307, USA.
 #pragma once
 
 #include "IVisitor.h"
-#include "SceneChannelAnimator.h"
 #include "MovementAnimation.h"
+#include "AnimationDefinition.h"
 
-class SceneMovementAnimator : public SceneChannelAnimator
+class SceneMovementAnimator : public AnimationDefinition
 {
     friend class VenueWriter;
     friend class VenueReader;
-
-    typedef std::vector<UINT> AngleList;
-
-    struct Participant {
-        UID         m_actor_uid;
-        Head        m_head;
-
-        Participant( UID actor_uid, Head& head ) :
-            m_actor_uid( actor_uid ),
-            m_head( head )
-        {}
-    };
-
-    typedef std::vector<Participant> ParticipantArray;
 
     MovementAnimation		m_movement;			// Movement animation description
 
@@ -53,9 +39,8 @@ public:
 
     SceneMovementAnimator() {}
 
-    SceneMovementAnimator( UID animation_uid, 
+    SceneMovementAnimator( UID animation_uid, bool shared, UID reference_fixture,  
                         AnimationSignal signal,
-                        UIDArray actors,
                         MovementAnimation movement );
     ~SceneMovementAnimator(void);
 
@@ -63,39 +48,16 @@ public:
         return m_movement;
     }
 
-    AbstractAnimation* clone();
-
-    const char* getName() { return SceneMovementAnimator::animationName; }
+    const char* getPrettyName() { return SceneMovementAnimator::animationName; }
     const char* getClassName() { return SceneMovementAnimator::className; }
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
 
-    void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
-
     virtual CString getSynopsis(void);
 
-private:
-    void genRandomMovement( AnimationTask* task, ParticipantArray& participants );
-    void genRotateMovement( AnimationTask* task, ParticipantArray& participants );
-    void genNodMovement( AnimationTask* task, ParticipantArray& participants );
-    void genFanMovement( AnimationTask* task, ParticipantArray& participants );
-    void genXcrossMovement( AnimationTask* task, ParticipantArray& participants );
-    void genMoonflowerMovement( AnimationTask* task, ParticipantArray& participants );
-    void genCoordinatesMovement( AnimationTask* task, ParticipantArray& participants );
-    void genSineMovement( AnimationTask* task, ParticipantArray& participants );
+    AnimationTask* createTask( AnimationEngine* engine, ActorList& actors, UID owner_uid );
 
-    ChannelValueArray anglesToValues( Channel* channel, AngleList& tilt );
-
-    void populateChannelAnimations( AnimationTask* task, ParticipantArray& participants, size_t& particpant_index, 
-                                    AngleList& tilt, AngleList& pan, ChannelValueArray& dimmer,
-                                    ChannelValueArray& speed, size_t group_size );
-
-    template <class T>
-    void swap( T& s1, T& s2 ) {
-        T tmp = s1;
-        s1 = s2;
-        s2 = tmp;
-    }
+	AnimationDefinition* clone();
 };

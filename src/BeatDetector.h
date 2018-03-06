@@ -22,7 +22,7 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "AudioInputStream.h"
 #include "FreqBin.h"
 
@@ -93,13 +93,6 @@ private:
     double* m_B;
     double* m_Es;
 
-    void output( const char *fmt, ... ) {
-        if ( studio.isDebug() ) {
-            va_list args;
-            va_start( args, fmt );
-            vprintf( fmt, args );
-            va_end( args );
-        }
-    }
+    void output( const char *fmt, ... );
 };
 

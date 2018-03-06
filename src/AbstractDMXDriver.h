@@ -26,7 +26,7 @@ MA 02111-1307, USA.
     DMX driver base class
 */
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "Threadable.h"
 
 #include <atomic>
@@ -48,6 +48,42 @@ typedef enum dmx_status {
     DMX_RECEIVE_ERROR = 9
 } DMX_STATUS;
 
+class DriverFixture
+{
+    CString         m_name;
+    CString         m_manufacturer;
+    CString         m_model;
+    UINT            m_channels;
+    channel_address m_dmx_address;
+
+public:
+    DriverFixture( LPCSTR manufacturer, LPCSTR model, UINT channels, LPCSTR name, channel_address dmx_address ) :
+        m_manufacturer( manufacturer ),
+        m_model( model ),
+        m_channels( channels ),
+        m_name( name ),
+        m_dmx_address( dmx_address )
+    {}
+
+    inline LPCSTR getManufacturer() const {
+        return m_manufacturer;
+    }
+    inline LPCSTR getModel() const {
+        return m_model;
+    }
+    inline UINT getChannels() const {
+        return m_channels;
+    }
+    inline LPCSTR getName() const {
+        return m_name;
+    }
+    inline channel_address getDMXAddress() const {
+        return m_dmx_address;
+    }
+};
+
+typedef std::vector<DriverFixture> DriverFixtureArray;
+
 class AbstractDMXDriver
 {
     universe_t m_universe_id;                           // Universe ID (purely informational)
@@ -56,8 +92,8 @@ class AbstractDMXDriver
     unsigned m_packet_min_delay;                        // Minimum time between packets
     CString m_connection_info;							// Current connection information
 
-    BYTE m_blackout_packet[DMX_PACKET_SIZE + 1];		// Blackout DMX packet
-    BYTE m_dmx_packet[DMX_PACKET_SIZE + 1];			    // New DMX packet (staging)
+	channel_value m_blackout_packet[DMX_PACKET_SIZE + 1];		// Blackout DMX packet
+	channel_value m_dmx_packet[DMX_PACKET_SIZE + 1];			// New DMX packet (staging)
 
     bool m_blackout;									// Universe is backed out
 
@@ -77,11 +113,17 @@ public:
     DMX_STATUS start();
     DMX_STATUS stop();
 
-    DMX_STATUS write( channel_t channel, BYTE value );
-    DMX_STATUS write_all( BYTE *dmx_512 );
+    DMX_STATUS write( channel_address channel, channel_value value );
+    DMX_STATUS write_all( channel_value *dmx_512 );
 
-    DMX_STATUS read( channel_t channel, BYTE& channel_value );
-    DMX_STATUS read_all( BYTE *dmx_512 );
+    DMX_STATUS read( channel_address channel, channel_value& channel_value );
+    DMX_STATUS read_all( channel_value *dmx_512 );
+
+    DMX_STATUS discover( DriverFixtureArray& fixtures ) {
+        fixtures.clear();
+
+        return dmx_discover( fixtures );
+    };
 
     inline boolean is_running() {
         return dmx_is_running();
@@ -129,9 +171,10 @@ public:
 
 protected:
     virtual CString dmx_name() = 0;
-    virtual DMX_STATUS dmx_send( BYTE* packet ) = 0;
+    virtual DMX_STATUS dmx_send( channel_value* packet ) = 0;
     virtual DMX_STATUS dmx_open(void) = 0;
     virtual DMX_STATUS dmx_close( void ) = 0;
     virtual boolean dmx_is_running(void) = 0;
+    virtual DMX_STATUS dmx_discover( DriverFixtureArray& fixtures ) { return DMX_OK; };
 };
 

@@ -54,6 +54,7 @@
             <name>UV</name>
           </channel>
           <channel index="8" type="strobe" color="false" blackout="false">
+            <strobe off="0" speed_slow="11" speed_fast="255"/>
             <name>Strobe</name>
             <ranges>
               <range start="0" end="10">
@@ -93,6 +94,7 @@
             <name>UV</name>
           </channel>
           <channel index="8" type="strobe" color="false" blackout="false">
+            <strobe off="0" speed_slow="11" speed_fast="255"/>
             <name>Strobe</name>
             <ranges>
               <range start="0" end="10">

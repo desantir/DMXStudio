@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-14 Robert DeSantis
+Copyright (C) 2011-17 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -26,12 +26,25 @@ MA 02111-1307, USA.
     Class represents a single fixture in a universe.
 */
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "FixtureDefinition.h"
 #include "DObject.h"
 #include "IVisitor.h"
 
 typedef ULONG FixtureNumber;					// Fixture numbers will be user friendly numbers 1-n
+
+struct GridPosition {
+	long			m_x;						// X position
+	long			m_y;						// Y position
+
+	GridPosition() :
+		m_x(0), m_y(0)
+	{}
+
+	GridPosition(UINT32 x, UINT32 y) :
+		m_x(x), m_y(y)
+	{}
+};
 
 class Fixture : public DObject
 {
@@ -39,13 +52,16 @@ class Fixture : public DObject
     friend class VenueReader;
 
     universe_t			m_universe;				// Ignored for now - only a single DMX universe
-    channel_t			m_address;				// Base address
+	channel_address		m_address;				// Base address
     FUID				m_fuid;                 // UID of the fixture type (not this fixture instance)
     CString             m_full_name;            // Full name of fixture (Manufacture Model Location)
+    bool                m_allow_master_dimming; // Dim this fixture with master dimmer (fixture must be capable)
+    bool                m_allow_whiteout;       // Whiteout this fixture (fixture must be capable)
+	GridPosition		m_grid_position;		// Postion in UI grid
+	
+	channel_address		m_realBaseAddress;		// Computed base address for channels based on universe
 
     FixtureDefinition*	m_fixture_definition;	// We only need to get this once
-
-    ChannelList	        m_channel_map;			// Channel mappings logical -> physical packet address
 
 public:
     Fixture() :
@@ -53,12 +69,16 @@ public:
         m_address(0),
         m_fuid(0),
         m_fixture_definition(NULL),
+        m_allow_master_dimming( true ),
+        m_allow_whiteout( true ),
+		m_realBaseAddress( 0 ),
         DObject() 
     {}
 
     Fixture( UID uid, FixtureNumber fixture_number, universe_t universe, 
-                     channel_t base_address, FUID fuid, 
-                     const char *name = NULL, const char *description = NULL );
+					 channel_address base_address, FUID fuid, 
+                     const char *name = NULL, const char *description = NULL,
+                     bool allow_master_dimming = true, bool allow_whiteout = true );
     ~Fixture(void);
 
     void accept( IVisitor* visitor) {
@@ -81,31 +101,53 @@ public:
 
     void setUniverseId( universe_t universe ) {
         m_universe = universe;
+		computeChannelBaseRealAddress();
     }
     inline universe_t getUniverseId( ) const {
         return m_universe;
     }
 
-    void setAddress( channel_t channel ) {
+    void setAddress( channel_address channel ) {
         m_address = channel;
+		computeChannelBaseRealAddress();
     }
-    inline channel_t getAddress( ) const {
+    inline channel_address getAddress( ) const {
         return m_address;
     }
 
-    bool setPhysicalChannels( ChannelList& channel_map );
+	// Return the multi-universe packet offset
+	inline channel_address getMultiPacketAddress( channel_address channel ) const {
+		return m_realBaseAddress + channel - 1;
+	}
+
+    void setAllowWhiteout( bool allow_whiteout ) {
+        m_allow_whiteout = allow_whiteout;
+    }
+    inline bool getAllowWhiteout( ) const {
+        return m_allow_whiteout;
+    }
+
+    void setAllowMasterDimming( bool allow_dimming ) {
+        m_allow_master_dimming = allow_dimming;
+    }
+    inline bool getAllowMasterDimming( ) const {
+        return m_allow_master_dimming;
+    }
+
+	inline GridPosition getGridPosition( ) const {
+		return m_grid_position;
+	}
+	inline void setGridPosition(GridPosition& pos ) {
+		m_grid_position = pos;
+	}
 
     // Accessors to handle channel re-mapping
-    inline channel_t getChannelAddress( channel_t channel ) {				// Return 1-based actual channel address
-        return m_address+mapChannel(channel);
+    inline channel_address getChannelAddress( channel_address channel ) const {	// Return 1-based actual channel address
+        return m_address+channel;
     }
 
-    inline Channel* getChannel( channel_t channel ) {
-        return getFixtureDefinition()->getChannel( mapChannel( channel ) );
-    }
-
-    inline channel_t mapChannel( channel_t channel ) const {
-        return ( m_channel_map.size() > 0 ) ? m_channel_map[channel] : channel;
+    inline Channel* getChannel( size_t channel ) {
+        return getFixtureDefinition()->getChannel( channel );
     }
 
     // Helper function to avoid consumers needing two pointers
@@ -117,19 +159,13 @@ public:
     inline bool canTilt() { return getFixtureDefinition()->canTilt(); }
     inline bool canMove() { return canPan() || canTilt(); }
     inline bool canWhiteout() { return getFixtureDefinition()->canWhiteout(); }
+    inline bool canDimmerStrobe() { return getFixtureDefinition()->canDimmerStrobe(); }
+    inline bool hasDimmer() { return getFixtureDefinition()->hasDimmer(); }
     inline size_t getNumChannels() { return getFixtureDefinition()->getNumChannels(); }
     inline size_t getNumPixels() { return getFixtureDefinition()->getNumPixels(); }
     inline PixelArray* getPixels() { return getFixtureDefinition()->getPixels(); }
     inline size_t getNumHeads( ) { return getFixtureDefinition()->getNumHeads(); }
     inline bool getHead( UINT head_number, Head& head) { return getFixtureDefinition()->getHead(head_number, head); }
-
-    inline channel_t getChannelByType( ChannelType channel_type ) {
-        for ( channel_t channel=0; channel < getNumChannels(); channel++ ) {
-            if ( getChannel( channel )->getType() == channel_type )
-                return channel;
-        }
-        return INVALID_CHANNEL;
-    }
 
     void print() {
         printf( "PID %ld: universe=%ld address=%ld fuid=%d location_name=%s description=%s\n", 
@@ -150,15 +186,22 @@ public:
     inline FUID getFUID( ) const {
         return m_fuid;
     }
+    inline void setFUID( FUID fuid ) {
+        m_fuid = fuid;
+    }
 
-protected:
     FixtureDefinition * getFixtureDefinition( ) {
         if ( !m_fixture_definition ) {
             m_fixture_definition = FixtureDefinition::lookupFixture( m_fuid );
-            STUDIO_ASSERT( m_fixture_definition != NULL, "Missing fixture definition for %lu", m_fuid);
+            STUDIO_ASSERT( m_fixture_definition != NULL, "Missing fixture definition %lu for id=%lu name=%s", m_fuid, getUID(), getName() );
         }
         return m_fixture_definition;
     }
+
+private:
+	inline void computeChannelBaseRealAddress( ) {
+		m_realBaseAddress = ((getUniverseId()-1) * DMX_PACKET_SIZE) + m_address;
+	}
 };
 
 typedef std::map<UID, Fixture> FixtureMap;

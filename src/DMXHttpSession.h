@@ -22,9 +22,11 @@ the Free Software Foundation; either version 3 of the License, or (at your
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "SoundSampler.h"
 #include "BeatDetector.h"
+
+#include <atomic>
 
 class BeatBin
 {
@@ -67,6 +69,8 @@ typedef std::vector<BeatBin> BeatBinArray;
 
 class DMXHttpSession
 {
+    static std::atomic<DWORD>   m_next_id;
+
     CString                 m_session_id;
     DWORD                   m_expires;
     EventQueue              m_events;
@@ -80,7 +84,7 @@ public:
     DMXHttpSession() :
         m_sound_sampler( 2 )
     {
-        m_session_id.Format( "DMXSTUDIO%lu", GetTickCount() );
+        m_session_id.Format( "DMXSTUDIO-%lu-%lu", m_next_id.fetch_add( 1 ), GetTickCount() );
         ping();
     }
 

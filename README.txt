@@ -2,11 +2,11 @@ DMXStudio DMX Controller
 
 Target environment:
 
-- Windows Vista, 7, 8.1, or 10 (only tested 32 bit on either platform)
+- Windows 10 (only tested 32 bit)
 
 Build Environment:
 
-- Microsoft Visual Studio 2015
+- Microsoft Visual Studio 2017
 
 To use this you will need one or more of the following:
 

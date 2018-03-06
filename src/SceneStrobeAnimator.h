@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-14 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -22,42 +22,89 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "SceneColorFader.h"
+#include "AnimationDefinition.h"
 
-class SceneStrobeAnimator : public SceneColorFader
+enum StrobeType {
+	STROBE_SIMULATED = 1,
+	STROBE_FIXTURE = 2
+};
+
+class SceneStrobeAnimator : public AnimationDefinition
 {
     friend class VenueWriter;
     friend class VenueReader;
+
+protected:
+	// Configuration
+	StrobeType			m_strobe_type;
+	UINT				m_strobe_percent;
+	RGBWA   			m_strobe_neg_color;
+	StrobeTime			m_strobe_time;
+	RGBWA				m_strobe_color;
 
 public:
     static const char* className;
     static const char* animationName;
 
-    SceneStrobeAnimator( UID animation_uid, 
+    SceneStrobeAnimator( UID animation_uid, bool shared, UID reference_fixture, 
                         AnimationSignal signal,
-                        UIDArray actors,
-                        RGBWA strobe_neg_color,
-                        unsigned strobe_pos_ms,
-                        unsigned strobe_neg_ms,
-                        UINT strobe_flashes );
+						StrobeType strobe_type,
+						UINT strobe_percent,
+						StrobeTime strobe_time,
+						RGBWA strobe_color,	
+                        RGBWA strobe_neg_color );
 
-    SceneStrobeAnimator(void) :
-        SceneColorFader( )
+    SceneStrobeAnimator(void)
     {}
 
     virtual ~SceneStrobeAnimator(void);
 
-    AbstractAnimation* clone();
     CString getSynopsis(void);
 
-    const char* getName() { return SceneStrobeAnimator::animationName; }
+    const char* getPrettyName() { return SceneStrobeAnimator::animationName; }
     const char* getClassName() { return SceneStrobeAnimator::className; }
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
 
-    bool sliceAnimation( DWORD time_ms, BYTE* dmx_packet );
-    void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
+    AnimationTask* createTask( AnimationEngine* engine, ActorList& actors, UID owner_uid );
+
+	AnimationDefinition* clone();
+
+	StrobeType getStrobeType() const {
+		return m_strobe_type;
+	}
+	void setStrobeType( StrobeType strobe_type ) {
+		m_strobe_type = strobe_type;
+	}
+
+	UINT getStrobePercent() const {
+		return m_strobe_percent;
+	}
+	void setStrobePercent( UINT strobe_percent ) {
+		m_strobe_percent = strobe_percent;
+	}
+
+	StrobeTime getStrobeTime() const {
+		return m_strobe_time;
+	}
+	void setStrobeTime( StrobeTime strobe_time ) {
+		m_strobe_time = strobe_time;
+	}
+
+	RGBWA getStrobeColor() const {
+		return m_strobe_color;
+	}
+	void setStrobeColor( RGBWA strobe_color ) {
+		m_strobe_color = strobe_color;
+	}
+
+	RGBWA getStrobeNegColor() const {
+		return m_strobe_neg_color;
+	}
+	void setStrobeNegColor( RGBWA strobe_neg_color ) {
+		m_strobe_neg_color = strobe_neg_color;
+	}
 };
 

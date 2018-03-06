@@ -22,7 +22,7 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 
 enum BPMRating {
     BPM_NO_RATING = 0,              // No rating defined

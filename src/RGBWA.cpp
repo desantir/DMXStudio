@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2014 Robert DeSantis
+Copyright (C) 2014-2017 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -22,6 +22,7 @@ MA 02111-1307, USA.
 
 #include "DMXStudio.h"
 #include "RGBWA.h"
+#include "Venue.h"
 
 struct InsensitiveComparator {
     bool operator()(const CString& a, const CString& b) const {
@@ -66,12 +67,13 @@ static ColorMap generate_color_names() {
     map["Magenta"] = RGBWA::MAGENTA;
     map["Hot pink"] = RGBWA::HOT_PINK;
     map["White"] = RGBWA::WHITE;
+
     return map;
 }
 
 static ColorMap predefinedColors = generate_color_names();
 
-static const ULONG RAINBOW[] = {
+const RGBWA RAINBOW_PALETTE_DEFAULT_COLORS[252] = {
     0xff4e00, 0xff5400, 0xff5a00, 0xff6000, 0xff6600, 0xff6c00, 0xff7200, 0xff7800, 0xff7e00, 0xff8400, 0xff8a00, 0xff9000, 0xff9600, 0xff9c00, 0xffa200,
     0xffa800, 0xffae00, 0xffcc00, 0xffd200, 0xffd800, 0xffde00, 0xffe400, 0xffea00, 0xfff000, 0xfff600, 0xfffc00, 0xffff00, 0xf9ff00, 0xf3ff00, 0xedff00, 
     0xe7ff00, 0xe1ff00, 0xdbff00, 0xd5ff00, 0xcfff00, 0xc9ff00, 0xc3ff00, 0xbdff00, 0xb7ff00, 0xb1ff00, 0xabff00, 0xa5ff00, 0x9fff00, 0x99ff00, 0x93ff00,
@@ -89,6 +91,25 @@ static const ULONG RAINBOW[] = {
     0xff00ba, 0xff00b4, 0xff00ae, 0xff00a8, 0xff00a2, 0xff009c, 0xff0096, 0xff0090, 0xff008a, 0xff0084, 0xff007e, 0xff0078, 0xff0072, 0xff006c, 0xff0066, 
     0xff0060, 0xff005a, 0xff0054, 0xff004e, 0xff0048, 0xff0042, 0xff003c, 0xff0036, 0xff0030, 0xff002a, 0xff0024, 0xff001e, 0xff0018, 0xff0012, 0xff0000, 
     0xff0600, 0xff0c00, 0xff1200, 0xff1800, 0xff1e00, 0xff2400, 0xff2a00, 0xff3000, 0xff3600, 0xff3c00, 0xff4200, 0xff4800
+};
+
+const RGBWA GLOBAL_PALETTE_DEFAULT_COLORS[16] = {
+    RGBWA::WHITE,
+    RGBWA::RED,
+    RGBWA::GREEN,
+    RGBWA::BLUE,
+    RGBWA::YELLOW,
+    RGBWA( 0x59, 0x00, 0xFF ),
+    RGBWA( 0x60, 0x6D, 0xBC ),
+    RGBWA( 0x10, 0xFF, 0x7F ),
+    RGBWA::MAGENTA,
+    RGBWA( 0x0f, 0x00, 0x61 ),
+    RGBWA( 0xD4, 0x69, 0x0B ),
+    RGBWA( 0x00, 0x80, 0x80 ),
+    RGBWA( 0x00, 0xd9, 0xff ),
+    RGBWA( 0xab, 0x87, 0xf5 ),
+    RGBWA( 0xf5, 0x93, 0x3d ), 
+    RGBWA( 0xb5, 0xe6, 0x12 )
 };
 
 // ----------------------------------------------------------------------------
@@ -129,8 +150,11 @@ CString RGBWA::getColorName( ) {
 //
 CString RGBWA::asString( ) {
     CString name;
-    name.Format( "%02x%02x%02x%02x%02x%02x", red(), green(), blue(), white(), amber() );
-    return name;
+
+    for ( size_t i=0; i < COLOR_CHANNELS; i++ )
+        name.AppendFormat( "%02x", m_rgbwa[i] );
+
+   return name;
 }
 
 // ----------------------------------------------------------------------------
@@ -152,7 +176,115 @@ void RGBWA::getAllPredefinedColors( RGBWAArray& colors, bool include_black ) {
 
 // ----------------------------------------------------------------------------
 //
-void RGBWA::getRainbowColors( RGBWAArray& colors ) {
-    for ( int index=0; index < sizeof(RAINBOW)/sizeof(ULONG); ++index )
-        colors.push_back( RGBWA(RAINBOW[index]) );
+void RGBWA::resolveColor( const RGBWA& rgbwa, RGBWAArray& color_list ) {
+    color_list.clear();
+
+    // Typical case
+    if ( rgbwa.red() > 4 || rgbwa.blue() > 4 || rgbwa.green() > 4 ) {
+        color_list.push_back( rgbwa );
+        return;
+    }
+
+    // Possible palette reference
+    if ( rgbwa == SYSTEM_PALETTE_1 )
+        studio.getVenue()->getSystemPalette( SYSTEM_PALETTE_GLOBAL_COLORS , color_list );
+    else if ( rgbwa == SYSTEM_PALETTE_2 )
+        studio.getVenue()->getSystemPalette( SYSTEM_PALETTE_PREDEFINED_COLORS, color_list );
+    else if ( rgbwa == SYSTEM_PALETTE_3 )
+        studio.getVenue()->getSystemPalette( SYSTEM_PALETTE_RAINBOW_COLORS, color_list );
+    else if ( rgbwa == SYSTEM_PALETTE_4 )
+        studio.getVenue()->getSystemPalette( SYSTEM_PALETTE_VIDEO_COLORS, color_list );
+    else if ( rgbwa == USER_PALETTE_1 )
+        studio.getVenue()->getSystemPalette( SYSTEM_PALETTE_USER_1, color_list );
+    else if ( rgbwa == USER_PALETTE_2 )
+        studio.getVenue()->getSystemPalette( SYSTEM_PALETTE_USER_2, color_list );
+    else if ( rgbwa == USER_PALETTE_3 )
+        studio.getVenue()->getSystemPalette( SYSTEM_PALETTE_USER_3, color_list );
+    else if ( rgbwa == USER_PALETTE_4 )
+        studio.getVenue()->getSystemPalette( SYSTEM_PALETTE_USER_4, color_list );
+    else
+        color_list.push_back( rgbwa );
+}
+
+// ----------------------------------------------------------------------------
+//
+RGBWAArray RGBWA::toRGBWAArray( const RGBWA* array, size_t size ) {
+    RGBWAArray colors;
+    for ( size_t index=0; index < size; index++ )
+        colors.push_back( *array++ );
+    return colors;
+}
+
+// ----------------------------------------------------------------------------
+//
+HSV RGBWA::toHSV( )
+{
+    HSV         out;
+
+    double min = std::min<BYTE>( red(), std::min<BYTE>( green(), blue() ) );
+    double max = std::max<BYTE>( red(), std::max<BYTE>( green(), blue() ) );
+    
+    double delta = max - min;
+
+    out.v = max / 255.0;                        // v
+
+    if ( max == 0 || delta == 0 ) {             // White-gray-black 
+        out.s = 0.0;
+        out.h = 0.0;                            
+        return out;
+    }
+
+    out.s = (delta / max);                        // s
+
+    if ( red() >= max )                           // > is bogus, just keeps compilor happy
+        out.h = ( green() - blue() ) / delta;        // between yellow & magenta
+    else
+        if ( green() >= max )
+            out.h = 2.0 + ( blue() - red() ) / delta;  // between cyan & yellow
+        else
+            out.h = 4.0 + ( red() - green() ) / delta;  // between magenta & cyan
+
+    out.h *= 60.0;                              // degrees
+
+    if ( out.h < 0.0 )
+        out.h += 360.0;
+
+    return out;
+}
+
+// ----------------------------------------------------------------------------
+//
+void RGBWA::convertFromHSV( HSV& hsv )
+{
+    double value = 255.0 * hsv.v;
+
+    if ( hsv.s <= 0.0 ) {
+        setRGB( (BYTE)value, (BYTE)value, (BYTE)value );
+        return;
+    }
+
+    double      hh, p, q, t, ff;
+
+    hh = hsv.h;
+    if( hh >= 360.0 ) 
+        hh = 0.0;
+    hh /= 60.0;
+
+    long i = (long)hh;
+
+    ff = hh - i;
+
+    p = value * (1.0 - hsv.s);
+    q = value * (1.0 - (hsv.s * ff));
+    t = value * (1.0 - (hsv.s * (1.0 - ff)));
+
+    switch(i) {
+        case 0:     setRGB( (BYTE)value, (BYTE)t, (BYTE)p ); break;
+        case 1:     setRGB( (BYTE)q, (BYTE)value, (BYTE)p ); break;
+        case 2:     setRGB( (BYTE)p, (BYTE)value, (BYTE)t ); break;
+        case 3:     setRGB( (BYTE)p, (BYTE)q, (BYTE)value ); break;
+        case 4:     setRGB( (BYTE)t, (BYTE)p, (BYTE)value ); break;
+        case 5:
+        default:    setRGB( (BYTE)value, (BYTE)p, (BYTE)q ); break;
+    }
 }

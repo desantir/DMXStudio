@@ -23,7 +23,7 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "ISerializable.h"
 #include "FixtureDefinition.h"
 

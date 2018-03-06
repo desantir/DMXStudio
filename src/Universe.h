@@ -22,14 +22,16 @@ MA 02111-1307, USA.
 
 #pragma once 
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "IVisitor.h"
 #include "AbstractDMXDriver.h"
 
 enum UniverseType {
-    OPEN_DMX = 0,
-    ENTTEC_USB_PRO = 1
-} ;
+    NONE = 0,
+    ENTTEC_USB_PRO = 1,
+    OPEN_DMX = 2,
+    PHILIPS_HUE = 3
+};
 
 class Universe {
 
@@ -39,7 +41,7 @@ class Universe {
     universe_t              m_id;                               // Universe ID 1 .. n
     UniverseType            m_type;                             // Universe type
 
-    CString			        m_dmx_port;							// DMX port connection information
+    CString			        m_dmx_config;           			// DMX connection information
     unsigned                m_dmx_packet_delay;					// DMX delay between packets
     unsigned                m_dmx_packet_min_delay;             // DMX minimum time between packets
     AbstractDMXDriver*      m_driver;                           // DMX driver
@@ -53,10 +55,10 @@ public:
         m_driver( NULL )
     {}
 
-    Universe( universe_t id, UniverseType type, LPCSTR port_name, unsigned delay_ms=DEFAULT_PACKET_DELAY_MS, unsigned min_delay_ms=DEFAULT_MINIMUM_DELAY_MS ) :
+    Universe( universe_t id, UniverseType type, LPCSTR dmx_config, unsigned delay_ms=DEFAULT_PACKET_DELAY_MS, unsigned min_delay_ms=DEFAULT_MINIMUM_DELAY_MS ) :
         m_id( id ),
         m_type( type ),
-        m_dmx_port( port_name ),
+        m_dmx_config( dmx_config ),
         m_dmx_packet_delay( delay_ms ),
         m_dmx_packet_min_delay( min_delay_ms ), 
         m_driver( NULL )
@@ -65,7 +67,7 @@ public:
     Universe( Universe& other ) :
         m_id( other.m_id ),
         m_type( other.m_type ),
-        m_dmx_port( other.m_dmx_port ),
+        m_dmx_config( other.m_dmx_config ),
         m_dmx_packet_delay( other.m_dmx_packet_delay ),
         m_dmx_packet_min_delay( other.m_dmx_packet_min_delay ), 
         m_driver( NULL )
@@ -105,14 +107,28 @@ public:
         m_type = type;
     }
 
-    inline const char* getDmxPort() const {
-        return m_dmx_port.GetLength() == 0 ? NULL : (const char *)m_dmx_port;
+    inline LPSTR getInterface(void) const {
+        switch ( m_type ) {
+            case OPEN_DMX:
+            case ENTTEC_USB_PRO:
+                return "usb_dmx";
+
+            case PHILIPS_HUE:
+                return "hue";
+
+            default:
+                return "unknown";
+        }
     }
-    inline void setDmxPort( const char* dmx_port ) {
-        if ( dmx_port == NULL )
-            m_dmx_port.Empty();
+
+    inline const char* getDmxConfig() const {
+        return m_dmx_config.GetLength() == 0 ? NULL : (const char *)m_dmx_config;
+    }
+    inline void setDmxConfig( const char* dmx_config ) {
+        if ( dmx_config == NULL )
+            m_dmx_config.Empty();
         else
-            m_dmx_port = dmx_port;
+            m_dmx_config = dmx_config;
     }
 
     inline unsigned getDmxPacketDelayMS() const {
@@ -129,31 +145,38 @@ public:
         m_dmx_packet_min_delay = packet_min_delay;
     }
 
-    inline DMX_STATUS write( channel_t channel, BYTE value ) {
+    inline DMX_STATUS write( channel_address channel, channel_value value ) {
         if ( !m_driver )
             return DMX_NOT_RUNNING;
 
         return m_driver->write( channel, value );
     }
     
-    inline DMX_STATUS write_all( BYTE *dmx_512 ) {
+    inline DMX_STATUS write_all( channel_value *dmx_512 ) {
         if ( !m_driver )
             return DMX_NOT_RUNNING;
 
         return m_driver->write_all( dmx_512 );
     }
 
-    inline DMX_STATUS read( channel_t channel, BYTE& channel_value ) {
+    inline DMX_STATUS read( channel_address channel, channel_value& channel_value ) {
         if ( !m_driver )
             return DMX_NOT_RUNNING;
 
         return m_driver->read( channel, channel_value );
     }
 
-    inline DMX_STATUS read_all( BYTE *dmx_512 ) {
+    inline DMX_STATUS read_all( channel_value *dmx_512 ) {
         if ( !m_driver )
             return DMX_NOT_RUNNING;
 
         return m_driver->read_all( dmx_512 );
+    }
+
+    inline DMX_STATUS discoverFixtures( DriverFixtureArray& fixtures ) {
+        if ( !m_driver )
+            return DMX_NOT_RUNNING;
+
+        return m_driver->discover( fixtures );
     }
 };

@@ -23,13 +23,16 @@ MA 02111-1307, USA.
 #include "DMXStudio.h"
 #include "USBProDriver.h"
 
-static BYTE end_code = DMX_END_CODE;        // Always the same, never changes
+static channel_value end_code = DMX_END_CODE;        // Always the same, never changes
 
 // ----------------------------------------------------------------------------
 //
 USBProDriver::USBProDriver(universe_t universe_id) :
-    FTDI_DMXDriver(universe_id)
+    FTDI_DMXDriver(universe_id),
+	Threadable("USBProDriver")
 {
+	memset(m_packet, 0, sizeof(m_packet));
+
     // Write the Packet Header - it never changes
     m_dmx_header[0] = DMX_START_CODE;
     m_dmx_header[1] = SET_DMX_TX_MODE;
@@ -68,9 +71,7 @@ DMX_STATUS USBProDriver::dmx_open() {
         return DMX_OPEN_FAILURE;
     }
 
-    DMXStudio::log_status("DMX universe %d driver started [%s]", getId(), (LPCSTR)dmx_name() );
-
-    return DMX_OK;
+	return startThread() ? DMX_OK : DMX_ERROR;
 }
 
 // ----------------------------------------------------------------------------
@@ -85,9 +86,62 @@ DMX_STATUS USBProDriver::dmx_close(void) {
 }
 
 // ----------------------------------------------------------------------------
+// Return true if DMX is running
+//
+boolean USBProDriver::dmx_is_running() {
+	return FTDI_DMXDriver::dmx_is_running() && isRunning();
+}
+
+
+// ----------------------------------------------------------------------------
+// Send current buffer
+//
+DMX_STATUS USBProDriver::dmx_send( channel_value* packet_513 ) {
+	CSingleLock lock( &m_lock, TRUE );
+
+	memcpy( m_pending_packet, packet_513, sizeof(m_packet) );
+
+	lock.Unlock();
+
+	if (!isRunning())                              // If not running, assume we are in "disconnected" mode
+		return DMX_OK;
+
+	m_wake.SetEvent();
+
+	return DMX_OK;
+}
+
+// ----------------------------------------------------------------------------
+//
+UINT USBProDriver::run(void) {
+	DMXStudio::log_status("DMX universe %d driver started [%s]", getId(), (LPCSTR)dmx_name() );
+
+	CSingleLock lock( &m_lock );
+
+	while (isRunning()) {
+		DWORD wait_status = ::WaitForSingleObject(m_wake.m_hObject, 1000);
+		
+		if ( wait_status == WAIT_OBJECT_0 ) {
+			lock.Lock();
+			memcpy(m_packet, m_pending_packet, sizeof(m_packet));
+			lock.Unlock();
+
+			DMX_STATUS status = sendData( SET_DMX_TX_MODE, m_packet, DMX_PACKET_SIZE + 1 );
+			if (status != DMX_OK) {
+				DMXStudio::log("DMX send error %d", status);
+			}
+		}
+	}
+
+	DMXStudio::log_status("DMX universe %d driver stopped [%s]", getId(), (LPCSTR)dmx_name() );
+
+	return DMX_OK;
+}
+
+// ----------------------------------------------------------------------------
 // Receive data
 //
-DMX_STATUS USBProDriver::receiveData( int label, BYTE *data, WORD expected_length )
+DMX_STATUS USBProDriver::receiveData( int label, channel_value *data, WORD expected_length )
 {
     FT_STATUS res = 0;
     WORD length = 0;
@@ -142,7 +196,7 @@ DMX_STATUS USBProDriver::receiveData( int label, BYTE *data, WORD expected_lengt
 // ----------------------------------------------------------------------------
 // Receive DMX data
 //
-DMX_STATUS USBProDriver::receiveDMX( int label, BYTE *data, WORD *receive_length )
+DMX_STATUS USBProDriver::receiveDMX( int label, channel_value *data, WORD *receive_length )
 {
     FT_STATUS res = 0;
     WORD length = 0;
@@ -191,10 +245,10 @@ DMX_STATUS USBProDriver::receiveDMX( int label, BYTE *data, WORD *receive_length
 // ----------------------------------------------------------------------------
 // Send data buffer
 //
-DMX_STATUS USBProDriver::sendData( BYTE label, BYTE* data, WORD data_size ) {
+DMX_STATUS USBProDriver::sendData( BYTE label, channel_value* data, WORD data_size ) {
     DWORD written = 0;
 
-    BYTE data_header[DMX_HEADER_LENGTH];
+	channel_value data_header[DMX_HEADER_LENGTH];
     data_header[0] = DMX_START_CODE;
     data_header[1] = label;
     data_header[2] = (data_size) & 0xFF;

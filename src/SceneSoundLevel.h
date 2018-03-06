@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-14 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -22,21 +22,19 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "AnimationTask.h"
-#include "SceneChannelAnimator.h"
+#include "AnimationDefinition.h"
 
 #define FADE_COLORS		0x01
 #define FADE_DIMMERS	0x02
 #define FADE_ALL		(FADE_COLORS | FADE_DIMMERS) 
 
-class SceneSoundLevel : public SceneChannelAnimator
+class SceneSoundLevel : public AnimationDefinition
 {
     friend class VenueWriter;
     friend class VenueReader;
 
     WORD				m_fade_what;						// What to fade
 
-    SceneSoundLevel(SceneSoundLevel& other) {}
     SceneSoundLevel& operator=(SceneSoundLevel& rhs) { return *this; }
 
 public:
@@ -44,13 +42,12 @@ public:
     static const char* animationName;
 
     SceneSoundLevel( void ) {};
-    SceneSoundLevel( UID animation_uid, AnimationSignal signal, UIDArray actors, WORD fade_what );
+    SceneSoundLevel( UID animation_uid, bool shared, UID reference_fixture, AnimationSignal signal, WORD fade_what );
     virtual ~SceneSoundLevel(void);
 
-    AbstractAnimation* clone();
     CString getSynopsis(void);
 
-    const char* getName() { return SceneSoundLevel::animationName; }
+    const char* getPrettyName() { return SceneSoundLevel::animationName; }
     const char* getClassName() { return SceneSoundLevel::className; }
 
     void accept( IVisitor* visitor) {
@@ -64,5 +61,7 @@ public:
         m_fade_what = fade_what;
     }
 
-    void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
+    AnimationTask* createTask( AnimationEngine* engine, ActorList& actors, UID owner_uid );
+
+	AnimationDefinition* clone();
 };

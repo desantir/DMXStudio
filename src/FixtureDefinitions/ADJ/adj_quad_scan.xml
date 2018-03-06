@@ -67,6 +67,7 @@
             </channel>
         </channels>
     </fixture>
+  
     <fixture type="scanner" channels="5">
         <manufacturer>ADJ</manufacturer>
         <model>Quad Scan LED</model>
@@ -142,6 +143,7 @@
                 <name>Dimmer</name>
             </channel>
             <channel index="4" type="strobe" color="false" blackout="true">
+                <strobe off="0" speed_slow="9" speed_fast="131"/>
                 <name>Strobe</name>
                 <ranges>
                     <range start="0" end="8">
@@ -273,11 +275,12 @@
             </channel>
         </channels>
     </fixture>
+  
     <fixture type="scanner" channels="28">
         <manufacturer>ADJ</manufacturer>
         <model>Quad Scan LED</model>
         <channels>
-            <channel index="1" type="pan" color="false" blackout="true" head="1">
+            <channel index="1" type="pan" color="false" blackout="true" head="1" home_value="170">
               <name>Mirror 1 Pan</name>
               <angles>
                 <angle degrees="0" value="0" />
@@ -285,7 +288,7 @@
                 <angle degrees="180" value="255" />
               </angles>
             </channel>
-            <channel index="2" type="tilt" color="false" blackout="true" head="1">
+            <channel index="2" type="tilt" color="false" blackout="true" head="1" home_value="131">
               <name>Mirror 1 Tilt</name>
               <angles>
                 <angle degrees="10" value="0" />
@@ -305,6 +308,7 @@
                 <name>Mirror 1 Dimmer</name>
             </channel>
             <channel index="7" type="strobe" color="false" blackout="true" head="1">
+                <strobe off="0" speed_slow="9" speed_fast="131"/>
                 <name>Mirror 1 Strobe</name>
                 <ranges>
                     <range start="0" end="8">
@@ -333,7 +337,7 @@
                     </range>
                 </ranges>
             </channel>
-            <channel index="8" type="pan" color="false" blackout="true" head="2">
+            <channel index="8" type="pan" color="false" blackout="true" head="2" home_value="166">
               <name>Mirror 2 Pan</name>
               <angles>
                 <angle degrees="0" value="0" />
@@ -341,7 +345,7 @@
                 <angle degrees="180" value="255" />
               </angles>
             </channel>
-            <channel index="9" type="tilt" color="false" blackout="true" head="2">
+            <channel index="9" type="tilt" color="false" blackout="true" head="2" home_value="96">
               <name>Mirror 2 Tilt</name>
               <angles>
                 <angle degrees="10" value="0" />
@@ -361,6 +365,7 @@
                 <name>Mirror 2 Dimmer</name>
             </channel>
             <channel index="14" type="strobe" color="false" blackout="false" head="2">
+                <strobe off="0" speed_slow="9" speed_fast="131"/>
                 <name>Mirror 2 Strobe</name>
                 <ranges>
                     <range start="0" end="8">
@@ -389,7 +394,7 @@
                     </range>
                 </ranges>
             </channel>
-            <channel index="15" type="pan" color="false" blackout="true" head="3">
+            <channel index="15" type="pan" color="false" blackout="true" head="3" home_value="126">
               <name>Mirror 3 Pan</name>
               <angles>
                 <angle degrees="0" value="0" />
@@ -397,7 +402,7 @@
                 <angle degrees="180" value="255" />
               </angles>
             </channel>
-            <channel index="16" type="tilt" color="false" blackout="true" head="3">
+            <channel index="16" type="tilt" color="false" blackout="true" head="3" home_value="111">
               <name>Mirror 3 Tilt</name>
               <angles>
                 <angle degrees="10" value="0" />
@@ -417,6 +422,7 @@
                 <name>Mirror 3 Dimmer</name>
             </channel>
             <channel index="21" type="strobe" color="false" blackout="false" head="3">
+                <strobe off="0" speed_slow="9" speed_fast="131"/>
                 <name>Mirror 3 Strobe</name>
                 <ranges>
                     <range start="0" end="8">
@@ -445,7 +451,7 @@
                     </range>
                 </ranges>
             </channel>
-            <channel index="22" type="pan" color="false" blackout="true" head="4">
+            <channel index="22" type="pan" color="false" blackout="true" head="4" home_value="99">
               <name>Mirror 4 Pan</name>
               <angles>
                 <angle degrees="0" value="0" />
@@ -453,7 +459,7 @@
                 <angle degrees="180" value="255" />
               </angles>
             </channel>
-            <channel index="23" type="tilt" color="false" blackout="true" head="4">
+            <channel index="23" type="tilt" color="false" blackout="true" head="4" home_value="149">
               <name>Mirror 4 Tilt</name>
               <angles>
                 <angle degrees="10" value="0" />
@@ -473,6 +479,7 @@
                 <name>Mirror 4 Dimmer</name>
             </channel>
             <channel index="28" type="strobe" color="false" blackout="false" head="4">
+                <strobe off="0" speed_slow="9" speed_fast="131"/>
                 <name>Mirror 4 Strobe</name>
                 <ranges>
                     <range start="0" end="8">

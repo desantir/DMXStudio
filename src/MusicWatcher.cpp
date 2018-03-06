@@ -91,8 +91,9 @@ UINT MusicWatcher::run(void) {
                 track_full_name = track_name;
             }
             else {                                                  // Use the full track name as the key
-                m_player->getTrackInfo( current_track_link, &track_name, &artist_name, NULL, NULL, NULL );
-                track_full_name.Format( "track '%s by %s'", track_name, artist_name );
+                TrackInfo track_info;
+                m_player->getTrackInfo( current_track_link, &track_info );
+                track_full_name.Format( "track '%s by %s'", track_info.track_name, track_info.artist_name );
                 track_link = current_track_link;
             }
 
@@ -237,10 +238,7 @@ bool MusicWatcher::start()
 //
 bool MusicWatcher::stop()
 {
-    if ( !stopThread() )
-        return false;
-
-    return true;
+    return stopThread();
 }
 
 

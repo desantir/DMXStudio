@@ -27,27 +27,25 @@ void chaseToJson( Venue* venue, JsonBuilder& json, Chase* scene );
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_chase( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data ) 
+void HttpRestServices::query_chase( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data ) 
 {
     UID uid;
     if ( sscanf_s( data, "%lu", &uid ) != 1 )
-        return false;
+        throw RestServiceException( "Invalid service arguments" );
 
     Chase* chase = venue->getChase( uid );
     if ( chase == NULL )
-        return false;
+        throw RestServiceException( "Invalid chase UID" );
 
     JsonBuilder json( response );
     json.startArray();
     chaseToJson( venue, json, chase );
     json.endArray();
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_chases( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
+void HttpRestServices::query_chases( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
     ChasePtrArray chases = venue->getChases();
     std::sort( chases.begin(), chases.end(), CompareObjectNumber );
@@ -61,25 +59,36 @@ bool HttpRestServices::query_chases( Venue* venue, DMXHttpSession* session, CStr
     }
 
     json.endArray();
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::delete_chase( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
+void HttpRestServices::control_chase_step( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
+{
+    int steps;
+
+    if ( sscanf_s( data, "%d", &steps ) != 1 )
+        throw RestServiceException( "Invalid service arguments" );
+
+    venue->chaseStep( steps );
+}
+
+// ----------------------------------------------------------------------------
+//
+void HttpRestServices::delete_chase( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
     UID chase_id;
         
     if ( sscanf_s( data, "%lu", &chase_id ) != 1 )
-        return false;
+        throw RestServiceException( "Invalid service arguments" );
 
-    return venue->deleteChase( chase_id );
+    if ( !venue->deleteChase( chase_id ) )
+        throw RestServiceException( "Invalid chase UID" );
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_chase( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode )
+void HttpRestServices::edit_chase( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode )
 {
     SimpleJsonParser parser;
     UID chase_id;
@@ -91,6 +100,7 @@ bool HttpRestServices::edit_chase( Venue* venue, DMXHttpSession* session, CStrin
     Chase* chase = NULL;
     Acts acts;
     bool repeat;
+    ChaseStepTrigger step_trigger;
 
     try {
         parser.parse( data );
@@ -103,25 +113,31 @@ bool HttpRestServices::edit_chase( Venue* venue, DMXHttpSession* session, CStrin
         fade_ms = parser.get<ULONG>( "fade_ms" );
         acts = parser.get<Acts>( "acts" );
         repeat = parser.get<bool>( "repeat" );
+        step_trigger = (ChaseStepTrigger)parser.get<unsigned>( "step_trigger" );
 
         for ( JsonNode* step : parser.getObjects( "steps" ) ) {
-            steps.push_back( ChaseStep( step->get<ULONG>( "id" ), step->get<ULONG>( "delay_ms" ), (SceneLoadMethod)step->get<int>( "load_method" ) ) );
+            steps.emplace_back( step->get<ULONG>( "id" ), step->get<ULONG>( "delay_ms" ), (SceneLoadMethod)step->get<int>( "load_method" ) );
         }
     }
     catch ( std::exception& e ) {
-        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
+        throw RestServiceException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
+
+    UID running_chase_id = venue->getRunningChase();
 
     if ( chase_id != 0 ) {
         chase = venue->getChase( chase_id );
         if ( !chase )
-            return false;
+            throw RestServiceException( "Invalid chase UID" );
+
+        if ( running_chase_id == chase->getUID() )
+            venue->stopChase();
     }
 
     // Make sure number is unique
     if ( mode != UPDATE || (chase && number != chase->getNumber()) ) {
-        if ( venue->getChaseByNumber( number ) != NULL ) 
-            return false;
+        if ( venue->getChaseByNumber( number ) != NOUID ) 
+            throw RestServiceException( "Chase number must be unique" );
     }
 
     switch ( mode ) {
@@ -139,11 +155,12 @@ bool HttpRestServices::edit_chase( Venue* venue, DMXHttpSession* session, CStrin
             chase = venue->getChase( chase_id );
             break;
         }
-    }
 
-    UID running_chase_id = venue->getRunningChase();
-    if ( running_chase_id == chase->getUID() )
-        venue->stopChase();
+        // Fall through 
+
+        case UPDATE:
+            break;
+    }
 
     chase->setName( name );
     chase->setChaseNumber( number );
@@ -153,6 +170,7 @@ bool HttpRestServices::edit_chase( Venue* venue, DMXHttpSession* session, CStrin
     chase->setSteps( steps );
     chase->setActs( acts );
     chase->setRepeat( repeat );
+    chase->setStepTrigger( step_trigger );
 
     venue->chaseUpdated( chase->getUID() );
 
@@ -163,8 +181,6 @@ bool HttpRestServices::edit_chase( Venue* venue, DMXHttpSession* session, CStrin
     json.startObject();
     json.add( "id", chase->getUID() );
     json.endObject();
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
@@ -181,6 +197,7 @@ void chaseToJson( Venue* venue, JsonBuilder& json, Chase* chase )
     json.add( "delay_ms", chase->getDelayMS() );
     json.add( "fade_ms", chase->getFadeMS() );
     json.add( "repeat", chase->isRepeat() );
+    json.add( "step_trigger", chase->getStepTrigger() );
     json.addArray<Acts>( "acts", chase->getActs() );
 
     // Add chase steps

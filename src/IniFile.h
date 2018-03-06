@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2017 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -22,111 +22,170 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 
 class IniFile
 {
-    CString         m_ini_filename;
-    CString         m_last_error;
-
+public:
     CString         m_venue_filename;
     CString         m_venue_container;
     bool            m_http_enabled;
     UINT            m_http_port;
     StrobeTime      m_whiteout_strobe_slow;
     StrobeTime      m_whiteout_strobe_fast;
+    StrobeTime      m_whiteout_strobe_manual;
     bool            m_music_player_enabled;
     CString         m_music_player_ddl;
     CString         m_music_player_username;
     bool            m_dmx_required;
     bool            m_debug;
+    CString         m_google_api_key;
+    size_t          m_videos_per_track;
+    size_t          m_video_palette_size;
 
-public:
-    IniFile( LPCSTR filename );
+    // Hue specific initializers
+    bool                m_hue_auto_setup;
+    CString             m_hue_bridge_ip;
+    std::set<UINT>      m_hue_ignored_lights;
+    std::set<CString>   m_hue_allowed_groups;
+
+    IniFile();
     ~IniFile(void);
 
-    bool read( void );
-    void write( void );
+    bool read( LPCSTR filename );
+    void write( LPCSTR filename );
 
-    LPCSTR getLastError( void ) const {
-        return m_last_error;
-    }
-
-    void setVenueFilename( LPCSTR filename ) {
+    inline void setVenueFilename( LPCSTR filename ) {
         m_venue_filename = filename;
     }
-    LPCSTR getVenueFilename( void ) const {
+    inline LPCSTR getVenueFilename( void ) const {
         return m_venue_filename;
     }
 
-    LPCSTR getVenueContainer() const {
+    inline LPCSTR getVenueContainer() const {
         return m_venue_container;
     }
-    void setVenueContainer( LPCSTR container ) {
+    inline void setVenueContainer( LPCSTR container ) {
         m_venue_container = container;
     }
 
-    bool isDMXRequired() const {
+    inline bool isDMXRequired() const {
         return m_dmx_required;
     }
-    void setDMXRequired( bool required ) {
+    inline void setDMXRequired( bool required ) {
         m_dmx_required = required;
     }
 
-    void setHttpEnabled( bool mobile ) {
+    inline void setHttpEnabled( bool mobile ) {
         m_http_enabled = mobile;
     }
-    bool isHttpEnabled( void ) const {
+    inline bool isHttpEnabled( void ) const {
         return m_http_enabled;
     }
 
-    void setHttpPort( UINT port ) {
+    inline void setHttpPort( UINT port ) {
         m_http_port = port;
     }
-    UINT getHttpPort( void ) const {
+    inline UINT getHttpPort( void ) const {
         return m_http_port;
     }
 
-    StrobeTime getWhiteoutStrobeSlow() const {
+    inline StrobeTime getWhiteoutStrobeSlow() const {
         return m_whiteout_strobe_slow;
     }
-    void setWhiteoutStrobeSlow( StrobeTime strobe_slow ) {
+    inline void setWhiteoutStrobeSlow( StrobeTime strobe_slow ) {
         m_whiteout_strobe_slow = strobe_slow;
     }
         
-    StrobeTime getWhiteoutStrobeFast() const {
+    inline StrobeTime getWhiteoutStrobeFast() const {
         return m_whiteout_strobe_fast;
     }
-    void setWhiteoutStrobeFast( StrobeTime strobe_fast ) {
+    inline void setWhiteoutStrobeFast( StrobeTime strobe_fast ) {
         m_whiteout_strobe_fast = strobe_fast;
     }
 
-    void setMusicPlayerEnabled( bool player_enabled ) {
+    inline StrobeTime getWhiteoutStrobeManual() const {
+        return m_whiteout_strobe_manual;
+    }
+    inline void setWhiteoutStrobeManual( StrobeTime strobe_manual ) {
+        m_whiteout_strobe_manual = strobe_manual;
+    }
+
+    inline void setMusicPlayerEnabled( bool player_enabled ) {
         m_music_player_enabled = player_enabled;
     }
-    bool isMusicPlayerEnabled( void ) const {
+    inline bool isMusicPlayerEnabled( void ) const {
         return m_music_player_enabled;
     }
 
-    void setMusicPlayer( LPCSTR player ) {
+    inline void setMusicPlayer( LPCSTR player ) {
         m_music_player_ddl = player;
     }
-    LPCSTR getMusicPlayer( void ) const {
+    inline LPCSTR getMusicPlayer( void ) const {
         return m_music_player_ddl;
     }
 
-    void setMusicUsername( LPCSTR username ) {
+    inline void setMusicUsername( LPCSTR username ) {
         m_music_player_username = username;
     }
-    LPCSTR getMusicUsername( void ) const {
+    inline  LPCSTR getMusicUsername( void ) const {
         return m_music_player_username;
     }
 
-    bool isDebug() const {
+    inline bool isDebug() const {
         return m_debug;
     }
-    void setDebug( bool debug ) {
+    inline void setDebug( bool debug ) {
         m_debug = debug;
+    }
+
+    inline LPCSTR getHueBridgeIP() const {
+        return m_hue_bridge_ip;
+    }
+    inline void setHueBridgeIP( LPCSTR hue_bridge_ip ) {
+        m_hue_bridge_ip = hue_bridge_ip;
+    }
+
+    inline std::set<UINT> getHueIgnoredLights() const {
+        return m_hue_ignored_lights;
+    }
+    inline void setHueIgnoredLights( std::set<UINT> hue_ignored_lights ) {
+        m_hue_ignored_lights = hue_ignored_lights;
+    }
+
+    inline std::set<CString> getHueAllowedGroups() const {
+        return m_hue_allowed_groups;
+    }
+    inline void setHueAllowedGroups( std::set<CString> hue_allowed_groups ) {
+        m_hue_allowed_groups = hue_allowed_groups;
+    }
+
+    inline bool isHueAutoSetup() const {
+        return m_hue_auto_setup;
+    }
+    void setHueAutoSetup( bool hue_auto_setup) {
+        m_hue_auto_setup = hue_auto_setup;
+    }
+
+    inline LPCSTR getGoogleAPIKey() const {
+        return m_google_api_key;
+    }
+    inline void setGoogleAPIKey( LPCSTR key ) {
+        m_google_api_key = key;
+    }
+
+    inline size_t getVideosPerTrack() const {
+        return m_videos_per_track;
+    }
+    inline void setVideosPerTrack( size_t videos_per_track ) {
+        m_videos_per_track = videos_per_track;
+    }
+
+    inline size_t getVideosPaletteSize() const {
+        return m_video_palette_size;
+    }
+    inline void setVideosPaletteSize( size_t video_palette_size ) {
+        m_videos_per_track = video_palette_size;
     }
 };
 

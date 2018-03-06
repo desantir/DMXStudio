@@ -206,13 +206,12 @@ function chaseTrack( event ) {
     }
 
     $("#ctd_scenelist").multiselect({
-        classes: 'player_multilist',
+        classes: 'small_multilist',
         header: "Scenes", 
         noneSelectedText: 'select scene',
         minWidth: 450,
         multiple: false,
-        selectedList: 1,
-        header: false
+        selectedList: 1
     });
     
     $("#ctd_scenelist").multiselect("refresh");

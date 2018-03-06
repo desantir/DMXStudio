@@ -26,25 +26,41 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_soundsampler_start( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
+void HttpRestServices::control_soundsampler_start( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
     session->getSoundSampler().attach( venue->getAudio() );
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_soundsampler_stop( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
+void HttpRestServices::control_soundsampler_stop( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
     session->getSoundSampler().detach();
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_soundsampler( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
+void HttpRestServices::query_amplitude( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
+{
+    SoundLevel levels;
+
+    venue->getSoundLevels( levels );
+
+    JsonBuilder json( response );
+
+    json.startObject();
+    json.add( "avg_amplitude", levels.avg_amplitude );
+    json.add( "amplitude", levels.amplitude );
+    json.add( "mute", venue->isMute() );
+    json.add( "volume", venue->getMasterVolume() );
+    json.add( "beat", levels.amplitude_beat );
+    json.add( "index", levels.beat_index );
+    json.endObject();
+}
+
+// ----------------------------------------------------------------------------
+//
+void HttpRestServices::query_soundsampler( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !session->getSoundSampler().isAttached() )
         session->getSoundSampler().attach( venue->getAudio() );
@@ -68,13 +84,11 @@ bool HttpRestServices::query_soundsampler( Venue* venue, DMXHttpSession* session
     json.endArray( "audio_data" );
 
     json.endObject();
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_beatsampler_start( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+void HttpRestServices::control_beatsampler_start( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     SimpleJsonParser parser;
 
@@ -92,36 +106,32 @@ bool HttpRestServices::control_beatsampler_start( Venue* venue, DMXHttpSession* 
             unsigned start_freq = bin->get<unsigned>( "start_freq" );
             unsigned end_freq = bin->get<unsigned>( "end_freq" );
 
-            session->getBeats().push_back( BeatBin( start_freq, end_freq ) );
+            session->getBeats().emplace_back( start_freq, end_freq );
         }
     }
     catch ( std::exception& e ) {
-        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
+        throw RestServiceException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
     for ( BeatBinArray::iterator it=session->getBeats().begin(); it != session->getBeats().end(); ++it )
         session->getBeatDetector().addFrequencyEvent( (*it).getEvent(), (*it).getStartFreq(),  (*it).getEndFreq() );
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_beatsampler_stop( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
+void HttpRestServices::control_beatsampler_stop( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
     session->getBeatDetector().removeAllFrequencyEvents();
     session->getBeatDetector().detach();
     session->getBeats().clear();
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_beatsampler( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
+void HttpRestServices::query_beatsampler( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
     if ( !session->getBeatDetector().isAttached() )
-         return false;
+        throw RestServiceException( "Beat detector not initialized" );
 
     JsonBuilder json( response );
 
@@ -136,7 +146,5 @@ bool HttpRestServices::query_beatsampler( Venue* venue, DMXHttpSession* session,
     }
 
     json.endArray();
-
-    return true;
 }
 

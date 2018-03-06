@@ -28,6 +28,8 @@ MA 02111-1307, USA.
 
 #pragma once
 
+#define NOMINMAX
+
 #include "targetver.h"
 
 #include <afxwin.h>
@@ -40,6 +42,7 @@ MA 02111-1307, USA.
 #include <shlobj.h> 
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <set>
 #include <list>
 #include <queue>
@@ -48,14 +51,22 @@ MA 02111-1307, USA.
 #include <iterator>
 #include <exception>
 #include <memory>
+#include <limits>
 #include <afxmt.h>
 #include <Mmdeviceapi.h>
 #include <Audioclient.h>
 #include <EndpointVolume.h> 
+#include <chrono>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-// TODO: reference additional headers your program requires here
-
 #define COLOR_SUPPORT
+
+#include "StudioTypes.h"
+#include "ColorStrobe.h"
+#include "BPMRating.h"
+#include "StudioException.h"
+#include "Event.h"
+#include "EventBus.h"
+#include "EventBusListener.h"

@@ -455,8 +455,10 @@ DWORD HttpWorkerThread::processGetRequest()
 //
 DWORD HttpWorkerThread::processPostRequest()
 {
+#define ENTITY_BUFFER_CHUNK 8196
+
     LPBYTE          pEntityBuffer;
-    ULONG           EntityBufferLength = 4096;
+    ULONG           EntityBufferLength = ENTITY_BUFFER_CHUNK;
     ULONG           TotalBytesRead = 0;
     ULONG           BufferOffset = 0;
     DWORD           result;
@@ -490,16 +492,21 @@ DWORD HttpWorkerThread::processPostRequest()
                 switch ( result ) {
                     case NO_ERROR:
                         if ( BytesRead != 0 ) {
-                            BYTE* pNewBuffer = NULL;
                             BufferOffset += BytesRead;
-                            EntityBufferLength *= 2;
-
-                            pNewBuffer = (LPBYTE) REALLOC_MEM( pEntityBuffer, EntityBufferLength+1 );
-                            if ( pNewBuffer == NULL ) 
-                                throw StudioException( "Unable to allocate memory for POST request buffer" );
-
-                            pEntityBuffer = pNewBuffer;
                             TotalBytesRead += BytesRead;
+
+                            if ( BufferOffset + ENTITY_BUFFER_CHUNK > EntityBufferLength ) {
+                                BYTE* pNewBuffer = NULL;
+
+                                EntityBufferLength += ENTITY_BUFFER_CHUNK;
+
+                                pNewBuffer = (LPBYTE) REALLOC_MEM( pEntityBuffer, EntityBufferLength+1 );
+                                if ( pNewBuffer == NULL ) 
+                                    throw StudioException( "Unable to allocate memory for POST request buffer" );
+
+                                pEntityBuffer = pNewBuffer;
+                            }
+
                         }
                         break;
 

@@ -309,9 +309,9 @@ $.widget("ech.multiselect", {
 				);
 
 				self._trigger('optgrouptoggle', e, {
-				    inputs: nodes,
-				    label: label,
-				    checked: nodes[0].checked
+                    inputs: nodes,
+                    label: label,
+                    checked: nodes[0].checked
 				});
 			})
 			.delegate('label', 'mouseenter.multiselect', function(){
@@ -595,9 +595,9 @@ $.widget("ech.multiselect", {
 		}
 
 		var o = this.options,
-		    effect = o.hide,
-		    speed = this.speed,
-		    args = [];
+            effect = o.hide,
+            speed = this.speed,
+            args = [];
 
 		// figure out opening effects/speeds
 		if( $.isArray(o.hide) ){
@@ -657,7 +657,7 @@ $.widget("ech.multiselect", {
 	},
 
 	getButton: function(){
-	  return this.button;
+        return this.button;
     },
 
 	// react to option changes after initialization

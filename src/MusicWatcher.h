@@ -22,7 +22,7 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "Threadable.h"
 #include "MusicPlayer.h"
 #include "IVisitor.h"
@@ -39,7 +39,8 @@ enum MusicSelectorType {
     MST_CHASE = 2,
     MST_RANDOM_SCENE = 3,
     MST_RANDOM_CHASE = 4,
-    MST_SCENE_BY_BPM = 5
+    MST_SCENE_BY_BPM = 5,
+	MST_DO_NOTHING = 6
 };
 
 struct MusicSceneSelector

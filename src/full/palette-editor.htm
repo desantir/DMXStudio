@@ -1,0 +1,304 @@
+﻿<!DOCTYPE html>
+
+<!--
+Copyright (C) 2016 Robert DeSantis
+hopluvr at gmail dot com
+
+This file is part of DMX Studio.
+
+DMX Studio is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
+
+DMX Studio is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+License for more details.
+
+You should have received a copy of the GNU General Public License
+along with DMX Studio; see the file _COPYING.txt.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+MA 02111-1307, USA.
+-->
+
+<html>
+
+<head>
+    <title>DMXStudio Palette</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <link rel="stylesheet" href="css/dark-hive-custom/jquery-ui-1.9.2.custom.css" />
+    <script src="js/jquery-1.8.3.js"></script>
+    <script src="js/jquery-ui-1.9.2.custom.js"></script>
+    <script src="flot/jquery.flot.js"></script>
+    <script src="flot/jquery.flot.fillbetween.js"></script>
+    <link rel="stylesheet" href="jquery.multiselect.css" />
+    <script src="jquery.multiselect.js"></script>
+    <link rel="stylesheet" media="screen" type="text/css" href="colorpicker/css/colorpicker.css" />
+    <script type="text/javascript" src="colorpicker/js/colorpicker.js"></script>
+    <script src="jquery.container.js"></script>
+    <script src="jquery.pan-tilt.js"></script>
+    <script src="jquery.track-visualize.js"></script>
+    <link rel="stylesheet" href="jquery-toastmessage/css/jquery.toastmessage.css" />
+    <script src="jquery-toastmessage/jquery.toastmessage.js"></script>
+
+    <script src="utils.js"></script>
+    <script src="select-list.js"></script>
+    <script src="slider-panel.js"></script>
+    <script src="events.js"></script>
+    <script src="palette-editor.js"></script>
+    <script src="palette-events.js"></script>
+    <script src="palette.js"></script>
+    <script src="fixture.js"></script>
+    <script src="fixture-definition.js"></script>
+    <script src="tile-scroll-panel.js"></script>
+
+    <link rel="stylesheet" href="palette-editor.css" />
+
+    <script>
+        $(function () {
+            initializePaletteUI(); // Get it started
+        });
+    </script>
+</head>
+
+<body style="background-color:black;" oncontextmenu="return false;">
+
+    <div id="palette_pane" style="padding: 4px;">
+        <div id="palette_select_section" class="ui-widget-content ui-corner-all" style="width: 980px;">
+            <div class="section_padder">
+                <div class="section_title_container" style="clear:both;">
+                    <div class="section_title">SELECT PALETTE</div>
+                </div>
+                <div style="margin: 0px 0px 10px 0px;">
+                    <button id="new_palette" class="section_button" style="width: 300px;">New Palette</button>
+                </div>
+                <hr />
+                <div id="palette_container" style="margin: 10px 0px 10px 0px; overflow-y: auto; min-height: 200px; column-count: 3;">
+                </div>
+            </div>
+        </div>
+
+        <div id="palette_edit_section" class="ui-widget-content ui-corner-all section_container">
+            <div class="section_padder">
+                <div class="section_title_container" style="clear:both;">
+                    <div class="section_title">EDIT PALETTE</div>
+                </div>
+
+                <div>
+                    <label class="field_title" for="palette_name">Name</label>
+                    <input id="palette_name" style="display:block;width: 400px;" />
+                </div>
+                <div>
+                    <label class="field_title" for="palette_description">Description</label>
+                    <input id="palette_description" style="display:block;width: 400px;" />
+                </div>
+                <div>
+                    <label class="field_title" for="palette_number">Number</label>
+                    <input id="palette_number" class="palette_font" style="display:block;width: 80px; color: white;" />
+                </div>
+                <div>
+                    <label class="field_title" for="palette_type">Palette Type</label>
+                    <select id="palette_type">
+                        <option value="0" selected>generic</option>
+                        <option value="1">location</option>
+                        <option value="2">color</option>
+                        <option value="3">dimmer</option>
+                        <option value="4">strobe</option>
+                        <option value="6">gobo</option>
+                        <option value="7">fixture preset</option>
+                        <option value="8">color palette</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="global_channels_section" class="ui-widget-content ui-corner-all section_container">
+            <div class="section_padder">
+                <div class="section_title_container" style="clear:both;">
+                    <div class="section_title">GLOBAL CHANNEL VALUES</div>
+                </div>
+                <div id="global_container" style="margin: 8px 0px 10px 0px;">
+                </div>
+                <button id="global_color_button" style="font-size: 10pt;">Color Palette</button>
+            </div>
+        </div>
+
+        <div id="palette_colors_section" class="ui-widget-content ui-corner-all section_container">
+            <div class="section_padder">
+                <div class="section_title_container" style="clear:both;">
+                    <div class="section_title">PALETTE COLORS</div>
+                </div>
+                <button id="palette_generate_from_image" style="font-size: 10pt;margin-top:4px;">Generate from JPEG</button>
+                <div id="palette_colors_container" style="margin: 4px 0px 10px 0px; padding-top:10px;">
+                    <div id="palette_color_progression" style="column-rule: 1px solid #808080;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="fixture_select_section" class="ui-widget-content ui-corner-all section_container">
+            <div class="section_padder">
+                <div class="section_title_container">
+                    <div class="section_title">FIXTURE CHANNEL VALUES</div>
+                </div>
+
+                <div id="fixture_container" style="margin: 8px 0px 10px 0px;">
+                </div>
+            </div>
+
+            <div class="definition_container">
+                <div class="section_padder">
+                    <div class="section_title_container ">
+                        <div class="section_title">FIXTURE DEFINITION CHANNEL VALUES</div>
+                    </div>
+
+                    <div id="definition_container" style="margin: 8px 0px 10px 0px;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="select_button_section" style="margin: 4px 0px 0px 2px; display: none; clear: both;">
+            <button id="palette_save" class="section_button" style="width: 100px; margin-right: 10px; ">SAVE</button>
+            <button id="palette_cancel" class="section_button" style="width: 100px;">CANCEL</button>
+        </div>
+
+        <div id="channel_sliders_section" class="ui-widget-content ui-corner-all section_container" style="background: #444444; padding: 0px 20px 0px 20px;">
+            <div class="section_padder">
+
+                <div id="channel_sliders_pane" style="margin: 10px 0px 0px 0px; float: left; overflow: visible; min-width: 500px;">
+                    <div class="section_title_container" style="margin-bottom: 10px;">
+                        <span id="channel_sliders_title" class="section_title" style="float:left;">CHANNELS</span>
+
+                        <span class="track_slider_icon icon_button_right"></span>
+                        <span class="colorpicker_icon ui-icon ui-icon-lightbulb icon_button_right"></span>
+                        <span class="pantilt_icon ui-icon ui-icon-arrow-4 icon_button_right"></span>
+                    </div>
+
+                    <div class="collapsable_content">
+                        <div class="scroll-content" style="margin-top:0px;"></div>
+                        <div class="scroll-bar-wrap ui-widget-content ui-corner-bottom">
+                            <div class="scroll-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="palette_font" style="clear: both; padding-top: 20px;">
+                    Only selected <div class="ui-icon-check ui-icon-green" style="display:inline-block;"></div> channels will be saved in the palette.
+                </div>
+
+                <div style="clear: both; padding-top: 120px;">
+                    <button id="channel_sliders_cancel" class="section_button" style="clear: both; float:right; width: 100px; ">CANCEL</button>
+                    <button id="channel_sliders_save" class="section_button" style="float:right; width: 100px; margin-right: 10px; ">OK</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="message_box_dialog" style="display:none;">
+        <p id="mbd_contents"></p>
+    </div>
+
+    <div id="palette_list_template" style="display:none;">
+        <div>
+            <div class="palette_select_div ui-button ui-state-default ui-corner-all">
+                <div style="clear: both; float:left;">
+                    <div class='palette_label palette_font'></div>
+                </div>
+                <div style="float:right;">
+                    <span class="palette_remove ui-icon ui-icon-circle-close" style="cursor: pointer;" title="remove palette"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="global_channel_template" style="display:none;">
+        <div>
+            <div class="select_div ui-button ui-state-default ui-corner-all">
+                <div style="clear: both; float:left;">
+                    <input class="palette_font channel_value" style="display:block; width: 40px; color: white;" />
+                </div>
+                <div style="float:left; margin-left: 10px; margin-top: 2px;">
+                    <div class='select_label palette_font'></div>
+                </div>
+                <div style="float:right;">
+                    <span class="select_remove ui-icon ui-icon-circle-close" style="cursor: pointer;" title="remove channel"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="fixture_template" style="display:none;">
+        <div>
+            <div class="select_action select_div ui-button ui-state-default ui-corner-all">
+                <div style="float:left; margin-left: 10px; ">
+                    <div class='select_label palette_font'></div>
+                </div>
+                <div style="float:right;">
+                    <span class="select_remove ui-icon ui-icon-circle-close" style="cursor: pointer;" title="remove channel"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="slider_template" style="display:none;">
+        <div class="slider_container">
+            <div class="slider_header slider_text_color"></div>
+            <div style="height:200px; width:40px;">
+                <div class="slider_side_text slider_text_color"></div>
+                <div class="slider_slider"></div>
+            </div>
+            <div class="slider_footer slider_text_color"></div>
+            <input class="slider_footer_input" type="number" value="0" />
+            <div class="ui-icon-check slider_select"></div>
+        </div>
+    </div>
+
+    <div id="pan_tilt_popup" style="display:none;">
+        <form>
+            <div style="float: left; margin-top: -10px; height:200px;">
+                <div id="ptp_control"></div>
+            </div>
+
+            <div style="float: left; margin: 20px 0px 0px 0px; position: absolute; left: 220px;">
+                <label for="ptp_pan" style="display:block; margin: 8px 0px 4px 0px; font-size:10pt;">pan &deg;</label>
+                <input id="ptp_pan" style="width: 60px; font-size:10pt; color: white;" />
+
+                <label for="ptp_tilt" style="display:block; margin: 12px 0px 4px 0px; font-size:10pt;">tilt &deg;</label>
+                <input id="ptp_tilt" style="width: 60px; font-size:10pt; color: white;" />
+            </div>
+        </form>
+    </div>
+
+    <iframe id="create_palette_uploadFrame" name="create_palette_uploadFrame" style="display:none;"></iframe>
+
+    <div id="create_palette_dialog" style="display:none;" title="Create Palette From JPEG">
+        <form style="height:230px;" id="cpd_form" action="/dmxstudio/rest/palette/upload/" method="post" target="create_palette_uploadFrame" enctype="multipart/form-data">
+            <div>
+                <div>Generate a palette using an uploaded JPEG file</div>
+                <hr />
+
+                <label for="cpd_colors" style="display:block; margin: 12px 0px 4px 0px;">number of palette colors</label>
+                <input id="cpd_colors" name="cpd_colors" style="width: 60px; font-size:10pt; color: white;" />
+
+                <label for="cpd_upload_file" style="display:block; margin: 12px 0px 4px 0px;">image to upload</label>
+                <input type="file" id="cpd_upload_file" name="jpg_file" size="45" accept="image/jpg,image/jpeg" />
+            </div>
+        </form>
+    </div>
+
+    <div id="wait_dialog" style="display:none;border: solid #2e7db2 1px;">
+        <div id="loading-div" class="ui-corner-all">
+            <img style="height:30px; margin:40px auto;display:block;" src="loading.gif" alt="Wait" />
+            <div style="font-weight:normal; color:#808080;text-align:center;" id="wd_reason"></div>
+        </div>
+    </div>
+
+</body>
+
+</html>
+

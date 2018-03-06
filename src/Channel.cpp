@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-14 Robert DeSantis
+Copyright (C) 2011-17 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -19,7 +19,6 @@ along with DMX Studio; see the file _COPYING.txt.  If not, write to
 the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
-
 
 #include "DMXStudio.h"
 #include "Channel.h"
@@ -60,7 +59,7 @@ static int static_kludge = populateChannelTypes();
 
 // ----------------------------------------------------------------------------
 //
-Channel::Channel( channel_t offset, ChannelType type, const char *name ) :
+Channel::Channel( channel_address offset, ChannelType type, const char *name ) :
     m_channel_offset( offset ),
     m_type( type ),
     m_default_value( 0 ),
@@ -68,8 +67,16 @@ Channel::Channel( channel_t offset, ChannelType type, const char *name ) :
     m_is_dimmer( false ),
     m_lowest_intensity( 0 ),
     m_highest_intensity( 255 ),
+	m_off_intensity( 0 ),
     m_pixel_index( 0 ),
-    m_head_number( 1 )
+    m_head_number( 1 ),
+	m_dimmer_can_strobe( true ),
+	m_is_strobe( false ),
+	m_strobe_slow( 1 ),
+	m_strobe_fast( 255 ),
+	m_strobe_off( 0 ),
+    m_min_angle( 0 ),
+    m_max_angle( 0 )
 {
     if ( name == NULL )
         m_name = getTypeName( m_type );
@@ -85,12 +92,22 @@ Channel::~Channel(void)
 
 // ----------------------------------------------------------------------------
 //
-BYTE Channel::convertAngleToValue( int angle ) 
+channel_value Channel::convertAngleToValue( int angle ) 
 {
-    AngleTable::iterator it = m_angle_table.find( angle );
-    if ( it == m_angle_table.end() )
+    if ( m_angle_table.empty() )    // Just in case
         return 0;
-    return it->second;
+
+    AngleTable::iterator it = m_angle_table.find( angle );
+    if ( it != m_angle_table.end() )
+        return it->second;
+
+    // Find lowest or highest value and return
+    if ( angle < m_angles.front().getAngle() )
+        return m_angles.front().getValue();
+    if ( angle > m_angles.back().getAngle() )
+        return m_angles.back().getValue();
+
+    return 0;
 }
 
 // ----------------------------------------------------------------------------
@@ -109,10 +126,10 @@ void Channel::generateAngleTable(void) {
     int value_low = 0;
     int value_high = 0;
 
-    for ( ChannelAngleMap::iterator it=m_angles.begin(); it != m_angles.end(); ++it ) {
-        if ( angle_low == -1 || it->first < angle_low ) {
-            angle_low = it->first;
-            value_low = it->second.getValue();
+    for ( ChannelAngle angle : m_angles ) {
+        if ( angle_low == -1 || angle.getAngle() < angle_low ) {
+            angle_low = angle.getAngle();
+            value_low = angle.getValue();
         }
     }
 
@@ -151,10 +168,10 @@ void Channel::generateAngleTable(void) {
 
         // Find next highest angle in the angle map
 
-        for ( ChannelAngleMap::iterator it=m_angles.begin(); it != m_angles.end(); ++it ) {
-            if ( it->first > angle_low && (angle_high == -1 || it->first < angle_high) ) {
-                angle_high = it->first;
-                value_high = it->second.getValue();
+        for ( ChannelAngle angle : m_angles ) {
+            if ( angle.getAngle() > angle_low && (angle_high == -1 || angle.getAngle() < angle_high) ) {
+                angle_high = angle.getAngle();
+                value_high = angle.getValue();
             }
         }
 
@@ -186,7 +203,7 @@ void Channel::generateAngleTable(void) {
         CString range_name;
         for ( size_t i=0; i < ranges.size(); i++ ) {
             range_name.Format( "%d degrees", ranges[i].range_angle);
-            m_ranges.push_back( ChannelValueRange( ranges[i].range_low, ranges[i].range_high, range_name, ranges[i].range_angle ) );
+            m_ranges.emplace_back( ranges[i].range_low, ranges[i].range_high, range_name, ranges[i].range_angle );
         }
     }
 }

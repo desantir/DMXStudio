@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 
 class Bitmap
 {

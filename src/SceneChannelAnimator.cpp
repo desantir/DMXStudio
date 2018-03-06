@@ -1,5 +1,5 @@
 /* 
-    Copyright (C) 2011-14 Robert DeSantis
+    Copyright (C) 2011-2016 Robert DeSantis
     hopluvr at gmail dot com
 
     This file is part of DMX Studio.
@@ -22,89 +22,37 @@
 
 #include "SceneChannelAnimator.h"
 
-/*
-Base class for general channel animation effects but can also be used directly.
-
-INPUTS            AFFECTS							CHANNEL					MODIFIERS
-------            -------                           -------                 ---------
-TIME			  ON/OFF							1-N PER FIXTURE			ATTACK
-LEVEL			  SET VALUE AS %					1-N FIXTURES			RELEASE
-BEAT (FREQ)		  ROTATE RANGE OF CHANNEL VALUES							SAMPLING
-AVG LEVEL		  SEQUENCE CHANNELS											SCALING (log ) 
-FREQ LEVEL		  CONTROL MULTIPLE CHANNELS
-RANDOMNESS		  CHOOSE FROM PRESET SETS OF CHANNELS/VALUES
-
-INPUT SIGNAL -> CONVERT SIGNAL -> EVENT STREAM -> CHANNEL MODIFICATION --
-    ^       				                    						|
-    |						                    						|
-    ---------------------------------------------------------------------
-
-- get signal
-    - sampling time or event
-- shape signal ( beat 1/0 (level = high), time tick 1 (level = high), audio level 1 (level = var), random (level=rnd)
-- apply signal to fixture/channel pairs
-    - channel on/off (values 0 & 255 same as below)
-    - channel rotate set values (0-255)
-    - channel value is a percent of level (with range of possible values e.g. 100-110 % input percent 0-100%)
-
-        Time ------>
-        tick	tick	tick	EVENT	tick	tick	
-
-F1C1	V1a		V2a		...			(beat is 100%, no beat-0%)
-F1C2	V1b		V2b		...			(V# modified by input level, with range limits)
-F2C2	V1c		V2c		...
-
-Examples:
-    ON/OFF
-    Light banks bank A on / bank B off / bank A off / bank B on / etc
-    Range 
-*/
-
 const char* SceneChannelAnimator::className = "SceneChannelAnimator";
 const char* SceneChannelAnimator::animationName = "Channel program";
 
 // ----------------------------------------------------------------------------
 //
-SceneChannelAnimator::SceneChannelAnimator( UID animation_uid, 
+SceneChannelAnimator::SceneChannelAnimator( UID animation_uid, bool shared, UID reference_fixture, 
                                             AnimationSignal signal,
                                             ChannelAnimationArray& channel_animations ) :
-    AbstractAnimation( animation_uid, signal ),
-    m_channel_animations( channel_animations ),
-    m_signal_processor( NULL ),
-    m_run_once( false )
+    AnimationDefinition( animation_uid, shared, reference_fixture, signal ),
+    m_channel_animations( channel_animations )
 {
-    setupActors();
 }
 
 // ----------------------------------------------------------------------------
 //
-SceneChannelAnimator::SceneChannelAnimator( UID animation_uid, 
+SceneChannelAnimator::SceneChannelAnimator( UID animation_uid, bool shared, UID reference_fixture, 
                                             AnimationSignal signal ) :
-    AbstractAnimation( animation_uid, signal ),
-    m_signal_processor( NULL ),
-    m_run_once( false )
+    AnimationDefinition( animation_uid, shared, reference_fixture, signal )
 {
-    setupActors();
 }
 
 // ----------------------------------------------------------------------------
 //
-void SceneChannelAnimator::setupActors() {
-    // This is for "cosmetics" in UIs to list the fixtures referenced by this animation (SHOULD NOT AFFECT SUBCLASSES)
-    if ( m_actors.size() == 0 ) {
-        for ( ChannelAnimationArray::iterator it=m_channel_animations.begin();
-              it != m_channel_animations.end(); ++it ) {
-            if ( std::find( m_actors.begin(), m_actors.end(), (*it).getActorUID() ) == m_actors.end() )
-                m_actors.push_back( (*it).getActorUID() );
-        }
-    }
+AnimationDefinition* SceneChannelAnimator::clone( ) {
+	return new SceneChannelAnimator( 0L, m_shared, m_reference_fixture, m_signal );
 }
 
 // ----------------------------------------------------------------------------
 //
 SceneChannelAnimator::~SceneChannelAnimator(void)
 {
-    stopAnimation();
 }
 
 // ----------------------------------------------------------------------------
@@ -114,172 +62,26 @@ CString SceneChannelAnimator::getSynopsis(void) {
 
     synopsis.Format( "Channels( " );
 
-    for ( ChannelAnimationArray::iterator it=m_channel_animations.begin(); 
-            it != m_channel_animations.end(); ++it )
-        synopsis.AppendFormat( "\n%s", (*it).getSynopsis() );
+    bool first = true;
+    for ( ChannelAnimation& chan_anim : m_channel_animations ) {
+        if ( !first )
+            synopsis.Append( "\n         " );
+        else
+            first = false;
 
-    synopsis += ")";
+        synopsis.AppendFormat( "%s", chan_anim.getSynopsis() );
+    }
+
+    synopsis += " )";
 
     return synopsis;
 }
 
 // ----------------------------------------------------------------------------
 //
-AbstractAnimation* SceneChannelAnimator::clone() {
-    return new SceneChannelAnimator( m_uid, m_signal, m_channel_animations );
-}
-
-// ----------------------------------------------------------------------------
-//
-void SceneChannelAnimator::removeActor( UID actor_uid ) {
-    AbstractAnimation::removeActor( actor_uid );
-
-    for ( ChannelAnimationArray::iterator it=m_channel_animations.begin(); it != m_channel_animations.end(); ) {
-        if ( (*it).getActorUID() == actor_uid )
-            it = m_channel_animations.erase( it );
-        else
-            it++;
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
-void SceneChannelAnimator::stopAnimation( )
-{
-    if ( m_signal_processor ) {
-        delete m_signal_processor;
-        m_signal_processor = NULL;
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
-void SceneChannelAnimator::initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet )
-{
-    memset( m_decay_channel, 0, sizeof(m_decay_channel) );
-
-    m_animation_task = task;
-    m_channel_state.clear();				// This may be restarted
-
-    // Setup channel states
-    for ( ChannelAnimation& chan_anim : m_channel_animations ) {
-        SceneActor* actor = getActor( chan_anim.getActorUID() );
-        channel_t channel = chan_anim.getChannel();
-
-        // Setup state so that the slice animation does not need to gather additional info
-        for ( Fixture *pf : m_animation_task->resolveActorFixtures( actor ) ) {
-            if ( channel < pf->getNumChannels() && channel != INVALID_CHANNEL )
-                m_channel_state.push_back( ChannelState( pf,
-                                                         channel, 
-                                                         actor->getChannelValue( channel ),
-                                                         chan_anim.getAnimationStyle(),
-                                                         &chan_anim.valueList() ) );
-        }
-    }
-
-    if ( studio.isDebug() ) {
-        CString debug_info;
-        for ( ChannelState cs : m_channel_state ) {
-            debug_info.Format( "%s -> %s channel %d style %d values ", getName(), cs.m_pf->getFullName(), cs.m_channel, cs.m_animation_style );
-            if ( cs.m_value_list != NULL ) {
-                for ( BYTE value : *cs.m_value_list )
-                    debug_info.AppendFormat( "%d ", value );
-            }
-            studio.log( debug_info );
-        }
-    }
-
-    m_signal_processor = new AnimationSignalProcessor( m_signal, task );
-}
-
-// ----------------------------------------------------------------------------
-//
-bool SceneChannelAnimator::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
-{
-    if ( m_channel_state.size() == 0 )
-        return false;
-
-    bool tick = m_signal_processor->tick( time_ms );
-
-    if ( !tick ) {
-        if ( m_signal_processor->isDecay() ) {		// Handle value decay
-            bool changed = false;
-            for ( channel_t channel=0; channel < sizeof(m_decay_channel); channel++ ) {
-                if ( m_decay_channel[ channel ] ) {
-                    dmx_packet[ channel ] = 0;
-                    changed = true;
-                }
-            }
-            return changed;
-        }
-
-        return false;
-    }
-
-    bool changed = false;
-
-    memset( m_decay_channel, 0, sizeof(m_decay_channel) );
-
-    for ( ChannelStateArray::iterator it=m_channel_state.begin();
-          it != m_channel_state.end(); ++it ) {
-
-        ChannelState& state = (*it);
-        BYTE value = 0;
-
-        unsigned level = m_signal_processor->getLevel();
-
-        if ( !m_signal_processor->isBeat() && state.m_animation_style != CAM_SCALE )
-            continue;
-
-        switch ( state.m_animation_style ) {
-            case CAM_RANGE: {
-                STUDIO_ASSERT( state.m_value_list->size() == 2, "Invalid size for range channel animation (UID=%lu CH=%d)", 
-                               state.m_pf->getUID(), state.m_channel );
-                unsigned offset = (unsigned)(state.m_value_list->at(1) - state.m_value_list->at(0) + 1) * level / 100;
-                value = (BYTE)(state.m_value_list->at(0)+offset);
-                break;
-            }
-
-            case CAM_LIST:
-                STUDIO_ASSERT( state.m_value_list->size() > 0, "Invalid size for list channel animation (UID=%lu CH=%d)", 
-                               state.m_pf->getUID(), state.m_channel );
-                value = state.m_value_list->at( state.m_index++ );
-                if ( state.m_index == state.m_value_list->size() )
-                    state.m_index = (m_run_once) ? state.m_value_list->size()-1 : 0;
-
-                if ( m_signal.isApplyToChannel() )
-                    value = (BYTE)((unsigned)value * level / 100);
-
-                break;
-
-            case CAM_SCALE:
-                if ( m_signal.isApplyToChannel() )
-                    value = (BYTE)((unsigned)state.m_initial_value * level / 100);
-                else
-                    value = state.m_initial_value;
-                break;
-        }
-
-        if ( value == 0 && m_signal.getSampleDecayMS() > 0 ) {
-            channel_t real_address = 
-                ((state.m_pf->getUniverseId()-1) * DMX_PACKET_SIZE) + state.m_pf->getChannelAddress( state.m_channel ) - 1;
-
-            m_decay_channel[ real_address ] = true;
-        }
-        else
-            m_animation_task->loadChannel( dmx_packet, state.m_pf, state.m_channel, value );
-        changed = true;
-    }
-
-    return changed;
-}
-
-// ----------------------------------------------------------------------------
-//
-ChannelAnimation::ChannelAnimation( UID actor_uid, channel_t channel, 
-                    ChannelAnimationStyle animation_style,
-                    ChannelValueArray& value_list ) :
-    m_actor_uid( actor_uid ),
+ChannelAnimation::ChannelAnimation( channel_address channel, 
+    ChannelAnimationStyle animation_style,
+    ChannelValueArray& value_list ) :
     m_channel( channel ),
     m_animation_style( animation_style ),
     m_value_list( value_list )
@@ -288,9 +90,8 @@ ChannelAnimation::ChannelAnimation( UID actor_uid, channel_t channel,
 
 // ----------------------------------------------------------------------------
 //
-ChannelAnimation::ChannelAnimation( UID actor_uid, channel_t channel, 
-                    ChannelAnimationStyle animation_style ) :
-    m_actor_uid( actor_uid ),
+ChannelAnimation::ChannelAnimation( channel_address channel, 
+    ChannelAnimationStyle animation_style ) :
     m_channel( channel ),
     m_animation_style( animation_style )
 {
@@ -304,16 +105,17 @@ CString ChannelAnimation::getSynopsis(void) {
     CString style;
 
     switch ( m_animation_style ) {
-        case CAM_LIST:	style = "list="; break;
-        case CAM_RANGE:	style = "range="; break;
-        case CAM_SCALE:	style = "scale"; break;
+    case CAM_LIST:	style = "value list="; break;
+    case CAM_RANGE:	style = "value range="; break;
+    case CAM_SCALE:	style = "scale value"; break;
+    case CAM_LEVEL:	style = "level value"; break;
     }
 
-    synopsis.Format( "id=%lu channel=%d %s", m_actor_uid, m_channel+1, style );
+    synopsis.Format( "channel=%d %s", m_channel+1, style );
 
     if ( m_value_list.size() > 0 ) {
         for ( ChannelValueArray::iterator it=m_value_list.begin(); 
-                it != m_value_list.end(); ++it ) {
+        it != m_value_list.end(); ++it ) {
             if ( it != m_value_list.begin() )
                 synopsis.Append( "," );
             synopsis.AppendFormat( "%u", (unsigned)(*it) );

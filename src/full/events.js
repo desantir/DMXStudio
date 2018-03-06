@@ -21,48 +21,39 @@ MA 02111-1307, USA.
 */
 
 var DEBUG_EVENTS = false;
-
 var pending_events = [];
 var eventRequestTimer = null;
 var eventHandlerTimer = null;
+var eventListeners = [];       // All events will also be sent to all registered "child" window listeners
 
-// Event sources
-var ES_STUDIO=1;
-var ES_VENUE=2;
-var ES_SCENE=3;
-var ES_CHASE=4;
-var ES_FIXTURE=5;
-var ES_FIXTURE_GROUP=6;
-var ES_CHANNEL=7;
-var ES_WHITEOUT=8;
-var ES_BLACKOUT=9;
-var ES_MUTE_BLACKOUT=10;
-var ES_TRACK=11;
-var ES_PLAYLIST=12;
-var ES_VOLUME=13;
-var ES_VOLUME_MUTE=14;
-var ES_MUSIC_MATCH=15;
-var ES_ANIMATION_SPEED=16;
-var ES_MUSIC_PLAYER=17;
-var ES_MASTER_DIMMER=18;
-var ES_WHITEOUT_STROBE=19;
-var ES_WHITEOUT_COLOR=20;
-var ES_TRACK_QUEUES=21;
+var eventHandlers = [ EventSourceType.ES_NUM_SOURCES ];
 
-var sources = [];
-
-// Event actions
-var EA_START=1;
-var EA_STOP=2;
-var EA_DELETED=3;
-var EA_PAUSE=4;
-var EA_RESUME=5;
-var EA_NEW=6;
-var EA_CHANGED=7;
-var EA_ERROR=8;
-var EA_TIME=9;
-
-var actionNames = [ null, "START", "STOP", "DELETED", "PAUSE", "RESUME", "NEW", "CHANGED", "ERROR", "TIME" ];
+eventHandlers[EventSourceType.ES_STUDIO] = handleStudioEvent;
+eventHandlers[EventSourceType.ES_VENUE] = handleVenueEvent;
+eventHandlers[EventSourceType.ES_SCENE] = handleSceneEvent;
+eventHandlers[EventSourceType.ES_CHASE] = handleChaseEvent;
+eventHandlers[EventSourceType.ES_FIXTURE] = handleFixtureEvent;
+eventHandlers[EventSourceType.ES_FIXTURE_GROUP] = handleFixtureEvent;
+eventHandlers[EventSourceType.ES_CHANNEL] = handleChannelEvent;
+eventHandlers[EventSourceType.ES_WHITEOUT] = handleWhiteoutEvent;
+eventHandlers[EventSourceType.ES_BLACKOUT] = handleBlackoutEvent;
+eventHandlers[EventSourceType.ES_MUTE_BLACKOUT] = handleMuteBlackoutEvent;
+eventHandlers[EventSourceType.ES_TRACK] = handleTrackEvent;
+eventHandlers[EventSourceType.ES_PLAYLIST] = null;
+eventHandlers[EventSourceType.ES_VOLUME] = handleVolumeEvent;
+eventHandlers[EventSourceType.ES_VOLUME_MUTE] = handleVolumeMuteEvent;
+eventHandlers[EventSourceType.ES_MUSIC_MATCH] = handleMusicMatchEvent;
+eventHandlers[EventSourceType.ES_ANIMATION_SPEED] = handleAnimationSpeedEvent;
+eventHandlers[EventSourceType.ES_MUSIC_PLAYER] = null;
+eventHandlers[EventSourceType.ES_MASTER_DIMMER] = handleDimmerEvent;
+eventHandlers[EventSourceType.ES_WHITEOUT_STROBE] = handleWhiteoutStrobeEvent;
+eventHandlers[EventSourceType.ES_WHITEOUT_COLOR] = handleWhiteoutColorEvent;
+eventHandlers[EventSourceType.ES_TRACK_QUEUES] = handleTrackQueuesEvent;
+eventHandlers[EventSourceType.ES_ANIMATION] = handleAnimationEvent;
+eventHandlers[EventSourceType.ES_PALETTE] = handlePaletteEvent;
+eventHandlers[EventSourceType.ES_WHITEOUT_EFFECT] = handleWhiteoutEffectEvent;
+eventHandlers[EventSourceType.ES_VIDEO_PALETTE] = null;
+eventHandlers[EventSourceType.ES_FIXTURE_STATUS] = handleFixtureStatusEvent;
 
 // ----------------------------------------------------------------------------
 //
@@ -73,30 +64,7 @@ function start_event_processing() {
     if ( eventHandlerTimer != null )
         clearTimeout( eventHandlerTimer );
 
-    sources[ES_STUDIO] = { "name": "STUDIO", "handler": null };
-    sources[ES_VENUE] = { "name": "VENUE", "handler": null };
-    sources[ES_SCENE] = { "name": "SCENE", "handler": handleSceneEvent };
-    sources[ES_CHASE] = { "name": "CHASE", "handler": handleChaseEvent };
-    sources[ES_FIXTURE] = { "name": "FIXTURE", "handler": handleFixtureEvent };
-    sources[ES_FIXTURE_GROUP] = { "name": "FIXTURE_GROUP", "handler": handleFixtureEvent };
-    sources[ES_CHANNEL] = { "name": "CHANNEL", "handler": handleChannelEvent };
-    sources[ES_WHITEOUT] = { "name": "WHITEOUT", "handler": handleWhiteoutEvent };
-    sources[ES_BLACKOUT] = { "name": "BLACKOUT", "handler": handleBlackoutEvent };
-    sources[ES_MUTE_BLACKOUT] = { "name": "MUTE_BLACKOUT", "handler": handleMuteBlackoutEvent };
-    sources[ES_TRACK] = { "name": "TRACK", "handler": handleTrackEvent };
-    sources[ES_PLAYLIST] = { "name": "PLAYLIST", "handler": null };
-    sources[ES_VOLUME] = { "name": "VOLUME", "handler": handleVolumeEvent };
-    sources[ES_VOLUME_MUTE] = { "name": "VOLUME_MUTE", "handler": handleVolumeMuteEvent };
-    sources[ES_MUSIC_MATCH] = { "name": "MUSIC_MATCH", "handler": handleMusicMatchEvent };
-    sources[ES_ANIMATION_SPEED] = { "name": "ANIMATION_SPEED", "handler": handleAnimationSpeedEvent };
-    sources[ES_MUSIC_PLAYER] = { "name": "MUSIC_PLAYER", "handler": null };
-    sources[ES_MASTER_DIMMER] = { "name": "MASTER_DIMMER", "handler": handleDimmerEvent };
-    sources[ES_WHITEOUT_STROBE] = { "name": "WHITEOUT_STROBE", "handler": handleWhiteoutStrobeEvent };
-    sources[ES_WHITEOUT_COLOR] = { "name": "WHITEOUT_COLOR", "handler": handleWhiteoutColorEvent };
-    sources[ES_TRACK_QUEUES] = { "name": "TRACK_QUEUES", "handler": handleTrackQueuesEvent };
-
     eventRequestTimer = setTimeout( eventRequest, 100 );
-    eventHandlerTimer = setTimeout( eventHandler, 100 );
 }
 
 // ----------------------------------------------------------------------------
@@ -125,17 +93,14 @@ function eventRequest() {
 
             pending_events = pending_events.concat( json.events );
 
+            if ( eventHandlerTimer == null && pending_events.length > 0 )
+                eventHandlerTimer = setTimeout( eventHandler, 50 );
+
             eventRequestTimer = setTimeout(eventRequest, 100);
         },
 
         error: function () {
-            if (system_status) {
-                cache_status_icon.removeClass("ui-icon-green").addClass("ui-icon-red");
-                cache_status_icon.attr("title", "status: disconnected");
-                system_status = false;
-            }
-
-            eventRequestTimer = setTimeout(eventRequest, 1000);
+            startUserInterface();
         }
     });
 }
@@ -148,34 +113,95 @@ function eventHandler() {
     while ( pending_events.length > 0 ) {
         var event = pending_events.shift();
 
-        var source = sources[ event.source ];
-        if ( source == null ) {
-            toastWarning( "UNKNOWN EVENT: " + actionNames[ event.action] + " " + event.source + " UID " + event.uid + 
-                                " [" + event.val1 + "] " + event.text );
-            continue;
+        if ( DEBUG_EVENTS )
+            toastEvent( event );
+
+        var handler = (event.source > 0 && event.source < EventSourceType.ES_NUM_SOURCES ) ? eventHandlers[ event.source ] : null;
+
+        if ( handler != null && handler != undefined ) {
+            if ( !handler( event ) )
+                toastWarning( "UNPROCESSED EVENT ACTION: " + eventActionNames[ event.action] + " " + eventSourceNames[ event.source ] + 
+                              " UID " + event.uid + " [" + event.val1 + "] " + event.text );
         }
 
-        if ( DEBUG_EVENTS )
-            toastNotice( "Event: " + actionNames[ event.action] + " " + source.name + " UID " + event.uid );
+        broadcastEvent( event );
+    }
+}
 
-        if ( source.handler == null )
-            continue;
+// ----------------------------------------------------------------------------
+//
+function broadcastEvent( event ) {
+    for ( var index=0; index < eventListeners.length; ) {
+        var listener = eventListeners[index];
 
-        var processed = source.handler( event );
+        if ( !listener.closed ) {
+            listener.postMessage( { "method": "eventBroadcast", "event": event }, "*" );
+            index++;
+        }
+        else {
+            eventListeners.splice( index, 1 );
+        }
+    }
+}
 
-        if ( !processed )
-            toastWarning( "UNPROCESSED EVENT: " + actionNames[ event.action] + " " + source.name + " UID " + event.uid + 
-                                " [" + event.val1 + "] " + event.text );
+// ----------------------------------------------------------------------------
+//
+function registerEventListener( listener ) {
+    // Make sure the window is not already registered
+    for ( var index=0; index < eventListeners.length; index++ )
+        if ( eventListeners[index] == listener )
+            return;
+
+    eventListeners.push( listener );
+}
+
+// ----------------------------------------------------------------------------
+//
+function handleStudioEvent( event ) {
+    if ( event.action == EventActionType.EA_MESSAGE ) {
+        if ( event.val1 == 1 )
+            toastWarning( event.text );
+        else if ( event.val1 == 2 )
+            toastError( event.text );
+        else 
+            toastNotice( event.text );
+
+        return true;
     }
 
-    eventHandlerTimer = setTimeout( eventHandler, 100 );
+    return false;
+}
+
+// ----------------------------------------------------------------------------
+//
+function handleVenueEvent( event ) {
+
+    if ( event.action == EventActionType.EA_START ) {
+        if ( eventRequestTimer != null )
+            clearTimeout( eventRequestTimer );
+
+        if ( eventHandlerTimer != null )
+            clearTimeout( eventHandlerTimer );
+
+        pending_events = [];
+
+        startUserInterface();
+        return true;
+    }
+
+    if ( event.action == EventActionType.EA_STOP || event.action == EventActionType.EA_CHANGED ) {
+        // Ignore
+        return true;
+    }
+
+    return false;
 }
 
 // ----------------------------------------------------------------------------
 //
 function handleVolumeEvent( event ) {
 
-    if ( event.action == EA_CHANGED ) {
+    if ( event.action == EventActionType.EA_CHANGED ) {
         updateVolume( event.val1 );
         return true;
     }
@@ -187,8 +213,8 @@ function handleVolumeEvent( event ) {
 //
 function handleVolumeMuteEvent( event ) {
 
-    if ( event.action == EA_START || event.action == EA_STOP ) {
-        updateVolumeMute( event.action == EA_START );
+    if ( event.action == EventActionType.EA_START || event.action == EventActionType.EA_STOP ) {
+        updateVolumeMute( event.action == EventActionType.EA_START );
         return true;
     }
 
@@ -198,7 +224,7 @@ function handleVolumeMuteEvent( event ) {
 // ----------------------------------------------------------------------------
 //
 function handleDimmerEvent( event ) {
-    if ( event.action == EA_CHANGED ) {
+    if ( event.action == EventActionType.EA_CHANGED ) {
         updateMasterDimmer( event.val1 );
         return true;
     }
@@ -209,8 +235,8 @@ function handleDimmerEvent( event ) {
 // ----------------------------------------------------------------------------
 //
 function handleBlackoutEvent( event ) {
-    if ( event.action == EA_START || event.action == EA_STOP ) {
-        updateBlackout( event.action == EA_START );
+    if ( event.action == EventActionType.EA_START || event.action == EventActionType.EA_STOP ) {
+        updateBlackout( event.action == EventActionType.EA_START );
         return true;
     }    
 
@@ -220,12 +246,12 @@ function handleBlackoutEvent( event ) {
 // ----------------------------------------------------------------------------
 //
 function handleMuteBlackoutEvent( event ) {
-    if ( event.action == EA_START || event.action == EA_STOP ) {
-        updateMuteBlackout( event.action == EA_START );
+    if ( event.action == EventActionType.EA_START || event.action == EventActionType.EA_STOP ) {
+        updateMuteBlackout( event.action == EventActionType.EA_START );
         return true;
     }    
 
-    if ( event.action == EA_CHANGED ) {
+    if ( event.action == EventActionType.EA_CHANGED ) {
         return true;
     } 
 
@@ -235,23 +261,12 @@ function handleMuteBlackoutEvent( event ) {
 // ----------------------------------------------------------------------------
 //
 function handleMusicMatchEvent( event ) {
-    if ( event.action == EA_START || event.action == EA_STOP ) {
-        updateMusicMatch( event.action == EA_START );
+    if ( event.action == EventActionType.EA_START || event.action == EventActionType.EA_STOP ) {
+        updateMusicMatch( event.action == EventActionType.EA_START );
         return true;
     }   
 
-    if ( event.action == EA_CHANGED ) {
-        return true;
-    }
-
-    return false;
-}
-
-// ----------------------------------------------------------------------------
-//
-function handleAnimationSpeedEvent( event ) {
-    if ( event.action == EA_CHANGED ) {
-        updateAnimationSpeed( event.val1 );
+    if ( event.action == EventActionType.EA_CHANGED ) {
         return true;
     }
 
@@ -262,8 +277,20 @@ function handleAnimationSpeedEvent( event ) {
 //
 function handleWhiteoutEvent( event ) {
 
-    if ( event.action == EA_CHANGED ) {
+    if ( event.action == EventActionType.EA_CHANGED ) {
         updateWhiteout( event.val1 );
+        return true;
+    }
+
+    return false;
+}
+
+// ----------------------------------------------------------------------------
+//
+function handleWhiteoutEffectEvent( event ) {
+
+    if ( event.action == EventActionType.EA_CHANGED ) {
+        updateWhiteoutEffect( event.val1 );
         return true;
     }
 
@@ -274,8 +301,8 @@ function handleWhiteoutEvent( event ) {
 //
 function handleWhiteoutStrobeEvent( event ) {
 
-    if ( event.action == EA_CHANGED ) {
-        updateWhiteoutStrobe( event.val1 );
+    if ( event.action == EventActionType.EA_CHANGED ) {
+        updateWhiteoutStrobe( event.val1, event.val2 );
         return true;
     }
 
@@ -285,7 +312,7 @@ function handleWhiteoutStrobeEvent( event ) {
 // ----------------------------------------------------------------------------
 //
 function handleWhiteoutColorEvent( event ) {
-    if ( event.action == EA_CHANGED ) {
+    if ( event.action == EventActionType.EA_CHANGED ) {
         updateWhiteoutColor( event.text );
         return true;
     }
@@ -295,28 +322,61 @@ function handleWhiteoutColorEvent( event ) {
 
 // ----------------------------------------------------------------------------
 //
+function handleAnimationSpeedEvent( event ) {
+
+    if ( event.action == EventActionType.EA_CHANGED ) {
+        updateAnimationSpeed( event.val1 );
+        return true;
+    }
+
+    return false;
+}
+
+// ----------------------------------------------------------------------------
+//
+function handlePaletteEvent( event ) {
+    if ( event.action == EventActionType.EA_NEW ) {
+        newPaletteEvent( event.uid );
+        return true;
+    }
+
+    if ( event.action == EventActionType.EA_DELETED ) {
+        deletePaletteEvent( event.uid );
+        return true;
+    }
+
+    if ( event.action == EventActionType.EA_CHANGED ) {
+        changePaletteEvent( event.uid );
+        return true;
+    }
+
+    return false;
+}
+
+// ----------------------------------------------------------------------------
+//
 function handleSceneEvent( event ) {
-    if ( event.action == EA_START ) {
+    if ( event.action == EventActionType.EA_START ) {
         markActiveScene( event.uid );
         return true;
     }
 
-    if ( event.action == EA_STOP ) {
+    if ( event.action == EventActionType.EA_STOP ) {
         markActiveScene( 0 );
         return true;
     }
 
-    if ( event.action == EA_NEW ) {
+    if ( event.action == EventActionType.EA_NEW ) {
         newSceneEvent( event.uid );
         return true;
     }
 
-    if ( event.action == EA_DELETED ) {
+    if ( event.action == EventActionType.EA_DELETED ) {
         deleteSceneEvent( event.uid );
         return true;
     }
 
-    if ( event.action == EA_CHANGED ) {
+    if ( event.action == EventActionType.EA_CHANGED ) {
         changeSceneEvent( event.uid );
         return true;
     }
@@ -327,27 +387,27 @@ function handleSceneEvent( event ) {
 // ----------------------------------------------------------------------------
 //
 function handleChaseEvent( event ) {
-    if ( event.action == EA_START ) {
+    if ( event.action == EventActionType.EA_START ) {
         markActiveChase( event.uid );
         return true;
     }
 
-    if ( event.action == EA_STOP ) {
+    if ( event.action == EventActionType.EA_STOP ) {
         markActiveChase( 0 );
         return true;
     }
 
-    if ( event.action == EA_NEW ) {
+    if ( event.action == EventActionType.EA_NEW ) {
         newChaseEvent( event.uid );
         return true;
     }
 
-    if ( event.action == EA_DELETED ) {
+    if ( event.action == EventActionType.EA_DELETED ) {
         deleteChaseEvent( event.uid );
         return true;
     }
 
-    if ( event.action == EA_CHANGED ) {
+    if ( event.action == EventActionType.EA_CHANGED ) {
         changeChaseEvent( event.uid );
         return true;
     }
@@ -358,18 +418,49 @@ function handleChaseEvent( event ) {
 // ----------------------------------------------------------------------------
 //
 function handleFixtureEvent( event ) {
-    if ( event.action == EA_NEW ) {
-        newFixureEvent( event.uid );
+    if ( event.action == EventActionType.EA_NEW ) {
+        newFixtureEvent( event.uid );
         return true;
     }
 
-    if ( event.action == EA_DELETED ) {
+    if ( event.action == EventActionType.EA_DELETED ) {
         deleteFixtureEvent( event.uid );
         return true;
     }
 
-    if ( event.action == EA_CHANGED ) {
+    if ( event.action == EventActionType.EA_CHANGED ) {
         changeFixtureEvent( event.uid );
+        return true;
+    }
+
+    return false;
+}
+
+// ----------------------------------------------------------------------------
+//
+function handleAnimationEvent( event ) {
+    if ( event.action == EventActionType.EA_START ) {
+        markActiveAnimation( event.uid, true );
+        return true;
+    }
+
+    if ( event.action == EventActionType.EA_STOP ) {
+        markActiveAnimation( event.uid, false );
+        return true;
+    }
+
+    if ( event.action == EventActionType.EA_NEW ) {
+        newAnimationEvent( event.uid );
+        return true;
+    }
+
+    if ( event.action == EventActionType.EA_DELETED ) {
+        deleteAnimationEvent( event.uid );
+        return true;
+    }
+
+    if ( event.action == EventActionType.EA_CHANGED ) {
+        changeAnimationEvent( event.uid );
         return true;
     }
 
@@ -380,8 +471,8 @@ function handleFixtureEvent( event ) {
 //
 function handleChannelEvent( event ) {
 
-    if ( event.action == EA_CHANGED ) {
-        changeChannelEvent( event.uid, event.val1, event.val2 );
+    if ( event.action == EventActionType.EA_CHANGED ) {
+        changeChannelEvent( event.uid, event.val1, event.val2, event.val3 );
         return true;
     }
 
@@ -391,27 +482,27 @@ function handleChannelEvent( event ) {
 // ----------------------------------------------------------------------------
 //
 function handleTrackEvent( event ) {
-    if ( event.action == EA_START ) {
+    if ( event.action == EventActionType.EA_START ) {
         startTrackEvent( event.text, event.val1 );
         return true;
     }
 
-    if ( event.action == EA_STOP ) {
+    if ( event.action == EventActionType.EA_STOP ) {
         stopTrackEvent( event.text );
         return true;
     }
 
-    if ( event.action == EA_PAUSE ) {
+    if ( event.action == EventActionType.EA_PAUSE ) {
         pauseTrackEvent( event.text );
         return true;
     }
 
-    if ( event.action == EA_RESUME ) {
+    if ( event.action == EventActionType.EA_RESUME ) {
         resumeTrackEvent( event.text );
         return true;
     }
 
-    if ( event.action == EA_TIME ) {
+    if ( event.action == EventActionType.EA_TIME ) {
         timeTrackEvent( event.text, event.val1 );
         return true;
     }
@@ -422,7 +513,7 @@ function handleTrackEvent( event ) {
 // ----------------------------------------------------------------------------
 //
 function handleTrackQueuesEvent( event ) {
-    if ( event.action == EA_CHANGED ) {
+    if ( event.action == EventActionType.EA_CHANGED ) {
         changeTrackQueueEvent( event.val1, event.val2 );
         return true;
     } 
@@ -430,5 +521,14 @@ function handleTrackQueuesEvent( event ) {
     return false;
 }
 
+// ----------------------------------------------------------------------------
+//
+function handleFixtureStatusEvent( event ) {
+    if (event.action == EventActionType.EA_CHANGED) {
+        changeFixtureStatusEvent( event.uid, event.val1, event.val2, event.val3 );
+        return true;
+    } 
 
+    return false;
+}
 

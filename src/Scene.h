@@ -24,10 +24,10 @@ MA 02111-1307, USA.
 
 #include "IVisitor.h"
 #include "SceneActor.h"
-#include "AbstractAnimation.h"
-#include "Act.h"
+#include "AnimationDefinition.h"
+#include "AnimationReference.h"
 
-typedef ULONG SceneNumber;								// Scene numbers will be user friendly numbers 1-n
+typedef ULONG SceneNumber;				// Scene numbers will be user friendly numbers 1-n
 
 // Controls how scenes are loaded over existing scenes
 enum SceneLoadMethod {
@@ -41,15 +41,12 @@ class Scene : public DObject
     friend class VenueWriter;
     friend class VenueReader;
 
-    CCriticalSection    m_scene_mutex;					// Protect scene objects
+    CCriticalSection        m_scene_mutex;					// Protect scene objects
 
-    ActorMap			m_actors;						// "Actors" in this scene
-    AnimationPtrArray	m_animations;
-    Acts                m_acts;                         // List of acts this object belongs to
-    BPMRating           m_bpm_rating;                   // BPM rating for this scene   
+    ActorMap			    m_actors;						// "Actors" in this scene
+    AnimationReferenceArray m_animations;
+    BPMRating               m_bpm_rating;                   // BPM rating for this scene   
     
-    void copy_animations( Scene& rhs );             
-
 public:
     Scene() {}
     Scene( Scene& other );
@@ -63,6 +60,7 @@ public:
     }
 
     void addActor( SceneActor& actor );
+    void setActors( ActorList& actors );
     bool removeActor( UID uid );
     SceneActor* getActor( UID uid );
     ActorPtrArray getActors( void );
@@ -102,28 +100,17 @@ public:
         m_bpm_rating = rating;
     }
 
-    AbstractAnimation* getAnimation( size_t animation_num );
-    void addAnimation( AbstractAnimation* animation );
-    void removeAnimation( UID animation_uid );
-    void insertAnimation( unsigned animation_num, AbstractAnimation* animation );
-    void clearAnimations( );
+    AnimationReference* getAnimationByUID( UID animation_uid );
+    bool removeAnimationByUID( UID animation_uid );
+        
+    bool clearAnimations( );
+    void addAnimation( AnimationReference& animation );
+    void replaceAnimation( size_t animation_index, AnimationReference& animation );
 
-    AbstractAnimation* getAnimation( UID animation_uid ) {
-        for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
-            if ( (*it)->getUID() == animation_uid )
-                return (*it);
-        return NULL;
-    }
+    AnimationReference* getAnimation( size_t animation_index );
 
-    AnimationPtrArray& animations() {
+    AnimationReferenceArray& animations() {
         return m_animations;
-    }
-
-    inline Acts getActs() const {
-        return m_acts;
-    }
-    inline void setActs( Acts& acts ) {
-        m_acts = acts;
     }
 };
 

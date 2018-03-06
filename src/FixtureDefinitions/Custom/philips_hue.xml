@@ -1,0 +1,219 @@
+<?xml version="1.0" ?>
+<fixture_definitions>
+    <author>Robert DeSantis</author>
+    <version>1</version>
+  
+	<fixture type="par" channels="6">
+		<manufacturer>Philips</manufacturer>
+		<model>Hue Color</model>
+    <channels>
+      <channel index="1" type="dimmer" color="false" blackout="true" value="255">
+        <dimmer strobe="false" />
+        <name>Dimmer</name>
+      </channel>
+      <channel index="2" type="color speed" color="false" blackout="true" value="50">
+        <name>Transition Time</name>
+        <ranges>
+          <range start="0" end="9">
+            <name>OFF</name>
+          </range>
+          <range start="10" end="19">
+            <name>100ms</name>
+          </range>
+          <range start="20" end="29">
+            <name>200ms</name>
+          </range>
+          <range start="30" end="39">
+            <name>300ms</name>
+          </range>
+          <range start="40" end="49">
+            <name>400ms</name>
+          </range>
+          <range start="50" end="59">
+            <name>500ms</name>
+          </range>
+          <range start="60" end="69">
+            <name>600ms</name>
+          </range>
+          <range start="70" end="79">
+            <name>700ms</name>
+          </range>
+          <range start="80" end="89">
+            <name>800ms</name>
+          </range>
+          <range start="90" end="99">
+            <name>900ms</name>
+          </range>
+          <range start="100" end="109">
+            <name>1s</name>
+          </range>
+          <range start="110" end="119">
+            <name>1.1s</name>
+          </range>
+          <range start="120" end="129">
+            <name>1.2s</name>
+          </range>
+          <range start="130" end="139">
+            <name>1.3s</name>
+          </range>
+          <range start="140" end="149">
+            <name>1.4s</name>
+          </range>
+          <range start="150" end="159">
+            <name>1.5s</name>
+          </range>
+          <range start="160" end="169">
+            <name>1.6s</name>
+          </range>
+          <range start="170" end="179">
+            <name>1.7s</name>
+          </range>
+          <range start="180" end="189">
+            <name>1.8ms</name>
+          </range>
+          <range start="190" end="199">
+            <name>1.9s</name>
+          </range>
+          <range start="200" end="209">
+            <name>2s</name>
+          </range>
+          <range start="210" end="219">
+            <name>2.1s</name>
+          </range>
+          <range start="220" end="229">
+            <name>2.2s</name>
+          </range>
+          <range start="230" end="239">
+            <name>2.3ms</name>
+          </range>
+          <range start="240" end="249">
+            <name>2.4s</name>
+          </range>
+          <range start="250" end="255">
+            <name>2.5s</name>
+          </range>
+        </ranges>  
+      </channel>
+      <channel index="3" type="white" color="true" blackout="true">
+        <name>White</name>
+      </channel>      
+      <channel index="4" type="red" color="true" blackout="true">
+				<name>Red</name>
+			</channel>
+			<channel index="5" type="green" color="true" blackout="true">
+				<name>Green</name>
+			</channel>
+			<channel index="6" type="blue" color="true" blackout="true">
+				<name>Blue</name>
+			</channel>
+		</channels>
+	</fixture>
+
+  <fixture type="par" channels="3">
+    <manufacturer>Philips</manufacturer>
+    <model>Hue Color Temperature</model>
+    <channels>
+      <channel index="1" type="dimmer" color="false" blackout="true" value="255">
+        <name>Dimmer</name>
+      </channel>
+      <channel index="2" type="color speed" color="false" blackout="true" value="50">
+        <name>Transition Time</name>
+        <ranges>
+          <range start="0" end="9">
+            <name>OFF</name>
+          </range>
+          <range start="10" end="19">
+            <name>100ms</name>
+          </range>
+          <range start="20" end="29">
+            <name>200ms</name>
+          </range>
+          <range start="30" end="39">
+            <name>300ms</name>
+          </range>
+          <range start="40" end="49">
+            <name>400ms</name>
+          </range>
+          <range start="50" end="59">
+            <name>500ms</name>
+          </range>
+          <range start="60" end="69">
+            <name>600ms</name>
+          </range>
+          <range start="70" end="79">
+            <name>700ms</name>
+          </range>
+          <range start="80" end="89">
+            <name>800ms</name>
+          </range>
+          <range start="90" end="99">
+            <name>900ms</name>
+          </range>
+          <range start="100" end="109">
+            <name>1s</name>
+          </range>
+          <range start="110" end="119">
+            <name>1.1s</name>
+          </range>
+          <range start="120" end="129">
+            <name>1.2s</name>
+          </range>
+          <range start="130" end="139">
+            <name>1.3s</name>
+          </range>
+          <range start="140" end="149">
+            <name>1.4s</name>
+          </range>
+          <range start="150" end="159">
+            <name>1.5s</name>
+          </range>
+          <range start="160" end="169">
+            <name>1.6s</name>
+          </range>
+          <range start="170" end="179">
+            <name>1.7s</name>
+          </range>
+          <range start="180" end="189">
+            <name>1.8ms</name>
+          </range>
+          <range start="190" end="199">
+            <name>1.9s</name>
+          </range>
+          <range start="200" end="209">
+            <name>2s</name>
+          </range>
+          <range start="210" end="219">
+            <name>2.1s</name>
+          </range>
+          <range start="220" end="229">
+            <name>2.2s</name>
+          </range>
+          <range start="230" end="239">
+            <name>2.3ms</name>
+          </range>
+          <range start="240" end="249">
+            <name>2.4s</name>
+          </range>
+          <range start="250" end="255">
+            <name>2.5s</name>
+          </range>
+        </ranges>
+      </channel>
+      <channel index="3" type="white" color="false" blackout="true">
+        <name>White</name>
+      </channel>
+    </channels>
+  </fixture>
+
+  <fixture type="par" channels="1">
+    <manufacturer>Philips</manufacturer>
+    <model>Hue Dimmable</model>
+    <channels>
+      <channel index="1" type="dimmer" color="false" blackout="true" value="255">
+        <name>Dimmer</name>
+      </channel>
+    </channels>
+  </fixture>  
+
+
+</fixture_definitions>

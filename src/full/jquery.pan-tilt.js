@@ -115,10 +115,10 @@ MA 02111-1307, USA.
             else
                 y = this.cy + this.radius_space + 12;
 
-            ctx.font = '6pt Arial';
+            ctx.font = '8pt Arial';
             ctx.textAlign = 'center';
             ctx.fillStyle = this.options.text_color;
-            ctx.fillText("Pan " + this.options.pan + "°", this.cx, y );
+            ctx.fillText("Pan " + this.options.pan, this.cx, y );
 
             this._drawTilt();
         },
@@ -188,10 +188,10 @@ MA 02111-1307, USA.
             else
                 y -= 5;
 
-            ctx.font = '6pt Arial';
+            ctx.font = '8pt Arial';
             ctx.textAlign = 'center';
             ctx.fillStyle = this.options.text_color;
-            ctx.fillText( "Tilt " + this.options.tilt + "°", this.cx, y);
+            ctx.fillText( "Tilt " + this.options.tilt, this.cx, y);
         },
 
         set_location: function (location) {
@@ -228,7 +228,7 @@ MA 02111-1307, USA.
             this.mouse_button = event.button;
 
             this.canvas.on("mouseup", function ( event ) { self._on_mouse_up( event ); });
-            this.canvas.bind("mousemove", function ( event) { self._on_mouse_move( event ); });
+            this.canvas.on("mousemove", function ( event) { self._on_mouse_move( event ); });
             this.canvas.get(0).setCapture();
             return false;
         },

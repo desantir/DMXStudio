@@ -32,15 +32,11 @@ class DMXHttpRedirector : public IRequestHandler
     RestHandlerMap      m_rest_handlers;
 
 public:
-    DMXHttpRedirector(void);
+    DMXHttpRedirector( UINT port );
     ~DMXHttpRedirector(void);
 
     LPCSTR getPrefix() {
         return DMX_URL_ROOT;
-    }
-
-    UINT getPort() {
-        return studio.getHttpPort();
     }
 
     DWORD processGetRequest( HttpWorkerThread* worker );

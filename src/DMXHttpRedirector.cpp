@@ -26,7 +26,8 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
-DMXHttpRedirector::DMXHttpRedirector(void)
+DMXHttpRedirector::DMXHttpRedirector( UINT port ) :
+    IRequestHandler( port )
 {
 }
 

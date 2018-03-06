@@ -20,20 +20,33 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "AudioInputStream.h"
+
+struct SoundLevel
+{
+    unsigned		amplitude;			    // Current sound amplitude
+    unsigned        avg_amplitude;
+    unsigned        amplitude_beat;         // 0 for none, > 0 for beat intensity
+    DWORD           beat_index;             // MS of current detected beat
+};
 
 class SoundDetector : public IAudioProcessor
 {
     AudioInputStream* m_audio_stream;
+    CCriticalSection  m_access_lock;
+
     DWORD			m_mute_ms;				// Length in MS of no amplitude before silence (zero = OFF)
 
     unsigned		m_amplitude;			// Current sound amplitude
+    unsigned        m_avg_amplitude;
+    unsigned        m_amplitude_beat;       // 0 for none, > 0 for beat intensity
     DWORD			m_last_sound_ms;		// Last time sounds was detected
     DWORD			m_last_quiet_ms;		// Last time silence was detected
+
+    DWORD           m_beat_index;           // MS of current detected beat
 
     // Buffer and values to compute moving average
     unsigned		m_amplitude_buffer_size;
@@ -61,13 +74,7 @@ public:
         detach();
     }
 
-    unsigned getAmplitude( ) const {
-        return m_amplitude;
-    }
-
-    unsigned getAvgAmplitude( ) const {
-        return m_ampbuf_count == 0 ? 0 : m_ampbuf_sum/m_ampbuf_count;
-    }
+    void getSoundData( SoundLevel& level );
 
     bool isMute() const {
         if ( m_mute_ms == 0 )				// Zero MS delay means mute detection is OFF

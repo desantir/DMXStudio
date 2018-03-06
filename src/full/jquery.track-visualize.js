@@ -342,7 +342,9 @@ MA 02111-1307, USA.
         },
 
         _cancel_event : function( event ) {
-            if (event = (event || window.event)) {
+            event = (event || window.event);
+
+            if ( event != null ) {
                 if (event.stopPropagation != null)
                     event.stopPropagation();
                 else

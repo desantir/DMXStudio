@@ -58,6 +58,15 @@ function initializeUI() {
         });
     });
 
+    $("#animation_speed").change(function () {
+        $.ajax({
+            type: "GET",
+            url: "/dmxstudio/rest/control/venue/animationspeed/" + $('#animation_speed').val(),
+            cache: false,
+            error: onError
+        });
+    });
+
     $("#whiteoutColor").minicolors({
         animationSpeed: 50,
         animationEasing: 'swing',
@@ -183,8 +192,8 @@ function initializeUI() {
             type: "GET",
             url: "/dmxstudio/rest/query/music/playlist/tracks/" + playlist_link,
             cache: false,
-            success: function (data) {
-                var json = jQuery.parseJSON(data);
+            success: function (playlist_data) {
+                var json = jQuery.parseJSON(playlist_data);
                 playlist = json['tracks'];
 
                 var data = [];
@@ -288,20 +297,9 @@ function change_whiteout_color( rgb, opacity ) {
 function change_strobe(strobe_value) {
     clearTimeout(timeout);
 
-    document.timer_url = "/dmxstudio/rest/control/venue/strobe/" + strobe_value
+    document.timer_url = "/dmxstudio/rest/control/venue/strobe/" + strobe_value + "/0"
 
     timeout = setTimeout(timeout_send_ajax_request, SLIDER_TIMEOUT);
-}
-
-// ----------------------------------------------------------------------------
-//
-function change_animation_speed(speed) {
-    $.ajax({
-        type: "GET",
-        url: "/dmxstudio/rest/control/venue/animation_speed/" + speed,
-        cache: false,
-        error: onError
-    });
 }
 
 // ----------------------------------------------------------------------------
@@ -396,8 +394,8 @@ function updateMusicPlayer(update_selections) {
                     type: "GET",
                     url: "/dmxstudio/rest/query/music/playlists/",
                     cache: false,
-                    success: function (data) {
-                        var json = jQuery.parseJSON(data);
+                    success: function (playlist_data) {
+                        var json = jQuery.parseJSON(playlist_data);
                         playlists = json.playlists;
 
                         var data = [];
@@ -515,7 +513,7 @@ function show_venue() {
                 return false;
             });
 
-            $('#slider_whiteout_strobe').val(json.whiteout_strobe);
+            $('#slider_whiteout_strobe').val(json.whiteout_strobe_ms);
             $('#slider_whiteout_strobe').slider("refresh");
 
             $("#master_dimmer").slider({
@@ -528,19 +526,8 @@ function show_venue() {
             $('#master_dimmer').val(json.dimmer);
             $('#master_dimmer').slider("refresh");
 
-            var o = $("#animations_speed_id option[value='" + json.animation_speed + "']");
-            var index = 0;
-
-            if (o != null && o.index() != -1) {
-                index = o.index();
-            }
-
-            $('#animations_speed_id option:eq(0)').text("Default: " + json.animation_speed + " ms");
-            $('#animations_speed_id option:eq(0)').val(json.animation_speed);
-
-            // Select option and refresh the dropdown
-            $('#animations_speed_id option').eq(index).attr("selected", true);
-            $('#animations_speed_id').selectmenu('refresh', true);
+            $("#animation_speed").find( "option[value='" + json.animation_speed + "']" ).attr( "selected", true );
+            $('#animation_speed').selectmenu("refresh");
 
             clearTimeout(timeout); // Stop events from going back to server
         },
@@ -748,17 +735,20 @@ function updateFixtures() {
 // ----------------------------------------------------------------------------
 //
 function change_fixture_channel(fixture_id, channel, channel_value) {
-    var fixture = getFixtureById(fixture_id);
-    if (fixture == null)
-        return;
-
-    var what = (fixture.is_group) ? "group" : "fixture";
-
-    fixture.channels[channel].value = channel_value;
+    var json = {
+        channel_data: [{
+        "actor_id": fixture_id,
+        "channel": channel,
+        "value": channel_value,
+        "capture": true
+        }]
+    };
 
     $.ajax({
-        type: "GET",
-        url: "/dmxstudio/rest/control/channel/" + what + "/" + fixture_id + "/" + channel + "/" + channel_value,
+        type: "POST",
+        url: "/dmxstudio/rest/control/fixture/channel/",
+        data: JSON.stringify(json),
+        contentType: 'application/json',
         cache: false,
         error: onError
     });
@@ -771,11 +761,16 @@ function capture_fixture() {
     if (fixture == null)
         return;
 
-    var what = (fixture.is_group) ? "group" : "fixture";
-
+    var json = {
+        "id": fixture.id,
+        "is_capture": true
+    };
+    
     $.ajax({
-        type: "GET",
-        url: "/dmxstudio/rest/control/select/" + what + "/" + fixture_select_id.value,
+        type: "POST",
+        url: "/dmxstudio/rest/control/fixture/",
+        data: JSON.stringify(json),
+        contentType: 'application/json',
         cache: false,
         success: function (data) {
             fixture.is_active = true;
@@ -791,9 +786,16 @@ function capture_fixture() {
 // ----------------------------------------------------------------------------
 //
 function release_fixture(fixture_id) {
+   var json = {
+        "id": fixture_id,
+        "is_capture": false
+    };
+    
     $.ajax({
-        type: "GET",
-        url: "/dmxstudio/rest/control/fixture/release/" + fixture_id,
+        type: "POST",
+        url: "/dmxstudio/rest/control/fixture/",
+        data: JSON.stringify(json),
+        contentType: 'application/json',
         cache: false,
         success: function (data) {
             $.map(fixtures, function (fixture, index) {

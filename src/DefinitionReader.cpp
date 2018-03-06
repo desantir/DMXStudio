@@ -20,7 +20,7 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
+#include "DMXStudio.h"
 #include "DefinitionReader.h"
 #include "DefinitionWriter.h"
 
@@ -89,7 +89,8 @@ void DefinitionReader::readFixtureDefinitions( LPCSTR directory )
         // Check for definition file
         TiXmlDocument doc;
         if ( !doc.LoadFile( file_name ) )
-            throw StudioException( "Error reading fixture definition '%s'", file_name );
+            throw StudioException( "Error reading fixture definition '%s': %s (row %u, column %u)", 
+                file_name, doc.ErrorDesc(), doc.ErrorRow(), doc.ErrorCol() );
 
         try {
             TiXmlElement* root = doc.FirstChildElement( "fixture_definitions" );
@@ -110,7 +111,7 @@ void DefinitionReader::readFixtureDefinitions( LPCSTR directory )
                 delete definition;
             }
         }
-        catch ( StudioException e ) {
+        catch ( StudioException& e ) {
             throw StudioException( "%s: %s", file_name, e.what() );
         }
     }
@@ -160,15 +161,19 @@ Channel* DefinitionReader::read( TiXmlElement* self, Channel* channel )
     channel = new Channel();
 
     try {
-        channel->m_channel_offset = (channel_t)read_dword_attribute( self, "index" );
+        channel->m_channel_offset = (channel_address)read_dword_attribute( self, "index" );
         channel->m_type = Channel::convertTextToChannelType( read_text_attribute( self, "type" ) );
         channel->m_name = read_text_element( self, "name" );
         channel->m_is_color = read_bool_attribute( self, "color" );
         channel->m_can_blackout = read_bool_attribute( self, "blackout" );
         channel->m_can_whiteout = read_bool_attribute( self, "whiteout", true );
-        channel->m_default_value = (BYTE)read_int_attribute( self, "value" );
-        channel->m_home_value = (BYTE)read_int_attribute( self, "home_value" );
-        channel->m_pixel_index = (BYTE)read_int_attribute( self, "pixel" );
+        channel->m_home_value = (channel_value)read_int_attribute( self, "home_value" );
+
+        // Use the home value as the default value if there is no specified value. Unclear that we need
+        // to treat these defaults differently during operation, but keeping the two for now.
+        channel->m_default_value = (channel_value)read_int_attribute( self, "value", channel->m_home_value );
+
+        channel->m_pixel_index = (BYTE)read_int_attribute( self, "pixel", 1 );
         channel->m_head_number = (BYTE)read_int_attribute( self, "head" );
 
         // If head number is not set on tilt or pan, default to 1
@@ -186,16 +191,32 @@ Channel* DefinitionReader::read( TiXmlElement* self, Channel* channel )
         TiXmlElement *dimmer = self->FirstChildElement( "dimmer" );
         if ( dimmer ) {
             channel->m_is_dimmer = true;
-            channel->m_lowest_intensity = (BYTE)read_int_attribute( dimmer, "lowest_intensity", 0 );
-            channel->m_highest_intensity = (BYTE)read_int_attribute( dimmer, "highest_intensity", 255 );
-            channel->m_off_intensity = (BYTE)read_int_attribute( dimmer, "off_intensity", channel->m_lowest_intensity );
+            channel->m_dimmer_can_strobe = read_bool_attribute( dimmer, "strobe", true );
+            channel->m_lowest_intensity = (channel_value)read_int_attribute( dimmer, "lowest_intensity", 0 );
+            channel->m_highest_intensity = (channel_value)read_int_attribute( dimmer, "highest_intensity", 255 );
+            channel->m_off_intensity = (channel_value)read_int_attribute( dimmer, "off_intensity", channel->m_lowest_intensity );
         }
         else {
             channel->m_is_dimmer = ( channel->m_type == CHNLT_DIMMER );     // Implies this is the default 0-255 dimmer channel type
+			channel->m_dimmer_can_strobe = channel->m_is_dimmer;
             channel->m_lowest_intensity = 0;
             channel->m_highest_intensity = 255;
             channel->m_off_intensity = 0;
         }
+
+		TiXmlElement *strobe = self->FirstChildElement( "strobe" );
+		if ( strobe ) {
+			channel->m_is_strobe = true;
+			channel->m_strobe_slow = (channel_value)read_int_attribute( strobe, "speed_slow", 1 );
+			channel->m_strobe_fast = (channel_value)read_int_attribute( strobe, "speed_fast", 255 );
+			channel->m_strobe_off = (channel_value)read_int_attribute( strobe, "off", 0 );
+		}
+		else {
+			channel->m_is_strobe = ( channel->m_type == CHNLT_STROBE );     // Implies this is the default 0-255 strobe channel type
+			channel->m_strobe_slow = 1;
+			channel->m_strobe_fast = 255;
+			channel->m_strobe_off = 0;
+		}
 
         // Add channel ranges
         std::vector<ChannelValueRange *> ranges = 
@@ -213,12 +234,19 @@ Channel* DefinitionReader::read( TiXmlElement* self, Channel* channel )
         std::vector<ChannelAngle *> angles = 
             read_xml_list<ChannelAngle>( self->FirstChildElement( "angles" ), "angle" );
 
-        for ( std::vector<ChannelAngle *>::iterator it=angles.begin(); it != angles.end(); ++it ) {
-            channel->m_angles[ (*it)->getAngle() ] = *(*it);
-            delete (*it);
+        for ( ChannelAngle* angle : angles ) {
+            channel->m_angles.push_back( *angle );
+            delete angle;
         }
 
         channel->generateAngleTable();
+
+        // Generate pan and tilt channel angle max and min
+        if ( channel->m_angles.size() > 0 && 
+             (channel->m_type == ChannelType::CHNLT_PAN || channel->m_type == ChannelType::CHNLT_TILT) ) {
+            channel->m_min_angle = channel->m_angles.front().getAngle();
+            channel->m_max_angle = channel->m_angles.back().getAngle();
+        }
     }
     catch( ... ) {
         delete channel;
@@ -235,7 +263,7 @@ ChannelAngle* DefinitionReader::read( TiXmlElement* self, ChannelAngle* channel_
     channel_angle = new ChannelAngle();
 
     channel_angle->m_angle = (int)read_int_attribute( self, "degrees" );
-    channel_angle->m_value = (BYTE)read_int_attribute( self, "value" );
+    channel_angle->m_value = (channel_value)read_int_attribute( self, "value" );
 
     return channel_angle;
 }

@@ -1,0 +1,429 @@
+<?xml version="1.0" ?>
+<fixture_definitions>
+    <author>Robert DeSantis</author>
+    <version>1</version>
+
+    <fixture type="effect" channels="14">
+      <manufacturer>Blizzard</manufacturer>
+      <model>Snake Eyes</model>
+      <channels>
+        <channel index="1" type="pan" color="false" blackout="false" home_value="169">
+          <name>Pan</name>
+          <angles>
+            <angle degrees="0" value="0" />
+            <angle degrees="90" value="43" />
+            <angle degrees="180" value="84" />
+            <angle degrees="270" value="127" />
+            <angle degrees="360" value="169" />
+            <angle degrees="450" value="210" />
+            <angle degrees="540" value="255" />
+          </angles>
+        </channel>
+        <channel index="2" type="tilt" color="false" blackout="false" home_value="139">
+          <name>Tilt</name>
+          <angles>
+            <angle degrees="45" value="0" />
+            <angle degrees="90" value="29" />
+            <angle degrees="180" value="139" />
+            <angle degrees="270" value="255" />
+          </angles>
+        </channel>
+        <channel index="3" type="control" color="false" blackout="false">
+          <name>Infinity Tilt</name>
+          <ranges>
+            <range start="0" end="30">
+              <name>Stop</name>
+            </range>
+            <range start="31" end="140">
+              <name>Counterclockwise (fast to slow)</name>
+            </range>
+            <range start="141" end="145">
+              <name>Stop</name>
+            </range>
+            <range start="146" end="2551">
+              <name>Clockwise (slow to fast)</name>
+            </range>
+          </ranges>
+        </channel>
+        <channel index="4" type="control" color="false" blackout="false">
+          <name>Pan/tilt speed (fast to slow)</name>
+        </channel>
+        <channel index="5" type="red" color="true" blackout="true">
+          <name>Red</name>
+        </channel>
+        <channel index="6" type="green" color="true" blackout="true">
+          <name>Green</name>
+        </channel>
+        <channel index="7" type="blue" color="true" blackout="true">
+          <name>Blue</name>
+        </channel>
+        <channel index="8" type="white" color="true" blackout="true">
+          <name>White</name>
+        </channel>
+        <channel index="9" type="strobe" color="false" blackout="true" value="0">
+          <strobe off="0" speed_slow="97" speed_fast="176"/>
+          <name>Strobe</name>
+          <ranges>
+            <range start="0" end="15">
+              <name>No Strobe</name>
+            </range>
+            <range start="16" end="96">
+              <name>Strobe 1Hz-25Hz (slow to fast)</name>
+            </range>
+            <range start="97" end="176">
+              <name>Strobe (fast to slow)</name>
+            </range>
+            <range start="177" end="255">
+              <name>Random strobe (slow to fast)</name>
+            </range>
+          </ranges>
+        </channel>
+        <channel index="10" type="dimmer" color="false" blackout="true" value="255">
+          <dimmer lowest_intensity="1" highest_intensity="255" off_intensity="0" />
+          <name>Dimmer</name>
+          <ranges>
+            <range start="0" end="255">
+              <name>0% to 100%</name>
+            </range>
+          </ranges>
+        </channel>
+        <channel index="11" type="color macro" color="false" blackout="true">
+          <name>LED Strip Auto Program</name>
+          <ranges>
+            <range start="0" end="36">
+              <name>No Function</name>
+            </range>
+            <range start="37" end="56">
+              <name>Red</name>
+            </range>
+            <range start="57" end="77">
+              <name>Green</name>
+            </range>
+            <range start="78" end="98">
+              <name>Blue</name>
+            </range>
+            <range start="99" end="119">
+              <name>Yellow</name>
+            </range>
+            <range start="120" end="140">
+              <name>Magenta</name>
+            </range>
+            <range start="141" end="161">
+              <name>Cyan</name>
+            </range>
+            <range start="162" end="176">
+              <name>White</name>
+            </range>
+            <range start="177" end="186">
+              <name>Multi-color Fading</name>
+            </range>
+            <range start="187" end="196">
+              <name>Red Chase</name>
+            </range>
+            <range start="197" end="206">
+              <name>Green Chase</name>
+            </range>
+            <range start="207" end="216">
+              <name>Blue Chase</name>
+            </range>
+            <range start="217" end="226">
+              <name>Yellow Chase</name>
+            </range>
+            <range start="227" end="236">
+              <name>Magenta Chase</name>
+            </range>
+            <range start="237" end="246">
+              <name>Cyan Chase</name>
+            </range>
+            <range start="247" end="255">
+              <name>White Chase</name>
+            </range>
+          </ranges>
+        </channel>
+        <channel index="12" type="control" color="false" blackout="false">
+          <name>LED Strip Speed</name>
+          <ranges>
+            <range start="0" end="255">
+              <name>slow to fast</name>
+            </range>
+          </ranges>
+        </channel>
+        <channel index="13" type="color macro" color="false" blackout="true">
+          <name>Color Macro</name>
+          <ranges>
+            <range start="0" end="45">
+              <name>No Function</name>
+            </range>
+            <range start="46" end="65">
+              <name>Red</name>
+            </range>
+            <range start="66" end="85">
+              <name>Green</name>
+            </range>
+            <range start="86" end="105">
+              <name>Blue</name>
+            </range>
+            <range start="106" end="125">
+              <name>White</name>
+            </range>
+            <range start="126" end="145">
+              <name>Yellow</name>
+            </range>
+            <range start="146" end="165">
+              <name>Magenta</name>
+            </range>
+            <range start="166" end="185">
+              <name>Cyan</name>
+            </range>
+            <range start="186" end="205">
+              <name>White</name>
+            </range>
+            <range start="206" end="255">
+              <name>Multi-color Fading (fast to slow)</name>
+            </range>
+          </ranges>
+        </channel>
+        <channel index="14" type="control" color="false" blackout="true">
+          <name>Auto Program</name>
+          <ranges>
+            <range start="0" end="49">
+              <name>No Function</name>
+            </range>
+            <range start="50" end="69">
+              <name>Auto #1</name>
+            </range>
+            <range start="70" end="89">
+              <name>Auto #2</name>
+            </range>
+            <range start="90" end="109">
+              <name>Auto #3</name>
+            </range>
+            <range start="110" end="119">
+              <name>Sound</name>
+            </range>
+            <range start="120" end="249">
+              <name>No Function</name>
+            </range>
+            <range start="250" end="255">
+              <name>Reset</name>
+            </range>
+          </ranges>
+        </channel>
+      </channels>
+    </fixture>
+  
+    <fixture type="effect" channels="16">
+        <manufacturer>Blizzard</manufacturer>
+        <model>Snake Eyes</model>
+        <channels>
+            <channel index="1" type="pan" color="false" blackout="false" home_value="169">
+                <name>Pan</name>
+                <angles>
+                    <angle degrees="0" value="0" />
+                    <angle degrees="90" value="43" />
+                    <angle degrees="180" value="84" />
+                    <angle degrees="270" value="127" />
+                    <angle degrees="360" value="169" />
+                    <angle degrees="450" value="210" />
+                    <angle degrees="540" value="255" />
+                </angles>
+            </channel>
+            <channel index="2" type="pan fine" color="false" blackout="false">
+                <name>Pan Fine</name>
+            </channel>
+            <channel index="3" type="tilt" color="false" blackout="false" home_value="139">
+                <name>Tilt</name>
+                <angles>
+                    <angle degrees="45" value="0" />
+                    <angle degrees="90" value="29" />
+                    <angle degrees="180" value="139" />
+                    <angle degrees="270" value="255" />
+                </angles>
+            </channel>
+            <channel index="4" type="tilt fine" color="false" blackout="false">
+                <name>Tilt Fine</name>
+            </channel>
+            <channel index="5" type="control" color="false" blackout="false">
+              <name>Infinity Tilt</name>
+              <ranges>
+                <range start="0" end="30">
+                  <name>Stop</name>
+                </range>
+                <range start="31" end="140">
+                  <name>Counterclockwise (fast to slow)</name>
+                </range>
+                <range start="141" end="145">
+                  <name>Stop</name>
+                </range>
+                <range start="146" end="2551">
+                  <name>Clockwise (slow to fast)</name>
+                </range>
+              </ranges>
+            </channel>
+            <channel index="6" type="control" color="false" blackout="false">
+              <name>Pan/tilt speed (fast to slow)</name>
+            </channel>
+            <channel index="7" type="red" color="true" blackout="true">
+              <name>Red</name>
+            </channel>
+            <channel index="8" type="green" color="true" blackout="true">
+              <name>Green</name>
+            </channel>
+            <channel index="9" type="blue" color="true" blackout="true">
+              <name>Blue</name>
+            </channel>
+            <channel index="10" type="white" color="true" blackout="true">
+              <name>White</name>
+            </channel>
+            <channel index="11" type="strobe" color="false" blackout="true" value="0">
+              <strobe off="0" speed_slow="97" speed_fast="176"/>
+              <name>Strobe</name>
+              <ranges>
+                <range start="0" end="15">
+                  <name>No Strobe</name>
+                </range>
+                <range start="16" end="96">
+                  <name>Strobe 1Hz-25Hz (slow to fast)</name>
+                </range>
+                <range start="97" end="176">
+                  <name>Strobe (fast to slow)</name>
+                </range>
+                <range start="177" end="255">
+                  <name>Random strobe (slow to fast)</name>
+                </range>
+              </ranges>
+            </channel>
+            <channel index="12" type="dimmer" color="false" blackout="true" value="255">
+              <dimmer lowest_intensity="1" highest_intensity="255" off_intensity="0" />
+              <name>Dimmer</name>
+              <ranges>
+                <range start="0" end="255">
+                  <name>0% to 100%</name>
+                </range>
+              </ranges>
+            </channel>
+            <channel index="13" type="color macro" color="false" blackout="true">
+                <name>LED Strip Auto Program</name>
+                <ranges>
+                    <range start="0" end="36">
+                        <name>No Function</name>
+                    </range>
+                    <range start="37" end="56">
+                        <name>Red</name>
+                    </range>
+                    <range start="57" end="77">
+                        <name>Green</name>
+                    </range>
+                    <range start="78" end="98">
+                        <name>Blue</name>
+                    </range>
+                    <range start="99" end="119">
+                        <name>Yellow</name>
+                    </range>
+                    <range start="120" end="140">
+                        <name>Magenta</name>
+                    </range>
+                    <range start="141" end="161">
+                        <name>Cyan</name>
+                    </range>
+                    <range start="162" end="176">
+                        <name>White</name>
+                    </range>
+                    <range start="177" end="186">
+                        <name>Multi-color Fading</name>
+                    </range>
+                    <range start="187" end="196">
+                        <name>Red Chase</name>
+                    </range>
+                    <range start="197" end="206">
+                        <name>Green Chase</name>
+                    </range>
+                    <range start="207" end="216">
+                        <name>Blue Chase</name>
+                    </range>
+                    <range start="217" end="226">
+                        <name>Yellow Chase</name>
+                    </range>
+                    <range start="227" end="236">
+                        <name>Magenta Chase</name>
+                    </range>
+                    <range start="237" end="246">
+                        <name>Cyan Chase</name>
+                    </range>
+                    <range start="247" end="255">
+                        <name>White Chase</name>
+                    </range>
+                </ranges>
+            </channel>          
+            <channel index="14" type="control" color="false" blackout="false">
+              <name>LED Strip Speed</name>
+              <ranges>
+                <range start="0" end="255">
+                  <name>slow to fast</name>
+                </range>
+              </ranges>
+            </channel>
+            <channel index="15" type="color macro" color="false" blackout="true">
+                <name>Color Macro</name>
+                <ranges>
+                    <range start="0" end="45">
+                      <name>No Function</name>
+                    </range>
+                    <range start="46" end="65">
+                      <name>Red</name>
+                    </range>
+                    <range start="66" end="85">
+                      <name>Green</name>
+                    </range>
+                    <range start="86" end="105">
+                      <name>Blue</name>
+                    </range>
+                    <range start="106" end="125">
+                      <name>White</name>
+                    </range>
+                    <range start="126" end="145">
+                      <name>Yellow</name>
+                    </range>
+                    <range start="146" end="165">
+                      <name>Magenta</name>
+                    </range>
+                    <range start="166" end="185">
+                      <name>Cyan</name>
+                    </range>
+                    <range start="186" end="205">
+                      <name>White</name>
+                    </range>
+                  <range start="206" end="255">
+                      <name>Multi-color Fading (fast to slow)</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="16" type="control" color="false" blackout="true">
+                <name>Auto Program</name>
+                <ranges>
+                    <range start="0" end="49">
+                        <name>No Function</name>
+                    </range>
+                    <range start="50" end="69">
+                        <name>Auto #1</name>
+                    </range>
+                    <range start="70" end="89">
+                        <name>Auto #2</name>
+                    </range>
+                    <range start="90" end="109">
+                        <name>Auto #3</name>
+                    </range>
+                    <range start="110" end="119">
+                        <name>Sound</name>
+                    </range>
+                    <range start="120" end="249">
+                        <name>No Function</name>
+                    </range>
+                    <range start="250" end="255">
+                        <name>Reset</name>
+                    </range>
+                </ranges>
+            </channel>
+        </channels>
+    </fixture>
+</fixture_definitions>

@@ -20,6 +20,11 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
+var slider_panel_features = [
+        { class_name: "scroll_or_grid_icon", handler: setPanelScroll },
+        { class_name: "track_slider_icon", handler: setPanelSliderTrack }
+];
+
 // ----------------------------------------------------------------------------
 // class Slider
 //
@@ -35,6 +40,8 @@ function Slider(panel, number, slider_frame) {
     this.busy = false;
     this.changed = false;
     this.linkable = false;
+    this.selectable = true;
+    this.max_value = 255;
 
     this.panel = panel;
     this.slider_frame = slider_frame;
@@ -42,252 +49,12 @@ function Slider(panel, number, slider_frame) {
     this.side_text = slider_frame.find(".slider_side_text");
     this.slider = slider_frame.find(".slider_slider");
     this.footer = slider_frame.find(".slider_footer");
-    this.linked = slider_frame.find(".slider_select");
-
-    // method isUsed
-    this.isUsed = function () {
-        return this.in_use;
-    }
-
-    this.setUsed = function (used) {
-        this.in_use = used;
-    }
-
-    this.getNumber = function () {
-        return this.number;
-    }
-
-    // method getValue
-    this.getValue = function () {
-        return this.value;
-    }
-
-    // method getOwner
-    this.getOwner = function () {
-        return this.owner;
-    }
-
-    // method getOwnerChannel
-    this.getOwnerChannel = function () {
-        return this.owner_channel;
-    }
-
-    // method getSliderFrame
-    this.getSliderFrame = function () {
-        return this.slider_frame;
-    }
-
-    // method getSlider 
-    this.getSlider = function () {
-        return this.slider;
-    }
-
-    // method getFooter 
-    this.getFooter = function () {
-        return this.footer;
-    }
-
-    // method getHeader
-    this.getHeader = function () {
-        return this.header;
-    }
-
-    // method getLabel
-    this.getLabel = function () {
-        return this.side_text;
-    }
-
-    // method getLinked
-    this.getLinked = function () {
-        return this.linked;
-    }
-
-    // method getType
-    this.getType = function () {
-        return this.type;
-    }
-
-    // method setRanges
-    this.setRanges = function (ranges) {
-        this.ranges = ranges;
-    }
-
-    // method getRanges
-    this.getRanges = function () {
-        return this.ranges;
-    }
-
-    // method isBusy
-    this.isBusy = function () {
-        return this.busy;
-    }
-
-    // method getRangeDescription
-    this.getRangeDescription = function (value) {
-        if (this.ranges != null) {
-            for (var i = 0; i < this.ranges.length; i++) {
-                var range = this.ranges[i];
-                if (value >= range.start && value <= range.end)
-                    return range.name;
-            }
-        }
-        return "";
-    }
-
-    // method highlight
-    this.highlight = function (highlight) {
-        if (highlight) {
-            if (this.isBusy() || !this.panel.isBusy()) {
-                this.getFooter().addClass('slider_highlight');
-                this.getHeader().addClass('slider_highlight');
-                this.getLabel().addClass('slider_highlight');
-            }
-        }
-        else {
-            this.getFooter().removeClass('slider_highlight');
-            this.getHeader().removeClass('slider_highlight');
-            this.getLabel().removeClass('slider_highlight');
-        }
-    }
-
-    // method setValue
-    this.setValue = function (value) {
-        this.getSlider().slider("value", value);
-        this.getFooter().html(value);
-        this.getSlider().attr("title", escapeForHTML(this.getRangeDescription(value)));
-        this.valueChange(value);
-    }
-
-    // method valueChange
-    this.valueChange = function (new_value) {
-        if (this.value != new_value) {
-            this.value = new_value;
-            this.changed = true;
-        }
-        this.typedValue = 0;
-    }
-
-    // method isChanged
-    this.isChanged = function () {
-        return this.changed;
-    }
-
-    // method sendValue
-    this.sendValue = function() {
-        if ( this.callback )
-            this.callback(this.owner, this.owner_channel, this.value);
-        this.changed = false;
-    }
-
-    this.setLinked = function (linked) {
-        if ( linked )
-            this.getLinked().addClass('ui-icon-green').removeClass('ui-icon-active');
-        else
-            this.getLinked().addClass('ui-icon-active').removeClass('ui-icon-green');
-    }
-
-    this.hideLinked = function () {
-        this.getLinked().removeClass('ui-icon-active').removeClass('ui-icon-green');
-    }
-
-    this.isLinked = function (linked) {
-        return this.getLinked().hasClass('ui-icon-green');
-    }
-
-    this.isLinkable = function () {
-        return this.linkable;
-    }
-
-    // method changeEvent
-    this.changeEvent = function (newValue) {
-        if (this.isLinked()) {
-            this.panel.iterateChannels(function (slider) {
-                if (slider.isLinked())
-                    slider.setValue(newValue);
-            });
-        }
-        else
-            this.valueChange(newValue);
-    }
-
-    // method allocate: channel data { channel, label, name, value, max_value, ranges }
-    this.allocate = function (owner, header_tip, slider_data, callback, linkable ) {
-        this.owner = owner;
-        this.in_use = true;
-        this.ranges = slider_data.ranges;
-        this.callback = callback;
-        this.owner_channel = slider_data.channel;
-        this.value = slider_data.value;
-        this.type = slider_data.type;
-        this.tooltip = header_tip;
-        this.busy = false;
-        this.linkable = linkable;
-        this.typedValue = 0;
-
-        this.getHeader().text(slider_data.label);
-        this.getHeader().attr("title", header_tip);
-        this.getHeader().css('color', slider_data.color ? slider_data.color : "");
-
-        this.getLabel().text(slider_data.name);
-        this.getFooter().text(slider_data.value);
-
-        var slider = this.getSlider();
-        slider.slider("value", slider_data.value);
-        slider.attr("title", this.getRangeDescription(slider_data.value));
-        slider.slider("option", "disabled", false);
-        slider.slider("option", "animate", true);
-        slider.slider("option", "max", slider_data.max_value);
-
-        if (this.isLinkable())
-            this.setLinked(false);
-        else
-            this.hideLinked();
-            
-        this.getSliderFrame().hover(
-            function () {
-                var slider_object = $(this).get(0).slider_object;
-                slider_object.highlight(true);
-
-                if ( !slider_object.panel.isBusy() )
-                    slider_object.panel.setSliderTitle(slider_object.tooltip);
-            },
-            function () {
-                var slider_object = $(this).get(0).slider_object;
-                slider_object.highlight(false);
-                slider_object.panel.setSliderTitle("");
-            }
-        );
-    }
-
-    // method release
-    this.release = function () {
-        this.owner = 0;
-        this.in_use = false;
-        this.ranges = null;
-        this.callback = null;
-        this.owner_channel = 0;
-        this.value = 0;
-        this.tooltip = "";
-        this.busy = false;
-        this.typedValue = 0;
-
-        this.getHeader().text("");
-        this.getLabel().text("");
-        this.getFooter().text("");
-        this.hideLinked();
-
-        this.highlight(false);
-
-        var slider = this.getSlider();
-        slider.slider("option", "animate", false);    // Must turn this off before loading
-        slider.slider("value", 0);
-        slider.attr("title", "");
-        slider.slider("option", "disabled", true);
-    }
+    this.footer_input = slider_frame.find(".slider_footer_input");
+    this.slider_select = slider_frame.find(".slider_select");
 
     // Constructor
     var slider = this.getSlider()
-    slider.empty().slider({ value: 0, range: "min", min: 0, max: 255, animate: false, orientation: "vertical" });
+    slider.empty().slider({ value: 0, range: "min", min: 0, max: this.max_value, animate: false, orientation: "vertical" });
     slider.slider("option", "disabled", true);
 
     slider.get(0).setAttribute("slider_number", this.number);
@@ -304,14 +71,13 @@ function Slider(panel, number, slider_frame) {
     var ui_handle = slider.find('.ui-slider-handle');
     ui_handle.append('<div class="slider_sidecar" style="display:none; max-width: 140px;"></div>');
 
-    // Setup event handlers
-    var channel_hint = null;
-    var slider_footer = null;
+    this.channel_hint = ui_handle.find(".slider_sidecar");
 
+    // Setup event handlers
     slider.on("slidestart", function (event,ui) {
+        stopEventPropagation(event);
+
         slider.attr("title", '');
-        channel_hint = $(this).find(".slider_sidecar");
-        channel_hint.css("display", "inline");
 
         var slider_object = $(this).get(0).slider_object;
         slider_object.busy = true;
@@ -320,82 +86,412 @@ function Slider(panel, number, slider_frame) {
         slider_object.getHeader().addClass('slider_sliding_highlight');
         slider_object.getLabel().addClass('slider_sliding_highlight');
 
-        slider_footer = slider_object.getFooter();
-        channel_hint.html(slider_object.getRangeDescription(ui.value));
+        slider_object.getChannelHint().css("display", "inline");
+        slider_object.getChannelHint().html(slider_object.getRangeDescription(ui.value));
     });
 
     slider.on("slidestop", function (event, ui) {
-        // Tooltip becomes range value
-        $(this).attr("title", channel_hint.html());
-
-        channel_hint.html("");
-        channel_hint.css("display", "none");
-        channel_hint = slider_footer = null;
+        stopEventPropagation(event);
 
         var slider_object = $(this).get(0).slider_object;
-        slider_object.busy = false;
+
+        // Tooltip becomes range value
+        $(this).attr("title", slider_object.getChannelHint().html());
+
+        slider_object.getChannelHint().html("");
+        slider_object.getChannelHint().css("display", "none");
 
         slider_object.getFooter().removeClass('slider_sliding_highlight');
         slider_object.getHeader().removeClass('slider_sliding_highlight');
         slider_object.getLabel().removeClass('slider_sliding_highlight');
 
         slider_object.changeEvent(ui.value);
+
+        slider_object.busy = false;
     });
 
-    var panel = this.panel;
-
     slider.on("slide", function (event, ui) {
-        var slider_object = $(this).get(0).slider_object;
-        slider_footer.html(ui.value);
-        channel_hint.html(slider_object.getRangeDescription(ui.value));
+        stopEventPropagation(event);
 
-        if ( panel.isTrackSlider() )
-            slider_object.changeEvent(ui.value);
+        var slider_object = $(this).get(0).slider_object;
+
+        setTimeout( function ( slider_object, value ) {
+            slider_object.getFooter().html(ui.value);
+            slider_object.footer_input.val( ui.value );
+            slider_object.getChannelHint().html(slider_object.getRangeDescription(value));
+
+            if ( slider_object.panel.isTrackSlider() )
+                slider_object.changeEvent(value);
+        }, 1, slider_object, ui.value );
+
     });
 
     slider.keydown( function( event ) {
+        stopEventPropagation(event);
+
+        var slider_object = $(this).get(0).slider_object;
+        if ( event.which == 32 )
+            slider_object.setSelected(!slider_object.isSelected());
+    });
+
+    this.getFooter().get(0).slider_object = this;
+    this.getFooter().on( "click", function (event) {
+        stopEventPropagation(event);
+
+        var slider_object = $(this).get(0).slider_object;
+        if ( slider_object.isUsed() ) {
+            slider_object.setFooterEdit( true );
+        }
+    });
+
+    this.footer_input.get(0).slider_object = this;
+    this.footer_input.on( "focusout", function (event) {
+        stopEventPropagation(event);
+
+        var slider_object = $(this).get(0).slider_object;
+
+        if ( slider_object.isUsed() ) {
+            var val = parseInt( slider_object.footer_input.val() );
+            if ( val >= 0 && val <= slider_object.max_value )
+                slider_object.changeEvent( val );
+
+            slider_object.setFooterEdit( false );
+        }
+    });
+
+    this.footer_input.keydown( function( event ) {
+        stopEventPropagation(event);
+
         var slider_object = $(this).get(0).slider_object;
 
         if ( event.which == 13 ) {
-            if ( slider_object.typedValue > 255 )
-                slider_object.typedValue = 255;
-            
-            if ( slider_object.isLinked() )
-                slider_object.changeEvent(slider_object.typedValue);
-            else
-                slider_object.setValue(slider_object.typedValue);
-        }
-        else if ( event.char >= '0' && event.char <= '9' ) {
-             slider_object.typedValue = slider_object.typedValue * 10 + ( event.char - '0');
+            var val = parseInt( slider_object.footer_input.val() );
+            if ( val >= 0 && val <= slider_object.max_value )
+                slider_object.changeEvent( val );
+
+            slider_object.setFooterEdit( false );
         }
         else if ( event.which == 27 )
-            slider_object.typedValue = 0;
-        else if ( event.which == 8 || event.which == 46 ) {
-            if (event.stopPropagation != null)
-                event.stopPropagation();
+            slider_object.setFooterEdit( false );
+    });
+
+    this.getSliderSelect().get(0).slider_object = this;
+    this.getSliderSelect().on("click", function (event) {
+        stopEventPropagation(event);
+
+        var slider_object = $(this).get(0).slider_object;
+
+        if ( slider_object.isUsed() && slider_object.selectable ) {
+            if (event.ctrlKey) {
+                slider_object.panel.iterateChannels(function (slider) {
+                    if (slider.selectable && slider.isUsed()) {
+                        slider.setSelected(slider.getLabel().text() === slider_object.getLabel().text());
+                    }
+                });
+            }
             else
-                event.cancelBubble = true;
-
-            slider_object.typedValue = ( slider_object.typedValue  / 10 ) | 0;      // Convert to integer
+                slider_object.setSelected(!slider_object.isSelected());
         }
-        else if ( event.which == 32 )
-            slider_object.setLinked(!slider_object.isLinked());
     });
 
-    var linked = $(this.getLinked());
-    var self = this;
+    this.getHeader().get(0).slider_object = this;
+    this.getHeader().on( "click", function( event ) {
+        stopEventPropagation(event);
 
-    linked.on("click", function (event) {
-        if (event.ctrlKey) {
-            self.panel.iterateChannels(function (slider) {
-                if (slider.isLinkable() && slider.isUsed()) {
-                    slider.setLinked(slider.getLabel().text() === self.getLabel().text());
-                }
-            });
+       var slider_object = $(this).get(0).slider_object;
+
+        if ( slider_object.isUsed() && slider_object.callback )
+            slider_object.callback(slider_object.owner, "header", slider_object.owner_channel, 0, event );
+    });
+
+    this.side_text.get(0).slider_object = this;
+    this.side_text.on( "click", function( event ) {
+        stopEventPropagation(event);
+
+       var slider_object = $(this).get(0).slider_object;
+
+        if ( slider_object.isUsed() && slider_object.callback )
+            slider_object.callback(slider_object.owner, "side-text", slider_object.owner_channel, 0, event );
+    });
+}
+
+// method isUsed
+Slider.prototype.isUsed = function () {
+    return this.in_use;
+}
+
+Slider.prototype.setUsed = function (used) {
+    this.in_use = used;
+}
+
+Slider.prototype.getNumber = function () {
+    return this.number;
+}
+
+// method getValue
+Slider.prototype.getValue = function () {
+    return this.value;
+}
+
+// method getOwner
+Slider.prototype.getOwner = function () {
+    return this.owner;
+}
+
+// method getOwnerChannel
+Slider.prototype.getOwnerChannel = function () {
+    return this.owner_channel;
+}
+
+// method getSliderFrame
+Slider.prototype.getSliderFrame = function () {
+    return this.slider_frame;
+}
+
+// method getSlider 
+Slider.prototype.getSlider = function () {
+    return this.slider;
+}
+
+// method getFooter 
+Slider.prototype.getFooter = function () {
+    return this.footer;
+}
+
+// method getHeader
+Slider.prototype.getHeader = function () {
+    return this.header;
+}
+
+// method getLabel
+Slider.prototype.getLabel = function () {
+    return this.side_text;
+}
+
+// method getChannelHint
+Slider.prototype.getChannelHint = function() {
+    return this.channel_hint;
+}
+
+// method getSliderSelect
+Slider.prototype.getSliderSelect = function () {
+    return this.slider_select;
+}
+
+// method getType
+Slider.prototype.getType = function () {
+    return this.type;
+}
+
+// method setRanges
+Slider.prototype.setRanges = function (ranges) {
+    this.ranges = ranges;
+}
+
+// method getRanges
+Slider.prototype.getRanges = function () {
+    return this.ranges;
+}
+
+// method isBusy
+Slider.prototype.isBusy = function () {
+    return this.busy;
+}
+
+// method getRangeDescription
+Slider.prototype.getRangeDescription = function (value) {
+    if (this.ranges != null) {
+        for (var i = 0; i < this.ranges.length; i++) {
+            var range = this.ranges[i];
+            if (value >= range.start && value <= range.end)
+                return range.name;
         }
+    }
+    return "";
+}
+
+// method highlight
+Slider.prototype.highlight = function (highlight) {
+    if (highlight) {
+        if (this.isBusy() || !this.panel.isBusy()) {
+            this.getFooter().addClass('slider_highlight');
+            this.getHeader().addClass('slider_highlight');
+            this.getLabel().addClass('slider_highlight');
+        }
+    }
+    else {
+        this.getFooter().removeClass('slider_highlight');
+        this.getHeader().removeClass('slider_highlight');
+        this.getLabel().removeClass('slider_highlight');
+    }
+}
+
+// method setValue
+Slider.prototype.setValue = function (value) {
+    this.getSlider().slider("value", value);
+    this.getFooter().html(value);
+    this.getSlider().attr("title", this.getRangeDescription(value));
+    this.valueChange(value);
+}
+
+// method valueChange
+Slider.prototype.valueChange = function (new_value) {
+    if (this.value != new_value) {
+        this.value = new_value;
+        this.changed = true;
+        this.panel.channelChanged();
+    }
+    this.typedValue = 0;
+}
+
+// method isChanged
+Slider.prototype.isChanged = function () {
+    return this.changed;
+}
+
+// method sendValue
+Slider.prototype.sendValue = function() {
+    if ( this.callback )
+        this.callback(this.owner, "channel", this.owner_channel, this.value, null);
+    this.changed = false;
+}
+
+Slider.prototype.setSelected = function ( selected ) {
+    if ( this.selectable ) {
+        if ( selected )
+            this.getSliderSelect().addClass('ui-icon-green').removeClass('ui-icon-active');
         else
-            self.setLinked(!self.isLinked());
-    });
+            this.getSliderSelect().addClass('ui-icon-active').removeClass('ui-icon-green');
+    }
+}
+
+Slider.prototype.enableSelect = function ( enabled ) {
+    if ( enabled )
+        this.getSliderSelect().addClass('ui-icon-active');
+    else
+        this.getSliderSelect().removeClass('ui-icon-active').removeClass('ui-icon-green');
+}
+
+Slider.prototype.isLinkable = function () {
+    return this.linkable;
+}
+
+Slider.prototype.isSelected = function () {
+    return this.getSliderSelect().hasClass('ui-icon-green');
+}
+
+Slider.prototype.setFooterEdit = function( edit ) {
+    if ( edit ) {
+        this.getFooter().hide();
+
+        this.footer_input.val( this.value );
+        this.footer_input.show();
+        this.footer_input.focus();
+        this.footer_input.select();
+    }
+    else {
+        this.getSlider().slider("value", this.value);
+        this.getSlider().attr("title", this.getRangeDescription(this.value));
+        this.getFooter().html( this.value );
+
+        this.getFooter().show();
+        this.footer_input.hide();
+    }
+}
+
+// method changeEvent
+Slider.prototype.changeEvent = function (newValue) {
+    if ( this.isLinkable() && this.isSelected() ) {
+        this.panel.iterateChannels( function (slider) {
+            if ( slider.isLinkable() && slider.isSelected() )
+                slider.setValue(newValue);
+        });
+    }
+    else
+        this.valueChange(newValue);
+}
+
+// method allocate: channel data { channel, label, name, value, max_value, ranges }
+Slider.prototype.allocate = function (owner, header_tip, slider_data, callback ) {
+    this.owner = owner;
+    this.in_use = true;
+    this.ranges = slider_data.ranges;
+    this.callback = callback;
+    this.owner_channel = slider_data.channel;
+    this.value = slider_data.value;
+    this.type = slider_data.type;
+    this.tooltip = header_tip;
+    this.busy = false;
+    this.typedValue = 0;
+    this.max_value = slider_data.max_value;
+
+    this.linkable = slider_data.linkable || false;
+    this.selectable = slider_data.selectable || this.linkable;
+
+    this.getHeader().text(slider_data.label);
+    this.getHeader().attr("title", header_tip);
+    this.getHeader().css('color', slider_data.color ? slider_data.color : "");
+
+    this.getLabel().text(slider_data.name);
+    this.getFooter().text(slider_data.value);
+
+    var slider = this.getSlider();
+    slider.slider("value", slider_data.value);
+    slider.attr("title", this.getRangeDescription(slider_data.value));
+    slider.slider("option", "disabled", false);
+    slider.slider("option", "animate", true);
+    slider.slider("option", "max", this.max_value);
+
+    this.enableSelect( this.selectable );
+
+    if ( this.selectable && slider_data.selected == true )
+        this.setSelected( true );
+
+    this.setFooterEdit( false );
+            
+    this.getSliderFrame().hover(
+        function () {
+            var slider_object = $(this).get(0).slider_object;
+            slider_object.highlight(true);
+
+            if ( !slider_object.panel.isBusy() )
+                slider_object.panel.setSliderTitle(slider_object.tooltip);
+        },
+        function () {
+            var slider_object = $(this).get(0).slider_object;
+            slider_object.highlight(false);
+            slider_object.panel.setSliderTitle("");
+        }
+    );
+}
+
+// method release
+Slider.prototype.release = function () {
+    this.owner = 0;
+    this.in_use = false;
+    this.ranges = null;
+    this.callback = null;
+    this.owner_channel = 0;
+    this.value = 0;
+    this.tooltip = "";
+    this.busy = false;
+    this.typedValue = 0;
+    this.selectable = false;
+    this.linkable = false;
+
+    this.getHeader().text("");
+    this.getLabel().text("");
+    this.getFooter().text("");
+    this.enableSelect( false );
+
+    this.highlight(false);
+    this.setFooterEdit( false );
+
+    var slider = this.getSlider();
+    slider.slider("option", "animate", false);    // Must turn this off before loading
+    slider.slider("value", 0);
+    slider.attr("title", "");
+    slider.slider("option", "disabled", true);
 }
 
 // ----------------------------------------------------------------------------
@@ -406,8 +502,8 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
     // method resetLinks
     this.resetLinks = function () {
         this.iterateChannels(function (slider) {
-            if (slider.isLinkable() && slider.isUsed() && slider.isLinked()) {
-                slider.setLinked(false);
+            if (slider.isLinkable() && slider.isUsed() && slider.isSelected()) {
+                slider.setSelected(false);
             }
         });
     }
@@ -446,7 +542,7 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
     }
 
     // method allocateChannels
-    this.allocateChannels = function (owner, owner_name, channel_data, callback, linkable ) {
+    this.allocateChannels = function (owner, owner_name, channel_data, callback ) {
         var num_channels = channel_data.length;
         if (num_channels == 0)
             return;
@@ -458,13 +554,14 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
         }
 
         for (var i = 0; i < num_channels; i++ ) {
-            this.sliders[i + channel_start].allocate(owner, owner_name, channel_data[i], callback, linkable );
+            this.sliders[i + channel_start].allocate(owner, owner_name, channel_data[i], callback, null );
         }
     }
 
     // method setSliderTitle
     this.setSliderTitle = function (title) {
-        $("#slider_pane_title").text(title);
+        if ( this.title_div != null && this.title_div .length > 0 )
+            this.title_div.text(title);
     }
 
     // method releaseChannels
@@ -507,6 +604,34 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
         }
 
         return null;
+    }
+
+    // method getChannelValues
+    this.getChannelValues = function ( owner ) {
+        var values = []
+
+        for (var i = 0; i < this.num_sliders; i++) {
+            if (this.sliders[i].isUsed() && this.sliders[i].getOwner() == owner ) {
+                var slider = this.sliders[i];
+                values.push( slider.getValue() );
+            }
+        }
+
+        return values;
+    }
+
+    // method getChannels (return channel, value, selected)
+    this.getChannels = function ( owner ) {
+        var data = []
+
+        for (var i = 0; i < this.num_sliders; i++) {
+            if (this.sliders[i].isUsed() && this.sliders[i].getOwner() == owner ) {
+                var slider = this.sliders[i];
+                data.push( { channel: slider.getOwnerChannel(), value: slider.getValue(), selected: slider.isSelected() } );
+            }
+        }
+
+        return data;
     }
 
     // method isBusy
@@ -611,58 +736,180 @@ function SliderPanel(panel_id, num_sliders, track_slider) {
         }
     }
 
+    // channelChanged
+    this.channelChanged = function() {
+        if ( this.update_timer == null ) {
+            this.update_timer = setTimeout(function ( panel ) { panel.sendUpdates(); }, 50, this );        
+        }
+    }
+    
     this.sendUpdates = function () {
         for (var i = 0; i < this.num_sliders; i++) {
             if (this.sliders[i].isUsed() && this.sliders[i].isChanged()) {
                 this.sliders[i].sendValue();
-                break;
             }
         }
 
-        var _this = this;
-        this.update_timer = setTimeout(function () { _this.sendUpdates(); }, 100);
+        this.update_timer = null;
     }
 
     // Constructor
+    if ( num_sliders < 1 )
+        num_sliders = 1;
+
+    var panel_div = $("#" + panel_id);
+
     this.panel_id = panel_id;
     this.track_slider = track_slider;                       // Slider owner will be notified of every movement
-    this.sliders = new Array();
+    this.sliders = [];
     this.num_sliders = 0;
     this.default_num_sliders = num_sliders;
+    this.title_div = panel_div.find(".slider_pane_title");
 
-    var content_div = $("#" + this.panel_id).find(".scroll-content");
+    var content_div = panel_div.find(".scroll-content");
+    content_div.empty();
 
     // Populate with initial number of sliders
-    for (var i = 0; i < num_sliders; i++)
+    for (var j = 0; j < num_sliders; j++)
         this.addSlider();
 
-    var scroll_or_grid_icon = $("#" + this.panel_id).find(".scroll_or_grid_icon");
-    if (scroll_or_grid_icon != null) {
-        var self = this;
-        scroll_or_grid_icon.addClass('ui-icon');
-        scroll_or_grid_icon.click(function (event) {
-            stopEventPropagation(event);
-            self.setScrollContent(!self.isScrollContent());
-            client_config_update = true;
-        });
-    }
+    // Add slider features
+    for ( var i=0; i < slider_panel_features.length; i++ ) {
+        var feature = slider_panel_features[i];
 
-    var track_slider_icon = $("#" + this.panel_id).find(".track_slider_icon");
-    if (track_slider_icon != null) {
-        var self = this;
-        track_slider_icon.addClass( 'ui-icon' );
-        track_slider_icon.click(function (event) {
-            stopEventPropagation(event);
-            self.setTrackSlider(!self.isTrackSlider());
-        });
+        var feature_icon = panel_div.find( "." + feature.class_name );
+        if ( feature_icon.length == 0 )
+            continue;
+
+        if ( feature.title != null && feature.title != undefined )
+            feature_icon.attr( "title", feature.title );
+
+        if ( feature.attach != null && feature.attach != undefined )
+            feature.attach( this, feature_icon );
+
+        if ( feature.handler != null && feature.handler != undefined ) {
+            feature_icon.data( "handler", feature.handler );
+
+            var self = this;
+            feature_icon.unbind( "click").click(function (event) {
+                stopEventPropagation(event);
+                $(this).data( "handler" )( self, $(this) )
+            });
+        }
     }
 
     this.setScrollContent(true);
     this.setTrackSlider(this.track_slider);
-
-    // Setup timer to send changes to the server
-    this.sendUpdates();
 }
 
+// ----------------------------------------------------------------------------
+//
+function initializeScrollPane( scrollPane ) {
+    var scrollbar = scrollPane.find(".scroll-bar");
+    var scrollContent = scrollPane.find(".scroll-content");
+    var scrollWrap = scrollPane.find(".scroll-bar-wrap");
 
+    //change overflow to hidden now that slider handles the scrolling
+    scrollPane.css("overflow", "hidden");
+    
+    // Initially hide the scrollbar otherwise we get a bounce due to the timeout
+    scrollWrap.hide();
 
+    function isScrollable() {
+        return (scrollContent.width() > scrollPane.width());
+    }
+
+    //build slider
+    scrollbar.slider({
+        min: 0,
+        max: 100,
+        slide: function (event, ui) {
+            if ( isScrollable() ) {
+                scrollContent.css("margin-left", Math.round(ui.value / 100 * (scrollPane.width() - scrollContent.width())) + "px");
+            } else {
+                scrollContent.css("margin-left", 0);
+            }
+        }
+    });
+
+    // Because the scroll bar is sized and centered in the scroll wrapper, this leaves empty zones before and after
+    // the scroll bar.  This handler on the wrapper will move the scroll bar to the appropriate min and max.
+    scrollWrap.mousedown( function (event) {
+        stopEventPropagation(event);
+
+        if ( isScrollable() ) {
+            if (event.pageX < scrollbar.offset().left) {
+                scrollbar.slider("value", 0);
+                scrollContent.css("margin-left", 0);
+            }
+            else if (event.pageX > scrollbar.offset().left + scrollbar.width()) {
+                scrollbar.slider("value", 100);
+                scrollContent.css("margin-left", Math.round((scrollPane.width() - scrollContent.width())) + "px");
+            }
+        }
+    });
+
+    //append icon to handle
+    var handleHelper = scrollbar.find(".ui-slider-handle").parent();
+    scrollbar.find(".ui-slider-handle").html("<span class='ui-icon ui-icon-grip-dotted-vertical'></span>");
+
+    //size scrollbar and handle proportionally to scroll distance
+    function sizeScrollbar() {
+        if (isScrollable()) {
+            scrollWrap.show();
+
+            scrollContent.css("margin-left", Math.round(scrollbar.slider("value") / 100 * (scrollPane.width() - scrollContent.width())) + "px");
+
+            var remainder = scrollContent.width() - scrollPane.width();
+            var proportion = remainder / scrollContent.width();
+            var handleSize = scrollPane.width() - (proportion * scrollPane.width());
+
+            scrollbar.find(".ui-slider-handle").css({ width: handleSize, "margin-left": -handleSize / 2 });
+            handleHelper.width("").width(scrollbar.width() - handleSize);
+        }
+        else {
+            scrollWrap.hide();
+            scrollContent.css("margin-left", 0);
+        }
+    }
+
+    //reset slider value based on scroll content position        
+    function resetValue() {
+        var remainder = scrollPane.width() - scrollContent.width();
+        var leftVal = scrollContent.css("margin-left") === "auto" ? 0 : parseInt(scrollContent.css("margin-left"));
+        var percentage = Math.round(leftVal / remainder * 100);
+        scrollbar.slider("value", percentage);
+    }
+
+    //if the slider is 100% and window gets larger, reveal content        
+    function reflowContent() {
+        if (isScrollable()) {
+            var showing = scrollContent.width() + parseInt(scrollContent.css("margin-left"), 10);
+            var gap = scrollPane.width() - showing;
+            if (gap > 0) {
+                scrollContent.css("margin-left", parseInt(scrollContent.css("margin-left"), 10) + gap);
+            }
+        }
+    }
+
+    //change handle position on window resize        
+    $(window).resize(function () {
+        resetValue(); sizeScrollbar(); reflowContent();
+    });
+
+    //init scrollbar size        
+    setTimeout(sizeScrollbar, 10);//safari wants a timeout
+}
+
+// ----------------------------------------------------------------------------
+//
+function setPanelScroll( slider_panel, icon_element ) {
+    slider_panel.setScrollContent( !slider_panel.isScrollContent() );
+    client_config_update = true;    // Set global client config
+}
+
+// ----------------------------------------------------------------------------
+//
+function setPanelSliderTrack( slider_panel, icon_element ) {
+    slider_panel.setTrackSlider( !slider_panel.isTrackSlider() );
+}

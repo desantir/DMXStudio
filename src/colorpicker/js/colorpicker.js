@@ -28,22 +28,32 @@
                   '<div class="colorpicker_hsb_b colorpicker_field"><input type="text" maxlength="3" size="3" /><span></span></div>' +
                   '<div class="colorpicker_submit"></div>' +
 
-                  '<div class="colorpicker_chip1 colorpicker_chip"></div>' +
-                  '<div class="colorpicker_chip2 colorpicker_chip"></div>' +
-                  '<div class="colorpicker_chip3 colorpicker_chip"></div>' +
-                  '<div class="colorpicker_chip4 colorpicker_chip"></div>' +
-                  '<div class="colorpicker_chip5 colorpicker_chip"></div>' +
-                  '<div class="colorpicker_chip6 colorpicker_chip"></div>' +
-                  '<div class="colorpicker_chip7 colorpicker_chip"></div>' +
-                  '<div class="colorpicker_chip8 colorpicker_chip"></div>' +
-                  '<div class="colorpicker_chip9 colorpicker_chip"></div>' +
-                  '<div class="colorpicker_chip10 colorpicker_chip"></div>' +
-                  '<div class="colorpicker_chip11 colorpicker_chip"></div>' +
-                  '<div class="colorpicker_chip12 colorpicker_chip"></div>' +
-                  '<div class="colorpicker_chip13 colorpicker_chip"></div>' +
-                  '<div class="colorpicker_chip14 colorpicker_chip"></div>' +
-                  '<div class="colorpicker_chip15 colorpicker_chip" title="special effect 1"></div>' +
+                  '<div class="colorpicker_chip1 colorpicker_chip" data-chip="1"></div>' +
+                  '<div class="colorpicker_chip2 colorpicker_chip" data-chip="2"></div>' +
+                  '<div class="colorpicker_chip3 colorpicker_chip" data-chip="3"></div>' +
+                  '<div class="colorpicker_chip4 colorpicker_chip" data-chip="4"></div>' +
+                  '<div class="colorpicker_chip5 colorpicker_chip" data-chip="5"></div>' +
+                  '<div class="colorpicker_chip6 colorpicker_chip" data-chip="6"></div>' +
+                  '<div class="colorpicker_chip7 colorpicker_chip" data-chip="7"></div>' +
+                  '<div class="colorpicker_chip8 colorpicker_chip" data-chip="8"></div>' +
+                  '<div class="colorpicker_chip9 colorpicker_chip" data-chip="9"></div>' +
+                  '<div class="colorpicker_chip10 colorpicker_chip" data-chip="10"></div>' +
+                  '<div class="colorpicker_chip11 colorpicker_chip" data-chip="11"></div>' +
+                  '<div class="colorpicker_chip12 colorpicker_chip" data-chip="12"></div>' +
+                  '<div class="colorpicker_chip13 colorpicker_chip" data-chip="13"></div>' +
+                  '<div class="colorpicker_chip14 colorpicker_chip" data-chip="14"></div>' +
+                  '<div class="colorpicker_chip15 colorpicker_chip" data-chip="15"></div>' +
+                  '<div class="colorpicker_chip16 colorpicker_chip" data-chip="16"></div>' +
 
+                  '<div class="colorpicker_palette1 colorpicker_chip palette_chip" title="palette color sequence"></div>' +
+                  '<div class="colorpicker_palette2 colorpicker_chip palette_chip" title="predefined color sequence"></div>' +
+                  '<div class="colorpicker_palette3 colorpicker_chip palette_chip" title="rainbow color sequence"></div>' +
+                  '<div class="colorpicker_palette4 colorpicker_chip palette_chip" title="video color sequence"></div>' +
+
+                  '<div class="colorpicker_palette5 colorpicker_chip palette_chip" title="user palette 1"></div>' +
+                  '<div class="colorpicker_palette6 colorpicker_chip palette_chip" title="user palette 2"></div>' +
+                  '<div class="colorpicker_palette7 colorpicker_chip palette_chip" title="user palette 3"></div>' +
+                  '<div class="colorpicker_palette8 colorpicker_chip palette_chip" title="user palette 4"></div>' +
                   '</div>',
 			defaults = {
 				eventName: 'click',
@@ -55,6 +65,8 @@
 				livePreview: true,
 				flat: false,
                 autoClose: false,
+                showPalettes: true,
+                anchor: null
 			},
 			fillRGBFields = function  (hsb, cal) {
 				var rgb = HSBToRGB(hsb);
@@ -99,18 +111,59 @@
 					change.apply(this);
 				}
 			},
+
+            chipSet = function ( ev ) {
+                var chip = $(this);
+                var chip_number = chip.attr( "data-chip" );
+                if ( chip_number == null || chip_number == undefined )
+                    return;
+
+                var cal = chip.parent();
+                var el = cal.data('colorpicker');
+
+                if ( el.onChipSet == null )
+                    return;
+
+				var col = cal.data('colorpicker').color;
+                var hex = HSBToHex(col);
+
+				if ( cal.data('colorpicker').onChipSet( parseInt( chip_number), col, hex, HSBToRGB(col) ) )
+                    chip.css( 'background-color', "#" + hex );
+            },
+
             chipClick = function (ev) {
-                var cal = $(this).parent(), color;
-                cal.data('colorpicker').color = col = HexToHSB(fixHex(this.currentStyle.backgroundColor));
+                var chip = $(this);
+                var cal = chip.parent();
+                var background_color = chip.css("background-color").toLowerCase();
+
+                // Convert rgb( #, #, # [,#] to hex
+                if ( background_color.indexOf( "rgb(" ) == 0 ) {
+                    var rgb = background_color.match(/^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/);
+
+                    background_color = (parseInt( rgb[1] ) << 16 | parseInt( rgb[2] ) << 8 | parseInt( rgb[3] )).toString( 16 );
+
+                    while ( background_color.length < 6 )
+                        background_color = "0" + background_color;
+
+                    background_color = "#" + background_color;
+                }
+                else
+                    background_color = fixHex( background_color ) ;
+
+                var col = HexToHSB( background_color );
+                
+                cal.data('colorpicker').color = col;
 
                 if (ev) {
                     fillRGBFields(col, cal.get(0));
                     fillHexFields(col, cal.get(0));
                     fillHSBFields(col, cal.get(0));
                 }
+
                 setSelector(col, cal.get(0));
                 setHue(col, cal.get(0));
                 setNewColor(col, cal.get(0));
+
                 cal.data('colorpicker').onChange.apply(cal, [col, HSBToHex(col), HSBToRGB(col)]);
 
                 return false;
@@ -246,7 +299,7 @@
 				var col = cal.data('colorpicker').color;
 				cal.data('colorpicker').origColor = col;
 				setCurrentColor(col, cal.get(0));
-				cal.data('colorpicker').onSubmit(col, HSBToHex(col), HSBToRGB(col), cal.data('colorpicker').el);
+				cal.data('colorpicker').onSubmit(col, HSBToHex(col), HSBToRGB(col), cal.data('colorpicker').el, cal.data('colorpicker').anchor );
 				if (cal.data('colorpicker').autoClose)
 				    cal.ColorPickerHide.apply($(cal.data('colorpicker').el));
 			},
@@ -260,13 +313,24 @@
 			            return;   // Stops any addition jQuery event handlers
 			    }
 
+                var palette_chips = cal.find( ".palette_chip" );
+                if ( cal.data('colorpicker').showPalettes )
+                    palette_chips.show();
+                else
+                    palette_chips.hide();
+
 				cal.data('colorpicker').onBeforeShow.apply(this, [cal.get(0)]);
-				var pos = $(this).offset();
+				
+                var anchor = cal.data('colorpicker').anchor;
+                if ( anchor == null )
+                    anchor = $(this);
+
+                var pos = anchor.offset();
 				var viewPort = getViewport();
-				var top = pos.top + this.offsetHeight;
+				var top = pos.top + anchor[0].offsetHeight;
 				var left = pos.left;
 				if (top + 176 > viewPort.t + viewPort.h) {
-					top -= this.offsetHeight + 176;
+					top -= anchor[0].offsetHeight + 176;
 				}
 				if (left + 356 > viewPort.l + viewPort.w) {
 					left -= 356;
@@ -279,16 +343,16 @@
 				if (cal.data('colorpicker').onShow.apply(this, [cal.get(0)]) != false) {
 					cal.show();
 				}
-				$(document).bind('mousedown', {cal: cal}, hide);
+				$(document).bind('mousedown', {cal: cal}, document_hide);
 				return false;
 			},
-			hide = function (ev) {
+            document_hide = function (ev) {
 				if (!isChildOf(ev.data.cal.get(0), ev.target, ev.data.cal.get(0))) {
 				    if (ev.data.cal.data('colorpicker').onHide.apply(this, [ev.data.cal.get(0)]) != false) {
 						ev.data.cal.hide();
 				    }
 				    ev.data.cal.data('hide_ms', new Date().getTime());
-					$(document).unbind('mousedown', hide);
+                    $(document).unbind('mousedown', document_hide);
 				}
 			},
 			isChildOf = function(parentEl, el, container) {
@@ -332,6 +396,7 @@
 					b: Math.min(255, Math.max(0, rgb.b))
 				};
 			},
+
 			fixHex = function (hex) {
 				var len = 6 - hex.length;
 				if (len > 0) {
@@ -432,10 +497,28 @@
 				setSelector(col, cal.get(0));
 				setHue(col, cal.get(0));
 				setNewColor(col, cal.get(0));
-			};
-		return {
+            }; 
+
+        return {
+            showPicker: function () {
+                return this.each(function () {
+                    if ($(this).data('colorpickerId')) {
+                        show.apply(this);
+                    }
+                });
+            },
+            hidePicker: function () {
+                return this.each(function () {
+                    if ($(this).data('colorpickerId')) {
+                        var cal = $('#' + $(this).data('colorpickerId'));
+                        cal.hide();
+                        $(document).unbind('mousedown', cal.data( 'document_hide' ) );
+                    }
+                });
+            },
 			init: function (opt) {
 				opt = $.extend({}, defaults, opt||{});
+
 				if (typeof opt.color == 'string') {
 					opt.color = HexToHSB(opt.color);
 				} else if (opt.color.r != undefined && opt.color.g != undefined && opt.color.b != undefined) {
@@ -457,8 +540,7 @@
 						} else {
 							cal.appendTo(document.body);
 						}
-						options.fields = cal
-											.find('input')
+						options.fields = cal.find('input')
 												.bind('keyup', keyDown)
 												.bind('change', change)
 												.bind('blur', blur)
@@ -467,7 +549,9 @@
 							.find('span').bind('mousedown', downIncrement).end()
 							.find('>div.colorpicker_current_color').bind('click', restoreOriginal);
 
-						cal.find('.colorpicker_chip').bind('click', chipClick).bind('contextmenu', chipClick);
+						cal.find('.colorpicker_chip')
+                                .click( chipClick )
+                                .contextmenu( chipSet );
 
 						options.selector = cal.find('div.colorpicker_color').bind('mousedown', downSelector);
 						options.selectorIndic = options.selector.find('div div');
@@ -488,6 +572,7 @@
 						setSelector(options.color, cal.get(0));
 						setCurrentColor(options.color, cal.get(0));
 						setNewColor(options.color, cal.get(0));
+
 						if (options.flat) {
 							cal.css({
 								position: 'relative',
@@ -496,20 +581,6 @@
 						} else {
 							$(this).bind(options.eventName, show);
 						}
-					}
-				});
-			},
-			showPicker: function() {
-				return this.each( function () {
-					if ($(this).data('colorpickerId')) {
-						show.apply(this);
-					}
-				});
-			},
-			hidePicker: function() {
-				return this.each( function () {
-					if ($(this).data('colorpickerId')) {
-						$('#' + $(this).data('colorpickerId')).hide();
 					}
 				});
 			},
@@ -523,27 +594,60 @@
 				} else {
 					return this;
 				}
-				return this.each(function(){
-					if ($(this).data('colorpickerId')) {
-						var cal = $('#' + $(this).data('colorpickerId'));
-						cal.data('colorpicker').color = col;
-						cal.data('colorpicker').origColor = col;
-						fillRGBFields(col, cal.get(0));
-						fillHSBFields(col, cal.get(0));
-						fillHexFields(col, cal.get(0));
-						setHue(col, cal.get(0));
-						setSelector(col, cal.get(0));
-						setCurrentColor(col, cal.get(0));
-						setNewColor(col, cal.get(0));
-					}
-				});
-			}
+
+                // Can be called on the colorpicker div or the launcher
+                var cal = ( $(this).hasClass( "colorpicker" ) )? $(this) : $('#' + $(this).data('colorpickerId'));
+
+                if ( cal != null && cal.length > 0 ) {
+					cal.data('colorpicker').color = col;
+					cal.data('colorpicker').origColor = col;
+					fillRGBFields(col, cal.get(0));
+					fillHSBFields(col, cal.get(0));
+					fillHexFields(col, cal.get(0));
+					setHue(col, cal.get(0));
+					setSelector(col, cal.get(0));
+					setCurrentColor(col, cal.get(0));
+					setNewColor(col, cal.get(0));
+				}
+			},
+
+			setAnchor: function(anchor) {
+                // Can be called on the colorpicker div or the launcher
+                var cal = ( $(this).hasClass( "colorpicker" ) )? $(this) : $('#' + $(this).data('colorpickerId'));
+
+                if ( cal != null && cal.length > 0 ) {
+					cal.data('colorpicker').anchor = anchor;
+				}
+			},
+
+			setColorChips: function( chip_colors ) {
+                // Can be called on the colorpicker div or the launcher
+                var cal = ( $(this).hasClass( "colorpicker" ) )? $(this) : $('#' + $(this).data('colorpickerId'));
+
+                if ( cal != null && cal.length > 0 ) {
+                    for ( var i=0; i < 16; i++ ) {
+                        var chip = cal.find( ".colorpicker_chip" + (i+1) );
+                        if ( chip.length == 1 && chip_colors.length > i )
+                            chip.css( 'background-color', chip_colors[i] ).show();
+                        else
+                            chip.hide();
+                    }
+
+                    var palette_codes = [ "#010101","#010102","#010103","#010104","#010201","#010202","#010203","#010204" ];
+                    for ( var i=0; i < palette_codes.length; i++ ) {
+                        var chip = cal.find( ".colorpicker_palette" + (i+1) );
+                        updateColorChip( chip, palette_codes[i], 1 );
+                    }
+                }
+            }
 		};
 	}();
 	$.fn.extend({
 		ColorPicker: ColorPicker.init,
 		ColorPickerHide: ColorPicker.hidePicker,
 		ColorPickerShow: ColorPicker.showPicker,
-		ColorPickerSetColor: ColorPicker.setColor
+		ColorPickerSetColor: ColorPicker.setColor,
+		ColorPickerSetColorChips: ColorPicker.setColorChips,
+		ColorPickerSetAnchor: ColorPicker.setAnchor
 	});
 })(jQuery)

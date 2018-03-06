@@ -20,7 +20,6 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "SoundSampler.h"
 
 static const unsigned DEFAULT_FREQUENCIES[] = { 32, 64, 128, 300, 500, 800, 1000, 2000, 4000, 5000, 8000, 10000, 16000, 20000, 0 };
@@ -84,7 +83,7 @@ bool SoundSampler::setFrequencySamples( unsigned channels, const unsigned* frequ
     for ( unsigned channel=0; channel < channels; channel++ ) {
         for ( unsigned f=0; frequencies[f] != 0; f++ ) {
             unsigned bin = (unsigned)((frequencies[f] * sample_size) / samples_per_second);
-            m_samples.push_back( SampleEntry( (AudioChannel)channel, bin ) );
+            m_samples.emplace_back( (AudioChannel)channel, bin );
         }
     }
 
@@ -120,12 +119,45 @@ int SoundSampler::getLevel( unsigned freq_low, unsigned freq_high )
     for ( SampleSet::iterator it=m_samples.begin(); it != m_samples.end(); ++it ) {
         SampleEntry& entry = (*it);
         if ( entry.getBin() >= bin_start && entry.getBin() <= bin_end ) {
-            total += entry.getPower();			// entry.getPower();
-            count++;
+            unsigned power = entry.getPower();			// entry.getPower();
+            if ( power > 0 ) {
+                total += power; 
+                count++;
+            }
         }
     }
 
-    return (int)sqrt(total/count);
+    return count > 0 ? (int)sqrt(total/count) : 0;
+}
+
+
+// ----------------------------------------------------------------------------
+// Returns frequency range dB average
+int SoundSampler::getDB( unsigned freq_low, unsigned freq_high )
+{
+    unsigned sample_size = m_audio_stream->getSampleSize();
+    unsigned samples_per_second = m_audio_stream->getSamplesPerSecond();
+
+    unsigned bin_start = ((freq_low * sample_size) / samples_per_second);
+    unsigned bin_end = ((freq_high * sample_size) / samples_per_second);
+
+    CSingleLock lock( &m_mutex, TRUE );
+
+    LONG total = 0;
+    int count = 0;
+
+    for ( SampleSet::iterator it=m_samples.begin(); it != m_samples.end(); ++it ) {
+        SampleEntry& entry = (*it);
+        if ( entry.getBin() >= bin_start && entry.getBin() <= bin_end ) {
+            unsigned db = entry.getDB();	
+            if ( db > 0 ) {
+                total += db; 
+                count++;
+            }
+        }
+    }
+
+    return count > 0 ? total/count : -100;
 }
 
 // ----------------------------------------------------------------------------

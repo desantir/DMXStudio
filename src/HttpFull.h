@@ -26,6 +26,7 @@ MA 02111-1307, USA.
 
 #define DMX_URL_ROOT_FULL                   DMX_URL_ROOT "full/"
 #define DMX_URL_FULL_HOME                   DMX_URL_ROOT_FULL "full.htm"
+#define DMX_SPOTIFY_AUTHORIZE				DMX_URL_ROOT "full/spotify/"
 
 class HttpFull : public IRequestHandler
 {
@@ -35,20 +36,19 @@ class HttpFull : public IRequestHandler
     RestHandlerMap      m_rest_handlers;
 
 public:
-    HttpFull(void);
+    HttpFull( UINT port );
     ~HttpFull(void);
 
     LPCSTR getPrefix() {
         return DMX_URL_ROOT_FULL;
     }
 
-    UINT getPort() {
-        return studio.getHttpPort();
-    }
-
     DWORD processGetRequest( HttpWorkerThread* worker );
     DWORD processPostRequest( HttpWorkerThread* worker, BYTE* contents, DWORD size );
     bool substitute( LPCSTR marker, LPCSTR data, CString& marker_content ) { return false; }
+
+private:
+	bool spotify_authorize( HttpWorkerThread* worker, LPCSTR wquery, CString& response );
 };
 
 

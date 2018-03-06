@@ -6,7 +6,7 @@
         <manufacturer>ADJ</manufacturer>
         <model>UVLED BAR 16</model>
         <channels>
-            <channel index="1" type="dimmer" color="false" blackout="true" value="255">
+            <channel index="1" type="dimmer" color="false" blackout="true" value="255" whiteout="false">
                 <name>Dimmer</name>
             </channel>
             <channel index="2" type="program speed" color="false" blackout="false">

@@ -22,11 +22,11 @@
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "channel.h"
 #include "IDefinitionVisitor.h"
 
-typedef enum fixture_type {
+enum FixtureType {
     FIXT_UNKNOWN = 0,
     FIXT_PAR = 1,
     FIXT_SPOT = 2,
@@ -41,7 +41,7 @@ typedef enum fixture_type {
     FIXT_SCANNER = 11,
     FIXT_PIXEL = 12,
     FIXT_NUM_TYPES
-} FixtureType;
+};
 
 typedef UID FUID;						// Fixture unique ID
 
@@ -55,15 +55,16 @@ typedef std::map<FUID,FixtureDefinition> FixtureDefinitionMap;
 typedef bool(*CaseInsensitiveCStringComparitor)(LPCSTR, LPCSTR);
 
 typedef std::map<UINT,FUID> FixturePersonalityToFUID;
-typedef std::map<CString,FixturePersonalityToFUID, CaseInsensitiveCStringComparitor> FixtureModelToPersonalityMap;
+typedef std::map<CString, FixturePersonalityToFUID, CaseInsensitiveCStringComparitor> FixtureModelToPersonalityMap;
 typedef std::map<CString, FixtureModelToPersonalityMap, CaseInsensitiveCStringComparitor> FixtureDefinitionHierarchy;
 
 class Pixel {
-    channel_t   m_red;
-    channel_t   m_green;
-    channel_t   m_blue;
-    channel_t   m_white;
-    channel_t   m_amber;
+	channel_address   m_red;
+	channel_address   m_green;
+	channel_address   m_blue;
+	channel_address   m_white;
+	channel_address   m_amber;
+	channel_address   m_uv;
 
 public:
      Pixel() : 
@@ -71,40 +72,44 @@ public:
         m_green( INVALID_CHANNEL ), 
         m_blue( INVALID_CHANNEL ), 
         m_white( INVALID_CHANNEL ),
-        m_amber( INVALID_CHANNEL )
+        m_amber( INVALID_CHANNEL ),
+        m_uv( INVALID_CHANNEL )
     {}
 
-    inline channel_t red( ) const { return m_red; };
-    inline channel_t green( ) const { return m_green; };
-    inline channel_t blue( ) const { return m_blue; };
-    inline channel_t white( ) const { return m_white; };
-    inline channel_t amber( ) const { return m_amber; };
+    inline channel_address red( ) const { return m_red; };
+    inline channel_address green( ) const { return m_green; };
+    inline channel_address blue( ) const { return m_blue; };
+    inline channel_address white( ) const { return m_white; };
+    inline channel_address amber( ) const { return m_amber; };
+    inline channel_address uv( ) const { return m_uv; };
 
-    inline void red( channel_t red ) { m_red = red; };
-    inline void green( channel_t green ) { m_green = green; };
-    inline void blue( channel_t blue ) { m_blue = blue; };
-    inline void white( channel_t white ) { m_white = white; };
-    inline void amber( channel_t amber ) { m_amber = amber; };
+    inline void red( channel_address red ) { m_red = red; };
+    inline void green( channel_address green ) { m_green = green; };
+    inline void blue( channel_address blue ) { m_blue = blue; };
+    inline void white( channel_address white ) { m_white = white; };
+    inline void amber( channel_address amber ) { m_amber = amber; };
+    inline void uv( channel_address uv ) { m_uv = uv; };
 
     inline bool hasRed( ) const { return m_red != INVALID_CHANNEL; };
     inline bool hasGreen( ) const { return m_green != INVALID_CHANNEL; };
     inline bool hasBlue( ) const { return m_blue != INVALID_CHANNEL; };
     inline bool hasWhite( ) const { return m_white != INVALID_CHANNEL; };
     inline bool hasAmber( ) const { return m_amber != INVALID_CHANNEL; };
+    inline bool hasUV( ) const { return m_uv != INVALID_CHANNEL; };
 
     inline void reset() {
-        m_red=m_green = m_blue = m_white = m_amber = INVALID_CHANNEL;
+        m_red=m_green = m_blue = m_white = m_amber = m_uv = INVALID_CHANNEL;
     }
 };
 
 typedef std::vector<Pixel> PixelArray;
 
 struct Head {
-    UINT        m_head_number;        // Head number
-    channel_t   m_pan;                // Pan channel
-    channel_t   m_tilt;               // Tilt channel
-    channel_t   m_speed;              // Movement speed channel
-    channel_t   m_dimmer;             // Dimmer channel ( may be for entire fixture)
+    UINT				m_head_number;        // Head number
+	channel_address		m_pan;                // Pan channel
+	channel_address		m_tilt;               // Tilt channel
+	channel_address		m_speed;              // Movement speed channel
+	channel_address		m_dimmer;             // Dimmer channel ( may be for entire fixture)
 
     Head() :
         m_head_number( 0 ),
@@ -137,6 +142,8 @@ class FixtureDefinition
     bool			m_can_tilt;
     bool			m_can_pan;
     bool            m_can_whiteout;
+    bool            m_has_dimmer;
+    bool            m_dimmer_can_strobe;	// Allow software strobing using the dimmer channel (false for slow fixtures)
 
     ChannelArray	m_channels;				// Ordered list of channels
 
@@ -146,6 +153,7 @@ class FixtureDefinition
 public:
     static void readFixtureDefinitions();
     static FixtureDefinition* lookupFixture( FUID fuid );
+    static FixtureDefinition* lookupFixture( LPCSTR manufacturer, LPCSTR model, UINT personality );
     static FixtureDefinitionMap FixtureDefinitions;
     static FixtureDefinitionHierarchy FixtureDefinition::FixtureDefinitionHierarchy;
 
@@ -198,6 +206,14 @@ public:
         return m_can_whiteout;
     }
 
+    inline bool canDimmerStrobe() const { 
+        return m_dimmer_can_strobe;
+    }
+
+    inline bool hasDimmer() const { 
+        return m_has_dimmer;
+    }
+
     inline size_t getNumChannels() const {
         return m_channels.size();
     }
@@ -206,6 +222,14 @@ public:
         if ( offset >= m_channels.size() )
             return NULL;
         return &m_channels[offset];
+    }
+
+    ChannelList getChannelsByType( ChannelType type ) {
+        ChannelList list;
+        for ( size_t offset=0; offset < m_channels.size(); offset++ )
+            if ( m_channels[offset].getType() == type )
+                list.push_back( offset );
+        return list;
     }
 
     inline size_t getNumPixels( ) const {

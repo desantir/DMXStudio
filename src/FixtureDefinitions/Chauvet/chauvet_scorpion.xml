@@ -1,0 +1,203 @@
+<?xml version="1.0" ?>
+<fixture_definitions>
+    <author>Robert DeSantis</author>
+    <version>1</version>
+    <fixture type="laser" channels="2">
+        <manufacturer>Chauvet</manufacturer>
+        <model>Scorpion Bar RG</model>
+        <channels>
+            <channel index="1" type="control" color="false" blackout="true">
+                <name>Auto Program</name>
+                <ranges>
+                    <range start="0" end="15">
+                        <name>Blackout</name>
+                    </range>
+                    <range start="16" end="35">
+                        <name>Program 1</name>
+                    </range>
+                    <range start="36" end="55">
+                        <name>Program 2</name>
+                    </range>
+                    <range start="56" end="75">
+                        <name>Program 3</name>
+                    </range>
+                    <range start="76" end="95">
+                        <name>Program 4</name>
+                    </range>
+                    <range start="96" end="115">
+                        <name>Program 5</name>
+                    </range>
+                    <range start="116" end="135">
+                        <name>Program 6</name>
+                    </range>
+                    <range start="136" end="155">
+                        <name>Program 7</name>
+                    </range>
+                    <range start="156" end="175">
+                        <name>Program 8</name>
+                    </range>
+                    <range start="176" end="195">
+                        <name>Program 9</name>
+                    </range>
+                    <range start="196" end="215">
+                        <name>Program 10</name>
+                    </range>
+                    <range start="216" end="235">
+                        <name>Program 11</name>
+                    </range>
+                    <range start="236" end="255">
+                        <name>Program 12</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="2" type="program speed" color="false" blackout="false">
+                <name>Program Speed</name>
+                <ranges>
+                    <range start="0" end="200">
+                        <name>0-100% (slow to fast)</name>
+                    </range>
+                  <range start="201" end="255">
+                    <name>Sound Active Mode</name>
+                  </range>                  
+                </ranges>
+            </channel>
+        </channels>
+    </fixture>
+
+  <fixture type="laser" channels="10">
+    <manufacturer>Chauvet</manufacturer>
+    <model>Scorpion Bar RG</model>
+    <channels>
+      <channel index="1" type="control" color="false" blackout="true">
+        <name>Auto Program</name>
+        <ranges>
+          <range start="0" end="15">
+            <name>Blackout</name>
+          </range>
+          <range start="16" end="255">
+            <name>Auto Laser Show</name>
+          </range>
+        </ranges>
+      </channel>
+      <channel index="2" type="program speed" color="false" blackout="false">
+        <name>Program Speed</name>
+        <ranges>
+          <range start="0" end="200">
+            <name>0-100% (slow to fast)</name>
+          </range>
+          <range start="201" end="255">
+            <name>Sound Active Mode</name>
+          </range>
+        </ranges>
+      </channel>
+      <channel index="3" type="control" color="false" blackout="true">
+        <name>Laser Mode</name>
+        <ranges>
+          <range start="0" end="15">
+            <name>Blackout</name>
+          </range>
+          <range start="16" end="255">
+            <name>Laser Output</name>
+          </range>
+        </ranges>
+      </channel>
+      <channel index="4" type="control" color="false" blackout="false">
+        <name>Strobe</name>
+        <ranges>
+          <range start="0" end="255">
+            <name>No Strobe</name>
+          </range>
+        </ranges>
+      </channel>
+      <channel index="5" type="control" color="false" blackout="false">
+        <name>Zoom</name>
+        <ranges>
+          <range start="0" end="127">
+            <name>Indexing (100%-5%)</name>
+          </range>
+          <range start="128" end="169">
+            <name>Zoom Out (slow to fast)</name>
+          </range>
+          <range start="170" end="209">
+            <name>Zoom In (slow to fast)</name>
+          </range>
+          <range start="210" end="255">
+            <name>Zoom In and Out (slow to fast)</name>
+          </range>
+        </ranges>
+      </channel>
+      <channel index="6" type="control" color="false" blackout="false">
+        <name>Rolling X-Axis</name>
+        <ranges>
+          <range start="0" end="127">
+            <name>Fixed Position (0-359)</name>
+          </range>
+          <range start="128" end="191">
+            <name>Clockwise Rolling (slow-fast)</name>
+          </range>
+          <range start="192" end="255">
+            <name>Counter-Clockwise Rolling (slow-fast)</name>
+          </range>
+        </ranges>
+      </channel>
+      <channel index="7" type="control" color="false" blackout="false">
+        <name>Rolling Y-Axis</name>
+        <ranges>
+          <range start="0" end="127">
+            <name>Fixed Position (0-359)</name>
+          </range>
+          <range start="128" end="191">
+            <name>Clockwise Rolling (slow-fast)</name>
+          </range>
+          <range start="192" end="255">
+            <name>Counter-Clockwise Rolling (slow-fast)</name>
+          </range>
+        </ranges>
+      </channel>
+      <channel index="8" type="control" color="false" blackout="false">
+        <name>Rolling Z-Axis</name>
+        <ranges>
+          <range start="0" end="127">
+            <name>Fixed Position (0-359)</name>
+          </range>
+          <range start="128" end="191">
+            <name>Clockwise Rolling (slow-fast)</name>
+          </range>
+          <range start="192" end="255">
+            <name>Counter-Clockwise Rolling (slow-fast)</name>
+          </range>
+        </ranges>
+      </channel>
+      <channel index="9" type="control" color="false" blackout="false">
+        <name>Moving X-Axis</name>
+        <ranges>
+          <range start="0" end="127">
+            <name>128 Horizontal Points</name>
+          </range>
+          <range start="128" end="191">
+            <name>Clockwise Movement (slow-fast)</name>
+          </range>
+          <range start="192" end="255">
+            <name>Counter-Clockwise Movement (slow-fast)</name>
+          </range>
+        </ranges>
+      </channel>
+      <channel index="10" type="control" color="false" blackout="false">
+        <name>Moving Y-Axis</name>
+        <ranges>
+          <range start="0" end="127">
+            <name>128 Vertical Points</name>
+          </range>
+          <range start="128" end="191">
+            <name>Clockwise Movement (slow-fast)</name>
+          </range>
+          <range start="192" end="255">
+            <name>Counter-Clockwise Movement (slow-fast)</name>
+          </range>
+        </ranges>    
+      </channel>
+        
+        
+    </channels>
+  </fixture>
+</fixture_definitions>

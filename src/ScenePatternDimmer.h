@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -22,7 +22,7 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "SceneChannelAnimator.h"
+#include "AnimationDefinition.h"
 
 enum DimmerPattern {
     DP_SEQUENCE = 1,
@@ -37,7 +37,7 @@ enum DimmerPattern {
     DP_RANDOM_TO_ALL = 10
 } ;
 
-class ScenePatternDimmer : public SceneChannelAnimator
+class ScenePatternDimmer : public AnimationDefinition
 {
     friend class VenueWriter;
     friend class VenueReader;
@@ -48,18 +48,16 @@ public:
     static const char* className;
     static const char* animationName;
 
-    ScenePatternDimmer( UID animation_uid, 
+    ScenePatternDimmer( UID animation_uid, bool shared, UID reference_fixture, 
                         AnimationSignal signal,
-                        UIDArray actors,
                         DimmerPattern pattern );
 
     ScenePatternDimmer(void) {}
     virtual ~ScenePatternDimmer(void);
 
-    AbstractAnimation* clone();
     CString getSynopsis(void);
 
-    const char* getName() { return ScenePatternDimmer::animationName; }
+    const char* getPrettyName() { return ScenePatternDimmer::animationName; }
     const char* getClassName() { return ScenePatternDimmer::className; }
 
     void accept( IVisitor* visitor) {
@@ -73,6 +71,8 @@ public:
         m_dimmer_pattern = dimmer_pattern;
     }
 
-    void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
+    AnimationTask* createTask( AnimationEngine* engine, ActorList& actors, UID owner_uid );
+
+	AnimationDefinition* clone();
 };
 

@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -37,38 +37,29 @@ Scene::Scene( UID uid, SceneNumber scene_number, const char * name, const char *
 Scene::Scene( Scene& other ) :
         DObject( other ),
         m_actors( other.m_actors ),
-        m_bpm_rating( other.m_bpm_rating )
+        m_bpm_rating( other.m_bpm_rating ),
+        m_animations( other.m_animations )
 {
-    copy_animations( other );
 }
 
 // ----------------------------------------------------------------------------
 //
 Scene& Scene::operator=( Scene& rhs ) {
+    if ( this == &rhs )
+        return *this;
+
     DObject::operator=( rhs ); 
     m_actors = rhs.m_actors;
-    m_acts = rhs.m_acts;
     m_bpm_rating = rhs.m_bpm_rating;
-    copy_animations(rhs );
+    m_animations = rhs.m_animations;
+
     return *this;
-}
-
-// ----------------------------------------------------------------------------
-//
-void Scene::copy_animations( Scene& rhs ) {
-    CSingleLock lock( &m_scene_mutex, TRUE );
-
-    for ( AnimationPtrArray::iterator it=rhs.m_animations.begin();
-          it != rhs.m_animations.end(); ++it ) {
-        m_animations.push_back( (*it)->clone() );
-    }
 }
 
 // ----------------------------------------------------------------------------
 //
 Scene::~Scene(void)
 {
-    clearAnimations();
 }
 
 // ----------------------------------------------------------------------------
@@ -77,6 +68,24 @@ void Scene::addActor( SceneActor& actor ) {
     CSingleLock lock( &m_scene_mutex, TRUE );
 
     m_actors[ actor.getActorUID() ] = actor;
+}
+
+// ----------------------------------------------------------------------------
+//
+void Scene::setActors( ActorList& actors ) {
+    CSingleLock lock( &m_scene_mutex, TRUE );
+
+    UIDArray old_actors = getActorUIDs();
+
+    m_actors.clear();
+
+    for ( SceneActor& actor : actors )
+        m_actors[ actor.getActorUID() ] = actor;
+
+    // Remove all actors that have been removed from the scene (do after animation update in case they are affected)
+    for ( UID old_actor_uid : old_actors )
+        if ( m_actors.find( old_actor_uid ) == m_actors.end() )
+            removeActor( old_actor_uid );
 }
 
 // ----------------------------------------------------------------------------
@@ -91,8 +100,8 @@ bool Scene::removeActor( UID uid ) {
     m_actors.erase( it );
 
     // Remove actor from all animations
-    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
-        (*it)->removeActor( uid );
+    for ( AnimationReference& animation : m_animations )
+        animation.removeActor( uid );
 
     return true;
 }
@@ -137,54 +146,63 @@ UIDArray Scene::getActorUIDs( ) {
 }
 
 // ----------------------------------------------------------------------------
-// Transfers animation life-cycle responsibilty to the scene
-void Scene::addAnimation( AbstractAnimation* animation ) {
+//
+void Scene::addAnimation( AnimationReference& animation ) {
     CSingleLock lock( &m_scene_mutex, TRUE );
-
-    if ( animation->getUID() == NOUID )
-        animation->setUID( studio.getVenue()->allocUID() );
 
     m_animations.push_back( animation );
 }
 
 // ----------------------------------------------------------------------------
-// Animation destructor will be called
-void Scene::clearAnimations( ) {
+//
+bool Scene::clearAnimations( ) {
     CSingleLock lock( &m_scene_mutex, TRUE );
 
-    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
-        delete (*it);
+    bool changed = m_animations.size() > 0;
+
     m_animations.clear();
+
+    return changed;
 }
 
 // ----------------------------------------------------------------------------
 // 
-AbstractAnimation* Scene::getAnimation( size_t animation_num ) {
+AnimationReference* Scene::getAnimation( size_t animation_index) {
     CSingleLock lock( &m_scene_mutex, TRUE );
 
-    STUDIO_ASSERT( animation_num < m_animations.size(), "Requested invalid animation" );
-    return m_animations[ animation_num ];
+    STUDIO_ASSERT( animation_index < m_animations.size(), "Requested invalid animation" );
+    return &m_animations[ animation_index ];
 }
 
 // ----------------------------------------------------------------------------
-// Animation destructor will be called
-void Scene::removeAnimation( UID animation_uid ) {
+// 
+AnimationReference* Scene::getAnimationByUID( UID animation_uid ) {
+    for ( AnimationReference& ref : m_animations )
+        if ( ref.getUID() == animation_uid )
+            return &ref;
+    return NULL;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool Scene::removeAnimationByUID( UID animation_uid ) {
     CSingleLock lock( &m_scene_mutex, TRUE );
 
-    for ( AnimationPtrArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
-        if ( (*it)->getUID() == animation_uid ) {
-            AbstractAnimation* animation = (*it);
+    for ( AnimationReferenceArray::iterator it=m_animations.begin(); it != m_animations.end(); ++it )
+        if ( (*it).getUID() == animation_uid ) {
             m_animations.erase( it );
-            delete animation;
-            break;
+            return true;
         }
+
+    return false;
 }
 
 // ----------------------------------------------------------------------------
-// Transfers animation life-cycle responsibilty to the scene
-void Scene::insertAnimation( unsigned animation_num, AbstractAnimation* animation ) {
+//
+void Scene::replaceAnimation( size_t animation_index, AnimationReference& animation ) {
     CSingleLock lock( &m_scene_mutex, TRUE );
 
-    STUDIO_ASSERT( animation_num <= m_animations.size(), "Animation insert step out of range" );
-    m_animations.insert( m_animations.begin()+animation_num, animation );
+    STUDIO_ASSERT( animation_index < m_animations.size(), "Animation delete index out of range" );
+
+    m_animations[animation_index] = animation;
 }

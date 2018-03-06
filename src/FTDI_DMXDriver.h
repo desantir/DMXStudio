@@ -45,7 +45,7 @@ private:
     int map_name_to_id( const char * com_port_name, FT_DEVICE_LIST_INFO_NODE *device_info );
 
 protected:
-    virtual DMX_STATUS dmx_send( BYTE* packet ) = 0;
+    virtual DMX_STATUS dmx_send( channel_value* packet ) = 0;
     virtual CString dmx_name() = 0;    
 
     virtual boolean dmx_is_running(void);

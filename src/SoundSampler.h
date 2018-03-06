@@ -23,7 +23,7 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "AudioInputStream.h"
 
 class SampleEntry {
@@ -34,7 +34,7 @@ class SampleEntry {
     unsigned				m_power;
 
     // Buffer and values to compute power moving average
-    unsigned				m_power_buffer[ 4 ];
+    unsigned				m_power_buffer[ 16 ];
     unsigned				m_power_index;
     unsigned				m_power_sum;
     unsigned				m_power_count;
@@ -106,6 +106,7 @@ public:
 
     SampleSet getSampleSet( ULONG &sample_number );
     int getLevel( unsigned freq_low, unsigned freq_high );
+    int getDB( unsigned freq_low, unsigned freq_high );
 
 private:
     void processChannelFFT( AudioChannel channel, FFT_Result* fft_data );

@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-2016 Robert DeSantis
+Copyright (C) 2011-2017 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -28,40 +28,126 @@ MA 02111-1307, USA.
     artifacts specific to a particular installation.
 */
 
+#include "DMXStudio.h"
 #include "IVisitor.h"
 #include "Universe.h"
 #include "Scene.h"
 #include "FixtureGroup.h"
 #include "Chase.h"
-#include "ChaseTask.h"
+#include "ChaseEngine.h"
 #include "AudioInputStream.h"
 #include "AudioVolumeController.h"
 #include "BeatDetector.h"
 #include "SoundDetector.h"
 #include "ColorStrobe.h"
 #include "MusicWatcher.h"
+#include "LevelRecord.h"
+#include "FixtureState.h"
 
-class AnimationTask;
+class AnimationEngine;
 
-#define DEFAULT_SCENE_NUMBER	0
+#define DEFAULT_SCENE_NUMBER	    0
+
+#define QUICK_COLOR_NUMBER	        1
+#define QUICK_COLOR_NAME            "Quick Effect Color Animation"
+
+#define QUICK_MOVEMENT_NUMBER	    2
+#define QUICK_MOVEMENT_NAME         "Quick Effect Movement Animation"
+
+#define QUICK_DIMMER_NUMBER	        3
+#define QUICK_DIMMER_NAME           "Quick Effect Dimmer Animation"
 
 enum WhiteoutMode {
     WHITEOUT_OFF = 0,
     WHITEOUT_STROBE_SLOW = 1,
     WHITEOUT_STROBE_FAST = 2,
     WHITEOUT_STROBE_MANUAL = 3,
-    WHITEOUT_ON = 4
-} ;
+    WHITEOUT_ON = 4,
+    WHITEOUT_PULSE = 5
+};
+
+enum WhiteoutEffect {
+    WHITEOUT_EFFECT_SINGLE_COLOR = 0,
+    WHITEOUT_EFFECT_MULTI_COLOR = 1,            // Palettes only
+    WHITEOUT_EFFECT_SMART_COLOR = 2             // Palettes only
+};
+
+enum QuickSceneEffect {
+	QSE_NONE = 0,
+	QSE_COLOR = 1,
+	QSE_COLOR_CHASE = 2,
+	QSE_COLOR_STROBE = 3,
+	QSE_COLOR_PULSE = 4,
+	QSE_COLOR_FADER = 5,
+    QSE_COLOR_BEAT = 6,
+    QSE_COLOR_BREATH = 7,
+    QSE_COLOR_DIMMER = 8
+};
+
+enum QuickSceneMovement {
+	QSM_NONE = 0,
+	QSM_NOD = 1,
+	QSM_WAVE = 2,
+	QSM_ROTATE = 3,
+	QSM_RANDOM = 4,
+	QSM_NOD_STAGGERED = 5,
+	QSM_WAVE_STAGGERED = 6,
+	QSM_ROTATE_STAGGERED = 7,
+    QSM_SHORT_NOD = 8,
+    QSM_SHORT_NOD_STAGGERED = 9
+
+};
 
 typedef std::map<BPMRating,UIDArray> SceneRatingsMap;
 
 typedef std::map<universe_t,Universe*> UniverseMap;
 typedef std::vector<Universe*> UniversePtrArray;
 
-class Venue : public DObject
+struct SetChannel {
+    UID					m_fixture_uid;
+	channel_address		m_address;
+    BYTE				m_value;
+    Channel*			m_cp;
+
+    SetChannel( UID fixture_uid, channel_address address, channel_value value, Channel* cp=NULL ) :
+        m_fixture_uid( fixture_uid ),
+        m_address ( address ),
+        m_value( value ),
+        m_cp( cp )
+    {}
+};
+
+typedef std::vector<SetChannel> SetChannelArray;
+
+struct WhiteoutFixture {
+    UID                 m_uid;
+    FixtureType         m_type;
+    bool                m_hasColor;
+    bool                m_hasMovement;
+    SetChannelArray     m_channels;
+    SetChannelArray     m_dimmers;
+
+    WhiteoutFixture() :
+        m_uid( NOUID ),
+        m_type( FixtureType::FIXT_UNKNOWN ),
+        m_hasColor( false ),
+        m_hasMovement( false )
+    {}
+
+    WhiteoutFixture( UID uid, FixtureType type ) :
+        m_uid( uid ),
+        m_type( type ),
+        m_hasColor( false ),
+        m_hasMovement( false )
+    {}
+};
+
+typedef std::vector<WhiteoutFixture> WhiteoutFixtureArray;
+
+class Venue : public DObject, Threadable
 {
-    friend class ChaseTask;
-    friend class AnimationTask;
+    friend class ChaseEngine;
+    friend class AnimationEngine;
     friend class VenueWriter;
     friend class VenueReader;
     friend class Scene;
@@ -76,27 +162,48 @@ class Venue : public DObject
     SceneMap			    m_scenes;
     FixtureGroupMap		    m_fixtureGroups;
     ChaseMap			    m_chases;
+    AnimationMap            m_animations;
+
+    PaletteMap              m_palettes;                         // The palette
 
     BYTE				    m_master_dimmer;					// Master dimmer( 0 -> 100 )
     UID					    m_current_scene;					// Currently active scene
     UID                     m_default_scene_uid;                // The default scene
-    ChaseTask*			    m_chase_task;
-    AnimationTask*		    m_animation_task;
+    UID                     m_test_animation_uid;               // Common UID used for test animation
+    UINT                    m_animation_speed;                  // Animation speed percentage (50=50%  100=100%, etc.)
+
+    ChaseEngine*		    m_chase_task;
+    AnimationEngine*        m_animation_task;
     DWORD				    m_auto_backout_ms;					// Auto backout timer (TODO: FADE OUT)
     bool				    m_mute_blackout;					// Blackout only colors / dimmer
     bool                    m_hard_blackout;                    // User forced lighting blackout
+    bool                    m_track_fixtures;                   // Enables fixture tracking events
+
+    // Run-time state for whiteout and other effects
+    WhiteoutFixtureArray    m_whiteout_fixtures;
+    SetChannelArray         m_blackout_channels;
+    SetChannelArray         m_dimmer_channels;
+    SetChannelArray         m_home_channels;
+    UIDArray                m_whiteout_pulse_fixture_ids;
+    RGBWAArray              m_whiteout_color_list;
+    size_t                  m_whiteout_positive_index;
+    size_t                  m_whiteout_pulse_index;
+    
+    BYTE                    m_multi_universe_packet[ MULTI_UNIV_PACKET_SIZE ];
+    bool                    m_packet_changed;
+    FixtureStateMap         m_fixture_states;
 
     CString			        m_audio_capture_device;				// Audio capture device name
     float                   m_audio_boost;                      // Scales incoming audio signal
     float                   m_audio_boost_floor;                // Minimum signal sample value (used when scaling)
     UINT                    m_audio_sample_size;                // Audio sample size (1024 defaut)
 
-    StrobeTime              m_whiteout_strobe_slow;
-    StrobeTime              m_whiteout_strobe_fast;
     WhiteoutMode            m_whiteout;                         // Whiteout color channels
     ColorStrobe             m_whiteout_strobe;                  // Whiteout strobe control
     UINT                    m_whiteout_strobe_ms;               // Manual strobe time MS
+    UINT                    m_whiteout_fade_ms;                 // Manual strobe fade time MS (used for fade in&out)
     RGBWA                   m_whiteout_color;                   // Whiteout "color"
+    WhiteoutEffect          m_whiteout_effect;                  // Whiteout effect
 
     AudioInputStream*	    m_audio;
     SoundDetector*		    m_sound_detector;
@@ -111,6 +218,9 @@ class Venue : public DObject
 
     Venue(Venue& other) {}
     Venue& operator=(Venue& rhs) { return *this; }
+
+protected:
+    UINT run(void);
 
 public:
     Venue(void);
@@ -127,10 +237,34 @@ public:
         return m_animation_task != NULL;
     }
 
+    inline CCriticalSection* getVenueLock() {
+        return &m_venue_mutex;
+    }
+
+    inline bool isTrackFixtures( ) const {
+        return m_track_fixtures;
+    }
+    inline void setTrackFixtures( bool track_fixtures ) {
+        m_track_fixtures = track_fixtures;
+    }
+
+    void getFixtureState( UID uid, RGBWA& color, bool& strobing );
+
+    inline bool isFixtureTracked( UID uid ) const {
+        return m_fixture_states.find( uid ) != m_fixture_states.end();
+    }
+
     void clearAllUniverses();
     void addUniverse( Universe* universe );
     Universe* getUniverse( size_t universe_num );
     UniversePtrArray getUniverses();
+
+    UID getAnimationByNumber( AnimationNumber animation_number );
+    UID getChaseByNumber( ChaseNumber chase_number );
+    UID getFixtureGroupByNumber( GroupNumber group_number );
+    UID getSceneByNumber( SceneNumber scene_number );
+    UID getPaletteByNumber( PaletteNumber palette_number );
+    UID getFixtureByNumber( FixtureNumber fixture_number );
 
     bool isMusicSceneSelectEnabled() const {
         return m_music_scene_select_enabled;
@@ -144,6 +278,11 @@ public:
     MusicSceneSelectMap& music_scene_select_map() {
         return m_music_scene_select_map;
     }
+
+    inline UINT getAnimationSpeed() const {
+        return m_animation_speed;
+    }
+    void setAnimationSpeed( UINT speed );
 
     void mapMusicToScene( LPCSTR track_link, MusicSelectorType& type, UID& type_uid );
     void addMusicMapping( MusicSceneSelector& music_scene_selector );
@@ -180,7 +319,7 @@ public:
 
     void setHomePositions( LPBYTE dmx_packet );
 
-    WhiteoutMode getWhiteout() const {
+    inline WhiteoutMode getWhiteout() const {
         return m_whiteout;
     }
     void setWhiteout( WhiteoutMode whiteout );
@@ -188,37 +327,30 @@ public:
     void setAudioBoost( float scale ) {
         m_audio_boost = scale;
     }
-    float getAudioBoost() const {
+    inline float getAudioBoost() const {
         return m_audio_boost;
     }
 
-    DWORD getAnimationSampleRate();
-    void setAnimationSampleRate( DWORD sample_rate_ms );
+    void setWhiteoutStrobeMS( UINT strobe_ms, UINT fade_ms );
 
-    void setWhiteoutStrobeMS( UINT strobe_ms ) {
-        m_whiteout_strobe_ms = strobe_ms;
-        if ( m_whiteout == WHITEOUT_STROBE_MANUAL )     // Need to reset strobe timer
-            setWhiteout( WHITEOUT_STROBE_MANUAL );
-
-        fireEvent( ES_WHITEOUT_STROBE, 0L, EA_CHANGED, NULL, strobe_ms );
-    }
     UINT getWhiteoutStrobeMS() const {
         return m_whiteout_strobe_ms;
     }
+    inline UINT getWhiteoutFadeMS() const {
+        return m_whiteout_fade_ms;
+    }
 
-    RGBWA getWhiteoutColor() const {
+    inline RGBWA getWhiteoutColor() const {
         return m_whiteout_color;
     }
-    void setWhiteoutColor( RGBWA& color ) {
-        m_whiteout_color = color;
-        if ( color.red() == 0xFF && color.blue() == 0xFF && color.green() == 0xFF )
-            m_whiteout_color.white( 0xFF );             // For fixtures with white channel
+    void setWhiteoutColor( RGBWA& color );
 
-        CString hex_color;
-        hex_color.AppendFormat( "%06lX", (ULONG)color );
-
-        fireEvent( ES_WHITEOUT_COLOR, 0L, EA_CHANGED, (LPCSTR)hex_color, (ULONG)color );
+    inline WhiteoutEffect getWhiteoutEffect() const {
+        return m_whiteout_effect;
     }
+    void setWhiteoutEffect( WhiteoutEffect effect );
+
+    void advanceWhiteoutColor();
 
     void setAudioBoostFloor( float boost_floor ) {
         m_audio_boost_floor = boost_floor;
@@ -263,19 +395,18 @@ public:
         return getSoundDetector()->isMute();
     }
 
-    unsigned getSoundLevel( ) const {
-        return getSoundDetector()->getAmplitude();
+    inline void getSoundLevels( SoundLevel& level ) {
+        STUDIO_ASSERT( m_sound_detector != NULL, "No sound detector" );
+
+        getSoundDetector()->getSoundData( level );
     }
 
-    unsigned getAvgAmplitude( ) const {
-        return getSoundDetector()->getAvgAmplitude();
-    }
+    void writePacket( const channel_value* dmx_packet, bool apply_default_scene );
+    void readPacket( channel_value* dmx_packet );
+	void applyDefaultActors( channel_value* dmx_packet, ChannelDataList* returned_channel_data = NULL );
 
-    void writePacket( const BYTE* dmx_packet );
-    void readPacket( BYTE* dmx_packet );
-
-    UID whoIsAddressRange( universe_t universe, channel_t start_address, channel_t end_address );
-    channel_t findFreeAddressRange( universe_t universe, UINT num_channels );
+    UID whoIsAddressRange( universe_t universe, channel_address start_address, channel_address end_address );
+	channel_address findFreeAddressRange( universe_t universe, UINT num_channels );
 
     void setMasterDimmer( BYTE dimmer ) {
         STUDIO_ASSERT( dimmer <= 100, "Master dimmer level must be between 0 and 100" );
@@ -316,27 +447,47 @@ public:
     // Physical fixture methods
     Fixture* getFixture( UID pfuid );
     FixturePtrArray getFixtures();
-    Fixture *getFixtureByNumber( FixtureNumber fixture_number );
     FixtureNumber nextAvailableFixtureNumber( void );
     UID addFixture( Fixture& pfixture );
     bool deleteFixture( UID pfuid );
-    BYTE getChannelValue( Fixture* pfixture, channel_t channel );
-    BYTE getChannelValue( SceneActor& actor, channel_t channel );
+    void fixtureUpdated( UID pfuid );
+	channel_value getBaseChannelValue( Fixture* pfixture, channel_address channel );
+	channel_value getBaseChannelValue( SceneActor& actor, channel_address channel );
+	channel_value getBaseChannelValue( FixtureGroup* group, channel_address channel );
+    Fixture* getFixtureByType( FUID fuid, universe_t universe, channel_address base_dmx_channel );
 
     // Default Scene methods
     void copySceneFixtureToDefault( UID scene_uid, UID fixture_uid );
-    void moveDefaultFixturesToScene( UID scene_uid, UIDArray actor_uid, boolean keep_groups, boolean clear_default );
-    void moveDefaultFixturesToScene( UID scene_uid, boolean keep_groups, boolean clear_default );
+    void moveDefaultFixturesToScene( UIDArray scene_uids, UIDArray actor_uids, boolean keep_groups, boolean clear_default, boolean copy_animations );
+    void moveDefaultFixturesToScene( UID scene_uid, boolean keep_groups, boolean clear_default, boolean copy_animations );
 
-    SceneActor* captureFixture( UID fixture_uid );
-    SceneActor* captureFixtureGroup( UID group_uid );
+    SceneActor* captureFixture( UID fixture_uid, std::vector<BYTE>* channel_values=NULL, UIDArray* palette_refs=NULL );
+    void captureAndSetChannelValue( SetChannelArray channel_sets, DWORD change_id = 0L );
+    void captureAndSetPalettes( UID actor_uid, UIDArray& palette_refs );
+
     SceneActor* getCapturedActor();
     void releaseActor( UID actor_id );
     void clearAllCapturedActors( );
     FixturePtrArray resolveActorFixtures( SceneActor* actor );
     Fixture* getGroupRepresentative( UID group_id );
 
-    void captureAndSetChannelValue( SceneActor& actor, channel_t channel, BYTE value );
+    // Palette methods
+    bool deletePalette( UID palette_id );
+    UID addPalette( Palette& palette );
+    void updatePalette( Palette& palette );
+    PaletteNumber nextAvailablePaletteNumber( void );
+    bool getSystemPalette( ULONG palette_number, RGBWAArray& palette_colors );
+    void setVideoPalette( RGBWAArray& palette_colors, ColorWeights& palette_weights );
+    DObjectArray getPaletteSummary();
+
+    template <class T>
+    inline bool getPalette( T identifier, Palette& palette ) {
+        Palette* p = getPalette( identifier );
+        if ( p == NULL )
+            return false;
+        palette = *p;
+        return true;
+    }
 
     // Scene methods
     Scene *getScene( UID scene_uid );
@@ -344,15 +495,16 @@ public:
     bool deleteScene( UID scene_uid );
     UID addScene( Scene& scene, bool isDefault=false );
     void playScene( UID scene_uid, SceneLoadMethod method );
-    void stageActors( ActorPtrArray& actors );
-    void clearAnimations();
-    Scene *getSceneByNumber( SceneNumber scene_number );
+    void stageActors( UID scene_uid );
+    void clearAllAnimations();
+
     SceneNumber nextAvailableSceneNumber( void );
     void deleteAllScenes();
     UID getRandomScene();
     void populateSceneRatingsMap( SceneRatingsMap& map );
     void sceneUpdated( UID scene_uid );
-    void fadeToNextScene( ULONG fade_time, ActorPtrArray& actors );
+    void fadeToNextScene( UID scene_uid, ULONG fade_time );
+    void setSceneAnimationReferences( Scene* scene, AnimationReferenceArray& animation_refs, bool copyPrivateAnimations );
 
     inline void selectScene( UID scene_uid ) {
         // Stop any running chases and load the new object
@@ -373,8 +525,8 @@ public:
         return getScene( m_default_scene_uid );
     }
 
-    inline bool isDefaultScene() {
-        return (getScene()->getSceneNumber() == DEFAULT_SCENE_NUMBER );
+    inline bool isDefaultScene() const {
+        return m_current_scene == m_default_scene_uid;
     }
 
     inline size_t getNumScenes( ) const {
@@ -387,20 +539,19 @@ public:
     FixtureGroup* getFixtureGroup( UID group_id );
     bool deleteFixtureGroup( UID group_id );
     GroupNumber nextAvailableFixtureGroupNumber( void );
-    FixtureGroup* getFixtureGroupByNumber( GroupNumber group_number );
     void deleteAllFixtureGroups();
 
     // Scene chase methods
     Chase *getChase( UID chase_uid );
     UID addChase( Chase& chase );
     ChasePtrArray getChases( );
-    Chase* getChaseByNumber( ChaseNumber chase_number );
     bool deleteChase( UID chase_id );
     bool copyChaseSteps( UID source_chase_id, UID target_chase_id );
     ChaseNumber nextAvailableChaseNumber( void );
     void deleteAllChases();
     UID getRandomChase();
     void chaseUpdated( UID chase_uid );
+    void chaseStep( int steps );
 
     inline size_t getNumChases() const {
         return m_chases.size();
@@ -423,8 +574,25 @@ public:
         return m_chase_task->getChase()->getUID();
     }
 
+    // Animation methods
+    AnimationDefinition* getAnimation( UID animation_uid );
+    AnimationPtrArray getAnimations();
+    bool deleteAnimation( UID animation_uid );
+    UID addAnimation( AnimationDefinition* animation );
+    void replaceAnimation( AnimationDefinition* animation );
+    void testAnimation( AnimationDefinition* animation );
+    AnimationNumber nextAvailableAnimationNumber( void );
+    void deleteAllAnimations();
+    void captureAnimation( UID animation_uid );
+    void releaseAnimation( UID animation_uid );
+
+    inline size_t getNumAnimations( ) const {
+        return m_animations.size();
+    }
+
+    // Venue and events
     void configure( LPCSTR name, LPCSTR description, LPCSTR audio_capture_device, float audio_boost, 
-                    float audio_boost_floor, int audio_sample_size, int auto_blackout, 
+                    float audio_boost_floor, int audio_sample_size, int auto_blackout, bool track_fixtures, 
                     std::vector<Universe>& universes );
 
     inline bool fireEvent( EventSource source, DWORD uid, EventAction action, LPCSTR text=NULL, DWORD val1=0L, DWORD val2=0L, DWORD val3=0L, DWORD val4=0L ) {
@@ -434,15 +602,34 @@ public:
         return false;
     }
 
+    void computeActorFinalValues( Scene* scene );
+    void computeActorFinalValues( SceneActor* actor );
+
+    AnimationLevelMap loadAnimationLevelData( DWORD after_ms );
+
+	void createQuickScene( UIDArray fixtures, QuickSceneEffect effect, RGBWA color, unsigned color_speed_ms, 
+                           QuickSceneMovement movement, unsigned move_speed_ms, bool multi_color );
+    void stopQuickScene();
+
 private:
     inline UID allocUID() {
         return m_uid_pool++;
     }
 
     SceneActor * getDefaultActor( UID pfuid );
-    void loadSceneChannels( BYTE *dmx_multi_universe_packet, ActorPtrArray& actors );
-    void loadChannel( BYTE *dmx_packet, Fixture* pf, channel_t channel, BYTE value );
-    void whiteoutChannels( LPBYTE dmx_packet );
-    void blackoutChannels( LPBYTE dmx_packet );
-    void dimmerChannels( LPBYTE dmx_packe );
+	void loadSceneChannels( channel_value *dmx_multi_universe_packet, ActorPtrArray& actors, ChannelDataList* returned_channel_data = NULL );
+	channel_address loadChannel( channel_value *dmx_packet, Fixture* pf, channel_address channel, channel_value value );
+    void whiteoutChannels( channel_value *dmx_packet );
+    void smartWhiteoutChannels( channel_value *dmx_packet );
+    void blackoutChannels( channel_value *dmx_packet );
+    void dimmerChannels( channel_value *dmx_packet );
+    void removeFixtureFromPalette( UID fixture_id );
+    void scanFixtureChannels( void );
+    void setupGlobalPaletteEntries();
+    void addActorToDefaultAnimations( UID fixture_id );
+    void addQuickEffectAnimation( AnimationDefinition* animation, AnimationNumber number, LPCSTR name, UIDArray& fixtures );
+    void autoCreateUniverseFixtures();
+
+    Palette* getPalette( UID palette_id );
+    Palette* getPalette( LPCSTR palette_name );
 };

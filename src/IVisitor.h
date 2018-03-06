@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2017 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -20,10 +20,9 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 
 class Venue;
 class Fixture;
@@ -46,6 +45,12 @@ struct MusicSceneSelector;
 class ScenePixelAnimator;
 class SceneChannelFilter;
 class Universe;
+class AnimationReference;
+class ScenePulse;
+class PaletteEntry;
+class Palette;
+class SceneCueAnimator;
+class SceneFixtureDimmer;
 
 class IVisitor
 {
@@ -56,7 +61,10 @@ public:
     virtual void visit( SceneActor* actor ) = 0;
     virtual void visit( Chase* chase ) = 0;
     virtual void visit( FixtureGroup* fixture_group ) = 0;
+    virtual void visit( Palette* palette ) = 0;
+    virtual void visit( PaletteEntry* palette_entry ) = 0;
 
+    virtual void visit( AnimationReference* animation ) = 0;
     virtual void visit( SceneStrobeAnimator* animation ) = 0;
     virtual void visit( ScenePatternDimmer* animation ) = 0;
     virtual void visit( SceneMovementAnimator* animation ) = 0;
@@ -66,6 +74,9 @@ public:
     virtual void visit( SceneSoundLevel* animation ) = 0;   
     virtual void visit( ScenePixelAnimator* animation ) = 0;   
     virtual void visit( SceneChannelFilter* animation ) = 0;
+    virtual void visit( ScenePulse* animation ) = 0;
+    virtual void visit( SceneCueAnimator* animation ) = 0;
+    virtual void visit( SceneFixtureDimmer *animation ) = 0;
 
     virtual void visit( AnimationSignal* signal ) = 0;
     virtual void visit( ChaseStep* chase_step ) = 0;

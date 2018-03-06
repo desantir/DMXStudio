@@ -35,6 +35,9 @@ MA 02111-1307, USA.
 #include "SceneSoundLevel.h"
 #include "ScenePixelAnimator.h"
 #include "SceneChannelFilter.h"
+#include "ScenePulse.h"
+#include "SceneCueAnimator.h"
+#include "SceneFixtureDimmer.h"
 
 class VenueWriter : public IVisitor, ISerializable
 {
@@ -61,6 +64,7 @@ public:
     void visit( SceneSequence* animation );  
     void visit( SceneSoundLevel* animation );  
     void visit( SceneChannelFilter* animation );
+    void visit( ScenePulse* animation );
     void visit( AnimationSignal* signal );
     void visit( ChaseStep* chase_step );
     void visit( MovementAnimation* movement );
@@ -68,6 +72,11 @@ public:
     void visit( ChannelAnimation* channel_animation );
     void visit( MusicSceneSelector* music_scene_selection );
     void visit( Universe* universe );
+    void visit( AnimationReference* animation );
+    void visit( Palette* palette );
+    void visit( PaletteEntry* palette_entry );
+    void visit( SceneCueAnimator* animation );
+    void visit( SceneFixtureDimmer* animation );
     // Reminder: Add a virtual entry to IVisitor for all new visit methods
 
     template <class T>
@@ -83,6 +92,15 @@ public:
         for ( T::iterator it=list.begin();
               it != list.end(); ++it )
             it->second.accept( this );
+        pop_parent( );
+    }
+
+    template <class T>
+    void visit_ptr_map( TiXmlElement& parent, T& list ) {
+        push_parent( parent );
+        for ( T::iterator it=list.begin();
+        it != list.end(); ++it )
+            it->second->accept( this );
         pop_parent( );
     }
 
@@ -120,5 +138,7 @@ protected:
 
 private:
     void writeDObject( TiXmlElement& element, DObject* dobject, LPCSTR number_name );
+    void writeAbstractAnimation( TiXmlElement& element, AnimationDefinition* animation );
+	void writeStrobeTime( TiXmlElement& element, StrobeTime& strobe_time );
 };
 

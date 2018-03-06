@@ -20,7 +20,7 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
+#include "DMXStudio.h"
 #include "BeatDetector.h"
 
 // ----------------------------------------------------------------------------
@@ -60,7 +60,7 @@ void BeatDetector::attach( AudioInputStream* audio, unsigned frequency_bins ) {
         STUDIO_ASSERT( m_frequency_bins <= BEAT_DETECTOR_MASK_SIZE*32, "Too many beat detector frequency bins - %d requested", m_frequency_bins );
 
         for ( unsigned i=0; i < m_frequency_bins; i++ )
-            m_bins.push_back( FreqBin( m_samples_per_second / m_sample_size, m_sensitivity_ms ) );
+            m_bins.emplace_back( m_samples_per_second / m_sample_size, m_sensitivity_ms );
 
         m_B = new double[ m_sample_size ];
         m_Es = new double[ m_sample_size ];	
@@ -117,7 +117,7 @@ void BeatDetector::addFrequencyEvent( CEvent* eventHandler, unsigned freq_low, u
         // output( "Beat detect %u-%uHz bins: %u to %u mask=%08x-%08x\n", freq_low, freq_high, bin_start, bin_end, mask[1],mask[0] );
     }
 
-    m_event_handlers.push_back( BeatEvent( eventHandler, mask ) );
+    m_event_handlers.emplace_back( eventHandler, mask );
 }
 
 // ----------------------------------------------------------------------------
@@ -245,4 +245,15 @@ HRESULT BeatDetector::ProcessFFT( WORD channels, FFT_Result* fft_result[] )
     }
 
     return 0;
+}
+
+// ----------------------------------------------------------------------------
+//
+void BeatDetector::output( const char *fmt, ... ) {
+    if ( studio.isDebug() ) {
+        va_list args;
+        va_start( args, fmt );
+        vprintf( fmt, args );
+        va_end( args );
+    }
 }

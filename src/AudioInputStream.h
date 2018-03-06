@@ -22,7 +22,7 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "ffft/FFTReal.h"
 #include "Threadable.h"
 
@@ -124,7 +124,9 @@ public:
     inline float getPower( unsigned bin ) const {
         if ( bin >= m_samples/2 )
             return 0.0F;
-        return m_dft[ bin ] * m_dft[bin] + m_dfti[bin] * m_dfti[bin];
+
+        float power = m_dft[ bin ] * m_dft[bin] + m_dfti[bin] * m_dfti[bin];
+        return power;
     }
 
     // Frequency amplitude

@@ -29,7 +29,6 @@ OpenDMXDriver::OpenDMXDriver( universe_t universe_id ) :
    FTDI_DMXDriver( universe_id ),
    Threadable("OpenDMXDriver")
 {
-    m_latch.store(false);
     memset(m_packet, 0, sizeof(m_packet));
 }
 
@@ -77,25 +76,19 @@ DMX_STATUS OpenDMXDriver::dmx_open() {
 // ----------------------------------------------------------------------------
 // Send current buffer
 //
-DMX_STATUS OpenDMXDriver::dmx_send( BYTE* packet ) {
-    memcpy( m_pending_packet, packet, sizeof(m_packet) );
+DMX_STATUS OpenDMXDriver::dmx_send( channel_value* packet_513 ) {
+    CSingleLock lock( &m_lock, TRUE );
+
+    memcpy( m_pending_packet, packet_513, sizeof(m_pending_packet) );
+    
+    lock.Unlock();
 
     if (!isRunning())                              // If not running, assume we are in "disconnected" mode
         return DMX_OK;
 
-    m_latch.store(true);
-
     m_wake.SetEvent();
 
-    const unsigned sleep_ms = 1;
-
-    int max_wait = 5000 / sleep_ms;					// Max wait 5 seconds
-
-    while (m_latch && max_wait--) {
-        Sleep(sleep_ms);
-    }
-
-    return m_latch.load() ? DMX_ERROR : DMX_OK;
+    return DMX_OK;
 }
 
 // ----------------------------------------------------------------------------
@@ -115,6 +108,8 @@ DMX_STATUS OpenDMXDriver::dmx_close(void) {
 UINT OpenDMXDriver::run(void) {
     DMXStudio::log_status("DMX universe %d driver started [%s]", getId(), (LPCSTR)dmx_name() );
 
+    CSingleLock lock( &m_lock );
+
     while (isRunning()) {
         DMX_STATUS status;
 
@@ -127,7 +122,7 @@ UINT OpenDMXDriver::run(void) {
 
         if (m_debug) {
             CString buffer;
-            for (channel_t chan = 1; chan <= DMX_PACKET_SIZE; chan++) {
+            for (channel_address chan = 1; chan <= DMX_PACKET_SIZE; chan++) {
                 buffer.Format("%03d=%02x ", chan, m_packet[chan]);
                 if (chan % 16 == 0) {
                     DMXStudio::log(buffer);
@@ -146,16 +141,13 @@ UINT OpenDMXDriver::run(void) {
             sleep_ms = 0;
 
         if (::WaitForSingleObject(m_wake.m_hObject, sleep_ms) == WAIT_OBJECT_0) {
-            if (m_latch.load()) {
-                memcpy(m_packet, m_pending_packet, sizeof(m_packet));
-                m_latch.store(false);
-            }
+            lock.Lock();
+            memcpy(m_packet, m_pending_packet, sizeof(m_packet));
+            lock.Unlock();
         }
     }
 
     DMXStudio::log_status("DMX universe %d driver stopped [%s]", getId(), (LPCSTR)dmx_name() );
-
-    AfxEndThread(DMX_OK);
 
     return DMX_OK;
 }
@@ -165,7 +157,7 @@ UINT OpenDMXDriver::run(void) {
     supplied packet include the 0 command byte with at least 24 bytes of data
     to a maximum of 513 total bytes (command + 512 data).
 */
-DMX_STATUS OpenDMXDriver::send( unsigned length, BYTE * packet ) {
+DMX_STATUS OpenDMXDriver::send( unsigned length, channel_value * packet ) {
     if ( !m_fthandle )
         return DMX_NO_CONNECTION;
 

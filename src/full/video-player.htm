@@ -1,0 +1,279 @@
+﻿<!DOCTYPE html> 
+
+<!--
+Copyright (C) 2017 Robert DeSantis
+hopluvr at gmail dot com
+
+This file is part of DMX Studio.
+ 
+DMX Studio is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
+ 
+DMX Studio is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+License for more details.
+ 
+You should have received a copy of the GNU General Public License
+along with DMX Studio; see the file _COPYING.txt.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+MA 02111-1307, USA.
+-->
+
+<html> 
+
+<head> 
+    <title>Music Video</title> 
+
+    <meta name="viewport" content="width=device-width, initial-scale=1"> 
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <link rel="stylesheet" href="css/dark-hive-custom/jquery-ui-1.9.2.custom.css" />
+    <link rel="stylesheet" href="jquery-toastmessage/css/jquery.toastmessage.css" />   
+    <script src="js/jquery-1.8.3.js"></script>
+    <script src="js/jquery-ui-1.9.2.custom.js"></script>
+    <script src="jquery-toastmessage/jquery.toastmessage.js"></script>
+    <script src="utils.js"></script>
+
+    // YouTube iframe API reference: https://developers.google.com/youtube/iframe_api_reference
+
+    <script type="text/javascript">
+        var PlayerStateType = {
+            UNSTARTED: -1,
+            ENDED: 0,
+            PLAYING: 1,
+            PAUSED: 2,
+            BUFFERING: 3,
+            CUED: 4
+        };
+
+        var player_api;
+        var video_queue = [];
+        var player_status = PlayerStateType.UNSTARTED;
+        var title = document.title;
+        var video_info = null;                    // Currently playing video
+
+        var palette_timer = null;
+
+        // ----------------------------------------------------------------------------
+        //
+        function loadPage() {
+            var tag = document.createElement('script');
+            tag.id = 'iframe-api';
+            tag.src = 'https://www.youtube.com/iframe_api';
+
+            var firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+            window.addEventListener( "message", function( event ) {
+                handlePostEvent( event );
+            });
+        }
+
+        // ----------------------------------------------------------------------------
+        // Called when the YT API is ready
+        function onYouTubeIframeAPIReady() {
+            player_api = new YT.Player( 'player', {
+                height: window.innerHeight - 50,
+                width: window.innerWidth - 50,
+                playerVars: { autoplay:1 , enablejsapi: 1 },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        // ----------------------------------------------------------------------------
+        //
+        function sendMessage( message ) {
+            if (  window.opener != null && !window.opener.closed )
+                window.opener.postMessage( message, "*" );
+        }
+
+        // ----------------------------------------------------------------------------
+        //
+        function onPlayerReady(event) {
+            sendMessage( { "method": "videoStateChange", "action": "ready" } );
+
+			var resizeVideoContainer = function( event ) {
+                var player = document.getElementById( "player" )
+
+			    player.height = window.innerHeight - 50;
+			    player.width = window.innerWidth - 50;
+			}
+
+			window.onresize = resizeVideoContainer;
+        }
+
+        // ----------------------------------------------------------------------------
+        //
+        function onPlayerStateChange(event) {
+            player_status = parseInt( event.data );
+
+            switch ( player_status ) {
+                case PlayerStateType.ENDED:
+                    if ( palette_timer != null ) {
+                        clearInterval( palette_timer );
+                        palette_timer = null;
+                    }
+
+                    video_info["queue"] = video_queue;
+
+                    sendMessage( { "method": "videoStateChange", "action": "ended", "video_info": video_info } );
+                    title = "Music Video";
+                    nextVideo();
+                    break;                      
+
+                case PlayerStateType.PLAYING:
+                    video_info["queue"] = video_queue;
+                    sendMessage( { "method": "videoStateChange", "action": "playing", "video_info": video_info } );
+
+                    if ( video_info.show_palette && video_info.palette_time_indexes.length > 0 && palette_timer == null ) 
+                        palette_timer = setInterval( track_video_time, 100 );
+                    break;
+
+                case PlayerStateType.PAUSED:
+                    if ( palette_timer != null ) {
+                        clearInterval( palette_timer );
+                        palette_timer = null;
+                    }
+
+                    video_info["queue"] = video_queue;
+                    sendMessage( { "method": "videoStateChange", "action": "paused", "video_info": video_info } );
+                    break;
+
+                case PlayerStateType.UNSTARTED:
+                case PlayerStateType.BUFFERING:
+                case PlayerStateType.CUED:
+                    break;
+            }
+        }
+
+        // ----------------------------------------------------------------------------
+        //
+        function track_video_time( ) {
+            var position = player_api.getCurrentTime() * 1000 + 1000;        // 1s fudge factor to get the lights loaded before frame
+            var new_index = 0;
+
+            while ( new_index < video_info.palette_time_indexes.length && video_info.palette_time_indexes[new_index] <= position )
+                new_index++;
+
+            if ( new_index > 0 )
+                new_index--;
+
+            if ( video_info.palette_index != new_index ) {
+                video_info.palette_index = new_index;
+                sendMessage( { "method": "videoStateChange", "action": "select_palette", "video_info": video_info } );
+            }
+        }
+
+        // ----------------------------------------------------------------------------
+        //
+        function nextVideo() {
+            video_info = null;
+
+            if ( video_queue.length != 0 ) {
+                video_info = video_queue[0];
+                video_queue.splice( 0, 1 );
+                video_info.palette_index = -1;
+
+                player_api.loadVideoById( video_info.video_id, video_info.start_seconds, "large" );
+
+                title = video_info.title;
+            }
+
+            updateWindowTitle();
+        }
+
+        // ----------------------------------------------------------------------------
+        //
+        function handlePostEvent( event ) {
+            // Ignore all youtube events as the handlers will get them
+            var origin = event.origin || event.originalEvent.origin;
+            if ( origin.indexOf( "youtube" ) != -1 )
+                return;
+
+            data = JSON.parse( event.data );
+
+            if ( data.action == "queue" ) {
+                for ( var i=0; i < video_queue.length; i++ )
+                    if ( video_queue[i].video_id == data.video_id ) {
+                        toastNotice( "Video already queued" );
+                        return;
+                    }
+
+                video_queue.push( data );
+
+                toastNotice( "Queued: " + data.title );
+
+                if ( player_status == PlayerStateType.UNSTARTED ||
+                        player_status == PlayerStateType.ENDED ) {
+                    nextVideo();
+                }
+                else {
+                    updateWindowTitle();
+
+                    video_info["queue"] = video_queue;
+
+                    sendMessage( { "method": "videoStateChange", "action": "queued", "video_info": video_info } );
+                }
+            }
+            else if ( data.action == "play" ) { 
+                video_queue.splice( 0, 0, data );
+                nextVideo();
+            }
+            else if ( data.action == "pause" ) {
+                if ( player_api.getPlayerState() == 1 )
+                    player_api.pauseVideo();
+            }
+            else if ( data.action == "toggle_pause" ) {
+                if ( player_api.getPlayerState() == 1 )
+                    player_api.pauseVideo();
+                else if ( player_api.getPlayerState() == 2 ) 
+                    player_api.playVideo();
+            }
+            else if ( data.action == "next" ) { 
+                nextVideo();
+            }
+        }
+
+        // ----------------------------------------------------------------------------
+        //
+        function updateWindowTitle() {
+            if ( video_queue.length )
+                document.title = unencode(title) + " (" + video_queue.length + " queued)";
+            else
+                document.title = unencode(title);
+        }
+
+        // ----------------------------------------------------------------------------
+        //
+        function toastNotice( message ) {
+            return $().toastmessage( 'showToast', {
+                text     : message,
+                stayTime : 5000,
+                sticky   : false,
+                position : 'top-right',
+                type     : 'notice',
+                close    : null
+            });
+        }
+
+    $(function () { 
+    
+    });
+
+    </script>
+
+</head> 
+
+<body style="background-color:black;" onload="loadPage();">
+    <div id="player" width="854" height="480" src="" frameborder="0" allowfullscreen></div>
+</body>
+
+</html>
+

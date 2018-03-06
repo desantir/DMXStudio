@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -20,14 +20,14 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #pragma once
 
 /**
     Base class for user's managed venue objects.  Provides UID, name, number, and description.
 */
 
-#include "DMXStudio.h"
+#include "stdafx.h"
+#include "Act.h"
 
 #define MAX_OBJECT_NUMBER	1000000
 
@@ -36,12 +36,18 @@ class DObject
     friend class VenueWriter;
     friend class VenueReader;
 
+    inline void setCreated() {
+        m_created = std::chrono::duration_cast<std::chrono::milliseconds >(
+            std::chrono::system_clock::now().time_since_epoch() ).count();
+    }
+
 protected:
     UID				m_uid;                          // The UID is guarenteed to be unique _across_ all objects
     ULONG			m_number;						// User selected friendly number
     CString		    m_name;
     CString		    m_description;
-    DWORD           m_created;                      // Created tick count
+    UINT64          m_created;                      // Created tick count
+    Acts            m_acts;                         // List of acts this object belongs to
 
     virtual inline void setNumber( ULONG number ) {
         m_number = number;
@@ -50,15 +56,17 @@ protected:
 public:
     DObject(void) :
         m_uid(NOUID),
-        m_number(0),
-        m_created( ::GetTickCount() )
-    {}
+        m_number(0)
+    {
+        setCreated();
+    }
 
     DObject( UID uid, ULONG number, const char* name, const char *description ) :
         m_uid(uid),
-        m_number(number),
-        m_created( ::GetTickCount() )
+        m_number(number)
     {
+        setCreated();
+
         if ( name )
             m_name = name;
         if ( description )
@@ -72,7 +80,9 @@ public:
         m_uid = other.m_uid;
         m_number = other.m_number;
         m_name = other.m_name;
+        m_created = other.m_created;
         m_description = other.m_description;
+        m_acts = other.m_acts;
     }
 
     virtual inline UID getUID( ) const {
@@ -100,7 +110,16 @@ public:
         m_description = description;
     }
 
-    virtual DWORD getCreated() const {
+    virtual UINT64 getCreated() const {
         return m_created;
     }
+
+    inline Acts getActs() const {
+        return m_acts;
+    }
+    inline void setActs( Acts& acts ) {
+        m_acts = acts;
+    }
 };
+
+typedef std::vector<DObject> DObjectArray;

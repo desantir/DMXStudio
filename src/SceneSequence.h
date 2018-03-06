@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-14 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -22,19 +22,13 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "AnimationTask.h"
-#include "AbstractAnimation.h"
+#include "AnimationDefinition.h"
 
-class SceneSequence : public AbstractAnimation
+class SceneSequence : public AnimationDefinition
 {
     friend class VenueWriter;
     friend class VenueReader;
 
-    unsigned			m_current_actor;
-    DWORD				m_next_actor_ms;
-    UIDArray			m_running_actors;
-
-    SceneSequence(SceneSequence& other) {}
     SceneSequence& operator=(SceneSequence& rhs) { return *this; }
 
 public:
@@ -42,23 +36,17 @@ public:
     static const char* animationName;
 
     SceneSequence( void ) {};
-    SceneSequence( UID animation_uid, AnimationSignal signal, UIDArray actors );
+    SceneSequence( UID animation_uid, bool shared, UID reference_fixture, AnimationSignal signal );
     virtual ~SceneSequence(void);
 
-    AbstractAnimation* clone();
-
-    const char* getName() { return SceneSequence::animationName; }
+    const char* getPrettyName() { return SceneSequence::animationName; }
     const char* getClassName() { return SceneSequence::className; }
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
 
-    void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
-    bool sliceAnimation( DWORD time_ms, BYTE* dmx_packet );
-    void stopAnimation( void );
+    AnimationTask* createTask( AnimationEngine* engine, ActorList& actors, UID owner_uid );
 
-private:
-    void unselectActor( unsigned actor, BYTE* dmx_packet );
-    void selectActor( unsigned actor, BYTE* dmx_packet );
+	AnimationDefinition* clone();
 };

@@ -33,37 +33,6 @@ MA 02111-1307, USA.
 // ----------------------------------------------------------------------------
 //
 CString AbstractAnimation::getSynopsis(void) {
-    CString synopsis;
-
-    synopsis.Format( "Fixtures( " );
-    for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); ++it ) {
-        Fixture *pf = studio.getVenue()->getFixture( (*it) );
-        if ( pf != NULL )
-            synopsis.AppendFormat( "F%lu ", pf->getNumber() );
-        else {
-            FixtureGroup* group = studio.getVenue()->getFixtureGroup( (*it) );
-            if ( group != NULL )
-                synopsis.AppendFormat( "G%lu ", group->getNumber() );
-        }
-    }
-    synopsis += ")";
-
-    return synopsis;
+    return "";
 }
 
-// ----------------------------------------------------------------------------
-//
-UIDArray AbstractAnimation::populateActors( ) {
-    return m_actors;
-}
-
-// ----------------------------------------------------------------------------
-//
-void AbstractAnimation::removeActor( UID actor ) {
-    for ( UIDArray::iterator it=m_actors.begin(); it != m_actors.end(); ) {
-        if ( (*it) == actor )
-            it = m_actors.erase( it );
-        else
-            it++;
-    }
-}

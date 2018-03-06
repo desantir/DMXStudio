@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-14 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -21,20 +21,19 @@ MA 02111-1307, USA.
 */
 
 #include "SceneSoundLevel.h"
+#include "SceneSoundLevelTask.h"
 
 const char* SceneSoundLevel::className = "SoundLevel";
-const char* SceneSoundLevel::animationName = "Sound level";
+const char* SceneSoundLevel::animationName = "Channel Fader";
 
 // ----------------------------------------------------------------------------
 //
-SceneSoundLevel::SceneSoundLevel( UID animation_uid,
+SceneSoundLevel::SceneSoundLevel( UID animation_uid, bool shared, UID reference_fixture,
                                   AnimationSignal signal,
-                                  UIDArray actors,
                                   WORD fade_what ) :
-    SceneChannelAnimator( animation_uid, signal ),
+    AnimationDefinition( animation_uid, shared, reference_fixture, signal ),
     m_fade_what( fade_what )
 {
-    m_actors = actors;
 }
 
 // ----------------------------------------------------------------------------
@@ -45,8 +44,14 @@ SceneSoundLevel::~SceneSoundLevel(void)
 
 // ----------------------------------------------------------------------------
 //
-AbstractAnimation* SceneSoundLevel::clone() {
-    return new SceneSoundLevel( m_uid, m_signal, m_actors, m_fade_what );
+AnimationDefinition* SceneSoundLevel::clone( ) {
+	return new SceneSoundLevel( 0L, m_shared, m_reference_fixture, m_signal, m_fade_what );
+}
+
+// ----------------------------------------------------------------------------
+//
+AnimationTask* SceneSoundLevel::createTask( AnimationEngine* engine, ActorList& actors, UID owner_uid ) {
+    return new SceneSoundLevelTask( engine, m_uid, actors, owner_uid );
 }
 
 // ----------------------------------------------------------------------------
@@ -60,37 +65,8 @@ CString SceneSoundLevel::getSynopsis(void) {
     if ( m_fade_what & FADE_DIMMERS )
         fade += "dimmers ";
 
-    synopsis.Format( "Fade ( %s) %s", fade, AbstractAnimation::getSynopsis() );
+    synopsis.Format( "Fade ( %s) %s", fade, AnimationDefinition::getSynopsis() );
 
     return synopsis;
 }
 
-// ----------------------------------------------------------------------------
-//
-void SceneSoundLevel::initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet )
-{
-    m_animation_task = task;
-    m_channel_animations.clear();
-
-    ChannelValueArray unused_value_array;
-
-    // Determine which channel will be participating
-    for ( UID actor_uid : populateActors() ) {
-        Fixture* pf = m_animation_task->getActorRepresentative( actor_uid );
-        if ( !pf )
-            continue;
-
-        // Determine which channels will be participating
-        for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
-            Channel* cp = pf->getChannel( channel );
-
-            if ( ((m_fade_what & FADE_COLORS) && cp->isColor()) ||
-                    ((m_fade_what & FADE_DIMMERS) && cp->isDimmer()) ) {
-                m_channel_animations.push_back( 
-                    ChannelAnimation(  actor_uid, channel, CAM_SCALE, unused_value_array ) );
-            }
-        }
-    }
-
-    return SceneChannelAnimator::initAnimation( task, time_ms, dmx_packet );
-}

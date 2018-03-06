@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -22,124 +22,186 @@ MA 02111-1307, USA.
 
 #pragma once
 
+#include "stdafx.h"
 #include "IVisitor.h"
-#include "DMXStudio.h"
 #include "BeatDetector.h"
 #include "SoundSampler.h"
 #include "SoundDetector.h"
 
-enum ApplySignal {
-    APPLY_CHANNEL = 1,		        // Input level affects channel values
-    APPLY_SPEED = 2,	            // Input level affects sample speed
-    APPLY_SPEED_AND_CHANNEL = 3,   	// Input level affects all
-    APPLY_INVERSE_SPEED = 4         // Input level inverse sample speed
+enum SpeedAdjust {
+    SPEED_NORMAL = 1,		        // Level does not affects timer MS
+    SPEED_FAST = 2, 	            // Level reduces timer MS for faster animations
+    SPEED_SLOW = 3             	    // Level increase timer MS for slower animations
 } ;
 
-class AnimationTask;
+class AnimationEngine;
 
-enum AnimationSignalInput{
-    CAI_TIMER_ONLY = 1,
-    CAI_SOUND_LEVEL = 2,
-    CAI_AVG_SOUND_LEVEL = 3,
-    CAI_FREQ_BEAT = 4,
-    CAI_FREQ_LEVEL = 5,
-    CAI_RANDOM = 6
-} ;
+#define MAXIMUM_LEVEL               255
+#define PERCENT_OF_LEVEL(x)         ((x * MAXIMUM_LEVEL) / 100)
+#define SCALE_BY_LEVEL(val, lvl)    ((unsigned)val * lvl / MAXIMUM_LEVEL)
+
+enum SignalTrigger {
+    TRIGGER_TIMER = 1,
+    TRIGGER_FREQ_BEAT = 2,
+    TRIGGER_AMPLITUDE_BEAT = 3,
+    TRIGGER_RANDOM_TIMER = 4
+};
+
+enum SignalSource {
+    SOURCE_HIGH = 1,                // Always returns high
+    SOURCE_AMPLITUDE = 2,           // Current amplitude scaled 0-MAXIMUM_LEVEL
+    SOURCE_AVG_AMPLITUDE = 3,       // Current average amplitude scaled 0-MAXIMUM_LEVEL
+    SOURCE_BEAT_INTENSITY = 4,      // Amplituce beat intensity
+    SOURCE_FREQ = 5,                // Frequency range max scaled 0-MAXIMUM_LEVEL
+    SOURCE_VOLUME = 6,              // Current volume
+    SOURCE_LOW = 7,                 // Always low
+    SOURCE_SQUAREWAVE = 8,          // Squarewave of 'n' trigger periods
+    SOURCE_SAWTOOTH = 9,            // Sawtooth of 'n' trigger periods
+    SOURCE_SINEWAVE = 10,           // Sinewave
+    SOURCE_TRIANGLEWAVE = 11,       // Triangle wave of 'n' trigger periods
+    SOURCE_STEPWAVE = 12,           // Stepwave (half)
+    SOURCE_STEPWAVE_FULL = 13,      // Stepwave (full)
+    SOURCE_RANDOM = 14,             // Random level 0-MAXIMUM_LEVEL of 'n' trigger periods,
+    SOURCE_SOUND = 15               // Current mute detection state
+};
 
 class AnimationSignal
 {
     friend class VenueWriter;
     friend class VenueReader;
 
-    DWORD					m_sample_rate_ms;				// Sample rate
-    AnimationSignalInput	m_input_type;
-    unsigned				m_input_low;
-    unsigned				m_input_high;
-    DWORD					m_sample_decay_ms;				// Length of decay for previous values
-    unsigned				m_scale_factor;					// Level scaling curve
-    unsigned				m_max_threshold;				// Lower level of maximum signal (n >= full_threshold = 100)
-    ApplySignal				m_apply_to;						// Apply signal to value and/or time
+    SignalTrigger           m_trigger;                      // Triggers the start of a signal
+    SignalSource            m_source;                       // Source of the signal level
+
+    DWORD                   m_timer_ms;                     // Timer trigger rate
+    DWORD                   m_off_ms;                       // Options off signal after trigger
+    
+    UINT                    m_level_floor;                  // Minimum level
+    UINT                    m_level_ceil;                   // Maximum level
+    bool                    m_level_invert;                 // Invert level result
+    UINT                    m_level_scale;					// Level scaling (simple level * factor)
+    UINT                    m_level_periods;                // Number of trigger periods for some level sources
+    UINT                    m_level_hold;                   // Hold periods for some level sources 
+    UINT                    m_freq_low_hz;                  // Frequency low (Hz)
+    UINT                    m_freq_high_hz;                 // Frequency high (Hz)
+    UINT                    m_sensitivity;                  // Amplitute beat sensitivity
+
+    SpeedAdjust				m_speed_adjust;					// Apply level to timer speed
 
 public:
-    AnimationSignal( DWORD sample_rate_ms = 200, 
-                     AnimationSignalInput input_type = CAI_TIMER_ONLY, 
-                     DWORD sample_decay = 0,
-                     unsigned input_low = 0,
-                     unsigned input_high = 0,
-                     unsigned scale_factor = 1,
-                     unsigned max_threshold = 100,
-                     ApplySignal apply_to = APPLY_CHANNEL );
+    AnimationSignal( SignalTrigger trigger = TRIGGER_TIMER,
+                     SignalSource source = SOURCE_HIGH,
+                     DWORD timer_ms = 500,
+                     DWORD  off_ms = 0,
+                     UINT level_floor = 0,
+                     UINT level_ceil = MAXIMUM_LEVEL,
+                     bool level_invert = false,
+                     UINT level_scale = 1,
+                     UINT level_periods = 10,
+                     UINT freq_low_hz = 0,
+                     UINT freq_high_hz = 22000,
+                     SpeedAdjust speed_modify = SPEED_NORMAL,
+                     UINT level_hold = 0,
+                     UINT sensitivity = 30 );
 
     ~AnimationSignal(void);
 
-    static const unsigned MAXIMUM_LEVEL;
-
-    inline DWORD getSampleDecayMS() const {
-        return m_sample_decay_ms;
+    inline SignalTrigger getTrigger() const {
+        return m_trigger;
     }
-    void setSampleDecayMS( DWORD decay_ms ) {
-        m_sample_decay_ms = decay_ms;
+    void setTrigger( SignalTrigger trigger ) {
+        m_trigger = trigger;
     }
 
-    inline DWORD getSampleRateMS() const {
-        return m_sample_rate_ms;
+    inline SignalSource getSource() const {
+        return m_source;
     }
-    void setSampleRateMS( DWORD sample_rate_ms ) {
-        m_sample_rate_ms = sample_rate_ms;
-    }
-
-    inline AnimationSignalInput getInputType() const {
-        return m_input_type;
-    }
-    void setInputType( AnimationSignalInput type ) {
-        m_input_type = type;
+    void setSource( SignalSource source ) {
+        m_source = source;
     }
 
-    inline unsigned getInputLow() const {
-        return m_input_low;
+    inline DWORD getTimerMS() const {
+        return m_timer_ms;
     }
-    void setInputLow( unsigned low ) {
-        m_input_low = low;
-    }
-
-    inline unsigned getInputHigh() const {
-        return m_input_high;
-    }
-    void setInputHigh( unsigned high ) {
-        m_input_high = high;
+    void setTimerMS( DWORD timer_ms ) {
+        m_timer_ms = timer_ms;
     }
 
-    inline unsigned getScaleFactor( ) const {
-        return m_scale_factor;
+    inline DWORD getOffMS() const {
+        return m_off_ms;
     }
-    inline void setScaleFactor( unsigned scale_factor ) {
-        m_scale_factor = scale_factor;
-    }
-
-    inline unsigned getMaxThreshold( ) const {
-        return m_max_threshold;
-    }
-    inline void setMaxThreshold( unsigned max_threshold ) {
-        m_max_threshold = max_threshold;
+    void setOffMS( DWORD off_ms ) {
+        m_off_ms = off_ms;
     }
 
-    inline ApplySignal getApplyTo() const {
-        return m_apply_to;
+    inline UINT getLevelFloor() const {
+        return m_level_floor;
     }
-    inline void setApplyTo( ApplySignal apply_to ) {
-        m_apply_to = apply_to;
-    }
-
-    bool isApplyToSpeed( ) const {
-        return m_apply_to == APPLY_SPEED || m_apply_to == APPLY_SPEED_AND_CHANNEL;
+    void setLevelFloor( UINT floor ) {
+        m_level_floor = floor;
     }
 
-    bool isApplyToChannel( ) const {
-        return m_apply_to == APPLY_CHANNEL || m_apply_to == APPLY_SPEED_AND_CHANNEL;
+    inline UINT getLevelCeil() const {
+        return m_level_ceil;
+    }
+    void setLevelCeil( UINT ceil ) {
+        m_level_ceil = ceil;
     }
 
-    bool isApplyInverseSpeed( ) const {
-        return m_apply_to == APPLY_INVERSE_SPEED;
+    inline bool isLevelInvert() const {
+        return m_level_invert;
+    }
+    void setLevelInvert( bool invert ) {
+        m_level_invert = invert;
+    }
+
+    inline UINT getLevelScale() const {
+        return m_level_scale;
+    }
+    void setLevelScale( UINT level_scale ) {
+        m_level_scale = level_scale;
+    }
+
+    inline UINT getLevelPeriods() const {
+        return m_level_periods;
+    }
+    void setLevelPeriods( UINT periods ) {
+        m_level_periods = periods;
+    }
+
+    inline UINT getFreqLowHz() const {
+        return m_freq_low_hz;
+    }
+    void setFreqLowHz( UINT freq_low_hz ) {
+        m_freq_low_hz = freq_low_hz;
+    }
+
+    inline UINT getFreqHighHz() const {
+        return m_freq_high_hz;
+    }
+    void setFreqHighHz( UINT freq_high_hz ) {
+        m_freq_high_hz = freq_high_hz;
+    }
+
+    inline UINT getLevelHold() const {
+        return m_level_hold;
+    }
+    void setLevelHold( UINT level_hold ) {
+        m_level_hold = level_hold;
+    }
+
+    inline SpeedAdjust getSpeedAdjust() const {
+        return m_speed_adjust;
+    }
+    inline void setSpeedAdjust( SpeedAdjust speed_adjust ) {
+        m_speed_adjust = speed_adjust;
+    }
+
+    inline UINT getSensitivity() const {
+        return m_sensitivity;
+    }
+    inline void setSensitivity( UINT sensitivity ) {
+        m_sensitivity = sensitivity;
     }
 
     void accept( IVisitor* visitor) {
@@ -147,61 +209,4 @@ public:
     }
 
     CString AnimationSignal::getSynopsis() const;
-};
-
-class AnimationSignalProcessor
-{	
-    // State information
-
-    AnimationSignal&		m_signal_def;
-
-    DWORD					m_next_sample_ms;				// Time of next sample
-    CEvent					m_trigger;						// Event trigger
-    BeatDetector*			m_detector;
-    SoundSampler*			m_sampler;
-    bool					m_beat;							// In beat
-    DWORD					m_decay_ms;						// Decay time
-    AnimationTask*			m_animation_task;
-    double					m_scale_max;					// Precalculated max for scaling
-
-    unsigned				m_level;						// Current signal level
-    bool					m_decay_latch;					// Is decay
-
-    AnimationSignalProcessor( AnimationSignalProcessor& other );
-    AnimationSignalProcessor& operator=( AnimationSignalProcessor& rhs );
-
-public:
-    AnimationSignalProcessor( AnimationSignal& signal_definition, AnimationTask* task );
-    ~AnimationSignalProcessor();
-
-    bool isDecay( ) {
-        bool decay = m_decay_latch;
-        m_decay_latch = false;
-        return decay;
-    }
-
-    bool isBeat() const { // CAUTION: Non-beat input is "always" beating
-        return m_signal_def.getInputType() != CAI_FREQ_BEAT || m_beat;
-    }
-
-    DWORD getNextSampleMS() const {
-        return m_next_sample_ms;
-    }
-
-    unsigned getLevel();
-    bool tick( DWORD time_ms );
-
-private:
-    inline unsigned level_adjust( unsigned level ) {
-        if ( m_signal_def.getScaleFactor() == 1 )
-            return level;
-
-        double result = pow( (double)level, m_signal_def.getScaleFactor() );
-        level =  (unsigned)(result / m_scale_max * 100.0);
-
-        if ( level >= m_signal_def.getMaxThreshold() )
-            return AnimationSignal::MAXIMUM_LEVEL;
-
-        return level;
-    }
 };

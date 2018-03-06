@@ -25,6 +25,7 @@ MA 02111-1307, USA.
 #include "Universe.h"
 #include "OpenDMXDriver.h"
 #include "USBProDriver.h"
+#include "PhilipsHueDriver.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -37,13 +38,20 @@ DMX_STATUS Universe::start() {
         case ENTTEC_USB_PRO:
             m_driver = new USBProDriver(m_id);
             break;
+
+        case PHILIPS_HUE:
+            m_driver = new PhilipsHueDriver(m_id);
+            break;
+
+        default:
+            return DMX_ERROR;
     }
 
-    m_driver->setConnectionInfo(m_dmx_port );
+    m_driver->setConnectionInfo( m_dmx_config );
     m_driver->setPacketDelayMS( m_dmx_packet_delay );
     m_driver->setMinimumDelayMS( m_dmx_packet_min_delay );
 
-    return m_driver->start(  );
+    return m_driver->start();
 }
 
 // ----------------------------------------------------------------------------

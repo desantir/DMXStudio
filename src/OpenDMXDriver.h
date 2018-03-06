@@ -30,15 +30,15 @@ MA 02111-1307, USA.
 
 class OpenDMXDriver : public FTDI_DMXDriver, Threadable
 {
-    CEvent m_wake;										// Wake up DMX transmitter
-    std::atomic_bool m_latch;   						// Latch DMX packet
+    CEvent m_wake;										// Wake up DMX transmitter for new packets
+    CCriticalSection m_lock;                            // Lock to prevent packet access collissions
 
-    BYTE m_packet[DMX_PACKET_SIZE + 1];					// Current DMX packet
-    BYTE m_pending_packet[DMX_PACKET_SIZE + 1];			// Current staged DMX packet
+	channel_value m_packet[DMX_PACKET_SIZE + 1];					// Current DMX packet
+	channel_value m_pending_packet[DMX_PACKET_SIZE + 1];			// Current staged DMX packet
 
     UINT run(void);
 
-    DMX_STATUS send(unsigned length, BYTE * packet);
+    DMX_STATUS send(unsigned length, channel_value* packet);
 
 public:
     OpenDMXDriver( universe_t universe_id );
@@ -46,7 +46,7 @@ public:
 
 protected:
     virtual CString dmx_name();
-    virtual DMX_STATUS dmx_send( BYTE* packet );
+    virtual DMX_STATUS dmx_send( channel_value* packet_513 );
     virtual DMX_STATUS dmx_open();
     virtual DMX_STATUS dmx_close(void);
     virtual boolean dmx_is_running();

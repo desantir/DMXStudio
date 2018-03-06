@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2017 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -21,20 +21,26 @@ MA 02111-1307, USA.
 */
 
 #include "SceneStrobeAnimator.h"
+#include "SceneStrobeAnimatorTask.h"
 
 const char* SceneStrobeAnimator::className = "SceneStrobeAnimator";
 const char* SceneStrobeAnimator::animationName = "Strobe";
 
 // ----------------------------------------------------------------------------
 //
-SceneStrobeAnimator::SceneStrobeAnimator( UID animation_uid, 
-                                          AnimationSignal signal,
-                                          UIDArray actors,
-                                          RGBWA strobe_neg_color,
-                                          unsigned strobe_pos_ms,
-                                          unsigned strobe_neg_ms,
-                                          UINT strobe_flashes) :
-    SceneColorFader( animation_uid, signal, actors, strobe_neg_color, strobe_pos_ms, strobe_neg_ms, strobe_flashes, RGBWAArray(), FaderEffect::FADER_EFFECT_STROBE )
+SceneStrobeAnimator::SceneStrobeAnimator( UID animation_uid, bool shared, UID reference_fixture, 
+										AnimationSignal signal,
+										StrobeType strobe_type,
+										UINT strobe_percent,
+										StrobeTime strobe_time,
+										RGBWA strobe_color,	
+										RGBWA strobe_neg_color ) :
+	AnimationDefinition( animation_uid, shared, reference_fixture, signal ),
+	m_strobe_neg_color( strobe_neg_color ),
+	m_strobe_time( strobe_time ),
+	m_strobe_color( strobe_color ),
+	m_strobe_type( strobe_type ),
+	m_strobe_percent( strobe_percent )
 {
 }
 
@@ -46,9 +52,9 @@ SceneStrobeAnimator::~SceneStrobeAnimator(void)
 
 // ----------------------------------------------------------------------------
 //
-AbstractAnimation* SceneStrobeAnimator::clone() {
-    return new SceneStrobeAnimator( m_uid, m_signal, m_actors, m_strobe_neg_color, 
-                                     m_strobe_pos_ms, m_strobe_neg_ms, m_strobe_flashes );
+AnimationDefinition* SceneStrobeAnimator::clone( ) {
+	return new SceneStrobeAnimator( 0L, m_shared, m_reference_fixture, m_signal, m_strobe_type, m_strobe_percent,
+								    m_strobe_time, m_strobe_color, m_strobe_neg_color );
 }
 
 // ----------------------------------------------------------------------------
@@ -56,30 +62,23 @@ AbstractAnimation* SceneStrobeAnimator::clone() {
 CString SceneStrobeAnimator::getSynopsis(void) {
     CString synopsis;
 
-    synopsis.AppendFormat( "Strobe( -color=%s +ms=%u -ms=%u flash=%u )\n%s", m_strobe_neg_color.getColorName(),
-        m_strobe_pos_ms, m_strobe_neg_ms, m_strobe_flashes,
-        AbstractAnimation::getSynopsis() );
+	if ( m_strobe_type == STROBE_FIXTURE ) {
+		synopsis.AppendFormat( "Fixture Strobe( %u percent )", m_strobe_percent );
+	}
+	else {
+		synopsis.AppendFormat( "Strobe( color=%s -color=%s +ms=%u +fade=%u -ms=%u -fade=%u flash=%u )\n%s",
+			m_strobe_color.getColorName(),
+			m_strobe_neg_color.getColorName(),
+			m_strobe_time.getOnMS(), m_strobe_time.getFadeInMS(), m_strobe_time.getOffMS(), m_strobe_time.getFadeOutMS(), m_strobe_time.getFlashes(),
+			AnimationDefinition::getSynopsis() );
+	}
 
     return synopsis;
 }
 
 // ----------------------------------------------------------------------------
 //
-void SceneStrobeAnimator::initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet ) {
-    SceneColorFader::initAnimation( task, time_ms, dmx_packet );
-
-    m_strobe.start( time_ms, m_strobe_pos_ms, m_strobe_neg_ms, m_strobe_flashes);
+AnimationTask* SceneStrobeAnimator::createTask( AnimationEngine* engine, ActorList& actors, UID owner_uid ) {
+    return new SceneStrobeAnimatorTask( engine, m_uid, actors, owner_uid );
 }
 
-// ----------------------------------------------------------------------------
-//
-bool SceneStrobeAnimator::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
-{
-    if ( m_strobe.strobe( time_ms ) ) {
-        for ( FaderFixture& f : m_fixtures )
-            loadColorChannels( dmx_packet, f, m_strobe.isOn() ? f.m_color : m_strobe.getNegative() );
-        return true;
-    }
-
-    return false;
-}

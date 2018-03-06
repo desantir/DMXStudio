@@ -22,7 +22,8 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
+#include "RGBWA.h"
 
 class ColorFader
 {
@@ -31,6 +32,7 @@ class ColorFader
     RGBWA		m_target_color;				                // Blend RGBWA targets
     int			m_blend_delta[COLOR_CHANNELS];				// Channel value blending deltas
     DWORD		m_blend_next_ms[COLOR_CHANNELS];
+    DWORD		m_fade_increment[COLOR_CHANNELS];           // Channel value increment for fade()
     DWORD       m_current_time;                             // Current fader time
 
 public:
@@ -46,8 +48,8 @@ public:
 
     inline RGBWA rgbwa() { return m_current_color; }
 
-    void start( DWORD current_time, int fade_time, const RGBWA& rgbw ) {
-        m_target_color = rgbw;
+    void start( DWORD current_time, int fade_time, const RGBWA& target_rgbw ) {
+        m_target_color = target_rgbw;
         m_current_time = current_time;
 
         for ( int i=0; i < COLOR_CHANNELS; i++ ) {
@@ -58,7 +60,15 @@ public:
                     m_blend_next_ms[i] = 0;
                 }
                 else {
-                    m_blend_delta[i] = fade_time/delta;
+                    if ( delta < 0 ) {
+                        m_blend_delta[i] = std::min<int>( fade_time/delta, -1 );
+                        m_fade_increment[i] = (fade_time > -delta || fade_time == 0) ? -1 : delta/fade_time;
+                    }
+                    else {
+                        m_blend_delta[i] = std::max<int>( fade_time/delta, 1 );
+                        m_fade_increment[i] = (fade_time > delta || fade_time == 0) ? 1 : delta/fade_time;
+                    }
+
                     m_blend_next_ms[i] = current_time;
                 } 
             }
@@ -98,20 +108,20 @@ public:
         bool changed = false;
 
         for ( int i=0; i < COLOR_CHANNELS; i++ ) {
-            if ( m_target_color[i] == m_current_color[i] || m_blend_delta[i] == 0 )
+            if ( m_blend_delta[i] == 0 )
                 continue;
 
-            while ( m_blend_next_ms[i] < time_ms ) {
+            while ( m_blend_next_ms[i] < time_ms && m_target_color[i] != m_current_color[i] ) {
                 if ( m_blend_delta[i] > 0 ) {
-                    if ( m_current_color[i] < 255 ) {
-                        m_current_color[i]++;
+                    if ( m_current_color[i] < m_target_color[i] ) {
+                        m_current_color.adjustChannel( i, m_fade_increment[i] );
                         changed = true;
                     }
                     m_blend_next_ms[i] += m_blend_delta[i];
                 }
                 else {
-                    if ( m_current_color[i] > 0 ) {
-                        m_current_color[i]--;
+                    if ( m_current_color[i] > m_target_color[i] ) {
+                        m_current_color.adjustChannel( i, m_fade_increment[i] );
                         changed = true;
                     }
                     m_blend_next_ms[i] += -m_blend_delta[i];

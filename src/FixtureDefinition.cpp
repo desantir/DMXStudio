@@ -67,7 +67,9 @@ FixtureDefinition::FixtureDefinition( FUID fuid, const char *manufacturer, const
     m_type( type ),
     m_can_tilt( false ),
     m_can_pan( false ),
-    m_can_whiteout( false )
+    m_can_whiteout( false ),
+    m_has_dimmer( false ),
+	m_dimmer_can_strobe( false )
 {
 }
 
@@ -82,15 +84,16 @@ FixtureDefinition::~FixtureDefinition(void)
 void FixtureDefinition::chooseCapabilities()
 {
     // Set fixture capabilities (we do this once since definitions are immutable)
-    bool red=false, blue=false, green=false, white=false, dimmer=false, amber=false;
+    bool red=false, blue=false, green=false, white=false, amber=false, uv=false;
     size_t heads=0;
-    channel_t default_dimmer_channel = INVALID_CHANNEL;     // For head movement (may have seperate dimmers per head)
+	channel_address default_dimmer_channel = INVALID_CHANNEL;     // For head movement (may have seperate dimmers per head)
 
     for ( ChannelArray::iterator it=m_channels.begin(); it != m_channels.end(); ++it ) {
         Channel& channel = *it;
 
         if ( channel.isDimmer() ) {
-            dimmer = true;
+            m_has_dimmer = true;
+			m_dimmer_can_strobe = channel.canDimmerStrobe();
 
             if ( default_dimmer_channel == INVALID_CHANNEL )
                 default_dimmer_channel = channel.getOffset();
@@ -112,15 +115,16 @@ void FixtureDefinition::chooseCapabilities()
             case CHNLT_GREEN:   green = true;          break;
             case CHNLT_WHITE:   white = true;          break;
             case CHNLT_AMBER:   amber = true;          break;
+            case CHNLT_UV:      uv = true;             break;
         }
     }
 
-    // Find all pixels - two cases: no RGB with pixel > 1 = single light fixture, else lights 1-n
-    for ( size_t index=0; true; index++ ) {
+    // Find all pixels
+    for ( size_t index=1; true; index++ ) {
         Pixel pixel;
         if ( findPixel( index, pixel ) )
             m_pixels.push_back( pixel );
-        else if ( index > 0 )
+        else
             break;
     }
 
@@ -151,10 +155,10 @@ void FixtureDefinition::chooseCapabilities()
     // Set whiteout support
     switch ( getType() ) {
         case FIXT_DIMMER:
-        case FIXT_STROBE:
-            m_can_whiteout = (dimmer == true);
+            m_can_whiteout = m_has_dimmer;
             break;
 
+        case FIXT_EFFECT:
         case FIXT_SCANNER:
         case FIXT_PIXEL:
         case FIXT_PAR:
@@ -180,6 +184,7 @@ bool FixtureDefinition::findPixel( size_t pixel_index, Pixel &pixel ) {
                 case CHNLT_BLUE:    pixel.blue( channel.getOffset() );          found = true; break;
                 case CHNLT_GREEN:   pixel.green( channel.getOffset() );         found = true; break;
                 case CHNLT_WHITE:   pixel.white( channel.getOffset() );         found = true; break;
+                case CHNLT_UV:      pixel.uv( channel.getOffset() );            found = true; break;
             }
         }
     }
@@ -196,6 +201,21 @@ FixtureDefinition* FixtureDefinition::lookupFixture( FUID fuid ) {
         return NULL;
 
     return &it->second;				// Not sure about this - I hope the iterator is not a copy ...
+}
+
+// ----------------------------------------------------------------------------
+//
+FixtureDefinition* FixtureDefinition::lookupFixture( LPCSTR manufacturer, LPCSTR model, UINT personality ) {
+
+    FixturePersonalityToFUID personalities = getModelPersonalities( manufacturer, model );
+    if ( personalities.size() == 0 )
+        return NULL;
+        
+    FixturePersonalityToFUID::iterator it = personalities.find( personality );
+    if ( it == personalities.end() )
+        return NULL;
+
+    return lookupFixture( it->second );
 }
 
 // ----------------------------------------------------------------------------

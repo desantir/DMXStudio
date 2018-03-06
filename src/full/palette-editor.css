@@ -1,0 +1,115 @@
+/*
+	Copyright (C) 2016-2017 Robert DeSantis
+	hopluvr at gmail dot com
+
+	This file is part of DMX Studio.mm_track_container
+ 
+	DMX Studio is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 3 of the License, or (at your
+	option) any later version.
+ 
+	DMX Studio is distributed in the hope that it will be useful, but
+	WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+	or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+	License for more details.
+ 
+	You should have received a copy of the GNU General Public License
+	along with DMX Studio; see the file _COPYING.txt.  If not, write to
+	the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+	MA 02111-1307, USA.
+*/
+
+.section_container { float: left; margin-right: 4px; min-height: 600px; display: none;
+                     background: #000000 url(css/dark-hive-custom/images/ui-bg_highlight-hard_30_000000_1x100.png) 0 24px repeat-x;}
+
+.section_padder { padding: 2px 8px 2px 8px; }
+
+.section_title_container { padding: 4px; height: 16px; }
+.section_title { font-weight: bold; color:#808080; font-size: 10pt;}
+
+.section_button { padding: 0px !important; font-family: sans-serif; font-size: 10pt; margin: 8px 0px 8px 0px;}
+
+.field_title { font-family: sans-serif; font-size: 10pt; margin: 10px 0px 2px 0px; display: block; }
+
+.palette_select_div { width: 300px; text-align:left; margin-bottom: 2px; padding: 2px; font-family: sans-serif; }
+.palette_select_div:hover { background: #003147; border: 1px solid #0b93d5; }
+.palette_select_title { color:white; font-size:12pt;}
+
+.palette_font { font-family: sans-serif !important; font-size: 10pt !important; }
+
+.select_list { font-family: sans-serif !important; font-size: 10pt !important; padding: 6px; }
+.select_div { width: 300px; text-align:left; margin-bottom: 2px; padding: 4px; font-family: sans-serif; }
+.select_div:hover { background: #003147; border: 1px solid #0b93d5; }
+.select_label { max-width: 255px; }
+
+.definition_container { background: #000000 url(css/dark-hive-custom/images/ui-bg_highlight-hard_30_000000_1x100.png) 0 24px repeat-x; }
+
+.slider_pane_title { float: right; margin-right: 10px; margin-top: 2px; font-size: 8pt; font-family: sans-serif; color: white;}
+
+.slider_container { float:left; width: 42px; margin: 8px 0px 0px 4px; }
+
+.slider_text_color { color: #808080; font-family: sans-serif; font-size: 10pt; } 
+
+.slider_header { height: 18px; width: 100%; overflow:hidden;   
+                 text-align:center; white-space:nowrap; border-bottom: 1px solid #808080; font-size: 8pt; cursor:pointer; } 
+.slider_footer { height: 18px; width: 100%; overflow: hidden; margin: 2px 0px 1px 5px !important;
+                    text-align:center; white-space:nowrap; cursor:pointer;} 
+
+.slider_footer_input { width: 30px !important; font: 10pt arial !important; margin-left: 8px; padding: 0px !important; display:none; }
+
+.slider_side_text { width:8px; white-space:nowrap; overflow: visible; cursor: pointer;
+                        position:relative; top: 240px; left: -5px; 
+                        transform:rotate(-90deg); -moz-transform:rotate(-90deg);-o-transform:rotate(-90deg); 
+                        -webkit-transform:rotate(-90deg); -ms-transform:rotate(-90deg); -webkit-transform-origin: 0 0; 
+                        -moz-transform-origin: 0 0; -ms-transform-origin: 0 0; -o-transform-origin: 0 0; float: left; }    
+
+.slider_select { margin-left: 15px; height: 16px; cursor:pointer; }  
+
+.slider_sidecar { position: absolute; top: -15px; left: 0px; width: 300px; height: 12px; background: rgba(0,0,0,0);
+                    color: white; font-family: sans-serif; font-size: 8pt; overflow: no-display;
+                    z-index: 100; }       
+     
+.slider_slider { height:240px; margin:15px 8px 15px 4px; width: 14px; float:right; }
+    
+.slider_highlight { color: white; }
+
+.slider_sliding_highlight { color: white; }
+
+.ui-icon-white { width: 16px; height: 16px; background-image: url(css/dark-hive-custom/images/ui-icons_ffffff_256x240.png); }
+.ui-icon-active { width: 16px; height: 16px; background-image: url(css/dark-hive-custom/images/ui-icons_222222_256x240.png); }
+.ui-icon-widget-content { width: 16px; height: 16px; background-image: url(css/dark-hive-custom/images/ui-icons_cccccc_256x240.png); }   
+.ui-icon-red { width: 16px; height: 16px; background-image: url(css/dark-hive-custom/images/ui-icons_a83300_256x240.png); }        
+.ui-icon-green { width: 16px; height: 16px; background-image: url(css/dark-hive-custom/images/ui-icons_4b8e0b_256x240.png); }        
+.ui-icon-blank { background-position: -160px 0; }     
+
+.icon_button { cursor:pointer; }
+.icon_button:hover { width: 16px; height: 16px; background-image: url(css/dark-hive-custom/images/ui-icons_ffffff_256x240.png); }
+
+.icon_button_right { cursor:pointer; float:right; margin-left: 5px; }
+.icon_button_right:hover { width: 16px; height: 16px; background-image: url(css/dark-hive-custom/images/ui-icons_ffffff_256x240.png); }
+
+.titlelessDialog { }
+
+.titlelessDialog > .ui-dialog-titlebar { display: none; }
+
+.palette_color_chip {
+    height: 18px;
+    width: 90px;
+    border: 1px solid #808080;
+    border-radius: 6pt 6pt;
+    cursor: pointer;
+    font-family: Arial, San-serif;
+    font-size: 10pt;
+    padding-top: 5px;
+    text-align:center;
+    color: black;
+}
+
+.set_channel {
+    cursor: pointer;
+}
+
+.set_channel:hover {
+    color: rgba(129, 209, 248, 1);
+}

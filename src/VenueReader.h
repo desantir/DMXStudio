@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-2014 Robert DeSantis
+Copyright (C) 2011-2017 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -27,6 +27,10 @@ MA 02111-1307, USA.
 
 class VenueReader : public ISerializable
 {
+    // FOLLOWING FIELDS FOR UPGRADE ONLY
+    Venue*          m_venue_temp;
+    int             m_anim_num_temp;
+
 public:
     VenueReader(void);
     ~VenueReader(void);
@@ -55,6 +59,11 @@ public:
     MusicSceneSelector* read( TiXmlElement* self, MusicSceneSelector* music_scene_selection );
     ScenePixelAnimator* read( TiXmlElement* self, ScenePixelAnimator* animation );
     SceneChannelFilter* read( TiXmlElement* self, SceneChannelFilter* animation );
+    ScenePulse* read( TiXmlElement* self, ScenePulse* animation );
+    PaletteEntry* read( TiXmlElement* self, PaletteEntry* palette_entry );
+    Palette* read( TiXmlElement* self, Palette* palette );
+    SceneCueAnimator* read( TiXmlElement* self, SceneCueAnimator* animation );
+    SceneFixtureDimmer* read( TiXmlElement* self, SceneFixtureDimmer* animation );
 
     template <class T>
     std::vector<T *> read_xml_list( TiXmlElement *container, const char *element_name ) {
@@ -64,17 +73,19 @@ public:
             TiXmlElement* element = container->FirstChildElement( element_name );
             while ( element ) {
                 T * instance = read( element, (T *)NULL );
-                if ( instance ) {
+                if ( instance )
                     list.push_back( instance );
-                }
+
                 element = element->NextSiblingElement();
             }
         }
 
-        return list;
+    return list;
     }
 
 private:
     void readDObject( TiXmlElement* self, DObject* dobject, LPCSTR number_name );
+    AnimationDefinition* readAnimation( TiXmlElement* element );
+	StrobeTime readStrobeTime( TiXmlElement* self );
 };
 

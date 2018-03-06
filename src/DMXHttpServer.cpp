@@ -28,15 +28,17 @@ MA 02111-1307, USA.
 
 static const HTTPAPI_VERSION HttpApiVersion = HTTPAPI_VERSION_1;
 
+std::atomic<DWORD> DMXHttpSession::m_next_id(1);
+
 // ----------------------------------------------------------------------------
 //
 DMXHttpServer::DMXHttpServer(void) :
     Threadable( "DMXHttpServer" )
 {
-    registerHandler( new HttpMobile() );             // Textbook example of need for DI
-    registerHandler( new HttpFull() );
-    registerHandler( new HttpRestServices() );
-    registerHandler( new DMXHttpRedirector() );
+    registerHandler( new HttpMobile( studio.getHttpPort() ) );                            // Textbook example of need for DI
+    registerHandler( new HttpFull( studio.getHttpPort() ) );
+    registerHandler( new HttpRestServices( studio.getHttpPort() ) );
+    registerHandler( new DMXHttpRedirector( studio.getHttpPort() ) );
 
     // Some MIME code we recognize
     m_mime_map[ "jpg" ] = "image/jpeg";
@@ -235,7 +237,7 @@ bool DMXHttpServer::handleEvent( const Event& event )
     CSingleLock lock( &m_session_lock, TRUE );
 
     for ( SessionMap::iterator it=m_sessions.begin(); it != m_sessions.end(); it++ ) {
-        // If the venus has stopped, release beat and sound detectors
+        // If the venue has stopped, release beat and sound detectors
         if ( event.m_source == ES_VENUE && event.m_action == EA_STOP ) {
             it->second->getBeatDetector().detach();
             it->second->getSoundSampler().detach();

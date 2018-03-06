@@ -43,13 +43,21 @@ MA 02111-1307, USA.
 #define DMX_END_CODE            0xE7 
 #define DMX_HEADER_LENGTH       4
 
-class USBProDriver : public FTDI_DMXDriver
+class USBProDriver : public FTDI_DMXDriver, Threadable
 {
-    BYTE m_dmx_header[DMX_HEADER_LENGTH];
+	CEvent m_wake;										// Wake up DMX transmitter for new packets
+	CCriticalSection m_lock;                            // Lock to prevent packet access collissions
 
-    DMX_STATUS receiveData( int label, BYTE *data, WORD expected_length );
-    DMX_STATUS sendData( BYTE label, BYTE* data, WORD data_size );
-    DMX_STATUS receiveDMX( int label, BYTE *data, WORD *receive_length );
+	channel_value m_packet[DMX_PACKET_SIZE + 1];					// Current DMX packet
+	channel_value m_pending_packet[DMX_PACKET_SIZE + 1];			// Current staged DMX packet
+
+	UINT run(void);
+
+	channel_value m_dmx_header[DMX_HEADER_LENGTH];
+
+    DMX_STATUS receiveData( int label, channel_value *data, WORD expected_length );
+    DMX_STATUS sendData( BYTE label, channel_value* data, WORD data_size );
+    DMX_STATUS receiveDMX( int label, channel_value *data, WORD *receive_length );
     DMX_STATUS setParams();
 
 public:
@@ -57,13 +65,11 @@ public:
     virtual ~USBProDriver(void);
 
 protected:
-    inline DMX_STATUS dmx_send( BYTE* packet ) {
-        return sendData( SET_DMX_TX_MODE, packet, DMX_PACKET_SIZE + 1 );
-    }
-
+	virtual DMX_STATUS dmx_send( channel_value* packet_513 );
     virtual CString dmx_name();
     virtual DMX_STATUS dmx_open();
     virtual DMX_STATUS dmx_close( void );
+	virtual boolean dmx_is_running();
 };
 
 #pragma pack(1)

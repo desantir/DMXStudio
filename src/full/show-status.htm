@@ -1,0 +1,101 @@
+﻿<!DOCTYPE html>
+
+<!--
+Copyright (C) 2017 Robert DeSantis
+hopluvr at gmail dot com
+
+This file is part of DMX Studio.
+
+DMX Studio is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
+
+DMX Studio is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+License for more details.
+
+You should have received a copy of the GNU General Public License
+along with DMX Studio; see the file _COPYING.txt.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+MA 02111-1307, USA.
+-->
+
+<html>
+
+<head>
+    <title>DMXStudio Status</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <link rel="stylesheet" href="css/dark-hive-custom/jquery-ui-1.9.2.custom.css" />
+    <link rel="stylesheet" href="jquery-toastmessage/css/jquery.toastmessage.css" />
+    <script src="js/jquery-1.8.3.js"></script>
+    <script src="js/jquery-ui-1.9.2.custom.js"></script>
+    <script src="jquery-toastmessage/jquery.toastmessage.js"></script>
+    <script src="utils.js"></script>
+
+    <script type="text/javascript">
+
+        function loadPage() {
+            var user_message = getUrlParameter( "status" );
+            if ( user_message != null )
+                $("#message").text(user_message);
+
+            $("#dismiss").button().click(function () {
+                window.close();
+            });
+        }
+
+        $(function () {
+        });
+
+    </script>
+
+    <style>
+        @keyframes color_animation {
+            from {color: white;}
+            50% {color: #0972a5; }
+            to {color: white;}
+        }
+
+        .usermessage {
+            font: 14pt verdana;
+            color: white;
+            padding: 10px;
+            margin: 40px 10px 40px 10px;
+            height: 510px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .titlemessage {
+            animation: color_animation 20s infinite !important;
+            font: 24pt verdana;
+            color: white;
+            padding: 10px;
+        }
+
+        .titleicon {
+            padding: 4px;
+        }
+
+    </style>
+
+</head>
+
+<body style="background-color:black;" onload="loadPage();">
+    <img class="titleicon" src="favicon.ico" style="clear:both; float:left;"/>
+    <div class="titlemessage" style="float: left;">DMXStudio Message</div>
+    <div style="clear: both;"></div>
+    <div id="message" class="usermessage"></div>
+
+    <button id="dismiss" style="margin-left: 250px;">Close</button>
+</body>
+
+</html>
+

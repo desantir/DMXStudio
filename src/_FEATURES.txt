@@ -33,8 +33,32 @@ One-shot chase (no restart)
 REMOVED Chase learn mode - track time and scene transitions
 CHASE add/remove/load scene actor to allow accumulated chase effects
 CHASE Movement animation travel time (prefetch next scene/position)
-Animations are not processed during chase cross fade
+Animations are now processed during chase cross fade
 Full HTML UIs event driven with light session management (event infrastructure in studio and player)
+Animations shared across scenes and globally defined (need to copy/update across scenes)
+Handle disconnected server state (disable UI, startup errors out if no COM)
+Session control
+Break out fixtures in scene editor to separate section with channel editing
+Philips Hue support
+Palettes for location, color, intensity
+Palette-based channel animator
+Pulse animation (selectable color, selection scheme, time, ordered fixtures)
+Track selection UI now shows and launches related videos
+Manual chase advancement button or clicker
+Dedicated video/audio selection page and search
+Simple search for tracks in current playlist
+Fixture map mode allows fixture icons to be organized using D&D however the user wants
+Reduce/remove dialogs used to control track selection - added music select page
+Fixture definition channel presets - selectable from capture UI
+Color palette option for palettes
+Venue pulse effect
+Experimental color tracker
+Quick effects builder to map color and movement behavior to fixtures
+Dimmer animation to seek out dimmer channels and add breath, random, effects
+Strobe animation focus on strobe channels and support for fuxture strobing
+Better display of patlette colors in UI
+Color change based on playing video colors (if storyboard is available and accessible)
+Maintain recent videos list
 
 Overview
 --------

@@ -25,7 +25,7 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
-ChannelValueRange::ChannelValueRange( BYTE start, BYTE end, const char *name, int extra ) :
+ChannelValueRange::ChannelValueRange( channel_value start, channel_value end, const char *name, int extra ) :
     m_start( start ),
     m_end( end ),
     m_name( name ),

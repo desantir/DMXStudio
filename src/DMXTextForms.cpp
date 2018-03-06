@@ -20,7 +20,6 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "DMXTextUI.h"
 
 // ----------------------------------------------------------------------------
@@ -55,14 +54,14 @@ ChaseSelectField::ChaseSelectField( LPCSTR label, Venue* venue, ChaseNumber defa
 
 // ----------------------------------------------------------------------------
 //
-ChannelControllerField::ChannelControllerField( Venue* venue, SceneActor actor, channel_t channel, bool live_update ) :
+ChannelControllerField::ChannelControllerField( Venue* venue, SceneActor actor, channel_address channel, bool live_update ) :
         IntegerField( 0, 255 ),
         m_venue( venue ),
         m_actor( actor ),
         m_channel( channel ),
         m_live_update( live_update )
 {
-    BYTE value = m_venue->getChannelValue( m_actor, m_channel );
+    BYTE value = m_venue->getBaseChannelValue( m_actor, m_channel );
 
     setInitialValue( value );
     setFixtureValues( value );
@@ -82,9 +81,12 @@ bool ChannelControllerField::setValue( LPCSTR value ) {
 // ----------------------------------------------------------------------------
 // Set channel value on all fixtures
 //
-void ChannelControllerField::setFixtureValues( BYTE chnl_value ) {
-    if ( m_live_update )
-        m_venue->captureAndSetChannelValue( m_actor, m_channel, chnl_value );
+void ChannelControllerField::setFixtureValues( channel_value chnl_value ) {
+    if ( m_live_update ) {
+        SetChannelArray channel_sets;
+        channel_sets.emplace_back( m_actor.getActorUID(), m_channel, chnl_value );
+        m_venue->captureAndSetChannelValue( channel_sets );
+    }
 
     m_labelValue.Format( "%u", chnl_value );
 }
@@ -128,94 +130,6 @@ LPCSTR ChannelControllerField::getLabel() {
 //
 void ChannelControllerField::getLabelValue( CString& labelValue ) {
     labelValue = m_labelValue;
-}
-
-// ----------------------------------------------------------------------------
-//
-UniqueSceneNumberField::UniqueSceneNumberField( LPCSTR label, Venue* venue ) :
-    IntegerField( label, venue->nextAvailableSceneNumber(), 1, MAX_OBJECT_NUMBER ),
-    m_venue( venue )
-{
-};
-
-// ----------------------------------------------------------------------------
-//
-bool UniqueSceneNumberField::setValue( LPCSTR value ) {
-    long result;
-
-    if ( !IntegerField::parse( value, result ) )
-        return false;
-
-    if ( m_venue->getSceneByNumber( (SceneNumber)result ) != NULL )
-        throw FieldException( "Scene number %lu is already in use", result );
-
-    return IntegerField::setValue( value );
-}
-
-// ----------------------------------------------------------------------------
-//
-UniqueFixtureNumberField::UniqueFixtureNumberField( LPCSTR label, Venue* venue ) :
-    IntegerField( label, venue->nextAvailableFixtureNumber(), 1, MAX_OBJECT_NUMBER ),
-    m_venue( venue )
-{
-};
-
-// ----------------------------------------------------------------------------
-//
-bool UniqueFixtureNumberField::setValue( LPCSTR value ) {
-    long result;
-
-    if ( !IntegerField::parse( value, result ) )
-        return false;
-
-    if ( m_venue->getFixtureByNumber( (FixtureNumber)result ) != NULL )
-        throw FieldException( "Fixture number %lu is already in use", result );
-
-    return IntegerField::setValue( value );
-}
-
-// ----------------------------------------------------------------------------
-//
-UniqueChaseNumberField::UniqueChaseNumberField( LPCSTR label, Venue* venue ) :
-    IntegerField( label, venue->nextAvailableChaseNumber(), 1, MAX_OBJECT_NUMBER ),
-    m_venue( venue )
-{
-};
-
-// ----------------------------------------------------------------------------
-//
-bool UniqueChaseNumberField::setValue( LPCSTR value ) {
-    long result;
-
-    if ( !IntegerField::parse( value, result ) )
-        return false;
-
-    if ( m_venue->getChaseByNumber( (ChaseNumber)result ) != NULL )
-        throw FieldException( "Chase number %lu is already in use", result );
-
-    return IntegerField::setValue( value );
-}
-
-// ----------------------------------------------------------------------------
-//
-UniqueGroupNumberField::UniqueGroupNumberField( LPCSTR label, Venue* venue ) :
-    IntegerField( label, venue->nextAvailableFixtureGroupNumber(), 1, MAX_OBJECT_NUMBER ),
-    m_venue( venue )
-{
-};
-
-// ----------------------------------------------------------------------------
-//
-bool UniqueGroupNumberField::setValue( LPCSTR value ) {
-    long result;
-
-    if ( !IntegerField::parse( value, result ) )
-        return false;
-
-    if ( m_venue->getFixtureGroupByNumber( (GroupNumber)result ) != NULL )
-        throw FieldException( "Group number %lu is already in use", result );
-
-    return IntegerField::setValue( value );
 }
 
 // ----------------------------------------------------------------------------
@@ -282,10 +196,10 @@ bool DmxAddressField::setValue( LPCSTR value )
     if ( !IntegerField::parse( value, result ) )
         throw FieldException( "'%s' is not a valid DMX address" );
 
-    channel_t end_address = (channel_t)result+m_num_channels-1;
+	channel_address end_address = (channel_address)result+m_num_channels-1;
 
     if ( !m_allow_address_overlap ) {
-        UID current = m_venue->whoIsAddressRange( m_universe_id, (channel_t)result, end_address );
+        UID current = m_venue->whoIsAddressRange( m_universe_id, (channel_address)result, end_address );
         if ( current != 0 && current != m_uid )
             throw FieldException( "DMX address %d already in use", result );
         if ( end_address > DMX_PACKET_SIZE )
@@ -316,23 +230,7 @@ FixtureDefSelectField::FixtureDefSelectField( LPCSTR field_label ) :
 
 // ----------------------------------------------------------------------------
 //
-void SceneAnimationSelectField::selectAnimations( Scene* scene ) 
-{
-    m_animations = scene->animations();
-
-    for ( unsigned index=0; index < m_animations.size(); index++ ) {
-        AbstractAnimation* animation = m_animations[index];
-        CString label;
-        label.Format( "%s (ID=%lu)", animation->getName(), animation->getUID() );
-        addKeyValue( index+1, (LPCSTR)label );
-    }
-
-    setDefaultListValue( 1 );
-}
-
-// ----------------------------------------------------------------------------
-//
-AnimationSelectField::AnimationSelectField( LPCSTR field_label ) :
+AnimationTypeSelectField::AnimationTypeSelectField( LPCSTR field_label ) :
         NumberedListField( field_label )
 {
     for ( unsigned index=0; index < DMXTextUI::animEditors.size(); index++ ) {
@@ -346,8 +244,13 @@ AnimationSelectField::AnimationSelectField( LPCSTR field_label ) :
 
 // ----------------------------------------------------------------------------
 //
-void FixtureChannelField::setFixture( Fixture *fixture ) {
-    for ( channel_t index=0; index < fixture->getNumChannels(); index++ )
+void FixtureChannelField::setFixture( UID fixture_uid ) {
+
+    Fixture* fixture = m_venue->getFixture( fixture_uid );
+    if ( fixture == NULL )
+        fixture = m_venue->getGroupRepresentative( fixture_uid );
+
+    for ( size_t index=0; index < fixture->getNumChannels(); index++ )
         addKeyValue( index+1, fixture->getChannel(index)->getName() );
 
     if ( fixture->getChannel( m_channel ) == NULL )
@@ -359,7 +262,7 @@ void FixtureChannelField::setFixture( Fixture *fixture ) {
 // ----------------------------------------------------------------------------
 //
 void FixtureChannelsField::setFixture( Fixture *fixture ) {
-    for ( channel_t index=0; index < fixture->getNumChannels(); index++ )
+    for ( size_t index=0; index < fixture->getNumChannels(); index++ )
         addKeyValue( index+1, fixture->getChannel(index)->getName() );
 }
 
@@ -459,7 +362,7 @@ bool CoordinatesField::setValue( LPCSTR value ) {
 ActorSelectField::ActorSelectField( LPCSTR field_label, Venue* venue ) :
     InputField( field_label, "" ),
     m_venue( venue ),
-    m_allow_multiple( true )
+    m_allow_multiple( false )
 {
 }
 
@@ -478,18 +381,18 @@ ActorSelectField::ActorSelectField( LPCSTR field_label, Venue* venue, Scene* sce
 ActorSelectField::ActorSelectField( LPCSTR field_label, Venue* venue, bool include_groups ) :
         InputField( field_label, "" ),
         m_venue( venue ),
-        m_allow_multiple( true )
+        m_allow_multiple( false )
 {
     FixturePtrArray fixtures = venue->getFixtures();
     ActorList actors;
 
     for ( FixturePtrArray::iterator it=fixtures.begin(); it != fixtures.end(); ++it )
-        actors.push_back( SceneActor( (*it) ) );
+        actors.emplace_back( (*it) );
 
     if ( include_groups ) {
         FixtureGroupPtrArray fixture_groups = m_venue->getFixtureGroups();
         for ( FixtureGroupPtrArray:: iterator it=fixture_groups.begin(); it != fixture_groups.end(); ++it )
-            actors.push_back( SceneActor( venue, (*it) ) );
+            actors.emplace_back( venue, (*it) );
     }
 
     ActorPtrArray actor_ptrs;
@@ -502,7 +405,7 @@ ActorSelectField::ActorSelectField( LPCSTR field_label, Venue* venue, bool inclu
 
 // ----------------------------------------------------------------------------
 //
-bool ActorSelectField::selectScene( UID scene_uid )
+bool ActorSelectField::selectScene( UID scene_uid, UIDArray& selected_actors )
 {
     m_entries.clear();
     m_selected_actors.clear();
@@ -511,7 +414,7 @@ bool ActorSelectField::selectScene( UID scene_uid )
     if ( scene == NULL )
         return false;
 
-    init( scene->getActors(), UIDArray() );
+    init( scene->getActors(), selected_actors );
 
     return true;
 }
@@ -634,6 +537,57 @@ SceneSelectField::SceneSelectField( LPCSTR label, Venue* venue, SceneNumber sele
 
 // ----------------------------------------------------------------------------
 //
+AnimationSelectField::AnimationSelectField( LPCSTR label, Venue* venue ) :
+    KeyListField( label ),
+    m_venue( venue )
+{
+    reloadAnimations();
+}
+
+// ----------------------------------------------------------------------------
+//
+void AnimationSelectField::reloadAnimations( Scene* scene ) 
+{
+    AnimationPtrArray animations = m_venue->getAnimations();
+    CString key;
+    UINT private_animation_num = 1;
+    AnimationReferenceArray animation_refs;
+
+    if ( scene != NULL )
+        animation_refs = scene->animations();
+
+    sort( animations.begin(), animations.end(), AnimationSelectField::CompareAnimationIDs );
+
+    bool defaultSelected = false;
+
+    for ( AnimationDefinition* animation : animations ) {
+        if ( !animation->isShared() ) {
+            if ( animation_refs.size() == 0 )
+                continue;
+
+            AnimationReferenceArray::iterator it =
+                std::find_if<AnimationReferenceArray::iterator>( animation_refs.begin(), animation_refs.end(),
+                                [animation]( const AnimationReference& ref ) { return animation->getUID() == ref.getUID(); } );
+
+            if ( it == animation_refs.end() )
+                continue;
+
+            key.Format( "P%u", private_animation_num++ );
+        }
+        else
+            key.Format( "%lu", animation->getNumber() );
+        
+        addKeyValue( (LPCSTR)key, animation->getName(), animation->getUID() );
+
+        if ( !defaultSelected ) {
+            setValue( key );
+            defaultSelected = true;
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
 ColorSelectField::ColorSelectField( LPCSTR field_label, RGBWAArray& colors ) :
     InputField( field_label, "" ),
     m_allow_multiple( true ),
@@ -722,4 +676,94 @@ bool ColorSelectField::setValue( LPCSTR value ) {
     m_colors = colors;
 
     return InputField::setValue( value );
+}
+
+// ----------------------------------------------------------------------------
+//
+ChannelTypeSelectField::ChannelTypeSelectField( LPCSTR label, ChannelType defaultType) :
+    NumberedListField( label )
+{
+    for ( unsigned type=CHNLT_UNKNOWN; type < CHNLT_NUM_TYPES; type++ )
+        addKeyValue(type, type == CHNLT_UNKNOWN ? "None" : Channel::getTypeName( (ChannelType)type ) );
+
+    setDefaultListValue( defaultType );
+}
+
+// ----------------------------------------------------------------------------
+//
+ChannelSelectField::ChannelSelectField( LPCSTR label, FUID fuid, size_t defaultChannel ) :
+    NumberedListField( label )
+{
+    FixtureDefinition* fd = FixtureDefinition::lookupFixture( fuid );
+
+    addKeyValue( 0, "None" );
+
+    for ( size_t index=0; index < fd->getNumChannels(); index++ ) {
+        Channel* channel = fd->getChannel( index );
+        addKeyValue( index+1, channel->getName() );    
+    }
+
+    setDefaultListValue( defaultChannel );
+}
+
+// ----------------------------------------------------------------------------
+//
+PaletteSelectField::PaletteSelectField( LPCSTR label, Venue* venue, bool addNone, UID defaultPalette ) :
+    NumberedListField( label ),
+    m_venue( venue )
+{
+    DObjectArray palettes = venue->getPaletteSummary();
+    sort( palettes.begin(), palettes.end(), PaletteSelectField::ComparePaletteNames );
+
+    if ( addNone )
+        addKeyValue( 0, "None", 0 );
+
+    DWORD defaultIndex = addNone ? 0 : 1;
+
+    for ( DObject& palette : palettes ) {
+        addKeyValue( palette.getNumber(), palette.getName(), palette.getUID() );
+    
+        if ( defaultPalette == palette.getUID() )
+            defaultIndex = palette.getNumber();
+    }
+
+    setDefaultListValue( defaultIndex );
+}
+
+// ----------------------------------------------------------------------------
+//
+MultiPaletteSelectField::MultiPaletteSelectField( LPCSTR label, Venue* venue, UIDArray palette_references ) :
+    MultiNumberedListField( label ),
+    m_venue( venue )
+{
+    DObjectArray palettes = venue->getPaletteSummary();
+    sort( palettes.begin(), palettes.end(), PaletteSelectField::ComparePaletteNames );
+
+    for ( DObject& summary : palettes ) {
+        addKeyValue( summary.getNumber(), summary.getName() );
+    }
+
+    std::vector<UINT> palette_numbers;
+
+    for ( UID palette_id : palette_references ) {
+        Palette palette;
+        if ( m_venue->getPalette( palette_id, palette ) )
+            palette_numbers.push_back( palette.getPaletteNumber() );
+    }
+
+    setDefaultListValue( palette_numbers );
+}
+
+// ----------------------------------------------------------------------------
+//
+UIDArray MultiPaletteSelectField::getSelectedPalettes() {
+    UIDArray palettes;
+
+    for ( UINT palette_number : getIntSelections( ) ) {
+        UID uid = m_venue->getPaletteByNumber( palette_number );
+        if ( uid != NOUID )
+            palettes.push_back( uid );
+    }
+    
+    return palettes;
 }

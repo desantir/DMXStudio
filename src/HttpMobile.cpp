@@ -26,7 +26,8 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
-HttpMobile::HttpMobile(void)
+HttpMobile::HttpMobile( UINT port ) :
+    IRequestHandler( port )
 {
 }
 

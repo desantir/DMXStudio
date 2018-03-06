@@ -22,8 +22,9 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "IVisitor.h"
-#include "SceneChannelAnimator.h"
+#include "AnimationDefinition.h"
+#include "AnimationEngine.h"
+#include "ChannelAnimatorTask.h"
 
 enum ChannelFilter {
     CF_SINE_WAVE = 1,					// Sine wave (amplitude, angle step)
@@ -33,7 +34,7 @@ enum ChannelFilter {
     CF_RANDOM = 5                       // Random value (amplitude)
 } ;
 
-class SceneChannelFilter : public SceneChannelAnimator
+class SceneChannelFilter : public AnimationDefinition
 {
     friend class VenueWriter;
     friend class VenueReader;
@@ -57,9 +58,8 @@ public:
         m_offset(0)
     {}
 
-    SceneChannelFilter( UID animation_uid, 
+    SceneChannelFilter( UID animation_uid, bool shared, UID reference_fixture, 
                         AnimationSignal signal,
-                        UIDArray actors,
                         ChannelFilter filter,
                         ChannelList channels,
                         BYTE step,
@@ -69,16 +69,12 @@ public:
 
     ~SceneChannelFilter(void);
 
-    AbstractAnimation* clone();
-
-    const char* getName() { return SceneChannelFilter::animationName; }
+    const char* getPrettyName() { return SceneChannelFilter::animationName; }
     const char* getClassName() { return SceneChannelFilter::className; }
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
     }
-
-    void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
 
     virtual CString getSynopsis(void);
 
@@ -117,13 +113,9 @@ public:
         m_offset = offset;
     }
 
-private:
-    ChannelValueArray generateSineWave( int start_value, double start_angle, int amplitude, int step );
-    ChannelValueArray generateStepWave( int start_value, int step );
-    ChannelValueArray generateRandom( int start, int end );
-    ChannelValueArray generateRampUp( int start_value, int amplitude, int maximum );
-    ChannelValueArray generateRampDown( int start_value, int step, int minimum );
+    AnimationTask* createTask( AnimationEngine* engine, ActorList& actors, UID owner_uid );
 
+	AnimationDefinition* clone();
 };
 
 

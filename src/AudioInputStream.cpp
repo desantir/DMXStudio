@@ -20,7 +20,7 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
+#include "DMXStudio.h"
 #include "AudioInputStream.h"
 #include "Functiondiscoverykeys_devpkey.h"
 
@@ -530,7 +530,7 @@ void AudioInputStream::collectAudioCaptureDevices( )
             bool isDefault = pstrDefaultId != NULL && wcscmp( pstrId, pstrDefaultId ) == 0;
             CW2A friendly_name( varName.pwszVal );
 
-            audioCaptureDevices.push_back( AudioCaptureDevice( pstrId, friendly_name.m_psz, isDefault) ); 
+            audioCaptureDevices.emplace_back( pstrId, friendly_name.m_psz, isDefault ); 
 
             DMXStudio::log_status( "Registering audio capture device '%s'%s", 
                 friendly_name.m_psz, isDefault ? " [Default]" : "" );

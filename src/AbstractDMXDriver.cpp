@@ -65,7 +65,7 @@ DMX_STATUS AbstractDMXDriver::stop() {
 // ----------------------------------------------------------------------------
 // Write all 512 channel values to the pending packet and latch
 //
-DMX_STATUS AbstractDMXDriver::write_all(BYTE *dmx_512) {
+DMX_STATUS AbstractDMXDriver::write_all(channel_value *dmx_512) {
     CSingleLock lock(&m_write_mutex, TRUE);
 
     memcpy(&m_dmx_packet[1], dmx_512, DMX_PACKET_SIZE);
@@ -76,7 +76,7 @@ DMX_STATUS AbstractDMXDriver::write_all(BYTE *dmx_512) {
 // ----------------------------------------------------------------------------
 // Write a single channel value to the pending packet (valid channel ID 1-512)
 //
-DMX_STATUS AbstractDMXDriver::write( channel_t channel, BYTE value ) {
+DMX_STATUS AbstractDMXDriver::write( channel_address channel, channel_value value ) {
     CSingleLock lock( &m_write_mutex, TRUE );
 
     if ( channel < 1 || channel > DMX_PACKET_SIZE )
@@ -90,7 +90,7 @@ DMX_STATUS AbstractDMXDriver::write( channel_t channel, BYTE value ) {
 // ----------------------------------------------------------------------------
 // Read a single channel value from running values (valid channel ID 1-512)
 //
-DMX_STATUS AbstractDMXDriver::read( channel_t channel, BYTE& channel_value ) {
+DMX_STATUS AbstractDMXDriver::read( channel_address channel, channel_value& channel_value ) {
     if ( channel < 1 || channel > DMX_PACKET_SIZE )
         return DMX_ERROR;
 
@@ -104,7 +104,7 @@ DMX_STATUS AbstractDMXDriver::read( channel_t channel, BYTE& channel_value ) {
 // ----------------------------------------------------------------------------
 // Read all current 512 channel values
 //
-DMX_STATUS AbstractDMXDriver::read_all( BYTE *dmx_512 ) {
+DMX_STATUS AbstractDMXDriver::read_all( channel_value *dmx_512 ) {
     CSingleLock lock( &m_write_mutex, TRUE );
     memcpy( dmx_512, &m_dmx_packet[1], DMX_PACKET_SIZE );
     return DMX_OK;

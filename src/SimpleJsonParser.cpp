@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2013-2016 Robert DeSantis
+Copyright (C) 2013-2017 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -20,13 +20,13 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-#include "stdafx.h"
 #include "SimpleJsonParser.h"
 
 // ----------------------------------------------------------------------------
 //
 SimpleJsonParser::SimpleJsonParser(void) :
-    JsonNode( JsonNodeType::JSONROOT )
+    JsonNode( JsonNodeType::JSONROOT, "<ROOT>" ),
+	m_stack_ptr( 0 )
 {
 }
 
@@ -38,24 +38,14 @@ SimpleJsonParser::~SimpleJsonParser(void)
 
 // ----------------------------------------------------------------------------
 //
-CString extract_token( LPCSTR start, LPCSTR end ) {
-    CString cstr;
-    unsigned length=end-start+1;
+LPSTR SimpleJsonParser::strip_quotes( LPSTR value ) {
 
-    LPSTR buffer = cstr.GetBufferSetLength( length+1 );
-    memcpy( buffer, start, length );
-    buffer[length] = '\0';
-    cstr.ReleaseBuffer();
-    cstr.Replace( "\\\\", "\\" );
-    return cstr;
-}
+	size_t len = strlen( value );
 
-// ----------------------------------------------------------------------------
-//
-CString& SimpleJsonParser::strip_quotes( CString& value ) {
-
-    if ( value[0] == '"' && value[value.GetLength()-1] == '"' )
-        value = value.Mid( 1, value.GetLength()-2 );
+	if ( value[0] == '"' && value[len - 1] == '"' ) {
+        value[len-1] = '\0';
+		value++;
+	}
 
     return value;
 }
@@ -84,7 +74,7 @@ void SimpleJsonParser::parse( FILE* fp )
 //
 void SimpleJsonParser::parse( LPCSTR json_data )
 {
-   parse( tokenize( json_data, "{},[]:", true ) );
+	parse( SimpleJsonTokenizer( json_data, "{},[]:", true ) );
 }
 
 // ----------------------------------------------------------------------------
@@ -96,8 +86,10 @@ void SimpleJsonParser::parse( LPCSTR json_data )
 // <rvalue> = <litteral> | <array> | <object>
 // <array> = [ [<object> [,... <objectn>] ] | [ <rvalue> [, ... <rvaluen>] ] | [ <array] [, <arrayn]] ]
 
-void SimpleJsonParser::parse( std::vector<CString>& tokens )
+void SimpleJsonParser::parse( SimpleJsonTokenizer& tokenizer )
 {
+#define IS_BREAK( t, b ) (t[0] == b && t[1] == '\0')
+
     enum ParseState {
         SCAN=1,
         ARRAY,
@@ -108,27 +100,25 @@ void SimpleJsonParser::parse( std::vector<CString>& tokens )
     };
 
     ParseState state = SCAN;
-    LPCSTR tag_name = NULL;
+    char tag_name[MAXTAGNAMELEN+1];
     CString array_index;
-    std::stack<JsonNode *> nodeStack;
 
-    m_values.clear();
-    m_type = JSONROOT;
+	reset();
 
-    nodeStack.push( this );
+	push( this );
 
-    for ( CString& token : tokens ) {
-        // printf( "%s ", (LPCSTR)token );
+	while ( tokenizer.hasToken() ) {
+		LPSTR token = tokenizer.nextToken();
 
         switch ( state ) {
             case SCAN:
-                if ( token == "[" ) {                   // Start of array
-                    m_type = JSONARRAY;
+                if ( IS_BREAK( token, '[' ) ) {                   // Start of array
+					setType( JSONARRAY );
                     state = RVALUE;
                     break;
                 }
-                else if ( token == "{" ) {              // Start of object
-                    m_type = JSONOBJECT;
+                else if ( IS_BREAK( token, '{' ) ) {              // Start of object
+					setType( JSONOBJECT );
                     state = PAIR;
                     break;
                 }
@@ -137,98 +127,86 @@ void SimpleJsonParser::parse( std::vector<CString>& tokens )
 
             case PAIR:
                 // Check for empty object
-                if ( token == "}" && nodeStack.top()->m_type == JSONOBJECT && nodeStack.top()->m_values.size() == 0 ) {
-                    nodeStack.pop();
+                if ( IS_BREAK( token, '}' ) && top()->getType() == JSONOBJECT && top()->valueCount() == 0 ) {
+					pop();
                     state = RVALUE_SEPARATOR;
                     break;
                 }
 
-                tag_name = strip_quotes( token );
+                strcpy_s( tag_name, strip_quotes( token ) );
                 state = PAIR_COLON;
                 break;
 
             case PAIR_COLON:
-                if ( token != ":" )
+                if ( !IS_BREAK( token, ':' ) )
                     throw std::exception( "Parser expecting colon seperator" );
                 state = RVALUE;
                 break;
 
             case RVALUE: {
-                if ( token == "]" ) {       // Empty array
-                    if ( nodeStack.top()->m_type != JSONARRAY  )
+                if ( IS_BREAK( token, ']' ) ) {       // Empty array
+                    if ( top()->getType() != JSONARRAY  )
                         throw std::exception( "Unexpected array closing bracket" );
 
-                    nodeStack.pop();
+					pop();
                     state = RVALUE_SEPARATOR;
                     break;
                 }
 
-                JsonNode* node = nodeStack.top();
+                JsonNode* node = top();
 
-                if ( node->m_type == JSONARRAY ) {
-                    array_index.Format( "%d", node->m_values.size() );
-                    tag_name = (LPCSTR)array_index;
+                if ( node->getType() == JSONARRAY ) {
+					tag_name[0] = '\0';
                 }
-
-                if ( node->m_values.find( tag_name ) != node->m_values.end() ) {
+                else if ( node->has_key( tag_name ) ) {
                     CString error;
                     error.Format( "Duplicate JSON tag name '%s'", tag_name );
                     throw std::exception( (LPCSTR)error );
                 }
 
-                if ( token == "[" ) {
-                    node->m_values[ tag_name ] = JsonNode( JSONARRAY );
+                if ( IS_BREAK( token, '[' ) ) {
+					push( node->setValue( JSONARRAY, tag_name ) );
                     state = RVALUE;
-                    nodeStack.push( &node->m_values[ tag_name ] );
                     break;
                 }
 
-                if ( token == "{" ) {
-                    node->m_values[ tag_name ] = JsonNode( JSONOBJECT );
+                if ( IS_BREAK( token, '{' )) {
+					push( node->setValue( JSONOBJECT, tag_name ) );
                     state = PAIR;
-                    nodeStack.push( &node->m_values[ tag_name ] );
                     break;
                 }
 
                 // Add a constant to current node container
 
-                if ( node->m_type != JSONOBJECT && node->m_type != JSONARRAY)
+                if ( node->getType() != JSONOBJECT && node->getType() != JSONARRAY)
                     throw std::exception( "Parser expecting container JSON node" );
 
-                node->m_values[ tag_name ] = JsonNode( strip_quotes( token ) );
+                node->setValue( strip_quotes( token ), tag_name );
                 state = RVALUE_SEPARATOR;
                 break;
             }
 
             case RVALUE_SEPARATOR: {
-                JsonNode* node = nodeStack.top();
+                JsonNode* node = m_nodeStack[m_stack_ptr-1];
 
-                if ( token == "," ) {
-                    state = node->m_type == JSONARRAY ? RVALUE : PAIR;
+                if ( IS_BREAK( token, ',' ) ) {
+                    state = node->getType() == JSONARRAY ? RVALUE : PAIR;
                     break;
                 }
 
-                if ( token == "}" && node->m_type == JSONOBJECT  ) {
-                    nodeStack.pop();
+                if ( IS_BREAK( token, '}' ) && node->getType() == JSONOBJECT  ) {
+					pop();
                     break;
                 }
 
-                if ( token == "]" && node->m_type == JSONARRAY ) {
-                    // Assert all non-null nodes in the array are the same type
-                    JsonNodeType expected_type = JSONNULL;
-                    for ( auto child : node->m_values ) {
-                        if ( child.second.m_type == JSONNULL )
-                            ;
-                        else if ( expected_type == JSONNULL )
-                            expected_type = child.second.m_type;
-                        else if ( child.second.m_type != expected_type ) {
-                            CString error;
-                            error.Format( "Mixed object types in '%s'", child.first );
-                            throw std::exception( (LPCSTR)error );
-                        }
-                    }
+                if ( IS_BREAK( token, ']' ) && node->getType() == JSONARRAY ) {
+					if ( !node->validateArray( ) ) {
+						CString error;
+						error.Format( "Mixed object types in '%s'", node->getTagName() );
+						throw std::exception( (LPCSTR)error );
+					}
 
-                    nodeStack.pop();
+					pop();
                     break;
                 }
 
@@ -237,89 +215,148 @@ void SimpleJsonParser::parse( std::vector<CString>& tokens )
         }
     }
 
-    if ( nodeStack.size() > 0 )
+    if ( stackSize() > 0 )
         throw std::exception( "Unclosed JSON objects detected" );
 }
 
 // ----------------------------------------------------------------------------
 //
-std::vector<CString> SimpleJsonParser::tokenize( LPCSTR value, LPCSTR break_chars, bool store_breaks ) 
-{
-    std::vector<CString> tokens;
+bool SimpleJsonTokenizer::hasToken() {
+	advanceToken();
 
-    LPCSTR start;
-    LPCSTR head;
-    CString token;
+	return m_token_available || m_break_available;
+}
 
-    bool in_quotes = false;
-    bool in_token = false;
-    bool must_break = false;
+// ----------------------------------------------------------------------------
+//
+LPSTR SimpleJsonTokenizer::nextToken() {
+	if ( m_token_available ) {
+		m_token_available = false;
+		return m_token;
+	}
 
-    char last_char = '\0';
+	if ( m_break_available ) {
+		m_break_available = false;
+		m_token[0] = m_break_char;
+        m_token[1] = '\0';
+		return m_token;
+	}
 
-    for ( head=start=value; *head; head++ ) {
-        if ( in_quotes ) {
-            if ( *head == '"' && last_char != '\\' ) {
-                in_quotes = false;
-                must_break = true;
-                token = extract_token( start, head );
-            }
-        }
-        else if ( iswspace(*head) ) {
-            if ( in_token && !must_break ) {
-                token = extract_token( start, head-1 );
-                must_break = true;
-            } 
-            else if ( !in_token )
-                start = head+1;
-            else
-                ; // Ignore WS between tokens and breaks
-        }
-        else if ( strchr( break_chars, *head ) != NULL ) {
-            if ( in_token && !must_break )  // Non-quoted literal
-                token = extract_token( start, head-1 );
+	throw std::exception( "No token available" );
+}
 
-            if ( in_token )
-                tokens.push_back( token );
+// ----------------------------------------------------------------------------
+//
+void SimpleJsonTokenizer::advanceToken() {
+	bool in_quotes = false;
 
-            if ( store_breaks )
-                tokens.push_back( extract_token( head, head ) );
+	while ( !m_token_available && !m_break_available && *m_head ) {
+		if ( in_quotes ) {
+			if ( *m_head == '"' && m_last_char != '\\' ) {
+				in_quotes = false;
+				m_must_break = true;
+				extract_token( m_start, m_head );
+			}
+		}
+		else if ( iswspace(*m_head) ) {
+			if ( m_in_token && !m_must_break ) {
+				extract_token( m_start, m_head-1 );
+				m_must_break = true;
+			} 
+			else if ( !m_in_token )
+				m_start = m_head+1;
+			else
+				; // Ignore WS between tokens and breaks
+		}
+		else if ( strchr( m_break_chars, *m_head ) != NULL ) {
+			if ( m_in_token && !m_must_break )  // Non-quoted literal
+				extract_token( m_start, m_head-1 );
 
-            start = head+1;
-            in_token = must_break = false;
-        }
-        else if ( must_break )
-            throw std::exception( "Parse error" );
-        else {
-            in_token = true;
-            
-            if ( *head == '"'  && last_char != '\\' )
-                in_quotes = true;
-        }
+			if ( m_in_token )
+				m_token_available = true;
 
-        last_char = *head;
+			if ( m_store_breaks ) {
+				m_break_char = *m_head;
+				m_break_available = true;
+			}
+
+			m_start = m_head+1;
+			m_in_token = m_must_break = false;
+		}
+		else if ( m_must_break )
+			throw std::exception( "Parse error" );
+		else {
+			m_in_token = true;
+
+			if ( *m_head == '"'  && m_last_char != '\\' )
+				in_quotes = true;
+		}
+
+		m_last_char = *m_head;
+
+		m_head++;
+	}
+
+	if ( m_token_available || m_break_available )
+		return;
+
+	if ( m_in_token ) {
+		if ( in_quotes )
+			throw std::exception( "Unterminate quotes" );
+
+		if ( !m_must_break )  // Non-quoted literal
+			extract_token( m_start, m_head-1 );
+
+		m_token_available = true;
+		m_in_token = false;
+	}
+}
+
+// ----------------------------------------------------------------------------
+//
+void SimpleJsonTokenizer::extract_token( LPCSTR start, LPCSTR end ) {
+	unsigned length=end-start+1;
+
+    if ( m_token_buf_len < length+1 ) {
+        m_token_buf_len = length+1+256;     // Don't want to double but add some extra
+        m_token = (LPSTR)realloc( m_token, m_token_buf_len );
     }
-    
-    if ( in_token ) {
-        if ( in_quotes )
-            throw std::exception( "Unterminate quotes" );
 
-        if ( !must_break )  // Non-quoted literal
-            token = extract_token( start, head-1 );
+    LPSTR target = m_token;
 
-        tokens.push_back( token );
+    while ( start <= end ) {
+        *target = *start++;
+
+        if ( *target == '\\' && *start == '\\' )
+            start++;
+
+        target++;
     }
 
-    return tokens;
+    *target = '\0';
 }
 
 // ----------------------------------------------------------------------------
 //
 void JsonNode::dump() {
-    for ( NAME_VALUE_PAIR::iterator it = m_values.begin(); it != m_values.end(); ++it ) {
-        printf( "%s(%d) = ", (LPCSTR)it->first, it->second.m_type );
+	for ( JsonNode* node=m_next; node != NULL; node = node->m_next ) {
+        printf( "%s(%d) = ", node->getTagName(), node->getType() );
 
-        it->second.dump();
+        switch ( node->getType() ) {
+            case JSONROOT:
+            case JSONOBJECT:
+            case JSONARRAY:
+                node->dump();
+                break;
+
+            case JSONCONSTANT:
+				printf( node->getValue() );
+                break;
+
+            case JSONNULL:
+                printf( "NULL" );
+                break;
+        }
 
         printf( "\n----------------------------\n" );
     }

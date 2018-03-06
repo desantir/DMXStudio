@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -15,24 +15,23 @@
     <ProjectGuid>{9D5082EC-A4AF-4FFE-8868-2FD8D9E9444E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>DMXStudio</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
     <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
     <UseOfMfc>Static</UseOfMfc>
-    <TargetPlatformVersion>7.0</TargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -51,6 +50,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <CodeAnalysisRuleSet>NativeMinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <OutDir>$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -63,7 +63,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>httpapi.lib;Dsound.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>httpapi.lib;Dsound.lib;Winhttp.lib;ftd2xx.lib;libjpeg.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBCMT;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <CustomBuildStep>
       <Command>echo "$(ProjectDir)$(Configuration)"
@@ -103,7 +104,8 @@ xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\d
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>httpapi.lib;Dsound.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>httpapi.lib;Dsound.lib;Winhttp.lib;ftd2xx.lib;libjpeg.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <CustomBuildStep>
       <Command>echo "$(ProjectDir)$(Configuration)"
@@ -128,16 +130,18 @@ xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\d
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ClassDiagram.cd" />
     <None Include="colorpicker\css\colorpicker.css" />
     <None Include="colorpicker\css\layout.css" />
     <None Include="colorpicker\js\colorpicker.js" />
-    <None Include="ftd2xx.dll" />
+    <None Include="flot-flot-f0e78fc\jquery.flot.js" />
+    <None Include="full\ampviz.js" />
+    <None Include="full\animationlevelviz.js" />
     <None Include="full\chase-track.js" />
     <None Include="full\animation.js" />
     <None Include="full\beatviz.js" />
     <None Include="full\chase.js" />
     <None Include="full\events.js" />
+    <None Include="full\fixture-definition.js" />
     <None Include="full\fixture.js" />
     <None Include="full\freqviz.js" />
     <None Include="full\full.js" />
@@ -146,13 +150,41 @@ xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\d
       <DeploymentContent>true</DeploymentContent>
     </None>
     <None Include="full\jquery.container.js" />
+    <None Include="full\jquery.contextMenu.css" />
+    <None Include="full\jquery.contextMenu.js" />
     <None Include="full\jquery.multiselect.js" />
     <None Include="full\jquery.pan-tilt.js" />
     <None Include="full\jquery.track-visualize.js" />
+    <None Include="full\music-match.js" />
     <None Include="full\music-player.js" />
+    <None Include="full\music-select-events.js" />
+    <None Include="full\music-select.css" />
+    <None Include="full\music-select.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="full\music-select.js" />
+    <None Include="full\palette-editor.css" />
+    <None Include="full\palette-editor.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="full\palette-editor.js" />
+    <None Include="full\palette-events.js" />
+    <None Include="full\palette.js" />
     <None Include="full\scene.js" />
+    <None Include="full\select-list.js" />
+    <None Include="full\show-status.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="full\slider-panel.js" />
+    <None Include="full\track-control.js" />
+    <None Include="full\track-select.js" />
+    <None Include="full\utils.js" />
     <None Include="full\venue.js" />
+    <None Include="full\video-player.htm">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="full\video-scroll-panel.js" />
+    <None Include="full\volume-control.js" />
     <None Include="jquery-toastmessage\css\jquery.toastmessage.css" />
     <None Include="jquery-toastmessage\jquery.toastmessage.js" />
     <None Include="mobile\mobile.htm">
@@ -164,10 +196,12 @@ xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\d
     <None Include="_TODO.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AbstractAnimation.cpp" />
+    <ClCompile Include="AnimationSignalProcessor.cpp" />
+    <ClCompile Include="AnimationTask.cpp" />
+    <ClCompile Include="ChannelAnimatorTask.cpp" />
     <ClCompile Include="AbstractDMXDriver.cpp" />
     <ClCompile Include="AnimationSignal.cpp" />
-    <ClCompile Include="AnimationTask.cpp" />
+    <ClCompile Include="AnimationEngine.cpp" />
     <ClCompile Include="AudioInputStream.cpp" />
     <ClCompile Include="AudioVolumeController.cpp" />
     <ClCompile Include="BeatDetector.cpp" />
@@ -177,8 +211,9 @@ xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\d
     <ClCompile Include="ChannelValueRange.cpp" />
     <ClCompile Include="Chase.cpp" />
     <ClCompile Include="ChaseFader.cpp" />
+    <ClCompile Include="ChaseFaderTask.cpp" />
     <ClCompile Include="ChaseStep.cpp" />
-    <ClCompile Include="ChaseTask.cpp" />
+    <ClCompile Include="ChaseEngine.cpp" />
     <ClCompile Include="ColorStrobe.cpp" />
     <ClCompile Include="DefinitionReader.cpp" />
     <ClCompile Include="DefinitionWriter.cpp" />
@@ -198,6 +233,8 @@ xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\d
     <ClCompile Include="FTDI_DMXDriver.cpp" />
     <ClCompile Include="HttpFull.cpp" />
     <ClCompile Include="HttpMobile.cpp" />
+    <ClCompile Include="HttpRestPalette.cpp" />
+    <ClCompile Include="HttpRestAnimation.cpp" />
     <ClCompile Include="HttpRestBeats.cpp" />
     <ClCompile Include="HttpRestChase.cpp" />
     <ClCompile Include="HttpRestEvents.cpp" />
@@ -206,23 +243,44 @@ xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\d
     <ClCompile Include="HttpRestScene.cpp" />
     <ClCompile Include="HttpRestServices.cpp" />
     <ClCompile Include="HttpRestVenue.cpp" />
+    <ClCompile Include="HttpUtils.cpp" />
     <ClCompile Include="IniFile.cpp" />
+    <ClCompile Include="JpegImage.cpp" />
+    <ClCompile Include="MimeDecoder.cpp" />
     <ClCompile Include="MovementAnimation.cpp" />
     <ClCompile Include="MusicPlayer.cpp" />
     <ClCompile Include="MusicWatcher.cpp" />
     <ClCompile Include="OpenDMXDriver.cpp" />
+    <ClCompile Include="Palette.cpp" />
+    <ClCompile Include="PaletteMaker.cpp" />
+    <ClCompile Include="PhilipsHueDriver.cpp" />
     <ClCompile Include="RGBWA.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneActor.cpp" />
     <ClCompile Include="SceneChannelAnimator.cpp" />
+    <ClCompile Include="SceneChannelAnimatorTask.cpp" />
     <ClCompile Include="SceneChannelFilter.cpp" />
+    <ClCompile Include="SceneChannelFilterTask.cpp" />
     <ClCompile Include="SceneColorFader.cpp" />
+    <ClCompile Include="SceneColorFaderTask.cpp" />
+    <ClCompile Include="SceneCueAnimator.cpp" />
+    <ClCompile Include="SceneCueAnimatorTask.cpp" />
+    <ClCompile Include="SceneFixtureDimmer.cpp" />
+    <ClCompile Include="SceneFixtureDimmerTask.cpp" />
+    <ClCompile Include="SceneMovementAnimatorTask.cpp" />
     <ClCompile Include="ScenePatternDimmer.cpp" />
+    <ClCompile Include="ScenePatternDimmerTask.cpp" />
     <ClCompile Include="ScenePixelAnimator.cpp" />
+    <ClCompile Include="ScenePixelAnimatorTask.cpp" />
+    <ClCompile Include="ScenePulse.cpp" />
+    <ClCompile Include="ScenePulseTask.cpp" />
     <ClCompile Include="SceneSequence.cpp" />
     <ClCompile Include="SceneMovementAnimator.cpp" />
+    <ClCompile Include="SceneSequenceTask.cpp" />
     <ClCompile Include="SceneSoundLevel.cpp" />
+    <ClCompile Include="SceneSoundLevelTask.cpp" />
     <ClCompile Include="SceneStrobeAnimator.cpp" />
+    <ClCompile Include="SceneStrobeAnimatorTask.cpp" />
     <ClCompile Include="SimpleJsonParser.cpp" />
     <ClCompile Include="SoundDetector.cpp" />
     <ClCompile Include="SoundSampler.cpp" />
@@ -233,6 +291,7 @@ xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\d
     <ClCompile Include="tinyxmlerror.cpp" />
     <ClCompile Include="tinyxmlparser.cpp" />
     <ClCompile Include="TextIO.cpp" />
+    <ClCompile Include="VideoFinder.cpp" />
     <ClCompile Include="Universe.cpp" />
     <ClCompile Include="USBProDriver.cpp" />
     <ClCompile Include="Venue.cpp" />
@@ -240,13 +299,14 @@ xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\d
     <ClCompile Include="VenueWriter.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="ftd2xx.lib" />
-  </ItemGroup>
-  <ItemGroup>
+    <ClInclude Include="AnimationReference.h" />
+    <ClInclude Include="AnimationSignalProcessor.h" />
+    <ClInclude Include="AnimationTask.h" />
+    <ClInclude Include="ChannelAnimatorTask.h" />
     <ClInclude Include="AbstractDMXDriver.h" />
     <ClInclude Include="Act.h" />
     <ClInclude Include="AnimationSignal.h" />
-    <ClInclude Include="AnimationTask.h" />
+    <ClInclude Include="AnimationEngine.h" />
     <ClInclude Include="AudioInputStream.h" />
     <ClInclude Include="AudioVolumeController.h" />
     <ClInclude Include="BeatDetector.h" />
@@ -257,8 +317,9 @@ xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\d
     <ClInclude Include="ChannelValueRange.h" />
     <ClInclude Include="Chase.h" />
     <ClInclude Include="ChaseFader.h" />
+    <ClInclude Include="ChaseFaderTask.h" />
     <ClInclude Include="ChaseStep.h" />
-    <ClInclude Include="ChaseTask.h" />
+    <ClInclude Include="ChaseEngine.h" />
     <ClInclude Include="ColorFader.h" />
     <ClInclude Include="ColorStrobe.h" />
     <ClInclude Include="DefinitionReader.h" />
@@ -269,6 +330,8 @@ xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\d
     <ClInclude Include="DMXHttpSession.h" />
     <ClInclude Include="DMXHttpWorker.h" />
     <ClInclude Include="DMXStudio.h" />
+    <ClInclude Include="DMXTextAnim.h" />
+    <ClInclude Include="DMXTextForms.h" />
     <ClInclude Include="DMXTextUI.h" />
     <ClInclude Include="DObject.h" />
     <ClInclude Include="Event.h" />
@@ -290,43 +353,70 @@ xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\d
     <ClInclude Include="Form.h" />
     <ClInclude Include="FreqBin.h" />
     <ClInclude Include="ftd2xx.h" />
-    <ClInclude Include="AbstractAnimation.h" />
+    <ClInclude Include="AnimationDefinition.h" />
     <ClInclude Include="FTDI_DMXDriver.h" />
+    <ClInclude Include="FixtureState.h" />
     <ClInclude Include="HttpFull.h" />
     <ClInclude Include="HttpMobile.h" />
     <ClInclude Include="HttpRestServices.h" />
+    <ClInclude Include="HttpUtils.h" />
     <ClInclude Include="IDefinitionVisitor.h" />
     <ClInclude Include="IniFile.h" />
     <ClInclude Include="ISerializable.h" />
     <ClInclude Include="IVisitor.h" />
+    <ClInclude Include="JpegImage.h" />
+    <ClInclude Include="jpeglib.h" />
+    <ClInclude Include="LevelRecord.h" />
+    <ClInclude Include="MimeDecoder.h" />
     <ClInclude Include="MovementAnimation.h" />
     <ClInclude Include="MusicPlayer.h" />
     <ClInclude Include="MusicWatcher.h" />
     <ClInclude Include="OpenDMXDriver.h" />
+    <ClInclude Include="Palette.h" />
+    <ClInclude Include="PaletteMaker.h" />
+    <ClInclude Include="PhilipsHueDriver.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="RestServiceException.h" />
     <ClInclude Include="RGBWA.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneActor.h" />
     <ClInclude Include="SceneChannelAnimator.h" />
+    <ClInclude Include="SceneChannelAnimatorTask.h" />
     <ClInclude Include="SceneChannelFilter.h" />
+    <ClInclude Include="SceneChannelFilterTask.h" />
     <ClInclude Include="SceneColorFader.h" />
+    <ClInclude Include="SceneColorFaderTask.h" />
+    <ClInclude Include="SceneCueAnimator.h" />
+    <ClInclude Include="SceneCueAnimatorTask.h" />
+    <ClInclude Include="SceneFixtureDimmer.h" />
+    <ClInclude Include="SceneFixtureDimmerTask.h" />
+    <ClInclude Include="SceneMovementAnimatorTask.h" />
     <ClInclude Include="ScenePatternDimmer.h" />
+    <ClInclude Include="ScenePatternDimmerTask.h" />
     <ClInclude Include="ScenePixelAnimator.h" />
+    <ClInclude Include="ScenePixelAnimatorTask.h" />
+    <ClInclude Include="ScenePulse.h" />
+    <ClInclude Include="ScenePulseTask.h" />
     <ClInclude Include="SceneSequence.h" />
     <ClInclude Include="SceneMovementAnimator.h" />
+    <ClInclude Include="SceneSequenceTask.h" />
     <ClInclude Include="SceneSoundLevel.h" />
+    <ClInclude Include="SceneSoundLevelTask.h" />
     <ClInclude Include="SceneStrobeAnimator.h" />
+    <ClInclude Include="SceneStrobeAnimatorTask.h" />
     <ClInclude Include="SimpleJsonBuilder.h" />
     <ClInclude Include="SimpleJsonParser.h" />
     <ClInclude Include="SoundDetector.h" />
     <ClInclude Include="SoundSampler.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StudioException.h" />
+    <ClInclude Include="StudioTypes.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Threadable.h" />
     <ClInclude Include="tinystr.h" />
     <ClInclude Include="tinyxml.h" />
     <ClInclude Include="TextIO.h" />
+    <ClInclude Include="VideoFinder.h" />
     <ClInclude Include="Universe.h" />
     <ClInclude Include="USBProDriver.h" />
     <ClInclude Include="Venue.h" />
@@ -350,11 +440,14 @@ xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\d
       <SubType>Designer</SubType>
     </Xml>
     <Xml Include="FixtureDefinitions\Blizzard\blizzard_rocker.xml" />
+    <Xml Include="FixtureDefinitions\Blizzard\blizzard_snake_eyes.xml" />
     <Xml Include="FixtureDefinitions\Chauvet\chauvet_abyss.xml" />
     <Xml Include="FixtureDefinitions\Chauvet\chauvet_colorbandpix_mini.xml" />
     <Xml Include="FixtureDefinitions\Chauvet\chauvet_led_dimmer_4.xml" />
     <Xml Include="FixtureDefinitions\Chauvet\chauvet_mega_trix.xml" />
     <Xml Include="FixtureDefinitions\Chauvet\chauvet_pixpar_12.xml" />
+    <Xml Include="FixtureDefinitions\Chauvet\chauvet_scorpion.xml" />
+    <Xml Include="FixtureDefinitions\Chauvet\chauvet_shocker_90.xml" />
     <Xml Include="FixtureDefinitions\Chauvet\chauvet_slimpar_h6.xml">
       <SubType>Designer</SubType>
     </Xml>
@@ -362,9 +455,12 @@ xcopy /y /s "$(ProjectDir)\jquery-toastmessage" "$(ProjectDir)$(Configuration)\d
     <Xml Include="FixtureDefinitions\Chauvet\chauvet_swarm_5fx.xml" />
     <Xml Include="FixtureDefinitions\Chauvet\chauvet_vue_1_1.xml" />
     <Xml Include="FixtureDefinitions\Custom\generic.xml" />
+    <Xml Include="FixtureDefinitions\Custom\generic_par.xml" />
     <Xml Include="FixtureDefinitions\Custom\led_array.xml">
       <SubType>Designer</SubType>
     </Xml>
+    <Xml Include="FixtureDefinitions\Custom\philips_hue.xml" />
+    <Xml Include="FixtureDefinitions\Lixada\lixada_min_wash.xml" />
   </ItemGroup>
   <ItemGroup>
     <Text Include=".\full\full.htm" />

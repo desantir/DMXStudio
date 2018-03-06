@@ -77,6 +77,7 @@
                 </ranges>
             </channel>
             <channel index="3" type="strobe" color="false" blackout="false">
+                <strobe off="0" speed_slow="5" speed_fast="255"/>
                 <name>Strobe</name>
                 <ranges>
                     <range start="0" end="4">

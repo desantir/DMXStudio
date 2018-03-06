@@ -43,7 +43,12 @@ enum EventSource {
     ES_MASTER_DIMMER=18,
     ES_WHITEOUT_STROBE=19,
     ES_WHITEOUT_COLOR=20,
-    ES_TRACK_QUEUES=21
+    ES_TRACK_QUEUES=21,
+    ES_ANIMATION=22,
+    ES_PALETTE=23,
+    ES_WHITEOUT_EFFECT=24,
+	ES_VIDEO_PALETTE=25,
+    ES_FIXTURE_STATUS=26
 };
 
 enum EventAction {
@@ -55,7 +60,8 @@ enum EventAction {
     EA_NEW=6,
     EA_CHANGED=7,
     EA_ERROR=8,
-    EA_TIME=9
+    EA_TIME=9,
+    EA_MESSAGE=10
 };
 
 struct Event

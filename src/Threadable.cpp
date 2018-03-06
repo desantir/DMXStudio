@@ -30,7 +30,7 @@ Threadable::Threadable( LPCSTR name ) :
     m_running( false ),
     m_thread( NULL )
 {
-    m_name.Format( "DMXStudio!%s", name ? name : "Threadable" );
+    m_thread_name.Format( "DMXStudio!%s", name ? name : "Threadable" );
 }
 
 // ----------------------------------------------------------------------------
@@ -50,7 +50,7 @@ bool Threadable::startThread( ) {
     // Start thread
     m_thread = AfxBeginThread( _run, this, THREAD_PRIORITY_NORMAL, 0, CREATE_SUSPENDED );
     if ( !m_thread ) {
-        DMXStudio::log( "Thread failed to start" );
+        DMXStudio::log_warning( "Thread %s failed to start", m_thread_name );
         m_running = false;
         return false;
     }
@@ -70,19 +70,21 @@ bool Threadable::stopThread() {
     DWORD exit_code = 0;
     if ( GetExitCodeThread( m_thread->m_hThread, &exit_code ) && exit_code != STILL_ACTIVE ) {
         m_running = false;
-        DMXStudio::log( "Thread premature exit (code %lx)", exit_code );
+        DMXStudio::log( "Thread %s premature exit (code %lx)", m_thread_name, exit_code );
     }
     else {
         // Stop the thread
         m_running = false;
 
         // Wait for thread to stop
-        DWORD status = ::WaitForSingleObject( m_thread->m_hThread, 5000 );
+        DWORD status = ::WaitForSingleObject( m_thread->m_hThread, 20000 );
 
-        if ( status == WAIT_FAILED )
-            DMXStudio::log( "Thread failed to stop" );
-        else
-            delete m_thread;
+        if ( status == WAIT_FAILED || status == WAIT_TIMEOUT ) {
+            DMXStudio::log_warning( "Thread %s failed to stop", m_thread_name );
+            return false;
+        }
+
+        delete m_thread;
     }
 
     m_thread = NULL;
@@ -128,10 +130,10 @@ typedef struct tagTHREADNAME_INFO
 
 void Threadable::setThreadName()
 {
-    if ( m_name.GetLength() > 0 ) {
+    if ( m_thread_name.GetLength() > 0 ) {
         THREADNAME_INFO info;
         info.dwType = 0x1000;
-        info.szName = (LPCSTR)m_name;
+        info.szName = (LPCSTR)m_thread_name;
         info.dwThreadID = -1;                // dwThreadID;
         info.dwFlags = 0;
 

@@ -20,8 +20,6 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-;
-
 var ui_expandableContainer_id = 0;
 
 (function($, undefined){
@@ -205,6 +203,10 @@ var ui_expandableContainer_id = 0;
             else {
                 this._add2(null, $(this.options.item_template), values);
             }
+        },
+
+        clear: function () {
+            this._init();
         },
 
         _setOption: function (key, value) {

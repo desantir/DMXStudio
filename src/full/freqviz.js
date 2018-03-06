@@ -48,6 +48,8 @@ function showFrequencyVisualizer() {
         return;
     }
 
+    initializeHorizontalSlider("frequency_sample_rate", 25, 1000, 50);
+
     var update_frequency_sample_rate = function () {
         $("#frequency_sample_value").html($("#frequency_sample_rate").slider("value") + " ms");
     }
@@ -60,7 +62,7 @@ function showFrequencyVisualizer() {
 
     $("#frequency_visualizer_dialog").dialog("open");
 
-    var sound_data = new Array();
+    var sound_data = [];
     for (var i = 1; i <= 29; i++)
         sound_data[i] = [i, 0];
 
@@ -113,7 +115,7 @@ function updateFrequencies() {
         success: function (data) {
             var json = jQuery.parseJSON(data);
 
-            var sound_data = new Array();
+            var sound_data = [];
             var offset = 0;
             for (var i = 1; i <= 28; i++) {
                 if (i == 15) {                  // Add separator for channels (all I can think of)
@@ -135,19 +137,7 @@ function updateFrequencies() {
             setTimeout(updateFrequencies, $("#frequency_sample_rate").slider("value"));
         },
         error: function () {
-            var sound_data = new Array();
-            for (var i = 1; i <= 29; i++)
-                sound_data[i] = [i, -1];
-
-            frequency_plot.setData([{
-                data: sound_data,
-                bars: { show: true, fill: true, fillColor: "rgba(0,0,255,0.4)", barWidth: 0.4 }
-            }]);
-            frequency_plot.draw();
-
-            $("#frequency_sample_number").text("");
-
-            setTimeout(updateFrequencies, 1000);
+            $("#frequency_visualizer_dialog").dialog("close");;
         }
     });
 }

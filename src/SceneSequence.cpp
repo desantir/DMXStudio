@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -21,16 +21,16 @@ MA 02111-1307, USA.
 */
 
 #include "SceneSequence.h"
+#include "SceneSequenceTask.h"
 
 const char* SceneSequence::className = "FixtureSequencer";
-const char* SceneSequence::animationName = "Fixture sequencer";
+const char* SceneSequence::animationName = "Fixture sequencer (deprecated)";
 
 // ----------------------------------------------------------------------------
 //
-SceneSequence::SceneSequence( UID animation_uid, AnimationSignal signal, UIDArray actors ) :
-    AbstractAnimation( animation_uid, signal )
+SceneSequence::SceneSequence( UID animation_uid, bool shared, UID reference_fixture, AnimationSignal signal ) :
+    AnimationDefinition( animation_uid, shared, reference_fixture, signal )
 {
-    m_actors = actors;
 }
 
 // ----------------------------------------------------------------------------
@@ -41,85 +41,12 @@ SceneSequence::~SceneSequence(void)
 
 // ----------------------------------------------------------------------------
 //
-AbstractAnimation* SceneSequence::clone() {
-    return new SceneSequence( m_uid, m_signal, m_actors );
+AnimationDefinition* SceneSequence::clone( ) {
+	return new SceneSequence( 0L, m_shared, m_reference_fixture, m_signal );
 }
 
 // ----------------------------------------------------------------------------
 //
-void SceneSequence::stopAnimation( )
-{
-}
-
-// ----------------------------------------------------------------------------
-//
-void SceneSequence::initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet )
-{
-    m_animation_task = task;
-    m_running_actors = populateActors();
-
-    for ( unsigned i=0; i < m_running_actors.size(); i++ )
-        unselectActor( i, dmx_packet );
-
-    m_current_actor = 0;
-
-    selectActor( m_current_actor, dmx_packet );
-
-    m_next_actor_ms = time_ms + m_signal.getSampleRateMS();
-}
-
-// ----------------------------------------------------------------------------
-//
-bool SceneSequence::sliceAnimation( DWORD time_ms, BYTE* dmx_packet )
-{
-    if ( time_ms < m_next_actor_ms )
-        return false;
-
-    unselectActor( m_current_actor, dmx_packet );
-
-    if ( ++m_current_actor == m_running_actors.size() )
-        m_current_actor = 0;
-
-    selectActor( m_current_actor, dmx_packet );
-
-    m_next_actor_ms = time_ms + m_signal.getSampleRateMS();
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-void SceneSequence::unselectActor( unsigned actor_num, BYTE* dmx_packet ) {
-    if ( actor_num >= m_running_actors.size() )
-        return;
-
-    SceneActor* actor = m_animation_task->getActor( m_running_actors[actor_num] );
-    STUDIO_ASSERT( actor != NULL, "Missing scene actor for fixture %lu", m_running_actors[actor_num] );
-
-    for ( Fixture *pf : m_animation_task->resolveActorFixtures( actor ) ) {
-        for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
-            if ( pf->getChannel( channel )->canBlackout() )
-                m_animation_task->loadChannel( dmx_packet, pf, channel, 0 );
-        }
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
-void SceneSequence::selectActor( unsigned actor_num, BYTE* dmx_packet )
-{
-    if ( actor_num >= m_running_actors.size() )
-        return;
-
-    SceneActor* actor = m_animation_task->getActor( m_running_actors[actor_num] );
-    STUDIO_ASSERT( actor != NULL, "Missing scene actor for fixture %lu", m_running_actors[actor_num] );
-
-    for ( Fixture *pf : m_animation_task->resolveActorFixtures( actor ) ) {
-        for ( channel_t channel=0; channel < pf->getNumChannels(); channel++ ) {
-            if ( pf->getChannel( channel )->canBlackout() ) {
-                BYTE value = actor->getChannelValue( channel );
-                m_animation_task->loadChannel( dmx_packet, pf, channel, value );
-            }
-        }
-    }
+AnimationTask* SceneSequence::createTask( AnimationEngine* engine, ActorList& actors, UID owner_uid ) {
+    return new SceneSequenceTask( engine, m_uid, actors, owner_uid );
 }

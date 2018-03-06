@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2012-15 Robert DeSantis
+Copyright (C) 2012-2017 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -27,54 +27,57 @@ var edit_mode = false;                              // True when UI is in edit m
 var active_scene_id = 0;                            // UID of currently active scene
 var active_chase_id = 0;                            // UID of currently active chase
 var auto_blackout = false;                          // Venue is in auto backout mode
-var client_config_update = false;                   // Client layou has changed -  update server
+var client_config_update = false;                   // Client layout has changed -  update server
 var current_act = 0;                                // All acts
 var whiteout_color = '#FFFFFF';                     // Whiteout color
 var num_universes = 1;
 var default_scene_uid = 0;                          // Default scene UID
+var volume_control = null;
+var track_fixtures = false;
 
 var scene_tile_panel;
 var chase_tile_panel;
-var fixture_tile_panel;
 var slider_panel;
+var animation_tile_panel;
+var palette_window = null;
+var music_select_window = null;
+var macro_color = "#0000FF";
+var macro_multi_color = false;
 
-var whiteout_ms = [25, 50, 75, 100, 125, 150, 200, 250, 350, 500, 750, 1000, 1500, 2000];
+var whiteout_ms = [0, 75, 100, 125, 150, 250, 300, 400, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000];
+
+var animation_percent = [ 
+    { percent: 10, label: "10 x" },
+    { percent: 20, label: "5 x" },
+    { percent: 25, label: "4 x" },
+    { percent: 33, label: "3 x" },
+    { percent: 50, label: "2 x" },
+    { percent: 100, label: "1 x" },
+    { percent: 200, label: "1/2 x" },
+    { percent: 300, label: "1/3 x" },
+    { percent: 500, label: "1/5 x" },
+    { percent: 1000, label: "1/10 x" },
+    { percent: 2000, label: "1/20 x" },
+    { percent: 5000, label: "1/50 x" },
+    { percent: 0, label: "Custom" } ];
 
 var venue_filename = "";
 
 var master_dimmer_channel = {
-    "channel": 1, "label": "venue", "name": "Master Dimmer", "value": 0, "max_value": 100, "ranges": null, "type": -1, "color": null, "slider": null
+    "channel": 1, "label": "venue", "name": "Master Dimmer", "value": 0, "max_value": 100, "ranges": null, "type": -1, "color": null, "slider": null, "selectable": false
 };
 
-var client_config = null;
-/*
-    {
-        "edit_mode": true,
-        "delete_mode": false,
-
-        "sections": {
-            "venue_pane": { collapsed: false },
-            "music_pane": { collapsed: true },
-            "act_pane": { collapsed: false },
-            "scene_tiles_pane": { collapsed: false, scroll: false },
-            "chase_tiles_pane": { collapsed: true, scroll: true },
-            "fixture_tiles_pane": { collapsed: false, scroll: false },
-            "slider_pane": { collapsed: false, scroll: false }
-        }
-    };
-*/
-
 // No need to keep looking these up on every update and it seems expensive
-var cache_master_volume = null;
+
 var cache_whiteout_custom_value = null;
-var cache_master_volume_value = null;
-var cache_master_volume_handle = null;
-var cache_volume_mute = null;
+var cache_whiteout_fade_value = null;
+var cache_whiteout_effect_0 = null;
+var cache_whiteout_effect_1 = null;
+var cache_whiteout_effect_2 = null;
 var cache_animation_speed = null;
 var cache_blackout_buttons = null;
 var cache_whiteout_buttons = null;
 var cache_music_match_buttons = null;
-var cache_animation_speed = null;
 var cache_blackout_on = null;
 var cache_blackout_off = null;
 var cache_music_match_on = null;
@@ -84,9 +87,17 @@ var cache_status_icon = null;
 // ----------------------------------------------------------------------------
 //
 function initializeUI() {
-    scene_tile_panel = new TileScrollPanel("scene_tiles_pane", "Scene", "scene");
-    chase_tile_panel = new TileScrollPanel("chase_tiles_pane", "Chase", "chase");
-    fixture_tile_panel = new TileScrollPanel("fixture_tiles_pane", "Fixture", "fixture");
+    // Add features to slider panel
+    slider_panel_features.push( { class_name: "colorpicker_icon", attach: attachPanelColorPicker, title: "show color palette" } );
+    slider_panel_features.push( { class_name: "pantilt_icon", handler: panelPanTiltHandler, title: "show pan tilt" } );
+    slider_panel_features.push( { class_name: "groupcolors_icon", handler: groupColorSlidersHandler, title: "group color channels" } );
+    slider_panel_features.push( { class_name: "rearrange_icon", handler: arrangeSlidersHandler, title: "arrange channels" } );
+    slider_panel_features.push( { class_name: "clear_links_icon", handler: resetLinkedSlidersHandler, title: "clear linked" } );
+
+    scene_tile_panel = new TileScrollPanel("scene_tiles_pane", "Scene", "scene" );
+    chase_tile_panel = new TileScrollPanel("chase_tiles_pane", "Chase", "chase" );
+    animation_tile_panel = new TileScrollPanel("animation_tiles_pane", "Animation", "animation" );
+    fixture_tile_panel = new TileScrollPanel("fixture_tiles_pane", "Fixture", "fixture", [ LayoutType.SCROLL, LayoutType.WRAP, LayoutType.MAP ] );
     slider_panel = new SliderPanel("slider_pane", FIXTURE_SLIDERS, true );
 
     // Cutomizations for fixtures and fixture groups
@@ -96,6 +107,7 @@ function initializeUI() {
     fixture_tile_panel.actions[fixture_tile_panel.ACTION_HOVER].used = true;
 
     initializeCollapsableSections();
+    setFixtureTileLock( false );
 
     // setup act master
     $("#master_act").empty();
@@ -107,8 +119,8 @@ function initializeUI() {
             selected: false
         }));
     }
-    // setup master volume
-    initializeHorizontalSlider("master_volume", 0, 100, 0);
+
+    volume_control = new VolumeControl( "master_volume" );
 
     $("#blackout_buttons").buttonset();
     $("#whiteout_buttons").buttonset();
@@ -119,6 +131,7 @@ function initializeUI() {
         current_act = parseInt($('input[name=act]:checked').val());
         createSceneTiles();
         createChaseTiles();
+        createAnimationTiles();
         update_current_act();
         client_config_update = true;
     });
@@ -126,16 +139,60 @@ function initializeUI() {
     update_current_act();
 
     for (var i = 0; i < whiteout_ms.length; i++) {
-        $("#whiteout_custom_value").append($('<option>', {
+        if ( whiteout_ms[i] != 0 ) {
+            $("#whiteout_custom_value").append($('<option>', {
+                value: whiteout_ms[i],
+                text: whiteout_ms[i] + " ms",
+                selected: false
+            }));
+        }
+
+        $("#whiteout_fade_value").append($('<option>', {
             value: whiteout_ms[i],
-            text: whiteout_ms[i] + " ms",
+            text: whiteout_ms[i] > 0 ? whiteout_ms[i] + " ms" : "no fade",
             selected: false
         }));
     }
 
-    $("#whiteout_custom_value").multiselect({ minWidth: 120, multiple: false, selectedList: 1, header: false, noneSelectedText:'Select ms' });
+    $("#whiteout_custom_value").multiselect( {
+        minWidth: 120, 
+        multiple: false, 
+        selectedList: 1, 
+        header: false, 
+        classes: "animation_speed",
+        noneSelectedText: 'Select ms' } ).on("change", sendWhiteoutCustomStrobe );
 
-    $("#animations_speed").multiselect({ minWidth: 200, multiple: false, selectedList: 1, header: false, noneSelectedText: 'Select ms' });
+    $("#whiteout_fade_value").multiselect( {
+        minWidth: 120, 
+        multiple: false, 
+        selectedList: 1, 
+        header: false, 
+        classes: "animation_speed",
+        noneSelectedText: 'Select ms' } ).on("change", sendWhiteoutCustomStrobe );
+
+    $("#whiteout_effect_0").click(function (event) { stopEventPropagation(event); sendWhiteoutEffect(0); } );
+    $("#whiteout_effect_1").click(function (event) { stopEventPropagation(event); sendWhiteoutEffect(1); } );
+    $("#whiteout_effect_2").click(function (event) { stopEventPropagation(event); sendWhiteoutEffect(2); });
+
+    for (var i = 0; i < animation_percent.length; i++) {
+        $("#animation_speed").append($('<option>', {
+            value: animation_percent[i].percent,
+            text: animation_percent[i].label,
+            selected: animation_percent[i].percent == 100
+        }));
+    }
+    $("#animation_speed").multiselect({ minWidth: 135, multiple: false, selectedList: 1, header: false, noneSelectedText:'Select %', classes: "animation_speed" });
+
+    $("#animation_speed").on("change", function () {
+        if ( $(this).val() > 0 ) {
+            $.ajax({
+                type: "GET",
+                url: "/dmxstudio/rest/control/venue/animationspeed/" + $(this).val(),
+                cache: false,
+                error: onAjaxError
+            });
+        }
+    });
 
     $("#blackout_buttons").change(function () {
         $.ajax({
@@ -167,39 +224,6 @@ function initializeUI() {
 
     $("#master_dimmer").on("slide slidestop", sendMasterDimmerUpdate);
 
-    $("#whiteout_custom_value").on("change", function () {
-        var ms = $(this).val();
-        if ( ms >= 25 && ms <= 10000 ) {
-            $.ajax({
-                type: "GET",
-                url: "/dmxstudio/rest/control/venue/strobe/" + ms,
-                cache: false,
-                error: onAjaxError
-            });
-        }
-    });
-
-    $("#master_volume").on("slide slidestop", sendMasterVolumeUpdate);
-
-    $("#animations_speed").on("change", function () {
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/rest/control/venue/animation_speed/" + $(this).val(),
-            cache: false,
-            error: onAjaxError
-        });
-    });
-
-    $("#volume_mute").click(function () {
-        var mute = $(this).hasClass("ui-icon-volume-on"); // Toggle mute
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/rest/control/venue/volume/mute/" + ((mute) ? 1 : 0),
-            cache: false,
-            error: onAjaxError
-        });
-    });
-
     $("#toggle_edit_mode").click(function () {
         setEditMode(!edit_mode);
         client_config_update = true;
@@ -209,57 +233,45 @@ function initializeUI() {
 
     $("#save_load_venue").click( loadSaveVenue );
 
+    $("#show_palette_editor").click( function() { 
+        if ( palette_window != null && !palette_window.closed )
+            palette_window.close();
+
+        palette_window = window.open( "palette-editor.htm", "palette editor" );
+    } );
+
+    $("#show_music_select").click( function() { 
+        if ( music_select_window != null && !music_select_window.closed )
+            music_select_window.close();
+
+        music_select_window = window.open( "music-select.htm", "music select" );
+    } );
+
     $("#show_frequency_visualizer").click( showFrequencyVisualizer );
 
     $("#show_beat_visualizer").click(showBeatVisualizer);
 
     $("#show_music_matcher").click(showMusicMatch);
 
+    $("#show_amplitude_visualizer").click( showAmplitudeVisualizer );
+
     $("#chaseTrack").click(chaseTrack);
 
-    initializeHorizontalSlider("frequency_sample_rate", 25, 1000, 50);
-
-    $("#channel_panel_colorpicker").ColorPicker({
-        color: "#FFFFFF",
-        livePreview: true,
-
-        onShow: function (picker) {
-            var color = getColorChannelRGB();
-            if ( color != null )
-                $("#channel_panel_colorpicker").ColorPickerSetColor(color);
-            $("#channel_panel_colorpicker").removeClass('ui-icon').addClass('ui-icon-white');
-            $(picker).fadeIn(500);
-            return false;
-        },
-
-        onHide: function (picker) {
-            $("#channel_panel_colorpicker").removeClass('ui-icon-white').addClass('ui-icon');
-            $(picker).fadeOut(500);
-            return false;
-        },
-
-        onSubmit: function (hsb, hex, rgb) {
-            setColorChannelRGB(hsb, hex, rgb);
-        },
-
-        onChange: function (hsb, hex, rgb) {
-            setColorChannelRGB(hsb, hex, rgb);
-        }
-    });
+    $("#chaseAdvance").click( function( event ) { chaseStep( event, 1 ); } );
+    $("#chaseBack").click( function( event ) { chaseStep( event, -1 ); } );
 
     $("#whiteout_colorpicker").ColorPicker({
         color: "#FFFFFF",
         livePreview: true,
 
         onShow: function (picker) {
-            $("#whiteout_colorpicker").ColorPickerSetColor( whiteout_color );
-            $("#whiteout_colorpicker").removeClass('ui-icon').addClass('ui-icon-white');
+            $(picker).ColorPickerSetColor( whiteout_color );
+            $(picker).ColorPickerSetColorChips( getColorChips() );
             $(picker).fadeIn(500);
             return false;
         },
 
         onHide: function (picker) {
-            $("#whiteout_colorpicker").removeClass('ui-icon-white').addClass('ui-icon');
             $(picker).fadeOut(500);
             return false;
         },
@@ -270,41 +282,141 @@ function initializeUI() {
 
         onChange: function (hsb, hex, rgb) {
             setWhiteoutColor(rgb);
-        }
+        },
 
+        onChipSet: function( chip, hsb, hex, rgb ) {
+            return setColorChip( chip, hex );
+        }
     });
 
+    $("#macro_effect").multiselect({
+        minWidth: 140, multiple: false, selectedList: 1, noneSelectedText: 'select effect', classes: 'small_multilist', height: 170, header: false
+    }).bind("multiselectclick", function() { client_config_update = true; } );
+
+    $("#macro_color_speed").multiselect({
+        minWidth: 110, multiple: false, selectedList: 1, noneSelectedText: 'select speed', classes: 'small_multilist', height: 170, header: false
+    }).bind("multiselectclick", function() { client_config_update = true; } );
+
+    $("#macro_move_speed").multiselect({
+        minWidth: 110, multiple: false, selectedList: 1, noneSelectedText: 'select speed', classes: 'small_multilist', height: 170, header: false
+    }).bind("multiselectclick", function () { client_config_update = true; });
+
+    $("#macro_movement").multiselect({
+        minWidth: 140, multiple: false, selectedList: 1, noneSelectedText: 'select movement', classes: 'small_multilist', height: 210, header: false
+    }).bind("multiselectclick", function() { client_config_update = true; } );
+
+    $("#macro_color").ColorPicker({
+        color: "#FFFFFF",
+        livePreview: false,
+        autoClose: true,
+
+        onShow: function (picker) {
+            $(picker).ColorPickerSetColor( macro_color );
+            $(picker).ColorPickerSetColorChips( getColorChips() );
+            $(picker).fadeIn(500);
+            return false;
+        },
+
+        onHide: function (picker) {
+            $(picker).fadeOut(500);
+            return false;
+        },
+
+        onChange: function (hsb, hex, rgb) {
+            setMacroColor( "#" + hex );
+            client_config_update = true;
+        }
+    });
+
+    $("#macro_multi_color").click( macroMultiColor );
+    $("#macro_go").button().click(macroEffectRun);
+    $("#macro_stop").button().click(macroEffectStop);
+
     // Appear after setup because some require initialization (such as sliders)
-    cache_master_volume = $('#master_volume');
     cache_whiteout_custom_value = $('#whiteout_custom_value');
-    cache_master_volume_value = $('#master_volume_value');
-    cache_master_volume_handle = $('#master_volume .ui-slider-handle')
-    cache_volume_mute = $("#volume_mute");
     cache_blackout_buttons = $("#blackout_buttons");
     cache_whiteout_buttons = $("#whiteout_buttons");
     cache_music_match_buttons = $("#music_match_buttons");
-    cache_animation_speed = $('#animations_speed');
     cache_blackout_on = $('#blackout_1');
     cache_blackout_off = $('#blackout_0');
     cache_music_match_on = $('#music_match_1');
     cache_music_match_off = $('#music_match_0');
     cache_status_icon = $("#system_status_icon");
+    cache_animation_speed = $("#animation_speed");
+    cache_whiteout_fade_value = $("#whiteout_fade_value");
+    cache_whiteout_effect_0 = $("#whiteout_effect_0");
+    cache_whiteout_effect_1 = $("#whiteout_effect_1");
+    cache_whiteout_effect_2 = $("#whiteout_effect_2");
 
     initializeMusicPlayer();
 
-    // START THE VENUE
+    // Accept post messages
+    window.addEventListener( "message", function( event ) {
+        if ( event.data.method === "registerEventListener" ) {
+            // toastNotice( event.data.method );
+            registerEventListener( event.source );
+        }
+        else if ( event.data.method === "updateClientConfig" ) {
+            updateClientConfig( event.data.config );
+        }
+    });
 
+    palette_update_callback = function () {
+        setMacroColor( macro_color );
+        updateWhiteoutColor( whiteout_color );
+    };
+
+    // START THE VENUE
     startUserInterface();
 }
+
+var server_toast = null;
 
 // ----------------------------------------------------------------------------
 //
 function startUserInterface() {
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/query/venue/status/",
+        cache: false,
+        success: function (data) {
+            $(".ui-widget-overlay").remove();
+
+            cache_status_icon.addClass("ui-icon-green").removeClass("ui-icon-red");
+            cache_status_icon.attr("title", "status: running");
+            system_status = true;
+
+            if ( server_toast ) {
+                $().toastmessage( 'removeToast', server_toast, null );
+                server_toast = null;
+            }
+
+            updateVenueLayout();
+
+            setTimeout( start, 300 );
+        },
+
+        error: function () {
+            if (system_status) {
+                cache_status_icon.removeClass("ui-icon-green").addClass("ui-icon-red");
+                cache_status_icon.attr("title", "status: disconnected");
+                system_status = false;
+
+                server_toast = toastError( "SERVER IS NOT RESPONDING" );
+            }
+
+            setTimeout( startUserInterface, 2500 );
+        }
+    });
+}
+
+function start()
+{
     // Update the UI from server's current state
-    updateVenueLayout();
+    updatePalettes();
     updateScenes();
     updateChases();
-    updateFixtures();
+    updateAnimations();
 
     var one_shot_updated = function() {
         $.ajax({
@@ -319,33 +431,40 @@ function startUserInterface() {
                 default_scene_uid = json.default_scene_uid;
                 venue_filename = json.venue_filename;
 
-                updateMasterDimmer( json.dimmer );
                 updateVolume( json.master_volume );
+                updateVolumeMute( json.mute );
+
+                updateMasterDimmer( json.dimmer );
                 updateMuteBlackout( json.auto_blackout );
-                updateWhiteoutStrobe( json.whiteout_strobe );
+                updateWhiteoutStrobe( json.whiteout_strobe_ms, json.whiteout_fade_ms );
                 updateWhiteoutColor( json.whiteout_color );
+                updateAnimationSpeed( json.animation_speed );
                 updateBlackout( json.blackout );
                 updateWhiteout( json.whiteout );
+                updateWhiteoutEffect( json.whiteout_effect );
                 updateMusicMatch( json.music_match );
-                updateVolumeMute( json.mute );
-                updateAnimationSpeed( json.animation_speed );
                 updateCapturedFixtures( json.captured_fixtures );
 
                 cache_status_icon.addClass("ui-icon-green").removeClass("ui-icon-red");
                 cache_status_icon.attr("title", "status: running");
                 system_status = true;
 
+                track_fixtures = json.track_fixtures;
+
+                updateFixtures();
+
                 if ( json.music_player != null )
-                    update_player_status( json.music_player );
+                    updatePlayerStatus( json.music_player );
 
                 // Start event processing if needed
                 start_event_processing();
             },
 
             error: function () {
-                toastError( "VENUE UPDATE FAILED" );
+                toastWarning( "VENUE UPDATE FAILED" );
+                startUserInterface();
             }
-        })
+        });
     };
     
     setTimeout( one_shot_updated, 100 );
@@ -353,10 +472,20 @@ function startUserInterface() {
 
 // ----------------------------------------------------------------------------
 //
+function keyEvent( event ) {
+    if ( event.which == 37 || event.which == 39 ) {
+        var chase = getActiveChase();
+        if ( chase != null && chase.getStepTrigger() == ChaseStepTriggerType.CT_MANUAL )
+            chaseStep( event, event.which == 37 ? -1 : 1 );
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
 function updateBlackout( blackout ) {
-    var blackout = blackout ? cache_blackout_on :cache_blackout_off;
-    if (!blackout.prop("checked") && !cache_blackout_buttons.is(":focus"))
-        blackout.prop("checked", true).button("refresh");
+    var blackout_button = blackout ? cache_blackout_on : cache_blackout_off;
+    if (!blackout_button.prop("checked") && !cache_blackout_buttons.is(":focus"))
+        blackout_button.prop("checked", true).button("refresh");
 }
 
 // ----------------------------------------------------------------------------
@@ -369,9 +498,40 @@ function updateWhiteout( whiteout ) {
 
 // ----------------------------------------------------------------------------
 //
+function updateWhiteoutEffect( effect ) {
+    cache_whiteout_effect_0.removeClass( "whiteout_button_selected" );
+    cache_whiteout_effect_1.removeClass( "whiteout_button_selected" );
+    cache_whiteout_effect_2.removeClass( "whiteout_button_selected" );
+
+    if ( effect == 0 ) {
+        cache_whiteout_effect_0.addClass( "whiteout_button_selected" );
+    }
+    else if ( effect == 1 ) {
+        cache_whiteout_effect_1.addClass( "whiteout_button_selected" );
+    }
+    else {
+        cache_whiteout_effect_2.addClass("whiteout_button_selected");
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
 function updateWhiteoutColor( hex_color ) {
     whiteout_color = hex_color;
-    $("#whiteout_colorchip").css( 'background-color', "#" + hex_color );
+    updateColorChip( $("#whiteout_colorpicker"), "#" + hex_color );
+}
+
+//
+function updateWhiteoutStrobe( whiteout_strobe_ms, whiteout_fade_ms ) {
+    if (cache_whiteout_custom_value.val() != whiteout_strobe_ms && !cache_whiteout_custom_value.multiselect( "isOpen" )) {
+        cache_whiteout_custom_value.find("option[value='" + whiteout_strobe_ms + "']").attr("selected", true);
+        cache_whiteout_custom_value.multiselect("refresh");
+    }
+
+    if (cache_whiteout_fade_value.val() != whiteout_fade_ms && !cache_whiteout_fade_value.multiselect( "isOpen" )) {
+        cache_whiteout_fade_value.find("option[value='" + whiteout_fade_ms + "']").attr("selected", true);
+        cache_whiteout_fade_value.multiselect("refresh");
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -399,71 +559,10 @@ function updateMuteBlackout( blackout ) {
 
 // ----------------------------------------------------------------------------
 //
-function updateVolumeMute( mute ) {
-    if (mute != cache_volume_mute.hasClass("ui-icon-volume-off")) {
-        if (!mute) {
-            cache_volume_mute.attr('class', "ui-icon ui-icon-volume-on");
-            cache_volume_mute.attr('title', 'mute');
-        }
-        else {
-            cache_volume_mute.attr('class', "ui-icon-red ui-icon-volume-off");
-            cache_volume_mute.attr('title', 'unmute');
-        }
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
 function updateAnimationSpeed( animation_speed ) {
-    if (cache_animation_speed.val() != animation_speed && !cache_animation_speed.multiselect("isOpen")) {
-        var o = cache_animation_speed.find("option[value='" + animation_speed + "']");
-
-        if (o != null && o.length == 1 )
-            o.attr("selected", true);
-        else {
-            cache_animation_speed.append($('<option>', {
-                value: animation_speed,
-                text: "custom: " + animation_speed + " ms",
-                selected: true
-            }));
-        }
-
-        cache_animation_speed.multiselect('refresh');
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
-function updateVolume( master_volume ) {
-    if (cache_master_volume.slider("value") != master_volume && !cache_master_volume_handle.is(':focus') ) {
-        cache_master_volume_value.html(master_volume);
-        cache_master_volume.slider("value", master_volume);
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
-function updateWhiteoutStrobe( whiteout_strobe ) {
-    if (cache_whiteout_custom_value.val() != whiteout_strobe && !cache_whiteout_custom_value.multiselect( "isOpen" )) {
-        cache_whiteout_custom_value.empty();
-        var found = false;
-        for (var i = 0; i < whiteout_ms.length; i++) {
-            if (whiteout_ms[i] == whiteout_strobe)
-                found = true;
-            cache_whiteout_custom_value.append($('<option>', {
-                value: whiteout_ms[i],
-                text: whiteout_ms[i] + " ms",
-                selected: whiteout_ms[i] == whiteout_strobe
-            }));
-        }
-        if (!found) {
-            cache_whiteout_custom_value.append($('<option>', {
-                value: whiteout_strobe,
-                text: whiteout_strobe + " ms",
-                selected: true
-            }));
-        }
-        cache_whiteout_custom_value.multiselect("refresh");
+    if (cache_animation_speed.val() != animation_speed && !cache_animation_speed.multiselect( "isOpen" )) {
+        if ( !multiselectSelect( cache_animation_speed, animation_speed ) )
+            multiselectSelect( cache_animation_speed, 0 );
     }
 }
 
@@ -485,73 +584,7 @@ function updateMasterDimmer( master_dimmer ) {
 // ----------------------------------------------------------------------------
 //
 function update_current_act() {
-    $("#current_act").text(current_act == 0 ? "all acts" : ("act " + current_act));
-}
-
-// ----------------------------------------------------------------------------
-//
-function messageBox(message) {
-    $("#message_box_dialog").dialog({
-        title: "DMXStudio",
-        autoOpen: true,
-        width: 540,
-        height: 260,
-        modal: true,
-        resizable: false,
-        closeOnEscape: true,
-        hide: {
-            effect: "explode",
-            duration: 500
-        },
-        buttons: {
-            "OK": function () {
-                $(this).dialog("close");
-            }
-        }
-    });
-
-    $("#mbd_contents").text(message);
-
-    $("#message_box_dialog").dialog("open");
-}
-
-// ----------------------------------------------------------------------------
-//
-function toastNotice( message ) {
-    $().toastmessage( 'showToast', {
-        text     : message,
-        stayTime : 3000,
-        sticky   : false,
-        position : 'top-right',
-        type     : 'notice',
-        close    : null
-    });
-}
-
-// ----------------------------------------------------------------------------
-//
-function toastWarning( message ) {
-    $().toastmessage( 'showToast', {
-        text     : message,
-        stayTime : 10000,
-        sticky   : false,
-        position : 'top-right',
-        type     : 'warning',
-        close    : null
-    });
-}
-
-// ----------------------------------------------------------------------------
-//
-function toastError( message ) {
-    $().toastmessage( 'showToast', {
-        text     : message,
-        stayTime : 3000,
-        sticky   : true,
-        position : 'top-right',
-        type     : 'error',
-        close    : null
-    });
+    $("#current_act").text(current_act == 0 ? "default act" : ("act " + current_act));
 }
 
 // ----------------------------------------------------------------------------
@@ -569,14 +602,26 @@ function setWhiteoutColor(rgb) {
 
 // ----------------------------------------------------------------------------
 //
-function sendMasterVolumeUpdate() {
-    delayUpdate( "volume", 10, function() {
-        $.ajax({
-            type: "GET",
-            url: "/dmxstudio/rest/control/venue/volume/master/" + $("#master_volume").slider("value"),
-            cache: false,
-            error: onAjaxError
-        });
+function sendWhiteoutCustomStrobe() {
+    var strobe_ms = $("#whiteout_custom_value").val();
+    var fade_ms = $("#whiteout_fade_value").val();
+
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/control/venue/strobe/" + strobe_ms + "/" + fade_ms,
+        cache: false,
+        error: onAjaxError
+    });
+}
+
+// ----------------------------------------------------------------------------
+//
+function sendWhiteoutEffect( effect ) {
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/control/venue/whiteout/effect/" + effect,
+        cache: false,
+        error: onAjaxError
     });
 }
 
@@ -595,21 +640,10 @@ function sendMasterDimmerUpdate() {
 
 // ----------------------------------------------------------------------------
 //
-var pendingUpdates = [];
+function master_dimmer_callback(unused, action, channel_type, value) {
+    if ( action != "channel" )
+        return;
 
-function delayUpdate( id, timeout_ms, func ) {
-    if ( pendingUpdates[ id ] != null )
-        clearTimeout( pendingUpdates[ id ] );
-
-    pendingUpdates[ id ] = setTimeout( function () {
-        pendingUpdates[ id ] = null;
-        func();
-    }, timeout_ms );
-}
-
-// ----------------------------------------------------------------------------
-//
-function master_dimmer_callback(unused, channel_type, value) {
     master_dimmer_channel.value = value;
 
     $.ajax({
@@ -618,17 +652,6 @@ function master_dimmer_callback(unused, channel_type, value) {
         cache: false,
         error: onAjaxError
     });
-}
-
-// ----------------------------------------------------------------------------
-//
-function stopEventPropagation(event) {
-    if ( event = (event || window.event ) ) {
-        if (event.stopPropagation != null)
-            event.stopPropagation();
-        else
-            event.cancelBubble = true;
-    }
 }
 
 // ----------------------------------------------------------------------------
@@ -648,24 +671,9 @@ function setEditMode(mode) {
     }
 
     $(".edit_mode").each(function () { $(this).css('display', state); });
-}
 
-// ----------------------------------------------------------------------------
-//
-function put_user_on_ice(reason) {
-    $("#wd_reason").text(reason);
-
-    var ice_dialog = $("#wait_dialog").dialog({
-        autoOpen: true,
-        width: 300,
-        height: 220,
-        modal: true,
-        resizable: false,
-        closeOnEscape: false,
-        open: function() { $(this).dialog("widget").find(".ui-dialog-titlebar").hide(); }
-    });
-
-    return ice_dialog;
+    // Need to update fixture pane for tile lock
+    fixture_tile_panel.setTileLock( fixture_tile_panel.getTileLock() );
 }
 
 // ----------------------------------------------------------------------------
@@ -698,110 +706,6 @@ function deleteVenueItem( item, callback ) {
 
 // ----------------------------------------------------------------------------
 //
-function onAjaxError( jqXHR, textError, errorThrown ) {
-    messageBox("Unable to complete server operation [" + textError + " (" + errorThrown + ") ]");
-}
-
-// ----------------------------------------------------------------------------
-//
-function initializeHorizontalSlider(name, min_value, max_value, init_value) {
-    name = "#" + name;
-
-    $( name ).slider({
-        orientation: "horizontal",
-        min: min_value,
-        max: max_value,
-        value: init_value,
-        animate: true,
-        change: function (event, ui) {
-            $(name + "_value").html( ui.value );
-        },
-        slide: function (event, ui ) {
-            $(name + "_value").html( ui.value );
-        }
-    });
-}
-
-// ----------------------------------------------------------------------------
-//
-function unencode(entity_ridden_string) {
-    if (entity_ridden_string == null)
-        return null;
-
-    entity_ridden_string = entity_ridden_string.replace(/&amp;/g, "&");
-    entity_ridden_string = entity_ridden_string.replace(/&lt;/g, "<");
-    entity_ridden_string = entity_ridden_string.replace(/&gt;/g, ">");
-    entity_ridden_string = entity_ridden_string.replace(/&quot;/g, "\"");
-    entity_ridden_string = entity_ridden_string.replace(/\\/g, "\\");
-
-    return entity_ridden_string;
-}
-
-// ----------------------------------------------------------------------------
-//
-function escapeForHTML(text) {
-    return escape(text).replace(/%(..)/g, "&#x$1;");
-}
-
-// ----------------------------------------------------------------------------
-//
-function initializeCollapsableSections() {
-    $(document.body).find(".collapsable_section").each(function (index, collapsable_section) {
-        var collapse_icon = $(collapsable_section).find(".collapsable_icon");
-        var collapse_content = $(collapsable_section).find(".collapsable_content");
-
-        if (collapse_icon == null || collapse_content == null)
-            return;
-
-        collapse_icon.addClass('ui-icon ui-icon-triangle-1-s');
-        collapse_icon.attr( 'title', 'hide');
-
-        collapse_icon.click(function (event) {
-            stopEventPropagation(event);
-            _expand_collapse_section(collapsable_section, collapse_content.is(":visible"));
-            client_config_update = true;
-        });
-    } );
-}
-
-// ----------------------------------------------------------------------------
-//
-function isSectionCollapsed( section_id ) {
-    var collapse_content = $(document.body).find("#" + section_id + " .collapsable_content");
-    if (collapse_content == null)
-        return false;
-
-    return !collapse_content.is(":visible");
-}
-
-// ----------------------------------------------------------------------------
-//
-function setSectionCollapsed(section_id,collapsed) {
-    var collapsable_section = $(document.body).find("#" + section_id);
-    if (collapsable_section == null)
-        return;
-
-    _expand_collapse_section(collapsable_section, collapsed);
-}
-
-function _expand_collapse_section(collapsable_section, collapsed) {
-    var collapse_icon = $(collapsable_section).find(".collapsable_icon");
-    var collapse_content = $(collapsable_section).find(".collapsable_content");
-
-    if (collapsed) {
-        collapse_icon.removeClass('ui-icon-triangle-1-s').addClass('ui-icon-triangle-1-e');
-        collapse_icon.attr('title', 'show');
-        collapse_content.hide();
-    }
-    else {
-        collapse_icon.removeClass('ui-icon-triangle-1-e').addClass('ui-icon-triangle-1-s');
-        collapse_icon.attr('title', 'hide');
-        collapse_content.show();
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
 function load_options( element, options, selected_func  ) {
     element.empty();
     var html = "";
@@ -814,38 +718,120 @@ function load_options( element, options, selected_func  ) {
 
 // ----------------------------------------------------------------------------
 //
-function multiselectSelect( control, value ) {
-
-    var o = control.find("option[value='" + value + "']");
-
-    if (o != null && o.length == 1 ) {
-        o.attr("selected", true);
-        control.multiselect('refresh');
-        return true;
-    }
-
-    return false;
+function updateVolumeMute( mute ) {
+    volume_control.setMute( mute );
 }
 
 // ----------------------------------------------------------------------------
 //
-function getNextUnusedNumber( objects ) {
-    var used_numbers = [];
-    var max_created = 0;
-    var start_number = 0;
+function updateVolume( master_volume ) {
+    volume_control.setVolume( master_volume );
+}
 
-    for ( var i=0; i < objects.length; i++ ) {
-        used_numbers[ used_numbers.length ] = objects[i].number;
-        if ( objects[i].created > max_created ) {
-            start_number = objects[i].number;
-            max_created = objects[i].created;
-        }
-    }
+// ----------------------------------------------------------------------------
+//
+function macroMultiColor( event ) {
+    stopEventPropagation(event);
 
-    while ( ++ start_number < 50000 ) {
-        if ( used_numbers.indexOf( start_number ) == -1 )
-            return start_number;
-    }
+    setMacroMultiColor( !macro_multi_color );
 
-    return 99999;
+    client_config_update = true;
+}
+
+// ----------------------------------------------------------------------------
+//
+function setMacroMultiColor( multi_color ) {
+    stopEventPropagation(event);
+
+    var button = $("#macro_multi_color" );
+
+    macro_multi_color = multi_color;
+
+    if ( macro_multi_color )
+        button.addClass( "whiteout_button_selected" );
+    else
+        button.removeClass( "whiteout_button_selected" );
+}
+
+// ----------------------------------------------------------------------------
+//
+function setMacroColorSpeed( color_speed ) {
+    $("#macro_color_speed").find('option[value=' + color_speed + ']').attr('selected', 'selected');
+    $("#macro_color_speed").multiselect("refresh");
+}
+
+// ----------------------------------------------------------------------------
+//
+function setMacroMoveSpeed(move_speed) {
+    $("#macro_move_speed").find('option[value=' + move_speed + ']').attr('selected', 'selected');
+    $("#macro_move_speed").multiselect("refresh");
+}
+
+// ----------------------------------------------------------------------------
+//
+function setMacroEffect( macro_effect ) {
+    $("#macro_effect").find('option[value=' + macro_effect + ']').attr('selected', 'selected');
+    $("#macro_effect").multiselect("refresh");
+}
+
+// ----------------------------------------------------------------------------
+//
+function setMacroColor( color ) {
+    updateColorChip( $("#macro_color"), color, 3 );
+    macro_color = color;
+}
+
+// ----------------------------------------------------------------------------
+//
+function setMacroMovement( movement ) {
+    $("#macro_movement").find('option[value=' + movement + ']').attr('selected', 'selected');
+    $("#macro_movement").multiselect("refresh");
+}
+
+// ----------------------------------------------------------------------------
+//
+function macroEffectStop(event) {
+    stopEventPropagation(event);
+
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/venue/control/quickscene/stop",
+        async: true,
+        cache: false,
+        success: function () {
+        },
+        error: onAjaxError
+    });
+}
+
+// ----------------------------------------------------------------------------
+//
+function macroEffectRun( event ) {
+    stopEventPropagation(event);
+
+    var fixture_ids = getActiveFixturesInOrder();
+    if ( fixture_ids.length == 0 )
+        return;
+
+    var json = {
+        "fixtures": fixture_ids,
+        "effect": $("#macro_effect").val(),
+        "color_speed_ms": $("#macro_color_speed").val(),
+        "move_speed_ms": $("#macro_move_speed").val(),
+        "movement": $("#macro_movement").val(),
+        "color": macro_color,
+        "multi_color": macro_multi_color
+    };
+
+    $.ajax({
+        type: "POST",
+        url: "/dmxstudio/rest/venue/create/quickscene/",
+        data: JSON.stringify(json),
+        contentType: 'application/json',
+        async: true,
+        cache: false,
+        success: function () {
+        },
+        error: onAjaxError
+    });
 }

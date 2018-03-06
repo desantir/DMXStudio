@@ -35,15 +35,11 @@ class HttpMobile : public IRequestHandler
     RestHandlerMap      m_rest_handlers;
 
 public:
-    HttpMobile(void);
+    HttpMobile(  UINT port );
     ~HttpMobile(void);
 
     LPCSTR getPrefix() {
         return DMX_URL_ROOT_MOBILE;
-    }
-
-    UINT getPort() {
-        return studio.getHttpPort();
     }
 
     DWORD processGetRequest( HttpWorkerThread* worker );

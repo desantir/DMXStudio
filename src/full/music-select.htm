@@ -1,0 +1,299 @@
+﻿<!DOCTYPE html>
+
+<!--
+Copyright (C) 2017 Robert DeSantis
+hopluvr at gmail dot com
+
+This file is part of DMX Studio.
+
+DMX Studio is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
+
+DMX Studio is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+License for more details.
+
+You should have received a copy of the GNU General Public License
+along with DMX Studio; see the file _COPYING.txt.  If not, write to
+the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+MA 02111-1307, USA.
+-->
+
+<html>
+
+<head>
+    <title>DMXStudio Music Select</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <link rel="stylesheet" href="css/dark-hive-custom/jquery-ui-1.9.2.custom.css" />
+    <script src="js/jquery-1.8.3.js"></script>
+    <script src="js/jquery-ui-1.9.2.custom.js"></script>
+    <script src="flot/jquery.flot.js"></script>
+    <script src="flot/jquery.flot.fillbetween.js"></script>
+    <link rel="stylesheet" href="jquery.multiselect.css" />
+    <script src="jquery.multiselect.js"></script>
+    <link rel="stylesheet" media="screen" type="text/css" href="colorpicker/css/colorpicker.css" />
+    <script type="text/javascript" src="colorpicker/js/colorpicker.js"></script>
+    <script src="jquery.container.js"></script>
+    <script src="jquery.pan-tilt.js"></script>
+    <script src="jquery.track-visualize.js"></script>
+    <link rel="stylesheet" href="jquery-toastmessage/css/jquery.toastmessage.css" />
+    <script src="jquery-toastmessage/jquery.toastmessage.js"></script>
+    <script src="jquery.contextMenu.js"></script>
+    <link rel="stylesheet" href="jquery.contextMenu.css" />
+
+    <script src="volume-control.js"></script>
+    <script src="track-control.js"></script>
+    <script src="track-select.js"></script>
+    <script src="utils.js"></script>
+    <script src="slider-panel.js"></script>
+    <script src="beatviz.js"></script>
+    <script src="freqviz.js"></script>
+    <script src="ampviz.js"></script>
+    <script src="music-select.js"></script>
+    <script src="music-select-events.js"></script>
+    <script src="video-scroll-panel.js"></script>
+
+    <link rel="stylesheet" href="full.css" />
+    <link rel="stylesheet" href="music-select.css" />
+
+    <script>
+        $(function () {
+            initializeMusicSelectUI(); // Get it started
+        });
+    </script>
+</head>
+
+<body style="background-color:black;" oncontextmenu="return false;">
+
+    <div id="sound_pane" class="ui-widget-content ui-corner-all collapsable_section">
+        <div class="section_title_container">
+            <span class="section_title">SOUND</span>
+            <span class="collapsable_icon"></span>
+            <span id="player_error" class="player_error"></span>
+            <span id="track_status" class="track_status"></span>
+        </div>
+        <div class="collapsable_content" style="margin-top: 8px; margin-bottom: 10px; height: 72px; ">
+            <div id="master_volume" style="width: 230px; margin: 3px 4px 4px 0px;  float:left; display:inline;">
+                <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px;">
+                    <span class="volume_mute ui-icon ui-icon-volume-on" style="float: left; margin: -1px 5px 0 0; cursor: pointer;" title="mute"></span>
+                    Master Volume <span class="volume_value"></span>
+                </p>
+                <div class="volume" style="width: 212px; margin: 10px 8px 8px 8px;"></div>
+            </div>
+            <div id="track_controls" style="width: 350px; margin: 3px 4px 4px 40px; float:left; display:none;">
+                <div class="ui-state-default ui-corner-all" style="float:left; display:inline; height: 34px; width: 100%; padding: 3px 5px 3px 5px;">
+                    <div class="track_title" style="float: left; width: 100%; margin-bottom: 4px;"></div>
+                    <div class="track_length" style="clear: both; float: left;"></div>
+                    <div class="track_remaining" style="float: right;"></div>
+                </div>
+                <div style="clear: both; float:left; margin: 5px 0px 0px 40px;">
+                    <div class="track_back_info ui-icon ui-icon-blank" style="float:left; margin-top: 6px;" title="show played tracks"></div>
+                    <div class="track_back md-icon-disabled md-icon-track-back menu_icon" title="track back" style="float:left; margin-right: 16px;"></div>
+                    <div class="track_play md-icon-disabled md-icon-track-play menu_icon" title="track play" style="float:left; margin-right: 16px;"></div>
+                    <div class="track_stop md-icon-disabled md-icon-track-stop menu_icon" title="track stop" style="float:left; margin-right: 16px;"></div>
+                    <div class="track_pause md-icon-disabled md-icon-track-pause menu_icon" title="track pause" style="float:left; margin-right: 16px;"></div>
+                    <div class="track_forward md-icon-disabled md-icon-track-forward menu_icon" title="track forward" style="float:left;"></div>
+                    <div class="track_forward_info ui-icon ui-icon-blank" style="float:left; margin-top: 6px; width: 14px;" title="show queued tracks"></div>
+                </div>
+            </div>
+
+            <div id="spotify_signon" title="sign into Spotify" style="float:right; margin: 2px 6px 0px 8px; cursor:pointer;"><img src="Spotify_Icon_RGB_Green.png" height="32" width="32" /></div>
+            <div id="show_amplitude_visualizer" class="lg-icon-grey lg-icon-line_chart menu_icon" title="amplitude visualizer" style="float:right; margin: 2px 6px 0px 10px;"></div>
+            <div id="show_frequency_visualizer" class="lg-icon-grey lg-icon-chart menu_icon" title="frequency visualizer" style="float:right; margin: 2px 0px 0px 10px;"></div>
+            <div id="show_beat_visualizer" class="lg-icon-grey lg-icon-antenna menu_icon" title="beat visualizer" style="float:right; margin: 2px 0px 0px 10px;"></div>
+        </div>
+    </div>
+
+    <div id="track_pane" class="ui-widget-content ui-corner-all collapsable_section">
+        <div class="section_title_container">
+            <span class="section_title">TRACKS</span>
+            <span class="collapsable_icon"></span>
+            <span class="table_size_icon ui-icon icon_button_right"></span>
+        </div>
+
+        <div class="collapsable_content" id="track_list">
+            <div style="margin-top: 8px; display: inline-block; width: 100%;">
+                <div style="clear: both; float: left; margin: 4px 0px 0px 0px;">
+                    <select id="tl_playlist_select" style="max-width: 400px; padding: 4px;"></select>
+                </div>
+
+                <div style="float: left; margin: 6px 0px 0px 40px;">
+                    <input type="text" class="track_filter" placeholder="filter playlist tracks" />
+                </div>
+
+                <div style="float: right; margin: 4px 0px 0px 40px;">
+                    <button id="playlist_play" class="playlist_button">play all</button>
+                    <button id="playlist_queue" class="playlist_button">queue all</button>
+                </div>
+
+                <div class="tl_title" style="clear: both; float: left; margin: 10px 0px 0px 0px;">
+                    <div class="tl_item tl_icon">&nbsp;</div>
+                    <div class="tl_item tl_track">TRACK</div>
+                    <div class="tl_item tl_time">TIME</div>
+                    <div class="tl_item tl_bpm">BPM</div>
+                    <div class="tl_item tl_artist">ARTIST</div>
+                </div>
+            </div>
+
+            <div style="display: inline-block;">
+                <div style="clear: both; float: left; width: 800px; ">
+                    <div id="tld_tracks" class="track_list" style="height: 164px;"></div>
+                </div>
+
+                <div id="tld_info" class="track_info" style="float: left; margin: 0px 0px 0px 20px;">
+                    <div class="ti_controls" style="display:none;">
+
+                        <div style="margin: 0px 0px 8px 0px;">
+                            <div style="clear: both; float: left;">
+                                <img class="ti_img" src="" height="96" width="96" />
+                            </div>
+
+                            <div style="float: left; width: 270px; overflow: auto; height: 96px; ">
+                                <div class="ti_track" style="margin-bottom: 4px;"></div>
+                                <div class="ti_artist" style="margin-bottom: 10px;"></div>
+                                <div class="ti_album"></div>
+                            </div>
+
+                            <div style="clear: both;"></div>
+                        </div>
+
+                        <div>
+                            <div class="track_play md-icon-disabled md-icon-track-play" title="track play" style="clear: both; float:left; margin-right: 16px;"></div>
+                            <div class="track_stop md-icon-disabled md-icon-track-stop" title="track stop" style="float:left; margin-right: 16px;"></div>
+                            <div class="track_pause md-icon-disabled md-icon-track-pause" title="track pause" style="float:left; margin-right: 16px;"></div>
+                            <div class="track_queue md-icon-disabled md-icon-plus" title="queue track" style="float:left; margin-right: 16px;"></div>
+                            <div style="clear: both;"></div>
+                        </div>
+
+                        <div style="margin: 8px 0px 0px 0px;">
+                            <span class="ti_time"></span>
+                            <span class="ti_bpm"></span>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="video_pane" class="ui-widget-content ui-corner-all collapsable_section">
+        <div class="section_title_container">
+            <span class="section_title">VIDEOS</span>
+            <span class="collapsable_icon"></span>
+            <span class="scroll_or_grid_icon icon_button_right"></span>
+        </div>
+
+        <div class="collapsable_content">
+            <div style="margin: 0px 0px 0px 5px; display: inline-block; width: 100%;">
+                <input id="tl_video_search_query" type="text" class="video_search" style="clear:both; float: left; " placeholder="video search" />
+                <div id="tl_video_search" class="video_search_run ui-corner-all" style="display: inline-block; float:left;" title="search videos"><span class="ui-icon ui-icon-search" style="margin: 0 auto; "></span></div>
+
+                <div class="ui-state-default ui-corner-all" style="float:left; height: 34px; min-width: 350px; padding: 5px 8px 3px 8px; margin: 6px 0px 0px 20px;">
+                    <div id="video_status_name" class="playing_video_title"></div>
+                    <div>
+                        <span id="video_status_state" class="playing_video_state"></span>
+                        <span id="video_status_queued" class="playing_video_queued"></span>
+                    </div>
+                </div>
+
+                <div id="video_palette_sample_div" style="display: none; float:left;">
+                    <div id="video_palette_sample" class="video_palette_sample ui-corner-all"></div>
+                    <div id="video_palette_time" style="font-family: Arial; color: white; font-size: 8pt; padding: 1px; width: 64px; text-align: center;"></div>
+                </div>
+
+                <div style="float: right; margin: 13px 0px 0px 40px;">
+                    <button id="video_recent" class="playlist_button">recent videos</button>
+                    <button id="video_pause" class="playlist_button">pause video</button>
+                    <button id="video_next" class="playlist_button">next video</button>
+                </div>
+
+                <div id="video_limit_buttons" style="float: right; margin: 8px 10px 0px 40px;" title="maximum videos to display">
+                    <input type="radio" id="video_limit_0" name="video_limit" value="10" /><label for="video_limit_0">10</label>
+                    <input type="radio" id="video_limit_1" name="video_limit" value="25" checked="checked" /><label for="video_limit_1">25</label>
+                    <input type="radio" id="video_limit_2" name="video_limit" value="50" /><label for="video_limit_2">50</label>
+                </div>
+            </div>
+
+            <div class="scroll-content" style="margin-top: 12px; margin-bottom: 10px;">
+                <div class="scroll-content" style="margin: 10px 0px 10px 0px; width: 100%;"></div>
+            </div>
+            <div class="scroll-bar-wrap ui-widget-content ui-corner-bottom">
+                <div id="video_tiles_scrollbar" class="scroll-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <span class="context-fixture-header"></span>
+
+    <div id="frequency_visualizer_dialog" title="Frequency Visualizer" style="display:none;">
+        <div style="color:#444444; font-family: sans-serif; font-size: 60pt; display:inline; position:absolute; top:100px; left:175px; z-index:-1; font-weight:normal;">LEFT</div>
+        <div style="color:#444444; font-family: sans-serif; font-size: 60pt; display:inline; position:absolute; top:100px; left:625px; z-index:-1; font-weight:normal;">RIGHT</div>
+        <div id="frequency_visualizer_chart" style="width:1000px;height:300px; margin: 10px 0px 20px 10px;"></div>
+        <div id="frequency_sample_rate" style="clear: both; float:left; width: 150px;"></div>
+        <div id="frequency_sample_value" style="float:left; margin-left:15px; color:#808080; width: 50px; font-family:sans-serif; font-size: 8pt; margin-top: 2px;"></div>
+        <div id="frequency_sample_number" style="float:right; color:#808080; font-family: sans-serif; font-size: 8pt;"></div>
+    </div>
+
+    <div id="amplitude_visualizer_dialog" title="Amplitude Visualizer" style="display:none;">
+        <div>
+            <div class='amplitude_yaxis'>Amplitude</div>
+            <div id="amplitude_visualizer_chart" style="width:1000px;height:300px; margin: 10px 0px 20px 10px;"></div>
+        </div>
+    </div>
+
+    <div id="beat_visualizer_dialog" title="Beat Visualizer" style="display:none;">
+        <div id="beat_visualizer_data"></div>
+    </div>
+
+    <div id="video_template" style="display:none;">
+        <div class="video_frame video_container" id="video_pane_video_NNN" style="float: left;">
+            <div class="video_title" title="click for menu"></div>
+            <div style="overflow:hidden; height: 180px; width: 320px; position: relative;">
+                <img class="video_image" />
+                <div class="video_time"></div>
+            </div>
+            <div class="video_controls">
+                <div class="video_play md-icon-track-play menu_icon md-icon-white" title="video play" style="clear: both; float:left; margin-right: 8px;"></div>
+                <div class="video_play_with_palette md-icon-sparkle menu_icon md-icon-white" title="video play with palette" style="float:left; margin-right: 8px; display: none;"></div>
+                <div class="video_queue md-icon-plus menu_icon md-icon-white" title="video queue" style="float:left; margin-right: 16px;"></div>
+                <div class="video_palette" title="video queue with palette" style="float:left;"></div>
+                <div style="clear: both;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="message_box_dialog" style="display:none;">
+        <p id="mbd_contents"></p>
+    </div>
+
+    <div id="video_palette_visualizer_dialog" title="Video Palettes" style="display:none;">
+        <div style="clear:both; float:left;">
+            <div>
+                <div style="overflow:hidden; height: 180px; width: 320px; position: relative;">
+                    <img class="video_image" />
+                    <div class="video_time"></div>
+                </div>
+
+                <div class="palette_visualizer_title" style="margin-top: 10px;">thumbnail palette</div>
+                <div class="default_palette video_palette_debug" style="width: 300px;"></div>
+            </div>
+        </div>
+        <div style="float:left; margin-left: 20px;">
+            <div style="position:relative; margin-bottom: 6px;">
+                <div class="palette_visualizer_title" style="position:absolute; left: 0px; width:46px; text-align: right;"></div>
+                <div class="palette_visualizer_title" style="position:absolute; left: 50px; width: 100px;">video palette</div>
+            </div>
+            <div class="video_palettes" style="position: relative; top:12px;"></div>
+        </div>
+    </div>
+
+</body>
+
+</html>
+

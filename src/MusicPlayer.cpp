@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-16 Robert DeSantis
+Copyright (C) 2011-17 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -55,17 +55,21 @@ void MusicPlayer::initialize( )
     STUDIO_ASSERT( m_library, "Unable to load music controller DLL '%s'", m_dll_path );
 
     GetPlayerApiVersion pGetPlayerApiVersion = getAddress<GetPlayerApiVersion>( "GetPlayerApiVersion" );
-    STUDIO_ASSERT( (*pGetPlayerApiVersion)() == 1, "Music controller version is not compatible" );
+    STUDIO_ASSERT( (*pGetPlayerApiVersion)() == 2, "Music controller version is not compatible" );
 
-    m_GetPlayerName = getAddress<GetPlayerName>( "GetPlayerName" );
+    m_GetPlayerInfo = getAddress<GetPlayerInfo>( "GetPlayerInfo" );
     m_Connect = getAddress<Connect>( "Connect" );
     m_Disconnect = getAddress<Disconnect>( "Disconnect" );
     m_RegisterEventListener = getAddress<RegisterEventListener>( "RegisterEventListener" );
     m_UnregisterEventListener = getAddress<UnregisterEventListener>( "UnregisterEventListener" );
     m_Signon = getAddress<Signon>( "Signon" );
+	m_AcceptAuthorization = getAddress<AcceptAuthorization>( "AcceptAuthorization" );
+	m_IsLoggedIn = getAddress<IsLoggedIn>( "IsLoggedIn" );
+
     m_GetPlaylists = getAddress<GetPlaylists>( "GetPlaylists" );
-    m_GetPlaylistName = getAddress<GetPlaylistName>( "GetPlaylistName" );
+    m_GetPlaylistInfo = getAddress<GetPlaylistInfo>( "GetPlaylistInfo" );
     m_GetTracks = getAddress<GetTracks>( "GetTracks" );
+	m_SearchTracks = getAddress<SearchTracks>( "SearchTracks" );
     m_QueueTrack = getAddress<QueueTrack>( "QueueTrack" );
     m_PlayTrack = getAddress<PlayTrack>( "PlayTrack" );
     m_PlayAllTracks = getAddress<PlayAllTracks>( "PlayAllTracks" );
@@ -75,7 +79,6 @@ void MusicPlayer::initialize( )
     m_PauseTrack = getAddress<PauseTrack>( "PauseTrack" );
     m_GetPlayingTrack = getAddress<GetPlayingTrack>( "GetPlayingTrack" );
     m_IsTrackPaused = getAddress<IsTrackPaused>( "IsTrackPaused" );
-    m_IsLoggedIn = getAddress<IsLoggedIn>( "IsLoggedIn" );
     m_GetTrackInfo = getAddress<GetTrackInfo>( "GetTrackInfo" );
     m_GetTrackAudioInfo = getAddress<GetTrackAudioInfo>( "GetTrackAudioInfo" );
     m_GetQueuedTracks = getAddress<GetQueuedTracks>( "GetQueuedTracks" );
@@ -83,19 +86,17 @@ void MusicPlayer::initialize( )
     m_GetLastPlayerError = getAddress<GetLastPlayerError>( "GetLastPlayerError" );
     m_WaitOnTrackEvent = getAddress<WaitOnTrackEvent>( "WaitOnTrackEvent" );
     m_GetTrackAnalysis = getAddress<GetTrackAnalysis>( "GetTrackAnalysis" );
+
+	getPlayerInfo( &m_player_info );
 }
 
 // ----------------------------------------------------------------------------
 //
-CString MusicPlayer::getPlayerName( ) 
+bool MusicPlayer::getPlayerInfo( PlayerInfo* player_info ) 
 {
     VERIFY_LIBRARY_LOADED;
 
-    CString buffer;
-    buffer.Empty();
-    (*m_GetPlayerName)( buffer.GetBufferSetLength( 512 ), 512 );
-    buffer.ReleaseBuffer();
-    return buffer;
+    return (*m_GetPlayerInfo)( player_info );
 }
 
 // ----------------------------------------------------------------------------
@@ -157,6 +158,26 @@ bool MusicPlayer::signon( LPCSTR username, LPCSTR password )
 
 // ----------------------------------------------------------------------------
 //
+bool MusicPlayer::isLoggedIn( )
+{
+	VERIFY_LIBRARY_LOADED;
+
+	m_logged_in = (*m_IsLoggedIn)( );
+
+	return m_logged_in;
+}
+
+// ----------------------------------------------------------------------------
+//
+bool MusicPlayer::acceptAuthorization(LPBYTE authorization_response, DWORD authorization_len )
+{
+	VERIFY_LIBRARY_LOADED;
+
+	return (*m_AcceptAuthorization)( authorization_response, authorization_len );
+}
+
+// ----------------------------------------------------------------------------
+//
 static void copyBufferToItemList( LPSTR playlists, PlayerItems& list ) {
     list.clear();
 
@@ -169,7 +190,6 @@ static void copyBufferToItemList( LPSTR playlists, PlayerItems& list ) {
 bool MusicPlayer::getPlaylists( PlayerItems& playlists )
 {
     VERIFY_LIBRARY_LOADED;
-    VERIFY_PLAYER_LOGGED_IN;
 
     char playlist_links[LINK_BUFFER_LENGTH];
     UINT num_lists = 0;
@@ -184,7 +204,6 @@ bool MusicPlayer::getPlaylists( PlayerItems& playlists )
 bool MusicPlayer::getTracks( LPCSTR playlist_link, PlayerItems& tracks )
 {
     VERIFY_LIBRARY_LOADED;
-    VERIFY_PLAYER_LOGGED_IN;
 
     char track_links[LINK_BUFFER_LENGTH];
     UINT num_tracks = 0;
@@ -196,10 +215,24 @@ bool MusicPlayer::getTracks( LPCSTR playlist_link, PlayerItems& tracks )
 
 // ----------------------------------------------------------------------------
 //
+bool MusicPlayer::searchTracks( LPCSTR search_query, PlayerItems& tracks )
+{
+	VERIFY_LIBRARY_LOADED;
+
+	char track_links[LINK_BUFFER_LENGTH];
+	UINT num_tracks = 0;
+
+	bool results = (*m_SearchTracks)( search_query, &num_tracks, track_links, LINK_BUFFER_LENGTH );
+	copyBufferToItemList( track_links, tracks );
+	return results;
+}
+
+
+// ----------------------------------------------------------------------------
+//
 bool MusicPlayer::getQueuedTracks( PlayerItems& queued_tracks )
 {
     VERIFY_LIBRARY_LOADED;
-    VERIFY_PLAYER_LOGGED_IN;
 
     char track_links[LINK_BUFFER_LENGTH];
     UINT num_tracks = 0;
@@ -214,7 +247,6 @@ bool MusicPlayer::getQueuedTracks( PlayerItems& queued_tracks )
 bool MusicPlayer::getPlayedTracks( PlayerItems& played_tracks )
 {
     VERIFY_LIBRARY_LOADED;
-    VERIFY_PLAYER_LOGGED_IN;
 
     char track_links[LINK_BUFFER_LENGTH];
     UINT num_tracks = 0;
@@ -226,52 +258,33 @@ bool MusicPlayer::getPlayedTracks( PlayerItems& played_tracks )
 
 // ----------------------------------------------------------------------------
 //
-CString MusicPlayer::getPlaylistName( LPCSTR playlist_link )
+bool MusicPlayer::getPlaylistInfo( LPCSTR playlist_link, PlaylistInfo* playlist_info )
 {
     VERIFY_LIBRARY_LOADED;
-    VERIFY_PLAYER_LOGGED_IN;
 
-    CString buffer;
-    buffer.Empty();
-    (*m_GetPlaylistName)( playlist_link, buffer.GetBufferSetLength( 512 ), 512 );
-    buffer.ReleaseBuffer();
-    return buffer;
+    return (*m_GetPlaylistInfo)( playlist_link, playlist_info );
 }
 
 // ----------------------------------------------------------------------------
 //
 CString MusicPlayer::getTrackFullName( LPCSTR track_link )
 {
-    CString title, artist;
+    TrackInfo track_info;
     CString buffer;
 
-    if ( getTrackInfo( track_link, &title, &artist ) )
-        buffer.Format( "%s by %s", title, artist );
+    if ( getTrackInfo( track_link, &track_info ) )
+        buffer.Format( "%s by %s", track_info.track_name, track_info.artist_name );
 
     return buffer;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool MusicPlayer::getTrackInfo( LPCSTR track_link, CString* track_name, CString* artist_name, CString* album_name, DWORD* track_duration_ms, bool* starred )
+bool MusicPlayer::getTrackInfo( LPCSTR track_link, TrackInfo* track_info )
 {
     VERIFY_LIBRARY_LOADED;
-    VERIFY_PLAYER_LOGGED_IN;
 
-    LPSTR track_name_ptr = track_name ? track_name->GetBufferSetLength(256) : NULL;
-    LPSTR artist_name_ptr = artist_name ? artist_name->GetBufferSetLength(256) : NULL;
-    LPSTR album_name_ptr = album_name ? album_name->GetBufferSetLength(256) : NULL;
-
-    bool result = (*m_GetTrackInfo)( track_link, track_name_ptr, 256, artist_name_ptr, 256, album_name_ptr, 256, track_duration_ms, starred );
-
-    if ( track_name_ptr )
-        track_name->ReleaseBuffer();
-    if ( artist_name_ptr )
-        artist_name->ReleaseBuffer();
-    if ( album_name_ptr )
-        album_name->ReleaseBuffer();
-
-    return result;
+    return (*m_GetTrackInfo)( track_link, track_info );
 }
 
 // ----------------------------------------------------------------------------
@@ -279,7 +292,6 @@ bool MusicPlayer::getTrackInfo( LPCSTR track_link, CString* track_name, CString*
 AudioStatus MusicPlayer::getTrackAudioInfo( LPCSTR track_link, AudioInfo* audio_info, DWORD wait_ms ) 
 {
     VERIFY_LIBRARY_LOADED;
-    VERIFY_PLAYER_LOGGED_IN;
 
     return (*m_GetTrackAudioInfo)( track_link, audio_info, wait_ms );
 }
@@ -319,7 +331,6 @@ bool MusicPlayer::playTrack( LPCSTR track_link, DWORD seek_ms )
 bool MusicPlayer::getTrackAnalysis( LPCSTR track_link, AnalyzeInfo** info )
 {
     VERIFY_LIBRARY_LOADED;
-    VERIFY_PLAYER_LOGGED_IN;
 
     return (*m_GetTrackAnalysis)( track_link, info );
 }
@@ -366,36 +377,21 @@ bool MusicPlayer::pauseTrack( bool pause )
 
 // ----------------------------------------------------------------------------
 //
-bool MusicPlayer::isLoggedIn( )
-{
-    VERIFY_LIBRARY_LOADED;
-
-    m_logged_in = (*m_IsLoggedIn)( );
-
-    return m_logged_in;
-}
-
-// ----------------------------------------------------------------------------
-//
 bool MusicPlayer::isTrackPaused( )
 {
     VERIFY_LIBRARY_LOADED;
-    VERIFY_PLAYER_LOGGED_IN;
 
     return (*m_IsTrackPaused)( );
 }
 
 // ----------------------------------------------------------------------------
 //
-bool MusicPlayer::getPlayingTrack( CString& track_link, DWORD* track_length, DWORD* time_remaining, UINT* queued_tracks, UINT* previous_tracks )
+bool MusicPlayer::getPlayingTrack( PlayingInfo* playing_info )
 {
     VERIFY_LIBRARY_LOADED;
-    VERIFY_PLAYER_LOGGED_IN;
 
-    track_link.Empty();
+    bool result = (*m_GetPlayingTrack)( playing_info );
 
-    bool result = (*m_GetPlayingTrack)( track_link.GetBuffer( MAX_LINK_SIZE ), track_length, time_remaining, queued_tracks, previous_tracks );
-    track_link.ReleaseBuffer();
     return result;
 }
 

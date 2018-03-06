@@ -24,17 +24,17 @@ MA 02111-1307, USA.
 #include "Venue.h"
 #include "SimpleJsonBuilder.h"
 
-void append_channel_json( JsonBuilder& json, ChannelPtrArray& channels, BYTE* channel_values );
+void append_channel_json( JsonBuilder& json, ChannelPtrArray& channels, BYTE* channel_values, BYTE* default_values );
 void fixtureToJson( Venue* venue, JsonBuilder& json, Fixture* fixture );
 void fixtureGroupToJson( Venue* venue, JsonBuilder& json, FixtureGroup* group );
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_fixture( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
+void HttpRestServices::query_fixture( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
     UID uid;
     if ( sscanf_s( data, "%lu", &uid ) != 1 )
-        return false;
+        throw RestServiceException( "Invalid service arguments" );
 
     Fixture* fixture = venue->getFixture( uid );
     if ( fixture != NULL ) {
@@ -42,7 +42,7 @@ bool HttpRestServices::query_fixture( Venue* venue, DMXHttpSession* session, CSt
         json.startArray();
         fixtureToJson( venue, json, fixture );
         json.endArray();
-        return true;
+        return;
     }
 
     FixtureGroup* group = venue->getFixtureGroup( uid );
@@ -51,15 +51,15 @@ bool HttpRestServices::query_fixture( Venue* venue, DMXHttpSession* session, CSt
         json.startArray();
         fixtureGroupToJson( venue, json, group );
         json.endArray();
-        return true;
+        return;
     }
 
-    return false;
+    throw RestServiceException( "Invalid fixture UID" );
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_fixtures( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
+void HttpRestServices::query_fixtures( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
     FixtureGroupPtrArray groups = venue->getFixtureGroups();
     std::sort( groups.begin(), groups.end(), CompareObjectNumber );
@@ -79,14 +79,15 @@ bool HttpRestServices::query_fixtures( Venue* venue, DMXHttpSession* session, CS
     }
 
     json.endArray();
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::query_fixture_definitions( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
+void HttpRestServices::query_fixture_definitions( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
+	channel_value channel_values[DMX_PACKET_SIZE];
+	channel_value default_values[DMX_PACKET_SIZE];
+
     JsonBuilder json( response );
     json.startArray();
 
@@ -97,7 +98,7 @@ bool HttpRestServices::query_fixture_definitions( Venue* venue, DMXHttpSession* 
 
         LPCSTRArray models = FixtureDefinition::getUniqueModels( (*it) );
 
-        json.startArray( "fixtures" );
+        json.startArray( "models" );
         for ( LPCSTRArray::iterator it2=models.begin(); it2 != models.end(); it2++ ) {
             json.startObject();
             json.add( "model", (*it2) );
@@ -106,66 +107,82 @@ bool HttpRestServices::query_fixture_definitions( Venue* venue, DMXHttpSession* 
 
             json.startArray( "personalities" );
             for ( FixturePersonalityToFUID::iterator it3=personalities.begin(); it3 != personalities.end(); it3++ ) {
+                FUID fuid = (*it3).second;
+
+                FixtureDefinition* fd = FixtureDefinition::lookupFixture( fuid );
+
+                if ( fd == NULL )
+                    continue;
+
+                ChannelPtrArray channels;
+
+                for ( channel_address ch=0; ch < fd->getNumChannels(); ch++ ) {
+                    Channel* channel = fd->getChannel( ch );
+                    channels.push_back( channel );
+                    channel_values[ch] = 0;
+                    default_values[ch] = channel->getDefaultValue();
+                }
+
                 json.startObject();
-                json.add( "fuid", (*it3).second );
-                json.add( "num_channels", (*it3).first );
+                json.add( "fuid", fd->getFUID() );
+                json.add( "type", fd->getType() );
+                json.add( "has_dimmer", fd->hasDimmer() );
+                json.add( "can_whiteout", fd->canWhiteout() );
+
+                append_channel_json( json, channels, channel_values, default_values );
+                
                 json.endObject();
             }
             json.endArray( "personalities" );
 
             json.endObject();
         }
-        json.endArray( "fixtures" );
+        json.endArray( "models" );
 
         json.endObject();
     }
 
     json.endArray();
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::delete_fixture( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data ) {
+void HttpRestServices::delete_fixture( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data ) {
     UID fixture_id;
         
     if ( sscanf_s( data, "%lu", &fixture_id ) != 1 )
-        return false;
+        throw RestServiceException( "Invalid service arguments" );
 
     if ( !venue->deleteFixture( fixture_id ) )
-        return false;
+        throw RestServiceException( "Invalid fixture UID" );
 
     venue->clearAllCapturedActors();    // TEMP - for now so sliders and selected are not out of sync
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::delete_fixturegroup( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data ) {
+void HttpRestServices::delete_fixturegroup( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data ) {
     UID fixture_group_id;
         
     if ( sscanf_s( data, "%lu", &fixture_group_id ) != 1 )
-        return false;
+        throw RestServiceException( "Invalid service arguments" );
 
     if ( !venue->deleteFixtureGroup( fixture_group_id ) )
-        return false;
+        throw RestServiceException( "Invalid fixture UID" );
 
     venue->clearAllCapturedActors();    // TEMP - for now so sliders and selected are not out of sync
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_fixturegroup( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode ) {
+void HttpRestServices::edit_fixturegroup( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode ) {
     SimpleJsonParser parser;
     UID group_id;
     CString name, description;
     GroupNumber number;
     std::vector<ULONG> fixture_ids;
-    std::vector<BYTE> channel_values;
+    std::vector<channel_value> channel_values;
+	GridPosition position;
 
     try {
         parser.parse( data );
@@ -175,21 +192,24 @@ bool HttpRestServices::edit_fixturegroup( Venue* venue, DMXHttpSession* session,
         description = parser.get<CString>( "description" );
         number = parser.get<ULONG>( "number" );
         fixture_ids = parser.get<std::vector<ULONG>>( "fixture_ids" );
-        channel_values = parser.get<std::vector<BYTE>>( "channel_values" );
+        channel_values = parser.get<std::vector<channel_value>>( "channel_values" );
+		position.m_x = parser.get<long>( "grid_x" );
+		position.m_y = parser.get<long>( "grid_y" );
     }
     catch ( std::exception& e ) {
-        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
+        throw RestServiceException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
     // Make sure number is unique
-    FixtureGroup* test = venue->getFixtureGroupByNumber( number );
-    if ( test != NULL && group_id != test->getUID() )
-        return false;
+   UID other_uid = venue->getFixtureGroupByNumber( number );
+    if ( other_uid != NOUID && group_id != other_uid )
+        throw RestServiceException( "Fixture group number must be unique" );
 
     switch ( mode ) {
         case NEW: {
             FixtureGroup group( 0L, number, name, description );
             group.setFixtures( UIDArrayToSet( fixture_ids ) );
+			group.setGridPosition( position );
             venue->addFixtureGroup( group );
             break;
         }
@@ -197,23 +217,25 @@ bool HttpRestServices::edit_fixturegroup( Venue* venue, DMXHttpSession* session,
         case UPDATE: {
             FixtureGroup* group = venue->getFixtureGroup( group_id );
             if ( !group )
-                return false;
+                throw RestServiceException( "Invalid fixture group UID" );
 
             group->setGroupNumber( number );
             group->setName( name );
             group->setDescription( description );
             group->setFixtures( UIDArrayToSet( fixture_ids ) );
             group->setChannelValues( channel_values.size(), (channel_values.size() == 0) ? NULL : &channel_values[0] );
+			group->setGridPosition( position );
+
+            venue->fireEvent( ES_FIXTURE_GROUP, group->getUID(), EA_CHANGED );
+
             break;
         }
     }
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::edit_fixture( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode )
+void HttpRestServices::edit_fixture( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, EditMode mode )
 {
     // {"id":9,"name":"Audio Center","description":"","number":9,"fuid":"984018742","dmx_address":7 }
 
@@ -223,6 +245,8 @@ bool HttpRestServices::edit_fixture( Venue* venue, DMXHttpSession* session, CStr
     CString name, description;
     FixtureNumber number;
     unsigned dmx_address, dmx_universe;
+    bool allow_dimming, allow_whiteout;
+	GridPosition position;
 
     try {
         parser.parse( data );
@@ -234,19 +258,24 @@ bool HttpRestServices::edit_fixture( Venue* venue, DMXHttpSession* session, CStr
         fuid = parser.get<ULONG>( "fuid" );
         dmx_address = parser.get<ULONG>( "dmx_address" );
         dmx_universe = parser.get<ULONG>( "dmx_universe" );
+        allow_dimming = parser.get<bool>( "allow_dimming" );
+        allow_whiteout = parser.get<bool>( "allow_whiteout" );
+		position.m_x = parser.get<long>("grid_x");
+		position.m_y = parser.get<long>("grid_y");
     }
     catch ( std::exception& e ) {
-        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
+        throw RestServiceException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
     // Make sure number is unique
-    Fixture* test = venue->getFixtureByNumber( number );
-    if ( test != NULL && fixture_id != test->getUID() )
-        return false;
+    UID other_uid = venue->getFixtureByNumber( number );
+    if ( other_uid != NOUID && fixture_id != other_uid )
+        throw RestServiceException( "Fixture number must be unique" );
 
     switch ( mode ) {
         case NEW: {
-            Fixture fixture( NOUID, number, dmx_universe, dmx_address, fuid, name, description );
+            Fixture fixture( NOUID, number, dmx_universe, dmx_address, fuid, name, description, allow_dimming, allow_whiteout );
+			fixture.setGridPosition(position);
             venue->addFixture( fixture );
             break;
         }
@@ -254,122 +283,133 @@ bool HttpRestServices::edit_fixture( Venue* venue, DMXHttpSession* session, CStr
         case UPDATE: {
             Fixture* fixture = venue->getFixture( fixture_id );
             if ( !fixture )
-                return false;
+                throw RestServiceException( "Invalid fixture UID" );
 
             fixture->setFixtureNumber( number );
             fixture->setName( name );
             fixture->setDescription( description );
             fixture->setAddress( dmx_address );
             fixture->setUniverseId( dmx_universe );
+            fixture->setAllowMasterDimming( allow_dimming );
+            fixture->setAllowWhiteout( allow_whiteout );
+			fixture->setGridPosition(position);
+
+            venue->fixtureUpdated( fixture_id );
+
             break;
         }
     }
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_fixture( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+void HttpRestServices::control_fixture_position(Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type)
+{
+	SimpleJsonParser parser;
+	UID fixture_id;
+	GridPosition position;
+
+	try {
+		parser.parse(data);
+
+		fixture_id = parser.get<ULONG>("id");
+		position.m_x = parser.get<long>("grid_x");
+		position.m_y = parser.get<long>("grid_y");
+	}
+	catch ( std::exception& e ) {
+		throw RestServiceException("JSON parser error (%s) data (%s)", e.what( ), data);
+	}
+
+	FixtureGroup* group = venue->getFixtureGroup( fixture_id );
+	if ( group != NULL ) {
+		group->setGridPosition(position);
+	}
+	else {
+		Fixture* fixture = venue->getFixture(fixture_id);
+		if ( !fixture )
+			throw RestServiceException("Invalid fixture UID");
+		fixture->setGridPosition(position);
+	}
+}
+
+// ----------------------------------------------------------------------------
+//
+void HttpRestServices::control_fixture( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     SimpleJsonParser parser;
-    UID fixture_id;
+    UID actor_id;
     bool is_capture;
-    std::vector<BYTE> channel_values;
+    std::vector<channel_value> channel_values;
+    UIDArray palette_refs;
 
     try {
         parser.parse( data );
 
-        fixture_id = parser.get<ULONG>( "id" );
+        actor_id = parser.get<ULONG>( "id" );
         is_capture = parser.get<bool>( "is_capture" );
 
         if ( parser.has_key( "channel_values" ) )
-            channel_values = parser.get<std::vector<BYTE>>( "channel_values" );
+            channel_values = parser.getArrayAsVector<channel_value>( "channel_values" );
+
+        if ( parser.has_key( "palette_refs" ) )
+            palette_refs = parser.getArrayAsVector<UID>( "palette_refs" );
     }
     catch ( std::exception& e ) {
-        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
+        throw RestServiceException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
 
     if ( is_capture ) {
-        SceneActor* actor = venue->captureFixture( fixture_id );
+        SceneActor* actor = venue->captureFixture( actor_id, &channel_values, &palette_refs );
         if ( !actor )
-            return false;
-
-        // Pre-set channel values (optional)
-        if ( channel_values.size() == actor->getNumChannels() ) {
-            for ( channel_t channel=0; channel < channel_values.size(); channel++ )
-                actor->setChannelValue( channel, channel_values[channel] );
-        }
+            throw RestServiceException( "Invalid fixture UID" );
 
         // Return current channel values
         JsonBuilder json( response );
         json.startArray();
-        for ( channel_t ch=0; ch < actor->getNumChannels(); ch++ )
-            json.add( actor->getChannelValue( ch ) );
+        for ( channel_address ch=0; ch < actor->getNumChannels(); ch++ )
+            json.add( actor->getBaseChannelValue( ch ) );
         json.endArray();
     }
-    else {
-        if ( fixture_id != 0 )
-            venue->releaseActor( fixture_id );
-        else
-            venue->clearAllCapturedActors();
-    }
-
-    return true;
+    else if ( actor_id != 0 )
+        venue->releaseActor( actor_id );
+    else
+        venue->clearAllCapturedActors();
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_fixture_group( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+void HttpRestServices::control_fixture_channel( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     SimpleJsonParser parser;
-    UID group_uid;
-    bool is_capture;
-    std::vector<BYTE> channel_values;
 
     try {
         parser.parse( data );
 
-        group_uid = parser.get<ULONG>( "id" );
-        is_capture = parser.get<bool>( "is_capture" );
+		DWORD change_id = parser.get<DWORD>( "change_id", 0L );
+        JsonNodePtrArray channel_info = parser.getObjects( "channel_data" );
+        SetChannelArray channel_sets;
 
-        if ( parser.has_key( "channel_values" ) ) 
-            channel_values = parser.get<std::vector<BYTE>>( "channel_values" );
+        for ( JsonNode* cp : channel_info ) {
+            UID actor_id = cp->get<UID>( "actor_id" );
+            bool capture = cp->get<bool>( "capture");
+
+            if ( !capture && venue->getDefaultScene()->getActor( actor_id ) == NULL)    // Actor may have been dropped
+                continue;
+
+            channel_sets.emplace_back( actor_id, cp->get<channel_address>( "channel" ), cp->get<channel_value>( "value" ) );
+        }
+        
+        if ( channel_sets.size() > 0 )
+            venue->captureAndSetChannelValue( channel_sets, change_id );
     }
     catch ( std::exception& e ) {
-        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
+        throw RestServiceException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
-
-    if ( is_capture ) {
-        SceneActor* actor = venue->captureFixtureGroup( group_uid );
-        if ( !actor )
-            return false;
-
-        // Pre-set channel values (optional)
-        if ( channel_values.size() == actor->getNumChannels() ) {
-            for ( channel_t channel=0; channel < channel_values.size(); channel++ )
-                actor->setChannelValue( channel, channel_values[channel] );
-        }
-
-        // Return current channel values 
-        JsonBuilder json( response );
-
-        json.startArray();
-        Fixture* pf = venue->getGroupRepresentative( group_uid );
-        for ( channel_t ch=0; ch < actor->getNumChannels(); ch++ )
-            json.add( actor->getChannelValue( ch ) );
-        json.endArray();
-    }
-    else {
-        venue->releaseActor( group_uid );
-    }
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_fixture_channels( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
+void HttpRestServices::control_fixture_palettes( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data, DWORD size, LPCSTR content_type )
 {
     SimpleJsonParser parser;
 
@@ -379,110 +419,28 @@ bool HttpRestServices::control_fixture_channels( Venue* venue, DMXHttpSession* s
 
         for ( JsonNode* cp : channel_info ) {
             UID actor_id = cp->get<UID>( "actor_id" );
-            channel_t channel = cp->get<channel_t>( "channel" );
-            BYTE channel_value = cp->get<BYTE>( "value" );
+            UIDArray palette_refs= cp->getArrayAsVector<UID>( "palette_refs" );
+            bool capture = cp->get<bool>( "capture");
 
-            SceneActor* actor = venue->getDefaultScene()->getActor( actor_id );
-            if ( actor )                                                               // Actor may have been dropped
-                venue->captureAndSetChannelValue( *actor, channel, channel_value );
+            if ( !capture && venue->getDefaultScene()->getActor( actor_id ) == NULL)    // Actor may have been dropped
+                continue;
+
+            venue->captureAndSetPalettes( actor_id, palette_refs );
         }
     }
     catch ( std::exception& e ) {
-        throw StudioException( "JSON parser error (%s) data (%s)", e.what(), data );
+        throw RestServiceException( "JSON parser error (%s) data (%s)", e.what(), data );
     }
-
-    return true;
 }
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::control_fixture_release( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
-{
-    UID fixture_id;
-        
-    if ( sscanf_s( data, "%lu", &fixture_id ) != 1 )
-        return false;
-
-    if ( fixture_id != 0 )
-        venue->releaseActor( fixture_id );
-    else
-        venue->clearAllCapturedActors();
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool HttpRestServices::control_fixture_capture( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
-{
-    UID fixture_id;
-    char what[11];
-        
-    if ( sscanf_s( data, "%10[^/]/%lu", what, 11, &fixture_id ) != 2 )
-        return false;
-
-    if ( fixture_id > 0 ) {
-        SceneActor* actor = NULL;
-        
-        if ( strcmp( what, "group" ) == 0)
-            actor = venue->captureFixtureGroup( fixture_id );
-        else
-            actor = venue->captureFixture( fixture_id );
-
-        if ( !actor )
-            return false;
-
-        // Return current channel values
-        JsonBuilder json( response );
-        json.startArray();
-        for ( channel_t ch=0; ch < actor->getNumChannels(); ch++ )
-            json.add( actor->getChannelValue( ch ) );
-        json.endArray();
-    }
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-bool HttpRestServices::control_fixture_channel( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
-{
-    UID fixture_id;
-    char what[11];
-    channel_t channel;
-    unsigned channel_value;
-
-    if ( sscanf_s( data, "%10[^/]/%lu/%u/%u", what, 11, &fixture_id, &channel, &channel_value ) != 4 )
-        return false;
-
-    SceneActor actor;
-
-    if ( strcmp( what, "group" ) == 0 ) {
-        FixtureGroup* group = venue->getFixtureGroup( fixture_id );
-        if ( !group )
-            return false;
-        actor = SceneActor( venue, group );
-    }
-    else {
-        Fixture* pf = venue->getFixture( fixture_id );
-        if ( !pf )
-            return false;
-        actor = SceneActor( pf );
-    }
-
-    venue->captureAndSetChannelValue( actor, channel, channel_value );
-
-    return true;
-}
-
-// ----------------------------------------------------------------------------
-//
-void append_channel_json( JsonBuilder& json, ChannelPtrArray& channels, BYTE* channel_values )
+void append_channel_json( JsonBuilder& json, ChannelPtrArray& channels, channel_value* channel_values, channel_value* default_values )
 {
     json.add( "num_channels", channels.size() );
 
     json.startArray( "channels" );
-    for ( channel_t ch=0; ch < channels.size(); ch++ ) {
+    for ( channel_address ch=0; ch < channels.size(); ch++ ) {
         Channel* channel = channels[ch];
 
         json.startObject();
@@ -491,6 +449,7 @@ void append_channel_json( JsonBuilder& json, ChannelPtrArray& channels, BYTE* ch
         json.add( "type", channel->getType() );
         json.add( "type_name", Channel::getTypeName(channel->getType()) );
         json.add( "value", channel_values ? channel_values[ch] : 0 );
+        json.add( "default_value", default_values ? default_values[ch] : 0 );
 
         ChannelValueRangeArray cvra = channel->getRanges();
 
@@ -514,16 +473,19 @@ void append_channel_json( JsonBuilder& json, ChannelPtrArray& channels, BYTE* ch
 //
 void fixtureToJson( Venue* venue, JsonBuilder& json, Fixture* fixture )
 {
-    BYTE channel_values[DMX_PACKET_SIZE];
+	channel_value channel_values[DMX_PACKET_SIZE];
+	channel_value default_values[DMX_PACKET_SIZE];
 
-    // Check if fixture is captured
-    bool is_active = venue->getDefaultScene()->getActor( fixture->getUID() ) != NULL;
+    // Check if fixture is captured (Ocalled active in clients)
+    bool is_active = venue->getDefaultScene()->hasActor( fixture->getUID() );
 
     ChannelPtrArray channels;
 
-    for ( channel_t ch=0; ch < fixture->getNumChannels(); ch++ ) {
-        channels.push_back( fixture->getChannel( ch ) );
-        channel_values[ch] = venue->getChannelValue( fixture, ch );
+    for ( size_t ch=0; ch < fixture->getNumChannels(); ch++ ) {
+        Channel* channel = fixture->getChannel( ch );
+        channels.push_back( channel );
+        channel_values[ch] = venue->getBaseChannelValue( fixture, ch );
+        default_values[ch] = channel->getDefaultValue();
     }
 
     json.startObject();
@@ -542,8 +504,20 @@ void fixtureToJson( Venue* venue, JsonBuilder& json, Fixture* fixture )
     json.add( "manufacturer", fixture->getManufacturer() );
     json.add( "model", fixture->getModel() );
     json.add( "type_name", fixture->getTypeName() );
+    json.add( "allow_dimming", fixture->getAllowMasterDimming() );
+    json.add( "allow_whiteout", fixture->getAllowWhiteout() );
+	json.add( "grid_x", fixture->getGridPosition().m_x );
+	json.add( "grid_y", fixture->getGridPosition().m_y );
+    json.add( "is_tracked", venue->isFixtureTracked( fixture->getUID() ) );
 
-    append_channel_json( json, channels, channel_values );
+    RGBWA  state_color;
+    bool state_strobing;
+
+    venue->getFixtureState( fixture->getUID(), state_color, state_strobing );
+    json.add( "fixture_state", state_color );
+    json.add( "fixture_strobe", state_strobing );
+
+    append_channel_json( json, channels, channel_values, default_values );
 
     json.endObject();
 }
@@ -552,7 +526,8 @@ void fixtureToJson( Venue* venue, JsonBuilder& json, Fixture* fixture )
 //
 void fixtureGroupToJson( Venue* venue, JsonBuilder& json, FixtureGroup* group )
 {
-    BYTE channel_values[DMX_PACKET_SIZE];
+	channel_value channel_values[DMX_PACKET_SIZE];
+	channel_value default_values[DMX_PACKET_SIZE];
 
     UIDSet fixtures = group->getFixtures();
 
@@ -562,15 +537,10 @@ void fixtureGroupToJson( Venue* venue, JsonBuilder& json, FixtureGroup* group )
 
     Fixture* pf = venue->getGroupRepresentative( group->getUID() );
     if ( pf != NULL ) {
-        SceneActor actor( venue, group );
-
-        for ( UINT ch=channels.size(); ch < pf->getNumChannels(); ch++ ) {
+        for ( size_t ch=channels.size(); ch < pf->getNumChannels(); ch++ ) {
             channels.push_back( pf->getChannel( ch ) );
-
-            if ( group->getNumChannelValues() > ch )
-                channel_values[ch] = group->getChannelValue( ch );
-            else
-                channel_values[ch] = venue->getChannelValue( actor, ch );
+            channel_values[ch] = venue->getBaseChannelValue( group, ch );
+            default_values[ch] = ch < group->getNumChannelValues() ? group->getChannelValue(ch) : 0;
         } 
     }
 
@@ -588,8 +558,10 @@ void fixtureGroupToJson( Venue* venue, JsonBuilder& json, FixtureGroup* group )
     json.addArray<UIDSet>( "fixture_ids", fixtures );
     json.add( "is_active", is_active );
     json.add( "has_channel_values", group->getNumChannelValues() > 0 );
+	json.add( "grid_x", group->getGridPosition( ).m_x );
+	json.add( "grid_y", group->getGridPosition( ).m_y );
 
-    append_channel_json( json, channels, channel_values );
+    append_channel_json( json, channels, channel_values, default_values );
 
     json.endObject();
 }

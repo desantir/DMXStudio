@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011-2016 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -22,41 +22,35 @@ MA 02111-1307, USA.
 
 #pragma once
 
+#include "stdafx.h"
 #include "IVisitor.h"
-#include "DMXStudio.h"
 #include "Fixture.h"
 #include "FixtureGroup.h"
+#include "Palette.h"
+
+typedef std::map<UID, ChannelValues> ActorChannelValues;
 
 class SceneActor
 {
     friend class VenueWriter;
     friend class VenueReader;
 
-    UID			m_uid;									    // Fixture/group UID
-    bool        m_group;                                    // Actor is a group
-
-    size_t      m_channels;
-
-    // m_channel_values always contains unmapped fixture channel values. For
-    // example, if a fixture maps channel 3 to channel 0, the value for physical
-    // channel 3 will be stored in m_channel_values[0].  The value will be 
-    // remapped from channel 0 to 3 when added to the DMX packet.
-
-    BYTE		m_channel_values[DMX_PACKET_SIZE];			// Not worth a container for this
+    UID			            m_uid;						    // Fixture/group UID
+    bool                    m_group;                        // Actor is a group
+    UIDArray                m_palette_references;           // Palettes to use for all actors
+    ChannelValues           m_channel_values;               // Base channel values (before palettes) 
+    ActorChannelValues      m_resolved_values;              // Resolved values for all actors (computed with palette values)
 
 public:
     SceneActor(void) :
         m_uid(0),
-        m_group(false),
-        m_channels(0) { reset_channel_values(); }
+        m_group(false)
+    { 
+    }
 
     SceneActor( Fixture * );
-    SceneActor(  Venue* venue, FixtureGroup * );
+    SceneActor( Venue* venue, FixtureGroup * );
     ~SceneActor(void);
-
-    void reset_channel_values( void ) {
-        memset( m_channel_values, 0, sizeof(m_channel_values) );
-    }
 
     void accept( IVisitor* visitor) {
         visitor->visit(this);
@@ -71,28 +65,98 @@ public:
     }
 
     inline size_t getNumChannels() const {
-        return m_channels;
+        return m_channel_values.getNumChannels();
     }
 
-    inline BYTE getChannelValue( channel_t channel ) const {
-        STUDIO_ASSERT( channel < m_channels, "Channel out of range" );
+    // Return the base channel value
+    inline channel_value getBaseChannelValue( channel_address channel ) const {
+        if ( channel >= getNumChannels() ) {
+            // DMXStudio::log_warning( "Channel out of range - base value [UID=%lu]", m_uid );
+            return 0;
+        }
         return m_channel_values[ channel ];
     }
 
-    inline void setChannelValue( channel_t channel, BYTE value ) {
-        STUDIO_ASSERT( channel < m_channels, "Channel out of range" );
-        m_channel_values[ channel ] = value;
+    void setFinalChannelValues( UID fixture_id,  ChannelValues& values ) {
+        m_resolved_values[ fixture_id ] = values;
     }
 
-    inline void setChannelValues( size_t channels, BYTE* values ) {
-        STUDIO_ASSERT( channels <= m_channels, "Channel count out of range" );
-        reset_channel_values();
-        memcpy( m_channel_values, values, channels );
+    // Return the palettized channel value
+    inline channel_value getFinalChannelValue( UID fixture_id, channel_address channel ) {
+        if ( channel >= getNumChannels() ) {
+            // DMXStudio::log_warning( "Channel out of range - final value [UID=%lu]", m_uid );
+            return 0;
+        }
+
+        ActorChannelValues::iterator it = m_resolved_values.find( fixture_id );
+        STUDIO_ASSERT( it != m_resolved_values.end(), "No resolved value for channel" );
+        return it->second[ channel ];
     }
 
-    inline size_t getChannelValues( BYTE * destination ) const {
-        memcpy( destination, m_channel_values, m_channels );
-        return m_channels;
+    // Return the non-palette channel values
+    inline ChannelValues getBaseChannelValues( ) const {
+        return m_channel_values;
+    }
+
+    // Set the base non-palette channel values
+    inline void setBaseChannelValues( size_t channels, channel_value* values ) {
+        reset();
+        m_channel_values.setAll( channels, values );
+    }
+
+    // Set the base non-palette channel values
+    inline void setBaseChannelValues( ChannelValues& new_values ) {
+        reset();
+        m_channel_values = new_values;
+    }
+
+    // Set the base non-palette channel value
+    inline void setBaseChannelValue( channel_address channel, channel_value value ) {
+        m_channel_values.set( channel, value );
+        m_resolved_values.clear();
+    }
+
+    inline UIDArray getPaletteReferences() {
+        return m_palette_references;
+    }
+
+    inline void setPaletteReferences( UIDArray& references ) {
+        m_palette_references = references;
+    }
+
+    inline bool hasPaletteReferences() const {
+        return m_palette_references.size() > 0;
+    }
+
+    inline bool hasPaletteReference( UID palette_id ) const {
+        for ( UID uid : m_palette_references )
+            if ( uid == palette_id )
+                return true;
+        return false;
+    }
+
+    inline void removeAllPaletteReferences() {
+        m_palette_references.clear();
+    }
+
+    inline void addPaletteReference( UID palette_uid ) {
+        if ( !hasPaletteReference( palette_uid ) )
+            m_palette_references.push_back( palette_uid );
+    }
+
+    inline bool removePaletteReference( UID palette_id ) {
+        for ( UIDArray::iterator it=m_palette_references.begin(); it !=m_palette_references.end(); ++it )
+            if ( (*it) == palette_id ) {
+                m_palette_references.erase( it );
+                return true;
+            }
+
+        return false;
+    }
+
+    void reset( void ) {
+        m_channel_values.clearAllValues();
+        m_resolved_values.clear();
     }
 };
 

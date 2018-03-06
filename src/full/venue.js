@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2012-15 Robert DeSantis
+Copyright (C) 2012-16 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -22,6 +22,24 @@ MA 02111-1307, USA.
 
 var DMX_MAX_UNIVERSES = 4;
 var UNUSED = "OFF";
+
+var client_config = null;
+/*
+    {
+        "edit_mode": true,
+        "delete_mode": false,
+
+        "sections": {
+            "venue_pane": { collapsed: false },
+            "music_pane": { collapsed: true },
+            "act_pane": { collapsed: false },
+            "scene_tiles_pane": { collapsed: false, scroll: false },
+            "chase_tiles_pane": { collapsed: true, scroll: true },
+            "fixture_tiles_pane": { collapsed: false, scroll: false },
+            "slider_pane": { collapsed: false, scroll: false }
+        }
+    };
+*/
 
 // ----------------------------------------------------------------------------
 //
@@ -65,26 +83,32 @@ function openConfigureVenueDialog(config_json) {
                     audio_sample_size: $("#cvd_audio_sample_size").val(),
                     audio_capture_device: capture_devices[$("#cvd_audio_capture_device").val()],
                     auto_blackout: $("#cvd_auto_blackout").val(),
+                    track_fixtures: $("#cvd_track_fixtures").is(':checked'), 
                     universes: []
                 };
 
                 for (var universe = 1; universe <= DMX_MAX_UNIVERSES; universe++) {
-                    var port = $("#cvd_dmx_port_" + universe).val();
+                    var dmx_type = parseInt($("#cvd_dmx_type_" + universe).val());
+                    var delay = $("#cvd_packet_delay_" + universe).val();
+                    var min_delay = $("#cvd_minimum_delay_" + universe).val();
 
-                    if (port != "") {
-                        for (var i = 0; i < json.universes.length; i++)
-                            if (json.universes[i].dmx_port == port) {
-                                messageBox("Universe " + universe + " port " + port + " is already allocated");
-                                return;
-                            }
+                    if ( dmx_type == 0 )        // UNUSED UNIVERSE
+                        continue;
 
-                        var delay = $("#cvd_packet_delay_" + universe).val();
-                        var min_delay = $("#cvd_minimum_delay_" + universe).val();
-                        var type = $("#cvd_dmx_type_" + universe).val();
+                    var dmx_config = $("#cvd_dmx_config_" + universe).val();
 
-                        json.universes.push({ "id": universe, "dmx_port": port, "type": type, "packet_delay_ms": delay, "minimum_delay_ms": min_delay });
-                    }
+                    for (var i = 0; i < json.universes.length; i++)
+                        if ( json.universes[i].type != 0 && json.universes[i].type != 3 && json.universes[i].dmx_config == dmx_config) {
+                            messageBox("Universe " + universe + " port " + dmx_config + " is already allocated");
+                            return;
+                        }
+
+                    json.universes.push({ "id": universe, "dmx_config": dmx_config, "type": dmx_type, "packet_delay_ms": delay, "minimum_delay_ms": min_delay });
                 }
+
+                $(this).dialog("close");
+
+                var ice_dialog = put_user_on_ice("Updating Venue ... Please wait");
 
                 $.ajax({
                     type: "POST",
@@ -92,17 +116,23 @@ function openConfigureVenueDialog(config_json) {
                     data: JSON.stringify(json),
                     contentType: 'application/json',
                     cache: false,
-                    async: false,
+                    async: true,
                     success: function () {
+                        ice_dialog.dialog("close");
+
+                        // TODO - why do we need to do this?  Perhaps just do a full reload if there some reason
+                        updatePalettes();
                         updateScenes();
                         updateChases();
+                        updateAnimations();
                         updateFixtures();
                     },
 
-                    error: onAjaxError
+                    error: function () {
+                        ice_dialog.dialog("close");
+                        onAjaxError();
+                    }
                 });
-
-                $(this).dialog("close");
             },
             Cancel: function () {
                 $(this).dialog("close");
@@ -129,17 +159,17 @@ function openConfigureVenueDialog(config_json) {
 
     var template = $("#cvd_universe_template")[0].innerHTML;
 
-    config_json.ports.splice(0, 0, UNUSED);
+    config_json.driver_types.splice(0, 0, "UNUSED");
 
     for (var universe_num = 1; universe_num <= DMX_MAX_UNIVERSES; universe_num++) {
-        var dmx_port = UNUSED;
+        var dmx_config = "";
         var delay = 100;
         var min_delay = 5;
         var type = 0;
 
         for (var i = 0; i < config_json.universes.length; i++) {
             if (config_json.universes[i].id == universe_num) {
-                dmx_port = config_json.universes[i].dmx_port;
+                dmx_config = config_json.universes[i].dmx_config;
                 delay = config_json.universes[i].packet_delay_ms;
                 min_delay = config_json.universes[i].minimum_delay_ms;
                 type = config_json.universes[i].type;
@@ -153,21 +183,21 @@ function openConfigureVenueDialog(config_json) {
 
         $("#cvd_universe_title_" + universe_num).html("U" + universe_num);
 
-        $("#cvd_dmx_port_" + universe_num).multiselect({ minWidth: 100, multiple: false, selectedList: 1, header: false });
+        $("#cvd_dmx_config_" + universe_num).multiselect({ minWidth: 100, multiple: false, selectedList: 1, header: false });
         $("#cvd_dmx_type_" + universe_num).multiselect({ minWidth: 170, multiple: false, selectedList: 1, header: false });
         $("#cvd_packet_delay_" + universe_num).spinner({ min: 50, max: 1000, value: 0 }).val(delay);
         $("#cvd_minimum_delay_" + universe_num).spinner({ min: 0, max: 1000, value: 0 }).val(min_delay);
 
         for (var i = 0; i < config_json.ports.length; i++) {
             var port = config_json.ports[i];
-            $("#cvd_dmx_port_" + universe_num).append($('<option>', {
-                value: port == UNUSED ? "" : port,
+            $("#cvd_dmx_config_" + universe_num).append($('<option>', {
+                value: port,
                 text: port,
-                selected: port == dmx_port
+                selected: port == dmx_config
             }));
         }
 
-        $("#cvd_dmx_port_" + universe_num).multiselect("refresh");
+        $("#cvd_dmx_config_" + universe_num).multiselect("refresh");
 
         for (var i = 0; i < config_json.driver_types.length; i++) {
             var driver_type = config_json.driver_types[i];
@@ -178,12 +208,32 @@ function openConfigureVenueDialog(config_json) {
             }));
         }
 
-        $("#cvd_dmx_type_" + universe_num).multiselect("refresh");
+        var config = $("#cvd_dmx_config_div_" + universe_num);
+        if ( type == 0 || type == 3 )
+            config.hide();
+        else
+            config.show();
+
+        $("#cvd_dmx_type_" + universe_num).unbind("multiselectclick").multiselect("refresh").data("universe", universe_num );
+
+        $("#cvd_dmx_type_" + universe_num).bind("multiselectclick", function (event, ui) {
+            stopEventPropagation(event);
+
+            var my_universe = $(event.target).data("universe");
+
+            var config = $("#cvd_dmx_config_div_" + my_universe);
+
+            if ( ui.value == 0 || ui.value == 3 )
+                config.hide();
+            else
+                config.show();
+        });
     }
 
     $("#cvd_audio_boost").spinner().val(config_json.audio_boost);
     $("#cvd_audio_boost_floor").spinner().val(config_json.audio_boost_floor);
     $("#cvd_auto_blackout").spinner("value", config_json.auto_blackout);
+    $("#cvd_track_fixtures").attr('checked', config_json.track_fixtures);
 
     for (var i = 1024; i <= 1024 * 8; i *= 2) {
         $("#cvd_audio_sample_size").append($('<option>', {
@@ -257,6 +307,10 @@ function loadSaveVenue(event) {
                 click: function () {
                     $("#load_save_dialog").dialog("close");
                     var ice_dialog = put_user_on_ice("Working ... Please wait");
+
+                    // Make suire venue changes are written
+                    if ( client_config_update )
+                        saveVenueLayout();
 
                     if ($("#lsd_accordion").accordion('option', 'active') == 0) {
                         var json = { venue_filename: $("#lsd_file_name").val() };
@@ -356,97 +410,159 @@ function loadSaveVenue(event) {
 //
 function updateVenueLayout() {
 
-    $.getJSON("/dmxstudio/rest/query/venue/layout/", function (data) {
-        client_config = data;
-        for (var prop in client_config) {
-            if (prop == "edit_mode")
-                setEditMode(client_config.edit_mode);
-            else if (prop == "playlist") 
-                setCurrentPlaylist(client_config.playlist);
-            else if (prop == "act") {
-                current_act = client_config.act;
-                $("#act_" + current_act).prop("checked", true).button("refresh");
-                createSceneTiles();
-                createChaseTiles();
-                update_current_act();
-            }
-            else if (prop == "sections") {
-                for (section in client_config.sections) {
-                    if (section == "act_pane") {
-                        setSectionCollapsed("act_pane", client_config.sections.act_pane.collapsed);
-                    }
-                    else if (section == "scene_tiles_pane") {
-                        scene_tile_panel.setScrollContent(client_config.sections.scene_tiles_pane.scroll);
-                        setSectionCollapsed("scene_tiles_pane", client_config.sections.scene_tiles_pane.collapsed);
-                    }
-                    else if (section == "chase_tiles_pane") {
-                        chase_tile_panel.setScrollContent(client_config.sections.chase_tiles_pane.scroll);
-                        setSectionCollapsed("chase_tiles_pane", client_config.sections.chase_tiles_pane.collapsed);
-                    }
-                    else if (section == "fixture_tiles_pane") {
-                        fixture_tile_panel.setScrollContent(client_config.sections.fixture_tiles_pane.scroll);
-                        setSectionCollapsed("fixture_tiles_pane", client_config.sections.fixture_tiles_pane.collapsed);
-                    }
-                    else if (section == "slider_pane") {
-                        slider_panel.setScrollContent(client_config.sections.slider_pane.scroll);
-                        setSectionCollapsed("slider_pane", client_config.sections.slider_pane.collapsed);
-                    }
-                    else if (section == "venue_pane") {
-                        setSectionCollapsed("venue_pane", client_config.sections.venue_pane.collapsed);
-                    }
-                    else if (section == "music_pane") {
-                        setSectionCollapsed("music_pane", client_config.sections.music_pane.collapsed);
-                    }
-                }
-            }
-        }
+    $.ajax({
+        type: "GET",
+        url: "/dmxstudio/rest/query/venue/layout/",
+        cache: false,
+        success: function (data) {
+            client_config = jQuery.parseJSON( data );
+            restoreVenueLayout( );
+        },
+
+        error: onAjaxError
     });
 }
 
 // ----------------------------------------------------------------------------
 //
+function updateClientConfig( config_update ) {
+    if ( client_config == null )
+        client_config = { "sections": {} };
+
+    for ( id in config_update ) {
+        if ( id === "playlist") 
+            changeCurrentPlaylist( config_update.playlist );
+        else
+            client_config.sections[ id ] = config_update[ id ];
+    }
+
+    client_config_update = true;
+}
+
+// ----------------------------------------------------------------------------
+//
+function restoreVenueLayout( ) {
+    if ( client_config == null )
+        return;
+
+    for (var prop in client_config) {
+        if (prop === "edit_mode")
+            setEditMode(client_config.edit_mode);
+        else if (prop == "playlist") 
+            changeCurrentPlaylist(client_config.playlist);
+        else if (prop === "act") {
+            current_act = client_config.act;
+            $("#act_" + current_act).prop("checked", true).button("refresh");
+            createSceneTiles();
+            createChaseTiles();
+            update_current_act();
+        }
+        else if ( prop === "quick_effect" ) {
+            setMacroMultiColor(client_config.quick_effect.multi_color);
+            if (client_config.quick_effect.color_speed_ms != undefined)
+                setMacroColorSpeed(parseInt(client_config.quick_effect.color_speed_ms));
+            if (client_config.quick_effect.move_speed_ms != undefined )
+                setMacroMoveSpeed(parseInt(client_config.quick_effect.move_speed_ms));
+            setMacroEffect( parseInt( client_config.quick_effect.effect ) );
+            setMacroColor( client_config.quick_effect.color );
+            setMacroMovement( parseInt( client_config.quick_effect.movement ) );
+        }
+        else if (prop === "sections") {
+            for (section in client_config.sections) {
+                if (section === "act_pane") {
+                    setSectionCollapsed("act_pane", client_config.sections.act_pane.collapsed);
+                }
+                else if (section === "scene_tiles_pane") {
+                    scene_tile_panel.setContentLayout(client_config.sections.scene_tiles_pane.scroll);
+                    setSectionCollapsed("scene_tiles_pane", client_config.sections.scene_tiles_pane.collapsed);
+                }
+                else if (section === "chase_tiles_pane") {
+                    chase_tile_panel.setContentLayout(client_config.sections.chase_tiles_pane.scroll);
+                    setSectionCollapsed("chase_tiles_pane", client_config.sections.chase_tiles_pane.collapsed);
+                }
+                else if (section === "fixture_tiles_pane") {
+                    fixture_tile_panel.setContentLayout(client_config.sections.fixture_tiles_pane.scroll);
+                    setSectionCollapsed("fixture_tiles_pane", client_config.sections.fixture_tiles_pane.collapsed);
+                    fixture_tile_panel.setTileLock( typeof client_config.sections.fixture_tiles_pane.locked === "boolean" ? 
+                        client_config.sections.fixture_tiles_pane.locked : false );
+                }
+                else if (section === "effects_pane") {
+                    setSectionCollapsed("effects_pane", client_config.sections.effects_pane.collapsed);
+                }
+                else if (section === "slider_pane") {
+                    slider_panel.setScrollContent(client_config.sections.slider_pane.scroll);
+                    setSectionCollapsed("slider_pane", client_config.sections.slider_pane.collapsed);
+                }
+                else if (section === "animation_tiles_pane") {
+                    animation_tile_panel.setContentLayout(client_config.sections.animation_tiles_pane.scroll);
+                    setSectionCollapsed("animation_tiles_pane", client_config.sections.animation_tiles_pane.collapsed);
+                }
+                else if (section === "venue_pane") {
+                    setSectionCollapsed("venue_pane", client_config.sections.venue_pane.collapsed);
+                }
+                else if (section === "music_pane") {
+                    setSectionCollapsed("music_pane", client_config.sections.music_pane.collapsed);
+                }
+            }
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+//
 function saveVenueLayout() {
-    client_config = {};
+    if ( client_config == null )
+        client_config = { "sections": {} };
+
     client_config.edit_mode = edit_mode;
     client_config.act = current_act;
     client_config.playlist = getCurrentPlaylist();
 
-    client_config.sections = {
-        "venue_pane": {
-            "collapsed": isSectionCollapsed("venue_pane")
-        },
-        "music_pane": {
-            "collapsed": isSectionCollapsed("music_pane")
-        },
-        "act_pane": {
-            "collapsed": isSectionCollapsed("act_pane")
-        },
-        "scene_tiles_pane": {
-            "scroll": scene_tile_panel.isScrollContent(),
-            "collapsed": isSectionCollapsed("scene_tiles_pane")
-        },
-        "chase_tiles_pane": {
-            "scroll": chase_tile_panel.isScrollContent(),
-            "collapsed": isSectionCollapsed("chase_tiles_pane")
-        },
-        "fixture_tiles_pane": {
-            "scroll": fixture_tile_panel.isScrollContent(),
-            "collapsed": isSectionCollapsed("fixture_tiles_pane")
-        },
-        "slider_pane": {
-            "scroll": slider_panel.isScrollContent(),
-            "collapsed": isSectionCollapsed("slider_pane")
-        }
+    client_config.quick_effect = {
+        "effect": $("#macro_effect").val(),
+        "color_speed_ms": $("#macro_color_speed").val(),
+        "move_speed_ms": $("#macro_move_speed").val(),
+        "movement": $("#macro_movement").val(),
+        "color": macro_color,
+        "multi_color": $( "#macro_multi_color" ).hasClass( "whiteout_effect_selected" )
     };
 
-    client_config_update = false;
+    client_config.sections[ "venue_pane" ] = { "collapsed": isSectionCollapsed("venue_pane") };
+    client_config.sections[ "music_pane" ] = { "collapsed": isSectionCollapsed("music_pane") };
+    client_config.sections[ "act_pane" ] = { "collapsed": isSectionCollapsed("act_pane") };
+    client_config.sections[ "effects_pane" ] = { "collapsed": isSectionCollapsed("effects_pane") };
+
+    client_config.sections[ "scene_tiles_pane" ] = { 
+        "scroll": scene_tile_panel.getContentLayout(),
+        "collapsed": isSectionCollapsed("scene_tiles_pane")
+    };
+    client_config.sections[ "chase_tiles_pane" ] = {
+            "scroll": chase_tile_panel.getContentLayout(),
+            "collapsed": isSectionCollapsed("chase_tiles_pane")
+    };
+    client_config.sections[ "fixture_tiles_pane" ] = {
+            "scroll": fixture_tile_panel.getContentLayout(),
+            "collapsed": isSectionCollapsed("fixture_tiles_pane"),
+            "locked": fixture_tile_panel.getTileLock()
+    };
+    client_config.sections[ "slider_pane" ] = {
+            "scroll": slider_panel.isScrollContent(),
+            "collapsed": isSectionCollapsed("slider_pane")
+    };
+    client_config.sections[ "animation_tiles_pane" ] = {
+            "scroll": animation_tile_panel.getContentLayout(),
+            "collapsed": isSectionCollapsed("animation_tiles_pane")
+    };
 
     $.ajax({
         type: "POST",
         url: "/dmxstudio/rest/edit/venue/layout/save",
         data: JSON.stringify(client_config),
         contentType: 'application/json',
+        async: false,
         cache: false,
         error: onAjaxError
     });
+
+    client_config_update = false;
 }

@@ -1,0 +1,222 @@
+<?xml version="1.0" ?>
+<fixture_definitions>
+    <author>Robert DeSantis</author>
+    <version>1</version>
+	
+    <fixture type="wash" channels="9">
+        <manufacturer>Lixada</manufacturer>
+        <model>Min Wash</model>
+        <channels>
+            <channel index="1" type="pan" color="false" blackout="false" home_value="0">
+                <name>Pan</name>
+                <angles>
+                  <angle degrees="0" value="0" />
+                  <angle degrees="90" value="43" />
+                  <angle degrees="180" value="84" />
+                  <angle degrees="270" value="127" />
+                  <angle degrees="360" value="169" />
+                  <angle degrees="450" value="210" />
+                  <angle degrees="540" value="255" />
+                </angles>
+            </channel>
+            <channel index="2" type="tilt" color="false" blackout="false" home_value="130">
+                <name>Tilt</name>
+                <angles>
+                    <angle degrees="90" value="0" />
+                    <angle degrees="180" value="255" />
+                </angles>
+            </channel>
+            <channel index="3" type="dimmer/strobe" color="false" blackout="true" value="134">
+                <dimmer lowest_intensity="8" highest_intensity="134" off_intensity="8" />
+                <strobe off="0" speed_slow="135" speed_fast="239" />
+                <name>Dimmer/Strobe</name>
+                <ranges>
+                    <range start="0" end="7">
+                        <name>No Strobe</name>
+                    </range>
+                    <range start="8" end="134">
+                        <name>Light to dark dimmer</name>
+                    </range>
+                    <range start="135" end="239">
+                        <name>Strobe speed</name>
+                    </range>
+                    <range start="240" end="251">
+                        <name>Strobe option</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="4" type="red" color="true" blackout="true">
+                <name>Red</name>
+            </channel>
+            <channel index="5" type="green" color="true" blackout="true">
+                <name>Green</name>
+            </channel>
+            <channel index="6" type="blue" color="true" blackout="true">
+                <name>Blue</name>
+            </channel>
+            <channel index="7" type="white" color="true" blackout="true">
+                <name>White</name>
+            </channel>		
+			      <channel index="8" type="movement speed" color="false" blackout="false">
+                <name>Movement Speed</name>
+            </channel>
+            <channel index="9" type="control" color="false" blackout="false">
+                <name>Reset</name>
+                <ranges>
+                    <range start="0" end="149">
+                        <name>No Function</name>
+                    </range>
+                    <range start="150" end="200">
+                        <name>Reset</name>
+                    </range>
+                    <range start="201" end="255">
+                        <name>No Function</name>
+                    </range>
+                 </ranges>
+            </channel>			
+        </channels>
+    </fixture>	
+	
+    <fixture type="wash" channels="14">
+        <manufacturer>Lixada</manufacturer>
+        <model>Min Wash</model>
+        <channels>
+            <channel index="1" type="pan" color="false" blackout="false" home_value="0">
+                <name>Pan</name>
+              <angles>
+                <angle degrees="0" value="0" />
+                <angle degrees="90" value="43" />
+                <angle degrees="180" value="84" />
+                <angle degrees="270" value="127" />
+                <angle degrees="360" value="169" />
+                <angle degrees="450" value="210" />
+                <angle degrees="540" value="255" />
+              </angles>
+            </channel>
+            <channel index="2" type="pan fine" color="false" blackout="false">
+                <name>Pan Fine</name>
+            </channel>
+            <channel index="3" type="tilt" color="false" blackout="false" home_value="130">
+                <name>Tilt</name>
+              <angles>
+                <angle degrees="90" value="0" />
+                <angle degrees="180" value="255" />
+              </angles>
+            </channel>
+            <channel index="4" type="tilt fine" color="false" blackout="false">
+                <name>Tilt Fine</name>
+            </channel>
+            <channel index="5" type="movement speed" color="false" blackout="false">
+                <name>Movement Speed</name>
+            </channel>
+            <channel index="6" type="dimmer/strobe" color="false" blackout="true" value="134">
+                <dimmer lowest_intensity="8" highest_intensity="134" off_intensity="8" />
+                <strobe off="0" speed_slow="135" speed_fast="239" />
+                <name>Dimmer/Strobe</name>
+                <ranges>
+                    <range start="0" end="7">
+                        <name>No Strobe</name>
+                    </range>
+                    <range start="8" end="134">
+                        <name>Light to dark dimmer</name>
+                    </range>
+                    <range start="135" end="239">
+                        <name>Strobe speed</name>
+                    </range>
+                    <range start="240" end="251">
+                        <name>Strobe option</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="7" type="red" color="true" blackout="true">
+                <name>Red</name>
+            </channel>
+            <channel index="8" type="green" color="true" blackout="true">
+                <name>Green</name>
+            </channel>
+            <channel index="9" type="blue" color="true" blackout="true">
+                <name>Blue</name>
+            </channel>
+            <channel index="10" type="white" color="true" blackout="true">
+                <name>White</name>
+            </channel>			
+            <channel index="11" type="color macro" color="false" blackout="true">
+                <name>Color Macro</name>
+                <ranges>
+                    <range start="0" end="7">
+                        <name>No Function</name>
+                    </range>
+
+                    <range start="8" end="12">
+                      <name>Yellow</name>
+                    </range>
+
+                    <range start="31" end="34">
+                      <name>Red</name>
+                    </range>
+
+                    <range start="65" end="70">
+                      <name>Purple</name>
+                    </range>
+
+                    <range start="95" end="100">
+                        <name>Blue</name>
+                    </range>
+                  
+                    <range start="108" end="112">
+                        <name>Cyan</name>
+                    </range>                  
+
+                    <range start="127" end="132">
+                      <name>Green</name>
+                    </range>
+
+                    <range start="160" end="231">
+                      <name>White</name>
+                    </range>
+                  
+                  <range start="232" end="255">
+                        <name>Color Change Macro</name>
+                    </range>
+                </ranges>
+            </channel>
+            <channel index="12" type="color speed" color="false" blackout="false">
+                <name>Color Speed</name>
+            </channel>
+            <channel index="13" type="movement macro" color="false" blackout="false">
+                <name>Movement Macro</name>
+                <ranges>
+                    <range start="0" end="7">
+                        <name>No Function</name>
+                    </range>
+                    <range start="8" end="63">
+                        <name>Fast Movement</name>
+                    </range>
+                    <range start="64" end="127">
+                        <name>Slow Movement</name>
+                    </range>
+                    <range start="128" end="191">
+                        <name>Sound Active #1</name>
+                    </range>
+                    <range start="192" end="255">
+                        <name>Sound Active #2</name>
+                    </range>
+                 </ranges>
+            </channel>
+            <channel index="14" type="control" color="false" blackout="false">
+                <name>Reset</name>
+                <ranges>
+                    <range start="0" end="149">
+                        <name>No Function</name>
+                    </range>
+                    <range start="150" end="200">
+                        <name>Reset</name>
+                    </range>
+                    <range start="201" end="255">
+                        <name>No Function</name>
+                    </range>
+                 </ranges>
+            </channel>			
+        </channels>
+    </fixture>
+</fixture_definitions>

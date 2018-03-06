@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011,2012 Robert DeSantis
+Copyright (C) 2011,2017 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -25,11 +25,13 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
-Chase::Chase( UID uid, ChaseNumber chase_number, ULONG delay_ms, ULONG fade_ms, const char * name, const char *description, bool repeat ) :
+Chase::Chase( UID uid, ChaseNumber chase_number, ULONG delay_ms, ULONG fade_ms, const char * name, 
+              const char *description, bool repeat, ChaseStepTrigger step_trigger ) :
     DObject( uid, chase_number, name, description ),
     m_delay_ms(delay_ms),
     m_fade_ms(fade_ms),
-    m_repeat( repeat )
+    m_repeat( repeat ),
+    m_step_trigger( step_trigger )
 {
 }
 
@@ -40,8 +42,8 @@ Chase::Chase( Chase& other ) :
     m_delay_ms( other.m_delay_ms ),
     m_fade_ms( other.m_fade_ms ),
     m_repeat( other.m_repeat ),
-    m_acts( other.m_acts ),
-    m_chase_steps( other.m_chase_steps )
+    m_chase_steps( other.m_chase_steps ),
+    m_step_trigger( other.m_step_trigger )
 {
 }
 

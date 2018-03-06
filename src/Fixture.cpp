@@ -27,14 +27,18 @@ MA 02111-1307, USA.
 // ----------------------------------------------------------------------------
 //
 Fixture::Fixture( UID uid, FixtureNumber fixture_number,
-                                  universe_t universe, channel_t base_address, 
-                                  FUID fuid, const char *name, const char *description ) :
+                    universe_t universe, channel_address base_address, 
+                    FUID fuid, const char *name, const char *description,
+                    bool allow_master_dimming, bool allow_whiteout ) :
     DObject( uid, fixture_number, name, description ),
     m_universe( universe ),
     m_address( base_address ),
     m_fuid( fuid ),
-    m_fixture_definition( NULL )
+    m_fixture_definition( NULL ),
+    m_allow_master_dimming( allow_master_dimming ),
+    m_allow_whiteout( allow_whiteout )
 {
+	computeChannelBaseRealAddress();
 }
 
 // ----------------------------------------------------------------------------
@@ -43,15 +47,3 @@ Fixture::~Fixture(void)
 {
 }
 
-// ----------------------------------------------------------------------------
-//
-bool Fixture::setPhysicalChannels( ChannelList& channel_map ) {
-    if ( channel_map.size() == 0 )
-        m_channel_map.clear();
-    else if ( channel_map.size() == getNumChannels() )
-        m_channel_map = channel_map;
-    else
-        return false;
-
-    return true;
-}

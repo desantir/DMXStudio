@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-2013 Robert DeSantis
+Copyright (C) 2011-2017 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -21,12 +21,15 @@ MA 02111-1307, USA.
 */
 
 #include "HttpFull.h"
-
+#include "HttpUtils.h"
 #include "Venue.h"
+
+#define SPOTIFY_REDIRECT_URI "http://localhost/dmxstudio/full/spotify/"
 
 // ----------------------------------------------------------------------------
 //
-HttpFull::HttpFull(void)
+HttpFull::HttpFull( UINT port ) :
+    IRequestHandler( port )
 {
 }
 
@@ -43,8 +46,8 @@ DWORD HttpFull::processGetRequest( HttpWorkerThread* worker )
     try {
         CString path( CW2A( worker->getRequest()->CookedUrl.pAbsPath ) );
         int pos = path.Find( '?' );
-        if ( pos != -1 )                                        // Remove query string
-           path = path.Left( pos );
+        if ( pos != -1 )
+			path = path.Left( pos );
 
         CString prefix( path );
         if ( prefix.GetLength() > 0 && prefix[prefix.GetLength()-1] != '/' )
@@ -53,6 +56,19 @@ DWORD HttpFull::processGetRequest( HttpWorkerThread* worker )
         if ( prefix == DMX_URL_ROOT_FULL ) {                  // Redirect to full index page
             return worker->sendRedirect( DMX_URL_FULL_HOME );
         }
+		else if ( prefix == DMX_SPOTIFY_AUTHORIZE ) {		// Spotify authorize response
+			CString response;
+			bool success = spotify_authorize( worker, CW2A( worker->getRequest()->CookedUrl.pQueryString ), response );
+
+			CString redirect_url;
+			redirect_url.Format( "/dmxstudio/full/show-status.htm?status=%s", encodeString( response ) );
+			worker->sendRedirect( (LPCSTR)redirect_url );
+
+			studio.fireEvent( ES_STUDIO, NOUID, EA_MESSAGE, response, success ? 0 : 2 );
+
+			if ( success )
+				studio.fireEvent( ES_MUSIC_PLAYER, NOUID, EA_START );
+		}
 
         // Invoke the approriate handler
         RestHandlerFunc func = NULL;
@@ -90,5 +106,80 @@ DWORD HttpFull::processGetRequest( HttpWorkerThread* worker )
 DWORD HttpFull::processPostRequest( HttpWorkerThread* worker, BYTE* contents, DWORD size  ) 
 {
     return worker->error_501();
+}
+
+// ----------------------------------------------------------------------------
+// see https://developer.spotify.com/web-api/authorization-guide/
+
+bool HttpFull::spotify_authorize( HttpWorkerThread* worker, LPCSTR query, CString& response ) {
+	if ( !studio.getMusicPlayer()->isLoaded() || strcmp( "SPOTIFY", studio.getMusicPlayer()->getPlayerType() ) ) {
+		response = "Spotify music player is not available";
+		return false;
+	}
+
+	if ( query == NULL ) {
+		response = "Spotify sign-on failed";
+		return false;
+	}
+
+	BYTE *buffer = NULL;
+	ULONG buffer_size = 0L;
+
+	try {
+		std::map<CString,CString> parameters;
+		std::map<CString,CString>::iterator it;
+
+		parseQuery( parameters, query );
+	
+		// Make sure this response copntains the expected state for this session	
+		it = parameters.find( "state" );
+		if ( it == parameters.end( ) || it->second != worker->getSession( )->getId( ) )
+			throw std::exception( "invalid state" );
+
+		// If there is an error field, then the sign-on failed
+		it = parameters.find( "error" );
+		if ( it != parameters.end( ) )
+			throw std::exception( it->second );
+
+		// Get the authorization code to get access and refresh tokens 	
+		it = parameters.find( "code" );
+		if ( it == parameters.end( ) )
+			throw std::exception( "missing authorization code" );
+
+		// Generate the body for our request
+		CString body;
+		body.Format( "grant_type=authorization_code&code=%s&redirect_uri=%s", (LPCSTR)it->second, (LPCSTR)encodeString( SPOTIFY_REDIRECT_URI ) );
+
+		// Generate the authorization header
+		char base64[2048];
+		int base64len = sizeof(base64);
+		encodeBase64( studio.getMusicPlayer()->getPlayerAuthorization(), base64, &base64len );
+
+		CStringW http_headers;
+		http_headers.Format( L"Authorization: Basic %s\r\nContent-Type: application/x-www-form-urlencoded\r\n", 
+			(LPCWSTR)CA2W(base64) );
+
+		httpPost( L"accounts.spotify.com", "/api/token", body, (LPCWSTR)http_headers, &buffer, &buffer_size );
+
+		buffer = (BYTE *)realloc( buffer, buffer_size+1 );
+		buffer[buffer_size] = '\0';
+
+		if ( !studio.getMusicPlayer()->acceptAuthorization( buffer, buffer_size ) )
+			throw std::exception( "authorization not accepted" );
+
+		free( buffer );
+
+		response = "Spotify sign-on successful!";
+		return true;
+	}
+	catch ( std::exception& e ) {
+		if ( buffer != NULL )
+			free( buffer );
+
+		studio.log( e );
+
+		response.Format( "Spotity sign-on error (%s)", e.what() );
+		return false;
+	}
 }
 

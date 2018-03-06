@@ -28,81 +28,31 @@ MA 02111-1307, USA.
 #include "BPMRating.h"
 #include "MusicPlayer.h"
 #include "EventBus.h"
-
-#define DMX_MAX_UNIVERSES          4
-#define DMX_PACKET_SIZE            512
-#define MULTI_UNIV_PACKET_SIZE     (DMX_PACKET_SIZE*DMX_MAX_UNIVERSES)
-
-#define INVALID_CHANNEL             0xFFFF
-
-#define SAFE_RELEASE(punk)  \
-              if ((punk) != NULL)  \
-                { (punk)->Release(); (punk) = NULL; }
-
-typedef unsigned int channel_t;
-typedef unsigned int universe_t;
-
-typedef unsigned char BYTE;
-
-typedef DWORD UID;
-typedef std::set<UID> UIDSet;
-typedef std::vector<UID> UIDArray;
-typedef std::vector<LPCSTR> LPCSTRArray;
-
-#define NOUID   0L
-
-typedef std::vector<channel_t> ChannelList;
-
-inline UIDSet UIDArrayToSet( UIDArray& uid_array ) {
-    UIDSet uid_set;
-    uid_set.insert( uid_array.begin(), uid_array.end() );
-    return uid_set;
-}
-
-template <class T, class R>
-R maxKeyValue( T& map ) {
-    R maxValue = 0;
-
-    for ( T::iterator it=map.begin(); it != map.end(); ++it ) {
-        if ( it->first > maxValue )
-            maxValue = it->first;
-    }
-
-    return maxValue;
-}
+#include "VideoFinder.h"
+#include "IniFile.h"
 
 class Venue;
-class EventBus;
 class MusicPlayer;
 
 class DMXStudio : public EventBusListener, IPlayerEventCallback
 {
+    IniFile             m_config;
+
     FILE*               m_hLog;
-    bool                m_debug;
+
     CCriticalSection    m_venue_mutex;
     Venue*              m_venue;
-    CString             m_venue_container;                      // Location on server where all venue files are kept
-    CString             m_venue_filename;                       // Venue filename relative to venue_container
-    UINT                m_http_port;
-    StrobeTime          m_whiteout_strobe_slow;
-    StrobeTime          m_whiteout_strobe_fast;
-    bool                m_enable_http;
     MusicPlayer*        m_music_player;
-    bool                m_dmx_required;
+    VideoFinder         m_video_finder;
     EventBus            m_event_bus;                            // Studio events
 
 public:
     DMXStudio();
     ~DMXStudio();
-
-    void readIniFile();
-    void writeIniFile();
         
     inline Venue* getVenue() const {
         return m_venue;
     }
-
-    void createMusicPlayer( LPCSTR username, LPCSTR player_dll_path );
 
     inline bool hasMusicPlayer() const {
         return m_music_player != NULL;
@@ -111,65 +61,133 @@ public:
         return m_music_player;
     }
 
-    bool isDMXRequired() const {
-        return m_dmx_required;
-    }
-    void setDMXRequired( bool required ) {
-        m_dmx_required = required;
+    inline VideoFinder* getVideoFinder() {
+        return &m_video_finder;
     }
 
-    LPCSTR getVenueFileName() const {
-        return m_venue_filename;
+    inline LPCSTR getGoogleAPIKey() const {
+        return m_config.m_google_api_key;
     }
-    void setVenueFileName( LPCSTR filename ) {
-        m_venue_filename = filename;
-    }
-
-    LPCSTR getVenueContainer() const {
-        return m_venue_container;
-    }
-    void setVenueContainer( LPCSTR container ) {
-        m_venue_container = container;
+    inline void setGoogleAPIKey( LPCSTR key ) {
+        m_config.m_google_api_key = key;
     }
 
-    bool getEnableHttp() const {
-        return m_enable_http;
+    inline bool isDMXRequired() const {
+        return m_config.m_dmx_required;
+    }
+    inline void setDMXRequired( bool required ) {
+        m_config.m_dmx_required = required;
     }
 
-    StrobeTime getWhiteoutStrobeSlow() const {
-        return m_whiteout_strobe_slow;
+    inline LPCSTR getVenueFileName() const {
+        return m_config.m_venue_filename;
     }
-    void setWhiteoutStrobeSlow( StrobeTime strobe_slow ) {
-        m_whiteout_strobe_slow = strobe_slow;
+    inline void setVenueFileName( LPCSTR filename ) {
+        m_config.m_venue_filename = filename;
+    }
+
+    inline LPCSTR getVenueContainer() const {
+        return m_config.m_venue_container;
+    }
+    inline void setVenueContainer( LPCSTR container ) {
+        m_config.m_venue_container = container;
+    }
+
+    inline bool isHttpEnabled() const {
+        return m_config.m_http_enabled;
+    }
+
+    inline StrobeTime getWhiteoutStrobeSlow() const {
+        return m_config.m_whiteout_strobe_slow;
+    }
+    inline void setWhiteoutStrobeSlow( StrobeTime strobe_slow ) {
+        m_config.m_whiteout_strobe_slow = strobe_slow;
     }
         
-    StrobeTime getWhiteoutStrobeFast() const {
-        return m_whiteout_strobe_fast;
+    inline StrobeTime getWhiteoutStrobeFast() const {
+        return m_config.m_whiteout_strobe_fast;
     }
-    void setWhiteoutStrobeFast( StrobeTime strobe_fast ) {
-        m_whiteout_strobe_fast = strobe_fast;
-    }
-
-    bool isDebug() const {
-        return m_debug;
-    }
-    void setDebug( bool debug ) {
-        m_debug = debug;
+    inline void setWhiteoutStrobeFast( StrobeTime strobe_fast ) {
+        m_config.m_whiteout_strobe_fast = strobe_fast;
     }
 
-    UINT getHttpPort() const {
-        return m_http_port;
+    inline StrobeTime getWhiteoutStrobeManual() const {
+        return m_config.m_whiteout_strobe_manual;
     }
-    void setHttpPort( UINT http_port ) {
-        m_http_port = http_port;
+    inline void setWhiteoutStrobeManual( StrobeTime strobe_manual ) {
+        m_config.m_whiteout_strobe_manual = strobe_manual;
+    }
+
+    inline bool isDebug() const {
+        return m_config.m_debug;
+    }
+    inline void setDebug( bool debug ) {
+        m_config.m_debug = debug;
+    }
+
+    inline UINT getHttpPort() const {
+        return m_config.m_http_port;
+    }
+    inline void setHttpPort( UINT http_port ) {
+        m_config.m_http_port = http_port;
+    }
+
+    inline LPCSTR getHueBridgeIP() const {
+        return m_config.m_hue_bridge_ip;
+    }
+    inline void setHueBridgeIP( LPCSTR hue_bridge_ip ) {
+        m_config.m_hue_bridge_ip = hue_bridge_ip;
+    }
+
+    inline std::set<UINT> getHueIgnoredLights() const {
+        return m_config.m_hue_ignored_lights;
+    }
+    inline void setHueIgnoredLights( std::set<UINT> hue_ignored_lights ) {
+        m_config.m_hue_ignored_lights = hue_ignored_lights;
+    }
+    inline bool isHueLightIgnored( UINT light_number ) const {
+        return m_config.m_hue_ignored_lights.find( light_number ) != m_config.m_hue_ignored_lights.end();
+    }
+
+    inline bool isHueAutoSetup() const {
+        return m_config.m_hue_auto_setup;
+    }
+    void setHueAutoSetup( bool hue_auto_setup) {
+        m_config.m_hue_auto_setup = hue_auto_setup;
+    }
+
+    inline std::set<CString>* getHueAllowedGroups() {
+        return &m_config.m_hue_allowed_groups;
+    }
+    inline void setHueAllowedGroups( std::set<CString> hue_allowed_groups ) {
+        m_config.m_hue_allowed_groups = hue_allowed_groups;
+    }
+    inline bool hasHueAllowedGroups() const {
+        return m_config.m_hue_allowed_groups.size() > 0;
+    }
+
+    inline size_t getVideosPerTrack() const {
+        return m_config.m_videos_per_track;
+    }
+    inline void setVideosPerTrack( size_t videos_per_track ) {
+        m_config.m_videos_per_track = videos_per_track;
+    }
+
+    inline size_t getVideosPaletteSize() const {
+        return m_config.m_video_palette_size;
+    }
+    inline void setVideosPaletteSize( size_t video_palette_size ) {
+        m_config.m_videos_per_track = video_palette_size;
     }
 
     void runStudio();
 
+    static CString getUserDocumentDirectory();
     static void log( std::exception& ex );
     static void log( StudioException& ex );
     static void log( const char *fmt, ... );
     static void log_status( const char *fmt, ... );
+    static void log_warning( const char *fmt, ... );
     static bool fireEvent( EventSource source, DWORD uid, EventAction action, LPCSTR text=NULL, DWORD val1=0L, DWORD val2=0L, DWORD val3=0L, DWORD val4=0L );
     static EventBus* getEventBus();
 
@@ -181,7 +199,7 @@ public:
     bool newVenue( );
 
     bool handleEvent( const Event& event );
-    HRESULT STDMETHODCALLTYPE notify( TrackEventData* pNotify );
+    HRESULT STDMETHODCALLTYPE notify( PlayerEventData* pNotify );
 
 private:
     Venue* readVenueFromFile( LPCSTR input_file );
@@ -193,6 +211,12 @@ private:
     void openStudioLogFile( void);
     void closeStudioLogFile( void );
     void showIpAddress( void );
+
+    void readIniFile();
+    void writeIniFile();
+
+    void createMusicPlayer( LPCSTR username, LPCSTR player_dll_path );
 };
 
 extern DMXStudio studio;
+

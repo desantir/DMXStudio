@@ -175,6 +175,7 @@
                 </ranges>
             </channel>
             <channel index="4" type="strobe" color="false" blackout="true">
+                <strobe off="0" speed_slow="5" speed_fast="254"/>
                 <name>LED Strobe (ch2 10-255)</name>
                 <ranges>
                     <range start="0" end="4">
@@ -256,6 +257,7 @@
                 </ranges>
             </channel>
             <channel index="7" type="strobe" color="false" blackout="true">
+                <strobe off="0" speed_slow="5" speed_fast="254"/>
                 <name>Laser Strobe (ch6 10-255)</name>
                 <ranges>
                     <range start="0" end="4">

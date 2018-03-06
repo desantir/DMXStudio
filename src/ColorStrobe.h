@@ -23,52 +23,76 @@ MA 02111-1307, USA.
 #pragma once
 
 #include "RGBWA.h"
+#include "ColorFader.h"
 
-struct StrobeTime {
-    UINT m_on_ms;
-    UINT m_off_ms;
-
-    StrobeTime( UINT on_ms=0, UINT off_ms=0 ) :
-        m_on_ms( on_ms ),
-        m_off_ms( off_ms )
-    {}
-};
-
-struct StrobeState {
-    bool    m_on;
-    UINT    m_time_ms;
-
-    StrobeState( bool on, UINT time_ms ) :
-        m_on( on ),
-        m_time_ms( time_ms )
-    {}
+enum StrobeState {
+    SE_NONE,
+    SE_START,                   // Internal restart sequence - not returned
+    SE_OFF,
+    SE_FADE_IN_START,
+    SE_FADE_IN,
+    SE_ON,
+    SE_FADE_OUT_START,
+    SE_FADE_OUT
 };
 
 class ColorStrobe
 {
+    struct StrobeStep {
+        StrobeState     m_event;
+        UINT            m_time_ms;
+
+        StrobeStep( StrobeState event, UINT time_ms ) :
+            m_event( event ),
+            m_time_ms( time_ms )
+        {}
+    };
+
     RGBWA			m_strobe_positive;
     RGBWA			m_strobe_negative;
 
     StrobeTime      m_timing;
 
     DWORD			m_strobe_next_ms;
-    bool			m_strobe_on;
-
-    UINT            m_flashes;
-
+    StrobeState 	m_current_state;
     UINT            m_index;
-    std::vector<StrobeState> m_states;
+    std::vector<StrobeStep> m_states;
+    ColorFader      m_fader;
+    bool            m_auto_fade;
+    RGBWA           m_strobe_color;
+    RGBWAArray      m_positive_colors;
+    size_t          m_positive_index;
 
 public:
-    ColorStrobe( void ) {}
+    ColorStrobe( void ) :
+        m_strobe_next_ms( 0 ),
+        m_current_state( SE_OFF ),
+        m_index( 0 ),
+        m_positive_index( 0 )
+    {}
+
     ~ColorStrobe(void) {}
 
-    inline bool isOn() const { return m_strobe_on; }
+    inline bool isOn() const { 
+        return m_current_state == StrobeState::SE_ON ||
+            m_current_state == StrobeState::SE_FADE_IN_START ||
+            m_current_state == StrobeState::SE_FADE_IN ||
+            m_current_state == StrobeState::SE_FADE_OUT_START ||
+            m_current_state == StrobeState::SE_FADE_OUT;
+    }
 
-    inline RGBWA rgbwa() { return m_strobe_on ? m_strobe_positive : m_strobe_negative; }
-
+    RGBWA rgbwa();
+    
+    // For simple strobe, return strobe state change
+    inline bool check_strobe( DWORD time_ms ) {
+        return strobe( time_ms ) != SE_NONE;
+    }
+    
     inline void setPositive( const RGBWA& rgbwa ) {
         m_strobe_positive = rgbwa;
+        m_positive_index = 0;
+
+        RGBWA::resolveColor( rgbwa, m_positive_colors );
     }
     inline RGBWA getPositive() const {
         return m_strobe_positive;
@@ -81,7 +105,6 @@ public:
         return m_strobe_negative;
     }
 
-    void start( DWORD time_ms, UINT light_ms, UINT dark_ms, UINT flashes );
-    void start( DWORD time_ms, const StrobeTime& timing, UINT flashes );
-    bool strobe( DWORD time_ms );
+    void start( DWORD time_ms, const StrobeTime& timing, bool auto_fade=false );
+    StrobeState strobe( DWORD time_ms );
 };

@@ -20,10 +20,10 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "SoundDetector.h"
 
-unsigned SoundDetector::maxAmplitude = 999;
+// NOTE: The sound capture device level can affect this maximum
+unsigned SoundDetector::maxAmplitude = 1000;
 
 // ----------------------------------------------------------------------------
 //
@@ -35,7 +35,10 @@ SoundDetector::SoundDetector( DWORD mute_ms ) :
     m_ampbuf_index( 0 ),
     m_ampbuf_sum( 0 ),
     m_ampbuf_count( 0 ),
-    m_amplitude_buffer( NULL )
+    m_amplitude_buffer( NULL ),
+    m_amplitude_beat( 0 ),
+    m_avg_amplitude( 0 ),
+    m_beat_index( 0 )
 {
 }
 
@@ -54,11 +57,11 @@ void SoundDetector::attach( AudioInputStream* audio ) {
     m_audio_stream = audio;
 
     if ( audio ) {
-        m_amplitude_buffer_size = audio->getSamplesPerSecond() / audio->getSampleSize();
+        m_amplitude_buffer_size = audio->getSamplesPerSecond() / audio->getSampleSize();    // Approx 1 second of samples
 
         if ( m_amplitude_buffer_size > 0 ) {
             m_amplitude_buffer = new unsigned[m_amplitude_buffer_size];
-            memset( m_amplitude_buffer, 0 , sizeof(m_amplitude_buffer) );
+            memset( m_amplitude_buffer, 0 , m_amplitude_buffer_size * sizeof(unsigned) );
         }
 
         m_audio_stream->addAudioProcessor( this, ProcessorFormat( 2, false) );
@@ -85,26 +88,31 @@ HRESULT SoundDetector::ProcessAmplitudes( WORD channels, size_t sample_size, flo
 
     // Determine peak amplitude for both channels (values approach 1.0 where .999 is loudest and .000 is no sound)
     float peak_amplitude = 0;
+	float sample;
+
     for ( size_t i=0; i < sample_size; i++ ) {
-        float sample = abs( sample_data[LEFT_CHANNEL][i] );
+        sample = sample_data[LEFT_CHANNEL][i] < 0.0 ? -sample_data[LEFT_CHANNEL][i] : sample_data[LEFT_CHANNEL][i];
         if ( sample > peak_amplitude )
             peak_amplitude = sample;
 
         if ( channels > 1 ) {
-            float sample = abs( sample_data[RIGHT_CHANNEL][i] );
+            sample = sample_data[RIGHT_CHANNEL][i] < 0.0 ? -sample_data[RIGHT_CHANNEL][i] : sample_data[RIGHT_CHANNEL][i];
             if ( sample > peak_amplitude )
                 peak_amplitude = sample;
         }
     }
 
-    // Convert to 0 - 999
-    m_amplitude = (unsigned)(peak_amplitude * 1000.0);
+    DWORD time_ms = GetTickCount();
 
-    DWORD time = GetTickCount();
+    CSingleLock( &m_access_lock, true );
+
+    // Convert to 0 - 1000
+    m_amplitude = std::min<unsigned>( (unsigned)(peak_amplitude * 1000.0), SoundDetector::maxAmplitude );
+
     if ( m_amplitude > 0 )
-        m_last_sound_ms = time;
+        m_last_sound_ms = time_ms;
     else
-        m_last_quiet_ms = time;
+        m_last_quiet_ms = time_ms;
 
     // Compute moving average 
     if ( m_ampbuf_count < m_amplitude_buffer_size )
@@ -118,5 +126,37 @@ HRESULT SoundDetector::ProcessAmplitudes( WORD channels, size_t sample_size, flo
     if ( ++m_ampbuf_index >= m_amplitude_buffer_size )
         m_ampbuf_index = 0;
 
+    m_avg_amplitude = m_ampbuf_count == 0 ? 0 : m_ampbuf_sum/m_ampbuf_count;
+
+    // Primitive peak (beat) detection
+
+    if ( m_amplitude > 0 && m_avg_amplitude > 0 ) {
+        unsigned beat_intensity = (m_amplitude*100) / m_avg_amplitude;
+
+        if ( beat_intensity < 110 ) {
+            m_amplitude_beat = 0;
+            m_beat_index = 0;
+        }
+        else if ( m_beat_index + 200 < time_ms ) {
+           m_amplitude_beat = beat_intensity - 100;
+           m_beat_index = time_ms;
+        }
+    }
+    else {
+        m_amplitude_beat = 0;
+        m_beat_index = 0;
+    }
+
     return 0;
+}
+
+// ----------------------------------------------------------------------------
+//
+void SoundDetector::getSoundData( SoundLevel& level ) {
+    CSingleLock( &m_access_lock, true );
+
+    level.amplitude = m_amplitude;
+    level.avg_amplitude = m_avg_amplitude;
+    level.amplitude_beat = m_amplitude_beat;
+    level.beat_index = m_beat_index;
 }

@@ -83,8 +83,8 @@ function showBeatVisualizer() {
     $("#beat_visualizer_data").append(html);
 
     beat_objects = [];
-    for (var i = 0; i < beat_frequencies.length; i++)
-        beat_objects.push($("#beat_bin_" + i));
+    for (var j = 0; j < beat_frequencies.length; j++)
+        beat_objects.push($("#beat_bin_" + j));
 
     $("#beat_visualizer_dialog").dialog("open");
 
@@ -169,7 +169,7 @@ function updateBeats() {
             setTimeout(updateBeats, 100);
         },
         error: function () {
-            setTimeout(restartBeats, 1000);
+            $("#beat_visualizer_dialog").dialog("close");
         }
     });
 }

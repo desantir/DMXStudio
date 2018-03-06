@@ -27,14 +27,13 @@ MA 02111-1307, USA.
 //
 SceneActor::SceneActor( Fixture *pf ) :
     m_uid( pf->getUID() ),
-    m_group( false), 
-    m_channels( pf->getNumChannels() )
+    m_group( false)
 {
-    reset_channel_values();
+    m_channel_values.setNumChannels( pf->getNumChannels() );
 
     // Copy channel defaults
-    for ( channel_t channel=0; channel < m_channels; channel++ ) {
-        m_channel_values[ channel ] = pf->getChannel( channel )->getDefaultValue();
+    for ( size_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+        m_channel_values.set( channel, pf->getChannel( channel )->getDefaultValue() );
     }
 }
 
@@ -42,24 +41,24 @@ SceneActor::SceneActor( Fixture *pf ) :
 //
 SceneActor::SceneActor( Venue* venue, FixtureGroup *fg ) :
     m_uid( fg->getUID() ),
-    m_group( true ),
-    m_channels(0)
+    m_group( true )
 {
-    reset_channel_values();
+    reset();
 
     if ( fg->getNumChannelValues() > 0 ) {
-        m_channels = fg->getNumChannelValues();
-        fg->getChannelValues( m_channel_values );
+		channel_value channel_values[DMX_PACKET_SIZE];
+
+        fg->getChannelValues( channel_values );
+        m_channel_values.setAll( fg->getNumChannelValues(), channel_values );
     }
     else {
         Fixture* pf = venue->getGroupRepresentative( fg->getUID() );
-
         if ( pf != NULL ) {         // Make sure this is not an empty group
-            m_channels = pf->getNumChannels();
+            m_channel_values.setNumChannels( pf->getNumChannels() );
 
             // Copy channel defaults
-            for ( channel_t channel=0; channel < m_channels; channel++ ) {
-                m_channel_values[ channel ] = pf->getChannel( channel )->getDefaultValue();
+            for ( size_t channel=0; channel < pf->getNumChannels(); channel++ ) {
+                m_channel_values.set( channel, pf->getChannel( channel )->getDefaultValue() );
             }
         }
     }

@@ -27,5 +27,5 @@ MA 02111-1307, USA.
 #include "stdafx.h"
 #include "DMXStudio.h"
 
-// TODO: reference any additional headers you need in STDAFX.H
+// Reference any additional headers you need in STDAFX.H
 // and not in this file

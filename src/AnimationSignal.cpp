@@ -20,30 +20,41 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-
 #include "AnimationSignal.h"
-#include "AnimationTask.h"
 
-const unsigned AnimationSignal::MAXIMUM_LEVEL = 100;
+static LPCSTR triggerNames[] = { "None", "Timer", "Frequency Beat", "Amplitude Beat", "Random Timer" };
+static LPCSTR sourceNames[] = { "None", "Always High", "Amplitude", "Avg. Amplitude", "Amplitude Beat Intensity", "Frequency", "Volume", "Squarewave", "Sawtooth", "Sinewave", "Triangle", "Random", "Always Low" };
 
 // ----------------------------------------------------------------------------
 //
-AnimationSignal::AnimationSignal( DWORD sample_rate_ms, 
-                                  AnimationSignalInput input_type, 
-                                  DWORD sample_decay,
-                                  unsigned input_low,
-                                  unsigned input_high,
-                                  unsigned scale_factor,
-                                  unsigned max_threshold,
-                                  ApplySignal apply_to ) :
-        m_sample_rate_ms( sample_rate_ms ),
-        m_sample_decay_ms( sample_decay ),
-        m_input_type( input_type ),
-        m_input_low( input_low ),
-        m_input_high( input_high ),
-        m_scale_factor( scale_factor ),
-        m_max_threshold( max_threshold ),
-        m_apply_to( apply_to )
+AnimationSignal::AnimationSignal( SignalTrigger trigger, 
+                                  SignalSource source,
+                                  DWORD timer_ms,
+                                  DWORD off_ms,
+                                  UINT level_floor,
+                                  UINT level_ceil,
+                                  bool level_invert,
+                                  UINT level_scale,
+                                  UINT level_periods,
+                                  UINT freq_low_hz,
+                                  UINT freq_high_hz,
+                                  SpeedAdjust speed_adjust,
+                                  UINT level_hold,
+                                  UINT sensitivity ) :
+        m_trigger( trigger ),
+        m_source( source ),
+        m_timer_ms( timer_ms ),
+        m_off_ms( off_ms ),
+        m_level_floor( level_floor ),
+        m_level_ceil( level_ceil ),
+        m_level_invert( level_invert ),
+        m_level_scale( level_scale ),
+        m_level_periods( level_periods ),
+        m_freq_low_hz( freq_low_hz ),
+        m_freq_high_hz( freq_high_hz ),
+        m_speed_adjust( speed_adjust ),
+        m_level_hold( level_hold ),
+        m_sensitivity( sensitivity )
 {
 }
 
@@ -56,194 +67,72 @@ AnimationSignal::~AnimationSignal(void)
 // ----------------------------------------------------------------------------
 //
 CString AnimationSignal::getSynopsis() const {
-    CString synopsis;
-    CString input;
+    CString synopsis( triggerNames[m_trigger ] );
+    CString speed_adjust;
 
-    switch ( m_input_type ) {
-        case CAI_TIMER_ONLY:
-            input = "Timer";
+    switch ( m_speed_adjust ) {
+        case SPEED_NORMAL:
             break;
 
-        case CAI_SOUND_LEVEL:
-            input = "Sound level";
+        case SPEED_SLOW:
+            speed_adjust.AppendFormat( " level reduces" );
             break;
 
-        case CAI_AVG_SOUND_LEVEL:
-            input = "Avg sound level";
-            break;
-
-        case CAI_FREQ_BEAT:
-            input = "Frequency beat %uHz-%uHz";
-            break;
-
-        case CAI_FREQ_LEVEL:
-            input = "Frequency level %uHz-%uHz";
-            break;
-
-        case CAI_RANDOM:
-            input = "Random level %u-%u";
+        case SPEED_FAST:
+            speed_adjust.AppendFormat( " level increases" );
             break;
     }
 
-    synopsis.Format( input, m_input_low, m_input_high );
-    synopsis.AppendFormat( " rate=%lums", m_sample_rate_ms );
+    switch ( m_trigger ) {
+        case TRIGGER_TIMER:
+            synopsis.AppendFormat( "=%dms%s", m_timer_ms, speed_adjust );
+            break;
 
-    if ( m_input_type != CAI_TIMER_ONLY ) {
-        synopsis.AppendFormat( " curve=%u decay=%lums threshold=%u",
-            m_scale_factor, m_sample_decay_ms, m_max_threshold );
+        case TRIGGER_RANDOM_TIMER:
+            synopsis.AppendFormat( "=0-%dms%s", m_timer_ms, speed_adjust );
+            break;
+        
+        case TRIGGER_FREQ_BEAT:
+            synopsis.AppendFormat( "=%d-%d Hz", m_freq_low_hz, m_freq_high_hz );
+            break;
 
-        synopsis.Append( " apply=" );
-
-        if ( m_apply_to == 0 )
-            synopsis.Append( "none" );
-        else {
-            if ( isApplyToChannel() )
-                synopsis.Append( "values " );
-            if ( isApplyToSpeed() )
-                synopsis.Append( "speed " );
-            if ( isApplyInverseSpeed() )
-                synopsis.Append( "-speed " );
-        }
+        case TRIGGER_AMPLITUDE_BEAT:
+            synopsis.AppendFormat( " sensitivity=%u", m_sensitivity );
+            break;
     }
+
+    if ( m_off_ms > 0 ) 
+        synopsis.AppendFormat( " off=%dms", m_off_ms );
+
+    synopsis.AppendFormat( " source=%s", sourceNames[m_source] );
+
+    switch ( m_source ) {
+        case SOURCE_AMPLITUDE:
+        case SOURCE_AVG_AMPLITUDE:
+        case SOURCE_FREQ:
+        case SOURCE_BEAT_INTENSITY:
+            synopsis.AppendFormat( " hold periods=%d", m_level_hold );
+            break;
+
+        case SOURCE_HIGH:
+        case SOURCE_LOW:
+        case SOURCE_VOLUME:
+        case SOURCE_SOUND:
+            break;
+
+        case SOURCE_SQUAREWAVE:
+        case SOURCE_SAWTOOTH:
+        case SOURCE_SINEWAVE:
+        case SOURCE_TRIANGLEWAVE:
+        case SOURCE_RANDOM:
+            synopsis.AppendFormat( " periods=%d hold periods=%d", m_level_periods, m_level_hold );
+            break;
+    }
+    
+    if ( !m_level_invert )
+        synopsis.AppendFormat( " level=%d-%d scale=%d", m_level_floor, m_level_ceil, m_level_scale );
+    else
+        synopsis.AppendFormat( " level=%d-%d scale=%d", m_level_ceil, m_level_floor, m_level_scale );
 
     return synopsis;
-}
-
-// ----------------------------------------------------------------------------
-//
-AnimationSignalProcessor::AnimationSignalProcessor( 
-            AnimationSignal& signal_definition, 
-            AnimationTask* task ) :
-    m_signal_def( signal_definition ),
-    m_animation_task( task ),
-    m_detector( NULL ),
-    m_sampler( NULL )
-{
-    m_next_sample_ms = m_decay_ms = 0;
-    m_beat = false;
-    m_decay_latch = false;
-    m_scale_max = pow( (double)AnimationSignal::MAXIMUM_LEVEL, (double)m_signal_def.getScaleFactor() );
-
-    // Start event generators
-    if ( m_signal_def.getInputType() == CAI_FREQ_BEAT ) {
-        m_detector = new BeatDetector( 64 );
-        m_detector->attach( task->getAudio() );
-        m_detector->addFrequencyEvent( &this->m_trigger, m_signal_def.getInputLow(), m_signal_def.getInputHigh() );
-    }
-    else if ( m_signal_def.getInputType() == CAI_FREQ_LEVEL ) {
-        m_sampler = new SoundSampler( 2 );
-        m_sampler->attach( task->getAudio() );
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
-AnimationSignalProcessor::~AnimationSignalProcessor( )
-{
-    if ( m_detector ) {
-        m_detector->removeFrequencyEvent( &this->m_trigger );
-        delete m_detector;
-        m_detector = NULL;
-    }
-
-    if ( m_sampler ) {
-        m_sampler->detach();
-        delete m_sampler;
-        m_sampler = NULL;
-    }
-}
-
-// ----------------------------------------------------------------------------
-//
-bool AnimationSignalProcessor::tick( DWORD time_ms )
-{
-    bool tick = true;
-
-    if ( m_signal_def.getInputType() == CAI_FREQ_BEAT ) {
-        bool beat = ( ::WaitForSingleObject( m_trigger.m_hObject, 1 ) == WAIT_OBJECT_0 );
-
-        // Not in a beat and don't have to decay existing beat, just leave
-        if ( !beat && (!m_beat || time_ms < m_next_sample_ms) )
-            tick = false;
-        else
-            m_beat = beat;
-    }
-    else if ( time_ms < m_next_sample_ms ) {
-        tick = false;
-    }
-
-    if ( !tick ) {
-        if ( m_decay_ms && time_ms > m_decay_ms ) {		// Handle value decay
-            m_decay_latch = true;
-            m_decay_ms = 0;
-        }
-        return false;
-    }
-
-    m_level = 0;
-
-    switch ( m_signal_def.getInputType() ) {
-        case CAI_TIMER_ONLY:
-            m_level = AnimationSignal::MAXIMUM_LEVEL;
-            break;
-
-        case CAI_FREQ_BEAT:
-            m_level = (m_beat) ? AnimationSignal::MAXIMUM_LEVEL : 0;
-            break;
-    
-        case CAI_FREQ_LEVEL:
-            // The amplitude will be between 0 (no sound) and 150+ (loudness)
-            m_level = level_adjust( m_sampler->getLevel( m_signal_def.getInputLow(), m_signal_def.getInputHigh() ) * 100 / 150 );
-            break;
-
-        case CAI_SOUND_LEVEL:
-            m_level = level_adjust( m_animation_task->getSoundLevel() * 100 / SoundDetector::maxAmplitude );
-            break;
-
-        case CAI_AVG_SOUND_LEVEL:
-            m_level = level_adjust( m_animation_task->getAvgAmplitude() * 100 / SoundDetector::maxAmplitude );
-            break;
-    }
-
-    // Determine next time slice
-
-    DWORD sample_rate_ms = m_signal_def.getSampleRateMS();
-
-    switch ( m_signal_def.getInputType() ) {
-        case CAI_RANDOM:
-            m_level = level_adjust( rand() % (sample_rate_ms+1) );
-
-        case CAI_FREQ_LEVEL:
-        case CAI_SOUND_LEVEL:
-        case CAI_AVG_SOUND_LEVEL:
-            if ( m_signal_def.isApplyToSpeed() ) {
-                m_next_sample_ms = time_ms + std::max<int>( 10, (sample_rate_ms * (100-m_level)) / 100 );
-                break;
-            }
-            else if ( m_signal_def.isApplyInverseSpeed() ) {
-                m_next_sample_ms = time_ms + std::max<int>( 10, (sample_rate_ms * m_level) / 100 );
-                break;
-            }
-
-        case CAI_TIMER_ONLY:
-        case CAI_FREQ_BEAT:
-            m_next_sample_ms = time_ms + sample_rate_ms;
-            break;
-    }
-
-    if ( m_signal_def.getSampleDecayMS() )
-        m_decay_ms = time_ms + m_signal_def.getSampleDecayMS();
-
-    return tick;
-}
-
-// ----------------------------------------------------------------------------
-//
-unsigned AnimationSignalProcessor::getLevel()
-{
-    if ( m_signal_def.getInputType() == CAI_RANDOM )		// Random values 0 to 100
-        m_level = m_signal_def.getInputLow() + 
-            (rand() % (m_signal_def.getInputHigh()-m_signal_def.getInputLow()+1));	
-
-    return m_level;
 }

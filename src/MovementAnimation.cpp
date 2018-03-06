@@ -78,6 +78,9 @@ MovementAnimation::MovementAnimation( const MovementAnimation& other ) {
 // ----------------------------------------------------------------------------
 //
 MovementAnimation& MovementAnimation::operator=( const MovementAnimation& other ) {
+    if ( this == &other )
+        return *this;
+
     m_movement_type = other.m_movement_type;
     m_head_number = other.m_head_number;
     m_tilt_start = other.m_tilt_start;

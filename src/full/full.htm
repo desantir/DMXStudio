@@ -1,7 +1,7 @@
-<!DOCTYPE html> 
+ï»¿<!DOCTYPE html> 
 
 <!--
-Copyright (C) 2011-2016 Robert DeSantis
+Copyright (C) 2011-2018 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -22,11 +22,14 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 -->
 
+<!-- Some icons from icons8.com -->
+
 <html> 
 
 <head> 
     <title>DMXStudio</title> 
     <meta name="viewport" content="width=device-width, initial-scale=1"> 
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
     <link rel="shortcut icon" href="favicon.ico">
 
     <link rel="stylesheet" href="css/dark-hive-custom/jquery-ui-1.9.2.custom.css" />
@@ -43,12 +46,21 @@ MA 02111-1307, USA.
     <script src="jquery.track-visualize.js"></script>
     <link rel="stylesheet" href="jquery-toastmessage/css/jquery.toastmessage.css" />    
     <script src="jquery-toastmessage/jquery.toastmessage.js"></script>
+    <script src="jquery.contextMenu.js"></script>
+    <link rel="stylesheet" href="jquery.contextMenu.css" />
 
+    <script src="volume-control.js"></script>
+    <script src="track-control.js"></script>
+    <script src="track-select.js"></script>
+    <script src="utils.js"></script>
+    <script src="select-list.js"></script>
     <script src="slider-panel.js"></script>
     <script src="tile-scroll-panel.js"></script>
     <script src="full.js"></script>
     <script src="venue.js"></script>
     <script src="music-player.js"></script>
+    <script src="music-match.js"></script>
+    <script src="palette.js"></script>
     <script src="fixture.js"></script>
     <script src="chase.js"></script>
     <script src="scene.js"></script>
@@ -57,6 +69,8 @@ MA 02111-1307, USA.
     <script src="freqviz.js"></script>
     <script src="chase-track.js"></script>
     <script src="events.js"></script>
+    <script src="ampviz.js"></script>
+    <script src="animationlevelviz.js"></script>
 
     <link rel="stylesheet" href="full.css" />
 
@@ -67,73 +81,74 @@ MA 02111-1307, USA.
     </script>
 </head> 
 
-<body style="background-color:black;" oncontextmenu="return false;">
+<body style="background-color:black;" oncontextmenu="return false;" onkeydown="keyEvent(event);">
 
 <div id="venue_pane" class="ui-widget-content ui-corner-all collapsable_section">
     <div class="section_title_container">
         <span class="section_title">VENUE</span>
         <span class="collapsable_icon"></span>
+        <div style="float:left; display:inline;">
+            <span id="debugoutput" style="color:black;height:20px;"></span>
+        </div>
         <span id="system_status_icon" class="ui-icon-red ui-icon-bullet" title="status:" style="float:right;"></span>
         <span id="system_blackout_icon" class="ui-icon-red ui-icon-lightbulb" title="auto blackout" style="float:right; display: none; margin-right: 5px;"></span>
     </div>
     <div class="collapsable_content" style="margin-top: 8px; margin-bottom: 10px; height: 80px;">
-        <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
-            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; width:100%; margin: 0px 0px 4px 0px;" >Blackout</p>
+        <div style="margin: 4px 20px 4px 5px; float:left; display:inline;">
+            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px 0px 4px 0px;" >Blackout</p>
             <div id="blackout_buttons">
                 <input type="radio" id="blackout_0" name="blackout" value="0" checked="checked" /><label for="blackout_0">Off</label>
                 <input type="radio" id="blackout_1" name="blackout" value="1" /><label for="blackout_1">On</label>
             </div>
         </div>
-        <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
-            <div class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px 0px 4px 0px;" >Whiteout
-                <div id="whiteout_colorchip" style="display: inline-block;" class="whiteout_colorchip"></div>
-                <span id="whiteout_colorpicker" class="ui-icon ui-icon-lightbulb" title="whiteout color" style="float:right; cursor:pointer; margin-right: 5px;"></span>
+
+        <div style="margin: 4px 20px 4px 5px; float:left; display:inline;">
+            <div class="ui-state-default ui-corner-all subsection_title" style="margin: 0px 0px 4px 0px;">
+                <div style="display: inline-block; margin: 4px 4px 4px 4px;">Whiteout</div>
+                <div id="whiteout_colorpicker" style="display: inline-block; float:right;" class="whiteout_colorchip ui-corner-all" title="whiteout color"></div>
+                <div style="display: inline-block; float:right; width:8px;">&nbsp;</div>
+                <div id="whiteout_effect_2" style="display: inline-block; float:right;" class="whiteout_button" title="palette smart color">S</div>
+                <div id="whiteout_effect_1" style="display: inline-block; float:right;" class="whiteout_button" title="palette multi-color">M</div>
+                <div id="whiteout_effect_0" style="display: inline-block; float:right;" class="whiteout_button" title="palette single color">1</div>
             </div>
-            <div id="whiteout_buttons">
-                <input type="radio" id="whiteout_0" name="whiteout" value="0" checked="checked" /><label for="whiteout_0">Off</label>
-                <input type="radio" id="whiteout_1" name="whiteout" value="1" /><label for="whiteout_1">Slow</label>
-                <input type="radio" id="whiteout_2" name="whiteout" value="2" /><label for="whiteout_2">Fast</label>
-                <input type="radio" id="whiteout_4" name="whiteout" value="4" /><label for="whiteout_4">On</label>
-                <input type="radio" id="whiteout_3" name="whiteout" value="3" /><label for="whiteout_3">Custom:</label>&nbsp;&nbsp;&nbsp;
-                <select id="whiteout_custom_value" style="width:80px;"></select>
-            </div>
-        </div>
-        <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
-            <p class="ui-state-default ui-corner-all subsection_title" style="margin: 0px 0px 4px 0px; padding: 4px;">Current Animation Speed</p>
-            <select id="animations_speed" style="width:80px;">
-                <option value="0" selected>no animations</option>
-                <option value="25">25 ms</option>
-                <option value="50">50 ms</option>
-                <option value="75">75 ms</option>
-                <option value="100">100 ms</option>
-                <option value="150">150 ms</option>
-                <option value="200">200 ms</option>
-                <option value="250">250 ms</option>
-                <option value="500">500 ms</option>
-                <option value="1000">1 sec</option>
-                <option value="1500">1.5 secs</option>
-                <option value="2000">2 secs</option>
-                <option value="2500">2.5 secs</option>
-                <option value="5000">5 secs</option>
-                <option value="10000">10 secs</option>
-                <option value="15000">15 secs</option>
-            </select>
-        </div>
-        <div style="margin: 4px 30px 4px 10px; float:left; display:inline;">
-            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px; width:100%; margin: 0px 0px 4px 0px;" >Music Match</p>
-            <div id="music_match_buttons">
-                <input type="radio" id="music_match_0" name="music_match_enable" value="0" checked="checked" /><label for="music_match_0">Off</label>
-                <input type="radio" id="music_match_1" name="music_match_enable" value="1" /><label for="music_match_1">On</label>
+            <div>
+                <div id="whiteout_buttons" style="float: left; margin: 0px 10px 0px 0px;">
+                    <input type="radio" id="whiteout_0" name="whiteout" value="0" checked="checked" /><label for="whiteout_0">Off</label>
+                    <input type="radio" id="whiteout_1" name="whiteout" value="1" /><label for="whiteout_1">Slow</label>
+                    <input type="radio" id="whiteout_2" name="whiteout" value="2" /><label for="whiteout_2">Fast</label>
+                    <input type="radio" id="whiteout_4" name="whiteout" value="4" /><label for="whiteout_4">On</label>
+                    <input type="radio" id="whiteout_3" name="whiteout" value="3" /><label for="whiteout_3">Strobe</label>
+                    <input type="radio" id="whiteout_5" name="whiteout" value="5" /><label for="whiteout_5">Pulse</label>
+                </div>
             </div>
         </div>
-        <div style="float:left; display:inline;">
-            <span id="debugoutput" style="color:black;height:20px;"></span>
+
+        <div style="margin: 4px 20px 4px 5px; float:left; display:inline;">
+            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px 0px 4px 0px;" title="whiteout strobe and multicolor palette timer">Timer</p>
+            <div>
+                  <select id="whiteout_custom_value" style="width:80px;"></select>
+            </div>
         </div>
-        <div style="float:right; display:inline;">
-            <div id="save_load_venue" class="lg-icon-grey lg-icon-folder menu_icon" title="load / save venue" style="float:right;width:32px;"></div>
-            <div id="configure_venue" class="lg-icon-grey lg-icon-gear menu_icon" title="venue configuration" style="float:right;"></div>
-            <div id="toggle_edit_mode" class="lg-icon-grey lg-icon-pencil menu_icon" title="edit" style="float:right;"></div>
+
+        <div style="margin: 4px 20px 4px 5px; float:left; display:inline;">
+            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px 0px 4px 0px;" title="multicolor palette fade">Fade</p>
+            <div>
+                <select id="whiteout_fade_value" style="width:80px"></select>
+            </div>
         </div>
+
+        <div style="margin: 4px 20px 4px 5px; float:left; display:inline;">
+            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px 0px 4px 0px;">Animation Speed</p>
+            <div>
+                <select id="animation_speed" style="width:80px;"></select>
+            </div>
+        </div>
+
+        <div id="save_load_venue" class="lg-icon-grey lg-icon-folder menu_icon" title="load / save venue" style="float:right; margin: 0px 6px 0px 0px;"></div>
+        <div id="configure_venue" class="lg-icon-grey lg-icon-gear menu_icon" title="venue configuration" style="float:right; margin-right: 10px;"></div>
+        <div id="toggle_edit_mode" class="lg-icon-grey lg-icon-pencil menu_icon" title="edit" style="float:right; margin-right: 10px;"></div>
+        <div id="show_palette_editor" class="lg-icon-grey lg-icon-sparkle menu_icon" title="palettes" style="float:right; margin-right: 10px;"></div>
+        <div id="show_music_select" class="lg-icon-grey lg-icon-speaker menu_icon" title="music select" style="float:right; margin-right: 10px;"></div>
     </div>
 </div>
 
@@ -145,45 +160,51 @@ MA 02111-1307, USA.
         <span id="track_status" class="track_status"></span>
     </div>
     <div class="collapsable_content" style="margin-top: 8px; margin-bottom: 10px; height: 72px; ">
-        <div style="width: 230px; margin: 3px 4px 4px 8px;  float:left; display:inline;">
+        <div id="master_volume" style="width: 230px; margin: 3px 4px 4px 0px;  float:left; display:inline;">
             <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px;" >
-                <span id="volume_mute" class="ui-icon ui-icon-volume-on" style="float: left; margin: -1px 5px 0 0;" title="mute"></span>
-                Master Volume <span id="master_volume_value"></span>
+                <span class="volume_mute ui-icon ui-icon-volume-on" style="float: left; margin: -1px 5px 0 0; cursor: pointer;" title="mute"></span>
+                Master Volume <span class="volume_value"></span>
             </p>
-            <div id="master_volume" style="width: 212px; margin: 10px 8px 8px 8px;"></div>
+            <div class="volume" style="width: 212px; margin: 10px 8px 8px 8px;"></div>
         </div>
-        <div id="track_controls" style="width: 350px; margin: 3px 4px 4px 20px; float:left; display:none;">
+        <div id="track_controls" style="width: 350px; margin: 3px 4px 4px 40px; float:left; display:none;">
             <div class="ui-state-default ui-corner-all" style="float:left; display:inline; height: 34px; width: 100%; padding: 3px 5px 3px 5px;">
-                <div id="now_playing" class="track_title" style="float: left; width: 100%; margin-bottom: 4px;"></div>
-                <div id="track_length" class="track_length" style="clear: both; float: left;"></div>
-                <div id="track_remaining" class="track_length" style="float: right;"></div>
+                <div class="track_title" style="float: left; width: 100%; margin-bottom: 4px;"></div>
+                <div class="track_length" style="clear: both; float: left;"></div>
+                <div  class="track_remaining" style="float: right;"></div>
             </div>
             <div style="clear: both; float:left; margin: 5px 0px 0px 40px;">
-                <div id="track_back_info" class="ui-icon ui-icon-blank" style="float:left; margin-top: 6px;" title="show played tracks"></div>
-                <div id="track_back" class="md-icon-disabled md-icon-track-back menu_icon" title="track back" style="float:left; margin-right: 16px;" ></div>
-                <div id="track_play" class="md-icon-disabled md-icon-track-play menu_icon" title="track play" style="float:left; margin-right: 16px;"></div>
-                <div id="track_stop" class="md-icon-disabled md-icon-track-stop menu_icon" title="track stop" style="float:left; margin-right: 16px;"></div>
-                <div id="track_pause" class="md-icon-disabled md-icon-track-pause menu_icon" title="track pause" style="float:left; margin-right: 16px;"></div>
-                <div id="track_forward" class="md-icon-disabled md-icon-track-forward menu_icon" title="track forward" style="float:left;"></div>
-                <div id="track_forward_info" class="ui-icon ui-icon-blank" style="float:left; margin-top: 6px; width: 14px;" title="show queued tracks"></div>
+                <div class="track_back_info ui-icon ui-icon-blank" style="float:left; margin-top: 6px;" title="show played tracks"></div>
+                <div class="track_back md-icon-disabled md-icon-track-back menu_icon" title="track back" style="float:left; margin-right: 16px;" ></div>
+                <div class="track_play md-icon-disabled md-icon-track-play menu_icon" title="track play" style="float:left; margin-right: 16px;"></div>
+                <div class="track_stop md-icon-disabled md-icon-track-stop menu_icon" title="track stop" style="float:left; margin-right: 16px;"></div>
+                <div class="track_pause md-icon-disabled md-icon-track-pause menu_icon" title="track pause" style="float:left; margin-right: 16px;"></div>
+                <div class="track_forward md-icon-disabled md-icon-track-forward menu_icon" title="track forward" style="float:left;"></div>
+                <div class="track_forward_info ui-icon ui-icon-blank" style="float:left; margin-top: 6px; width: 14px;" title="show queued tracks"></div>
             </div>
         </div>
-        <div id="track_select" style="float:left; margin:3px 0px 0px 36px; display:none;">
+        <div id="track_select" style="float:left; margin:3px 0px 0px 44px; display:none;">
             <div>
-                <select id="playlist_list" style="max-width: 400px;"></select>
+                <select id="playlist_list" style="max-width: 400px; padding: 4px;"></select>
             </div>
-            <div style="margin-top:4px;">
+            <div style="margin-top:6px;">
                 <button id="playlist_play" class="playlist_button">play all</button>
                 <button id="playlist_queue" class="playlist_button">queue all</button>
                 <button id="playlist_tracks" class="playlist_button">track list</button>
             </div>
         </div>
-        <div style="float:right; display:inline;">
-            <div id="show_frequency_visualizer" class="lg-icon-grey lg-icon-chart menu_icon" title="frequency visualizer" style="float:right;"></div>
-            <div id="show_beat_visualizer" class="lg-icon-grey lg-icon-speaker menu_icon" title="beat visualizer" style="float:right;"></div>
-            <div id="show_music_matcher" class="lg-icon-grey lg-icon-tag menu_icon" title="music match mappings" style="float:right;"></div>
-            <!-- div id="show_amplitude_visualizer" class="lg-icon-grey lg-icon-sparkle menu_icon" title="amplitude visualizer" style="float:right;"></div -->
+        <div style="margin: 4px 0px 4px 20px; float:left; display:inline;">
+            <p class="ui-state-default ui-corner-all subsection_title" style="padding: 4px; margin: 0px 0px 4px 0px;">Music Match</p>
+            <div id="music_match_buttons">
+                <input type="radio" id="music_match_0" name="music_match_enable" value="0" checked="checked" /><label for="music_match_0">Off</label>
+                <input type="radio" id="music_match_1" name="music_match_enable" value="1" /><label for="music_match_1">On</label>
+            </div>
         </div>
+
+        <div id="show_amplitude_visualizer" class="lg-icon-grey lg-icon-line_chart menu_icon" title="amplitude visualizer" style="float:right; margin: 0px 6px 0px 6px;"></div>
+        <div id="show_frequency_visualizer" class="lg-icon-grey lg-icon-chart menu_icon" title="frequency visualizer" style="float:right;"></div>
+        <div id="show_beat_visualizer" class="lg-icon-grey lg-icon-antenna menu_icon" title="beat visualizer" style="float:right;"></div>
+        <div id="show_music_matcher" class="lg-icon-grey lg-icon-tag menu_icon" title="music match mappings" style="float:right; margin-right: 10px;"></div>
     </div>
 </div>
 
@@ -224,9 +245,9 @@ MA 02111-1307, USA.
     <div class="section_title_container">
         <span class="section_title">SCENES</span>
         <span class="collapsable_icon"></span>
-        <span class="scroll_or_grid_icon" style="margin-right: 5px;"></span>
-        <span class="ui-icon ui-icon-plusthick edit_mode header_icon" title="new scene" onclick="createScene(event);"></span>
-        <span id="copy_scene_button" class="ui-icon ui-icon-clipboard edit_mode header_icon" title="copy scene" onclick="copyScene(event);"></span>
+        <span class="scroll_or_grid_icon icon_button_right"></span>
+        <span class="ui-icon ui-icon-plusthick edit_mode icon_button_right" title="new scene" onclick="createScene(event);"></span>
+        <span id="copy_scene_button" class="ui-icon ui-icon-clipboard edit_mode icon_button_right" title="copy scene" onclick="copyScene(event);"></span>
     </div>
     <div class="collapsable_content">
         <div class="scroll-content"></div>    
@@ -239,11 +260,12 @@ MA 02111-1307, USA.
 <div id="chase_tiles_pane" class="ui-widget-content ui-corner-all collapsable_section scroll-pane ">
     <div class="section_title_container">
         <span class="section_title">CHASES</span>
-        <span class="collapsable_icon"></span>
-        <span class="scroll_or_grid_icon" style="margin-right: 5px;"></span>
-        <span class="ui-icon ui-icon-plusthick edit_mode header_icon" title="new chase" onclick="createChase(event);"></span>
-        <span id="chaseTrack" class="ui-icon ui-icon-volume-on edit_mode header_icon" title="chase track"></span>
-
+        <span class="collapsable_icon icon_button"></span>
+        <span class="scroll_or_grid_icon icon_button_right"></span>
+        <span class="ui-icon ui-icon-plusthick edit_mode icon_button_right" title="new chase" onclick="createChase(event);"></span>
+        <span id="chaseTrack" class="ui-icon ui-icon-volume-on edit_mode icon_button_right" title="chase track"></span>
+        <span id="chaseAdvance" class="ui-icon ui-icon-seek-next icon_button_right" title="chase advance"></span>
+        <span id="chaseBack" class="ui-icon ui-icon-seek-prev icon_button_right" title="chase back"></span>
     </div>
     <div class="collapsable_content">
         <div class="scroll-content"></div>    
@@ -253,19 +275,118 @@ MA 02111-1307, USA.
     </div>
 </div>
 
+<div id="animation_tiles_pane" class="ui-widget-content ui-corner-all collapsable_section scroll-pane ">
+    <div class="section_title_container">
+        <span class="section_title">ANIMATIONS</span>
+        <span class="collapsable_icon icon_button"></span>
+        <span class="scroll_or_grid_icon icon_button_right"></span>
+        <span class="ui-icon ui-icon-plusthick edit_mode icon_button_right" title="new animation" onclick="createAnimation(event,null);"></span>
+        <span class="ui-icon ui-icon-signal icon_button_right" title="analyze signal level" onclick="showAnimationLevelVisualizer(event);"></span>
+    </div>
+    <div class="collapsable_content">
+        <div class="scroll-content"></div>
+        <div class="scroll-bar-wrap ui-widget-content ui-corner-bottom">
+            <div id="animation_tiles_scrollbar" class="scroll-bar"></div>
+        </div>
+    </div>
+</div>
+
+<div id="effects_pane" class="scroll-pane ui-widget-content ui-corner-all collapsable_section">
+    <div class="section_title_container">
+        <span class="section_title">QUICK EFFECT</span>
+        <span class="collapsable_icon icon_button"></span>
+    </div>
+    <div class="collapsable_content">
+
+        <div class="subsection_title" style="display: inline-block;">
+            <div style="clear: both; float: left; margin: 15px 0px 0px 4px;">
+                effect:
+                <select id="macro_effect" style="padding: 4px;">
+                    <option value="0">none</option>
+                    <option value="1" selected>color</option>
+                    <option value="2">color chase</option>
+                    <option value="3">color strobe</option>
+                    <option value="4">color pulse</option>
+                    <option value="5">color fader</option>
+                    <option value="6">color beat</option>
+                    <option value="7">color breath</option>
+                    <option value="8">random dimmer</option>
+                </select>
+            </div>
+
+            <div style="float: left; margin: 19px 4px 0px 30px;">
+                color:
+            </div>
+
+            <span id="macro_color" class="macro_color_chip" style="float: left; margin: 15px 4px 0px 0px;"></span>
+
+            <div id="macro_multi_color" style="display: inline-block; float:left; margin: 18px 0px 0px 0px;" class="whiteout_button" title="enable multi-color">M</div>
+
+            <div style="float: left; margin: 15px 0px 0px 30px;">
+                color speed:
+                <select id="macro_color_speed" style="padding: 4px;">
+                    <option value="5000">glacial</option>
+                    <option value="3000">slowest</option>
+                    <option value="2000">slower</option>
+                    <option value="1500">slow</option>
+                    <option value="1000" selected>normal</option>
+                    <option value="750">fast</option>
+                    <option value="500">faster</option>
+                    <option value="250">fastest</option>
+                    <option value="100">lightening</option>
+                </select>
+            </div>
+
+            <div style="float: left; margin: 15px 0px 0px 30px;">
+                movement:
+                <select id="macro_movement" style="padding: 4px;">
+                    <option value="0" selected>none</option>
+                    <option value="1">nod in unison</option>
+                    <option value="8">short nod in unison</option>
+                    <option value="2">wave in unison</option>
+                    <option value="3">rotate in unison</option>
+                    <option value="4">random</option>
+                    <option value="5">nod</option>
+                    <option value="9">short nod</option>
+                    <option value="6">wave</option>
+                    <option value="7">rotate</option>
+                </select>
+            </div>
+
+            <div style="float: left; margin: 15px 0px 0px 30px;">
+                move speed:
+                <select id="macro_move_speed" style="padding: 4px;">
+                    <option value="5000">glacial</option>
+                    <option value="3000">slowest</option>
+                    <option value="2000">slower</option>
+                    <option value="2000">slow</option>
+                    <option value="1800" selected>normal</option>
+                    <option value="1600">fast</option>
+                    <option value="800">faster</option>
+                    <option value="4000">fastest</option>
+                </select>
+            </div>
+
+            <button id="macro_go" class="macro_button" style="float: left; margin: 14px 0px 0px 30px;">run</button>
+            <button id="macro_stop" class="macro_button" style="float: left; margin: 14px 0px 0px 8px;">stop</button>
+        </div>
+    </div>
+</div>
+
 <div id="fixture_tiles_pane" class="scroll-pane ui-widget-content ui-corner-all collapsable_section">
     <div class="section_title_container">
         <span class="section_title" >GROUPS & FIXTURES</span>
-        <span class="collapsable_icon"></span>
-        <span class="scroll_or_grid_icon" style="margin-right: 5px;"></span>
-        <span class="ui-icon ui-icon-plusthick edit_mode header_icon" title="new fixture" onclick="createFixture(event);"></span>
-        <span class="ui-icon ui-icon-plusthick edit_mode header_icon" title="new fixture group" style="border: 1px solid #808080;" onclick="createFixtureGroup(event);"></span>
-        <span id="copy_fixtures_button" class="ui-icon ui-icon-clipboard edit_mode header_icon" title="copy fixtures to scene" onclick="copyFixtures(event);"></span>
-        <span id="clear_fixtures_button" class="ui-icon ui-icon-minus play_item header_icon" title="clear all fixtures" style="border: 1px solid #000000;" onclick="clearFixtures(event);" ></span>
+        <span class="collapsable_icon icon_button"></span>
+        <span class="scroll_or_grid_icon icon_button_right"></span>
+        <span class="tile_lock ui-icon ui-icon-locked edit_mode icon_button_right"></span>
+        <span class="ui-icon ui-icon-plusthick edit_mode icon_button_right" title="new fixture" onclick="createFixture(event);"></span>
+        <span class="ui-icon ui-icon-plusthick edit_mode icon_button_right" title="new fixture group" style="border: 1px solid #808080;" onclick="createFixtureGroup(event);"></span>
+        <span id="copy_fixtures_button" class="ui-icon ui-icon-clipboard edit_mode icon_button_right" title="copy fixtures to scene" onclick="copyFixtures(event);"></span>
+        <span id="clear_fixtures_button" class="ui-icon ui-icon-minus play_item icon_button_right" title="clear all fixtures" style="border: 1px solid #000000;" onclick="clearFixtures(event);" ></span>
     </div>
     <div class="collapsable_content">
-        <div class="scroll-content"></div>    
-        <div class="scroll-bar-wrap ui-widget-content ui-corner-bottom">
+        <div class="scroll-content" style="position: relative"></div>    
+        <div class="scroll-bar-wrap ui-widget-content ui-corner-bottom ui-droppable">
             <div id="fixture_tiles_scrollbar" class="scroll-bar"></div>
         </div>
     </div>
@@ -276,14 +397,14 @@ MA 02111-1307, USA.
         <span class="section_title" >CHANNELS</span>
         <span class="collapsable_icon"></span>
 
-        <span class="scroll_or_grid_icon"  style="margin-right: 5px;"></span>
-        <span class="track_slider_icon" style="margin-right: 5px;"></span>
-        <span id="channel_panel_colorpicker" class="ui-icon ui-icon-lightbulb header_icon" title="show color palette"></span>
-        <span id="channel_pan_tilt" class="ui-icon ui-icon-arrow-4 header_icon" title="show pan tilt" onclick="panTilt(event);"></span>
-        <span id="channel_panel_groupcolors" class="ui-icon ui-icon-pin-s header_icon" title="group color channels" onclick="groupFixtureSliderColors(event);"></span>
-        <span id="channel_panel_rearrange" class="ui-icon ui-icon-grip-solid-vertical header_icon" title="arrange channels" onclick="arrangeSliders(event);"></span>
-        <span id="channel_panel_clear_links" class="ui-icon ui-icon-check header_icon" title="clear linked" onclick="resetLinkedSliders(event);"></span>
-        <span id="slider_pane_title" class="slider_pane_title"></span>
+        <span class="scroll_or_grid_icon ui-icon icon_button_right"></span>
+        <span class="track_slider_icon ui-icon icon_button_right"></span>
+        <span class="colorpicker_icon ui-icon ui-icon-lightbulb icon_button_right"></span>
+        <span class="pantilt_icon ui-icon ui-icon-arrow-4 icon_button_right"></span>
+        <span class="groupcolors_icon ui-icon ui-icon-pin-s icon_button_right"></span>
+        <span class="rearrange_icon ui-icon ui-icon-grip-solid-vertical icon_button_right"></span>
+        <span class="clear_links_icon ui-icon ui-icon-check icon_button_right"></span>
+        <span class="slider_pane_title"></span>
     </div>
     <div class="collapsable_content">
         <div class="scroll-content" style="margin-top:0px;"></div>
@@ -301,6 +422,7 @@ MA 02111-1307, USA.
             <div class="slider_slider"></div>
         </div>
         <div class="slider_footer slider_text_color"></div>
+        <input class="slider_footer_input" type="number" value="0" />
         <div class="ui-icon-check slider_select"></div>
     </div>
 </div>
@@ -312,6 +434,13 @@ MA 02111-1307, USA.
     <div id="frequency_sample_rate" style="clear: both; float:left; width: 150px;"></div>
     <div id="frequency_sample_value" style="float:left; margin-left:15px; color:#808080; width: 50px; font-family:sans-serif; font-size: 8pt; margin-top: 2px;"></div>
     <div id="frequency_sample_number" style="float:right; color:#808080; font-family: sans-serif; font-size: 8pt;"></div>
+</div>
+
+<div id="amplitude_visualizer_dialog" title="Amplitude Visualizer" style="display:none;">
+    <div>
+        <div class='amplitude_yaxis'>Amplitude</div>
+        <div id="amplitude_visualizer_chart" style="width:1000px;height:300px; margin: 10px 0px 20px 10px;"></div>
+    </div>
 </div>
 
 <div id="select_track_dialog" title="Select Track" style="display:none;">
@@ -480,19 +609,101 @@ MA 02111-1307, USA.
     <div id="describe_scene_animations" class="describe_data" style="width:100%; clear:both;"></div>
 </div>
 
-<div id="copy_workspace_fixtures_dialog" style="display:none;" title="Copy Active Fixtures To Scene">
+<div id="describe_animation_dialog" style="display:none;margin-bottom: 14px;">
+    <div id="describe_animation_number" class="describe_number" style="cursor: pointer;"></div>
+    <div style="float:left; margin-top: 4px;">
+        <div class="describe_title">type:</div>
+        <div class="describe_data" id="describe_animation_type"></div>
+        <div class="describe_title">name:</div>
+        <div class="describe_data" id="describe_animation_name"></div>
+        <div class="describe_title">acts:</div>
+        <div class="describe_data" id="describe_animation_acts"></div>
+        <div class="describe_title">&nbsp;</div>
+        <div class="describe_data" id="describe_animation_description"></div>
+    </div>
+    <hr style="clear: both;" />
+    <div class="describe_data_title" id="describe_animation_summary" style="margin-bottom: 10px;"></div>
+    <div class="describe_data_title" id="describe_animation_classname"></div>
+    <div class="describe_data" id="describe_animation_synopsis" style="width:100%; margin-left: 20px; font-size: 10pt;"></div>
+    <div class="describe_data_title" style="margin-top: 10px;">Signal</div>
+    <div class="describe_data" id="describe_animation_signal" style="width:100%; margin-left: 20px; font-size: 10pt;"></div>
+    <div class="describe_data_title" style="margin-top: 10px;">Scenes</div>
+    <div class="describe_data" id="describe_animation_scenes" style="width:100%; margin-left: 20px; font-size: 10pt;"></div>
+</div>
+
+<div id="new_animation_dialog" style="display:none;">
+    <form style="height:550px;">
+        <div id="nad_accordion">
+            <h3>General</h3>
+            <div>
+                <div id="nad_share_div" style="margin: 12px 0px 10px 0px;">
+                    <input type="checkbox" id="nad_shared" checked="checked" style="" />
+                    <label for="nad_shared" style="">share animation (allow use by multiple scenes)</label>
+                </div>
+
+                <div id="nad_shared_div" style="margin: 12px 0px 10px 0px;">
+                    shared animation (used by multiple scenes)
+                </div>
+
+                <hr />
+
+                <div id="nad_number_div" >
+                    <label for="nad_number" style="display:block; margin: 10px 0px 4px 0px;">number</label>
+                    <input id="nad_number" style="display:block; width:80px;" />
+                </div>
+
+                <label for="nad_name" style="display:block; margin: 8px 0px 4px 0px;">name</label>
+                <input id="nad_name" style="display:block;width: 400px;" />
+
+                <label for="nad_description" style="display:block; margin: 8px 0px 4px 0px;">description</label>
+                <input id="nad_description" style="display:block; width: 400px;" />
+
+                <div>
+                    <label for="nad_acts" style="display:block; margin: 8px 0px 4px 0px;">acts</label>
+                    <select id="nad_acts" style="display:block;" multiple="multiple"></select>
+                </div>
+            </div>
+
+            <h3>Animation</h3>
+            <div>
+                <select id="nad_type" style="display:block;"></select>
+                <div id="nad_type_description" class="animation_description" style="margin-top: 8px;"></div>
+
+                <div id="nad_reference_fixture_div" style="margin: 4px 0px 20px 0px;">
+                    <label for="nad_reference_fixture" style="display:block; margin: 10px 0px 4px 0px;">show channels from</label>
+                    <select id="nad_reference_fixture" style="display:block;"></select>
+                </div>
+
+                <hr />
+
+                <div id="nad_animation" style="margin-top: 4px;"> </div>
+            </div>
+
+            <h3>Timing</h3>
+            <div>
+                <div id="nad_signal">
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div id="copy_workspace_fixtures_dialog" style="display:none;" title="Copy Active Fixtures To Scene(s)">
     <form> 
         <label for="copy_fixture_fixtures" style="display:block; margin: 8px 0px 4px 0px;">fixture(s)</label>
         <select id="copy_fixture_fixtures" style="display:block;" multiple="multiple" ></select>
 
         <label for="copy_fixture_scene" style="display:block; margin: 12px 0px 4px 0px;">scene</label>
-        <select id="copy_fixture_scene" style="display:block;" ></select>
+        <select id="copy_fixture_scene" style="display:block;" multiple="multiple" ></select>
 
-        <input type="checkbox" id="copy_fixture_keep_groups" checked="checked" value="remove" style="clear:both; margin-top: 12px; float:left;"/>
-        <label for="copy_fixture_keep_groups" style="float:left; margin: 10px 0px 0px 2px;">keep fixtures in groups</label>
+        <input type="checkbox" id="copy_fixture_keep_groups" checked="checked" value="remove" style="clear:both; margin-top: 24px; float:left;"/>
+        <label for="copy_fixture_keep_groups" style="float:left; margin: 20px 0px 0px 2px;">keep fixtures in groups</label>
+
+        <input type="checkbox" id="copy_fixture_keep_animations" checked="checked" style="clear:both; margin-top: 12px; float:left;"/>
+        <label for="copy_fixture_keep_animations" style="float:left; margin: 8px 0px 0px 2px;">copy animations</label>
 
         <input type="checkbox" id="copy_fixture_remove" checked="checked" value="remove" style="clear:both; display:block;margin-top: 12px; float:left;"/>
-        <label for="copy_fixture_remove" style="float:left; margin: 10px 0px 0px 2px;">release fixtures after copy</label>
+        <label for="copy_fixture_remove" style="float:left; margin: 8px 0px 0px 2px;">release fixtures after copy</label>
     </form>
 </div>
 
@@ -507,8 +718,15 @@ MA 02111-1307, USA.
                 <label for="cvd_description" style="display:block; margin: 8px 0px 4px 0px;">description</label>
                 <input id="cvd_description" style="display:block; width: 400px;" />
 
-                <label for="cvd_auto_blackout" style="display:block; margin: 8px 0px 4px 0px;">auto blackout</label>
-                <input id="cvd_auto_blackout" style="display:block; width:80px;" title="blackout on no audio for specified MS (0=off)"/>&nbsp;ms
+                <div>
+                    <label for="cvd_auto_blackout" style="display:block; margin: 8px 0px 4px 0px;">auto blackout</label>
+                    <input id="cvd_auto_blackout" style="display:block; width:80px;" title="blackout on no audio for specified MS (0=off)"/>&nbsp;ms
+                </div>
+
+                <div>
+                    <input type="checkbox" id="cvd_track_fixtures" checked="checked" style="clear:both; margin-top: 16px; float:left;" />
+                    <label for="cvd_track_fixtures" style="float:left; margin: 12px 0px 0px 2px;">fixture color live tracking</label>
+                </div>
             </div>
 
             <h3>DMX</h3>
@@ -516,8 +734,8 @@ MA 02111-1307, USA.
             <div>
                 <div style="clear:both; float:left; margin-bottom: 6px;">
                     <div class="describe_data" style="float:left; width: 40px;">&nbsp;</div>
-                    <div class="describe_data" style="float:left; width: 130px;">port</div>
                     <div class="describe_data" style="float:left; width: 200px;">type</div>
+                    <div class="describe_data" style="float:left; width: 130px;">port</div>
                     <div class="describe_data" style="float:left; width: 120px;">delay (ms)</div>
                     <div class="describe_data" style="float:left; width: 130px;">min delay (ms)</div>
                 </div>
@@ -552,20 +770,22 @@ MA 02111-1307, USA.
     <div style="clear:both; float:left; margin-bottom: 8px;" id="dmx_universe_NNN">
         <div id="cvd_universe_title_NNN" class="describe_data" style="float:left; margin: 3px 0px 0px 0px; width:40px;"></div>
 
-        <div style="float:left; width:130px;">
-            <select id="cvd_dmx_port_NNN" style="display:block;"></select>
-        </div>
-
         <div style="float:left; width:200px;">
             <select id="cvd_dmx_type_NNN" style="display:block;"></select>
         </div>
 
-        <div style="float:left; width:120px;">
-            <input id="cvd_packet_delay_NNN" style="display:block; width:60px;" title="delay between packets"/>
-        </div>
+        <div id="cvd_dmx_config_div_NNN" style="float:left;">
+            <div style="clear: both; float:left; width:110px;">
+                <select id="cvd_dmx_config_NNN" style="display:block;"></select>
+            </div>
 
-        <div style="float:left; width:120px;">
-            <input id="cvd_minimum_delay_NNN" style="display:block; width:60px;" title="minimum delay between packets"/>
+            <div style="float:left; width:120px; margin-left: 20px;">
+                <input id="cvd_packet_delay_NNN" style="display:block; width:60px;" title="delay between packets" />
+            </div>
+
+            <div style="float:left; width:120px;">
+                <input id="cvd_minimum_delay_NNN" style="display:block; width:60px;" title="minimum delay between packets" />
+            </div>
         </div>
     </div>
 </div>
@@ -575,20 +795,8 @@ MA 02111-1307, USA.
         <div id="nsd_accordion">
             <h3>General</h3>
             <div>
-                <label for="nsd_fixtures" style="display:block; margin: 0px 0px 4px 0px;">fixtures</label>
-                <select id="nsd_fixtures" style="display:block;" multiple="multiple" ></select>
-
-                <div>
-                    <div style="clear:both;float:left;">
-                        <label for="nsd_number" style="display:block; margin: 8px 0px 4px 0px;">number</label>
-                        <input id="nsd_number" style="display:block; width:80px;"/>
-                    </div>
-                    <div id="nsd_keep_groups_section" style="float:left; margin: 10px 0px 0px 90px;">
-                        <input type="checkbox" id="nsd_keep_groups" checked="checked" />
-                        <label for="nsd_keep_groups">keep fixtures in groups</label>
-                    </div>
-                    <div style="clear:both;"></div>
-                </div>
+                <label for="nsd_number" style="display:block; margin: 8px 0px 4px 0px;">number</label>
+                <input id="nsd_number" style="display:block; width:80px;"/>
 
                 <label for="nsd_name" style="display:block; margin: 8px 0px 4px 0px;">name</label>
                 <input id="nsd_name" style="display:block;width: 400px;" />
@@ -607,41 +815,125 @@ MA 02111-1307, USA.
                 </div>
             </div>
 
+            <h3>Fixtures</h3>
+            <div id="nsd_fixture_container"></div>
+
             <h3>Animations</h3>
             <div>
-                <div id="nsd_animations">
+                <div style="clear: both; float:left; margin: 0px 0px 10px 0px;">
+                    <select id="nsd_add_animation"></select>
                 </div>
 
-                <div id="nsd_new_animation_button" class="ui-state-default ui-corner-all" 
-                    style="padding: 4px; clear: both; float:left; width: 664px; cursor: pointer;" >
-                    <span class="animation_button_title" style="float:left; margin:2px 10px 0px 6px;">add animation</span>
-                    <select id="nsd_new_animation_type" style="float:left;"></select>
-                    <div style="float:right; padding:3px; margin-top:4px;"><span class="ui-icon ui-icon-circle-plus" ></span></div>
-                    <div id="nsd_new_animation_description" style="clear:both; float:left;  margin: 4px 0px 0px 4px;" class="animation_description"></div>
+                <div style="clear: both;"></div>
+
+                <hr />
+
+                <div id="nsd_animations" style="clear: both; float:left; margin: 8px 0px 10px 0px;">
                 </div>
 
+                <div style="clear: both; float:left;">&nbsp;</div>
             </div>
         </div>
     </form>
 </div>
 
-<div id="nsd_animation_template" style="display:none;">
-    <div id="nsd_animation_NNN">
-        <button id="nsd_animation_NNN_edit" class="animation_button" onclick="scene_edit_animation(event, NNN); return false;">
-        </button>
-        <div style="float:right; margin: 30px 0px 0px 20px;">
-            <span id="nsd_animation_NNN_remove" class="ui-icon ui-icon-circle-minus" title="remove animation" style="float:left;cursor: pointer;" onclick="scene_remove_animation(event,NNN); return false;"></span>
+<div id="nsd_scene_template" style="display:none;">
+    <div class="select_action actor_select_div ui-button ui-state-default ui-corner-all">
+        <div style="clear: both; float:left;">
+            <div class='select_label actor_select_title'></div>
+        </div>
+        <div style="float:right;">
+            <span class="select_remove ui-icon ui-icon-circle-close" style="cursor: pointer;" title="remove fixture"></span>
+        </div>
+    </div>
+</div>
+
+<div id="nsd_edit_animation_template" style="display:none;">
+    <div id="esa_NNN_button" class="animation_edit_div ui-button ui-state-default ui-corner-all">
+        <div style="clear: both; float:left; max-width: 550px;">
+            <div class="animation_button_title">
+                <div id="nsd_animation_NNN_number" style="clear: both; float:left;" ></div>
+                <div id="nsd_animation_NNN_name" style="float:left;"></div>
+                <div id="nsd_animation_NNN_edit_button" class="ui-icon ui-icon-pencil animation_edit_button icon_button" style="float:left; font-size: 8pt; cursor: pointer; margin-left: 4px;" title="edit animation"></div>
+            </div>
+            <div id="nsd_animation_NNN_type" class='animation_button_signal' style="clear: both; padding-top: 6px; margin-left: 20px;"></div>
+            <div id="nsd_animation_NNN_synopsis" class='animation_button_signal' style='margin: 4px 0px 0px 20px;'></div>
+
+            <div style="margin: 8px 0px 10px 20px;">
+                <div id="nsd_animation_NNN_fixture_order" class='animation_button_fixtures' style="width:500px;"></div>
+                <select id="nsd_animation_NNN_fixture_select" multiple="multiple"></select>
+            </div>
+        </div>
+
+        <div style="float:right;" class="ui-icon ui-icon-circle-close icon_button" title="remove animation" onclick="scene_remove_animation(event,NNN); return false;"></div>
+    </div>
+</div>
+
+<div id="edit_scene_actor_dialog" style="display:none;">
+    <form style="height:400px;">
+        <div id="esa_slider_pane" style="margin: 10px 40px 0px 0px; clear:both; float: left; overflow: visible;">
+            <div class="section_title_container" style="margin-bottom: 10px;">
+                <span class="section_title">CHANNELS</span>
+
+                <span class="track_slider_icon icon_button" style="margin-right: 5px;"></span>
+                <span class="colorpicker_icon ui-icon ui-icon-lightbulb icon_button_right"></span>
+                <span class="pantilt_icon ui-icon ui-icon-arrow-4 icon_button_right"></span>
+            </div>
+
+            <div class="collapsable_content">
+                <div class="scroll-content" style="margin-top:0px;"></div>
+                <div class="scroll-bar-wrap ui-widget-content ui-corner-bottom">
+                    <div class="scroll-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="esa_palette_pane" style="margin: 10px 0px 0px 0px; float: left; width: 320px;">
+            <div class="section_title_container" style="margin-bottom: 16px;">
+                <span class="section_title">PALETTES</span>
+            </div>
+
+            <div id="esa_palette_container" style="width: 300px;"></div>
+        </div>
+
+    </form>
+</div>
+
+<div id="esa_palette_template" style="display:none;">
+    <div class="select_action palette_select_div ui-button ui-state-default ui-corner-all">
+        <div style="clear: both; float:left;">
+            <div class='select_label palette_select_title'></div>
+        </div>
+        <div style="float:right;">
+            <span class="select_remove ui-icon ui-icon-circle-close" style="cursor: pointer;" title="remove palette"></span>
         </div>
     </div>
 </div>
 
 <div id="new_fixture_group_dialog" style="display:none;">
-    <form style="height:390px;">
+    <form style="height:420px;">
         <div id="nfgd_accordion">
             <h3>General</h3>
             <div>
-                <label for="nfgd_number" style="display:block; margin: 8px 0px 4px 0px;">number</label>
-                <input id="nfgd_number" style="display:block; width:80px;"/>
+                <div style="clear:both; float: left; margin: 8px 0px 4px 0px;">
+                    <label for="nfgd_number" style="display:block; margin-bottom: 4px;">number</label>
+                    <input id="nfgd_number" style="display:block; width:80px;" />
+                </div>
+
+                <div style="float: right; margin: 8px 10px 4px 0px;">
+                    <div style="margin-bottom: 4px;">
+                        grid position
+                    </div>
+                    <div>
+                        <label for="nfgd_grid_x" style="margin: 8px 0px 4px 0px;">x</label>
+                        <input id="nfgd_grid_x" style="width:70px;" />
+
+                        <label for="nfgd_grid_y" style="margin: 8px 0px 4px 10px;">y</label>
+                        <input id="nfgd_grid_y" style="width:70px;" />
+                    </div>
+                </div> 
+
+                <div style="clear:both;"></div>
 
                 <label for="nfgd_name" style="display:block; margin: 8px 0px 4px 0px;">name</label>
                 <input id="nfgd_name" style="display:block;width: 400px;" />
@@ -654,8 +946,8 @@ MA 02111-1307, USA.
             </div>
 
             <h3>Channel Defaults</h3>
-            <div style="height: 200px; width: 500px; overflow-x: auto; overflow-y: hidden;">
-                <div id="nfgd_sliders" style="min-width: 450px;" >
+            <div>
+                <div id="nfgd_sliders" style="min-width: 450px; width: 500px; overflow-x: auto; overflow-y: hidden;" >
                 </div>
             </div>
         </div>
@@ -663,7 +955,7 @@ MA 02111-1307, USA.
 </div>
 
 <div id="new_chase_dialog" style="display:none;">
-    <form style="height:420px;"> 
+    <form style="height:490px;"> 
         <div id="ncd_accordion">
             <h3>General</h3>
             <div>
@@ -676,17 +968,25 @@ MA 02111-1307, USA.
                 <label for="ncd_description" style="display:block; margin: 8px 0px 4px 0px;">description</label>
                 <input id="ncd_description" style="display:block; width: 400px;" />
 
-                <div>
+                <div style="display:block; margin: 8px 0px 4px 0px;">
                     <label for="ncd_acts" style="display:block; margin: 0px 0px 4px 0px;">acts</label>
                     <select id="ncd_acts" style="display:block;" multiple="multiple" ></select>
                 </div>
 
-                <div style="clear:both; float:left; margin:10px 18px 4px 0px;">
-                    <label for="ncd_delay_ms" style="display:block;">duration</label>
+                <div style="clear:both; float:left; margin:10px 24px 4px 0px;">
+                    <label for="ncd_step_trigger" style="display:block;">step trigger</label>
+                    <select id="ncd_step_trigger" style="display:block; width:80px;" title="triggers advance to next scene step">
+                        <option value="1">Timer (automatic)</option>
+                        <option value="2">Manual (operator controlled)</option>
+                    </select>
+                </div>
+
+                <div id="ncd_delay_div" style="float:left; margin:10px 24px 0px 0px;">
+                    <label for="ncd_delay_ms" style="display:block;">default duration</label>
                     <input id="ncd_delay_ms" style="display:block; width:80px;" title="duration used when step duration = 0ms"/>&nbsp;ms
                 </div>
 
-                <div style="float:left; margin:5px 10px 0px 20px;">
+                <div style="float:left; margin:10px 0px 0px 0px;">
                     <label for="ncd_fade_ms" style="display:block;">step fade</label>
                     <input id="ncd_fade_ms" style="display:block; width:80px;" title="inter-scene fade"/>&nbsp;ms
                 </div>
@@ -715,7 +1015,7 @@ MA 02111-1307, USA.
             <span class="ui-icon ui-icon-circle-plus" title="insert step below" style="float:left; cursor: pointer; margin-right:4px;" onclick="chase_insert_step(event,NNN); return false;"></span>
         </div>
 
-        <div style="float:right; margin: 8px 0px 4px 0px;font-size: 8pt; font-family: sans-serif;">
+        <div id="ncd_step_NNN_delay_div" style="float:right; margin: 8px 0px 4px 0px;font-size: 8pt; font-family: sans-serif;">
             <label for="ncd_step_NNN_delay_ms" style="display:block;">duration</label>
             <input id="ncd_step_NNN_delay_ms" style="display:block; width:60px;" title="step duration (0 for default)" />&nbsp;ms
         </div>
@@ -758,7 +1058,7 @@ MA 02111-1307, USA.
                 <input type="radio" id="lsd_new_venue_4" name="lsd_new_venue" value="new" checked="checked" />
                 <label for="lsd_new_venue_4">new venue</label><br />
                 <input type="radio" id="lsd_new_venue_0" name="lsd_new_venue" value="scenes" />
-                <label for="lsd_new_venue_0">clear scenes and chases</label><br />
+                <label for="lsd_new_venue_0">clear scenes, chases, and animations</label><br />
                 <input type="radio" id="lsd_new_venue_1" name="lsd_new_venue" value="chases" />
                 <label for="lsd_new_venue_1">clear chases</label><br />
                 <input type="radio" id="lsd_new_venue_2" name="lsd_new_venue" value="groups" />
@@ -776,51 +1076,78 @@ MA 02111-1307, USA.
 </div>
 
 <div id="new_fixture_dialog" style="display:none;">
-    <form style="height:430px;"> 
-            <label for="nfd_number" style="display:block; margin: 8px 0px 4px 0px;">number</label>
-            <input id="nfd_number" style="display:block; width:80px;"/>
-
-            <label for="nfd_name" style="display:block; margin: 10px 0px 4px 0px;">location</label>
-            <input id="nfd_name" style="display:block;width: 400px;" />
-
-            <label for="nfd_description" style="display:block; margin: 10px 0px 4px 0px;">description</label>
-            <input id="nfd_description" style="display:block; width: 400px;" />
-
-            <label for="nfd_manufacturer" style="display:block; margin: 20px 0px 4px 0px;">manufacturer</label>
-            <select id="nfd_manufacturer" style="display:block;" ></select>
-
-            <div style="margin-left: 30px;">
-                <label for="nfd_model" style="display:block; margin: 10px 0px 4px 0px;">model</label>
-                <select id="nfd_model" style="display:block;" ></select>
+    <form style="height:460px;">
+        <div style="clear:both; float: left; margin: 8px 0px 4px 0px;">
+            <label for="nfd_number" style="display:block; margin-bottom: 4px;" >number</label>
+            <input id="nfd_number" style="display:block; width:80px;" />
+        </div>
+        
+        <div style="float: right; margin: 8px 10px 4px 0px;">
+            <div style="margin-bottom: 4px;">
+                grid position
             </div>
+            <div>
+                <label for="nfd_grid_x" style="margin: 8px 0px 4px 0px;">x</label>
+                <input id="nfd_grid_x" style="width:70px;" />
 
-            <div style="margin-left: 60px;">
-                <label for="nfd_personality" style="display:block; margin: 10px 0px 4px 0px;">personality</label>
-                <select id="nfd_personality" style="display:block;" ></select>
+                <label for="nfd_grid_y" style="margin: 8px 0px 4px 10px;">y</label>
+                <input id="nfd_grid_y" style="width:70px;" />
             </div>
+        </div> 
 
-            <div style="float:left; margin-top:20px; margin-right: 10px;">
-                <label for="nfd_dmx_universe" style="clear: both; display:block; margin: 0px 0px 4px 0px;">universe</label>
-                <input id="nfd_dmx_universe" style="display:block; width: 80px;" />
-            </div>
-            <div style="float:left; margin-top:20px;">
-                <label for="nfd_dmx_address" style="clear: both; display:block; margin: 0px 0px 4px 0px;">address</label>
-                <input id="nfd_dmx_address" style="display:block; width: 80px;" />
-            </div>
-            <div style="float:left; margin-top:25px;">
-                <span id="nfd_choose_dmx" class="ui-icon ui-icon-calculator" style="float: left; margin: -1px 5px 0 -16px; cursor:pointer;" 
-                    title="choose dmx address"></span>
-            </div>
-            <div style="float:left; margin: 45px 0px 0px 20px; ">
-                <input type="checkbox" id="nfd_allow_overlap" checked="checked" value="remove" style="display:block;float:left;margin-top:2px; "/>
-                <label for="nfd_allow_overlap" style="float:left;">allow address overlap</label>
-            </div>
+        <div style="clear:both;"></div>
+
+        <label for="nfd_name" style="display:block; margin: 10px 0px 4px 0px;">location</label>
+        <input id="nfd_name" style="display:block;width: 400px;" />
+
+        <label for="nfd_description" style="display:block; margin: 10px 0px 4px 0px;">description</label>
+        <input id="nfd_description" style="display:block; width: 400px;" />
+
+        <label for="nfd_manufacturer" style="display:block; margin: 20px 0px 4px 0px;">manufacturer</label>
+        <select id="nfd_manufacturer" style="display:block;" ></select>
+
+        <div style="margin-left: 30px;">
+            <label for="nfd_model" style="display:block; margin: 10px 0px 4px 0px;">model</label>
+            <select id="nfd_model" style="display:block;" ></select>
+        </div>
+
+        <div style="margin-left: 60px;">
+            <label for="nfd_personality" style="display:block; margin: 10px 0px 4px 0px;">personality</label>
+            <select id="nfd_personality" style="display:block;" ></select>
+        </div>
+
+        <div style="float:left; margin-top:20px; margin-right: 10px;">
+            <label for="nfd_dmx_universe" style="clear: both; display:block; margin: 0px 0px 4px 0px;">universe</label>
+            <input id="nfd_dmx_universe" style="display:block; width: 80px;" />
+        </div>
+        <div style="float:left; margin-top:20px;">
+            <label for="nfd_dmx_address" style="clear: both; display:block; margin: 0px 0px 4px 0px;">address</label>
+            <input id="nfd_dmx_address" style="display:block; width: 80px;" />
+        </div>
+        <div style="float:left; margin-top:25px;">
+            <span id="nfd_choose_dmx" class="ui-icon ui-icon-calculator" style="float: left; margin: -1px 5px 0 -16px; cursor:pointer;" 
+                title="choose dmx address"></span>
+        </div>
+        <div style="float:left; margin: 45px 0px 0px 20px; ">
+            <input type="checkbox" id="nfd_allow_overlap" checked="checked" value="remove" style="display:block;float:left;margin-top:2px; "/>
+            <label for="nfd_allow_overlap" style="float:left;">allow address overlap</label>
+        </div>
+
+        <div id="nfd_allow_dimming_div" style="clear:both; float:left; margin: 15px 0px 0px 0px; ">
+            <input type="checkbox" id="nfd_allow_dimming" checked="checked" />
+            <label for="nfd_allow_dimming">master dimmer affects this fixture</label>
+        </div>
+
+        <div id="nfd_allow_whiteout_div" style="clear:both; float:left; margin: 10px 0px 0px 0px; ">
+            <input type="checkbox" id="nfd_allow_whiteout" checked="checked" />
+            <label for="nfd_allow_whiteout">whiteout affects this fixture</label>
+        </div>
     </form>
 </div>
 
 <div id="choose_dmx_address_dialog" style="display:none;"> 
     <fieldset data-role="controlgroup" id="cda_show_buttons" data-type="horizontal" 
-            style=" font-size: 8pt; border: 0px; margin: 0px 0px 8px 0px;">
+            style="font-size: 8pt; border: 0px; margin: 0px 0px 8px 0px;">
         <legend></legend>
         <div>
             <input type="radio" id="cda_0" name="cda_show" value="0" checked="checked" /><label for="cda_0">DMX addresses</label>
@@ -832,508 +1159,869 @@ MA 02111-1307, USA.
     </div>
 </div>
 
-
 <div id="animation_signal_template" style="display: none;">
-    <div style="margin-top: 10px;">
+    <div style="margin-top: 4px;">
+        <div class="animation_description">
+            The trigger is an event or timer that cause the animation to refresh the source level.
+        </div>
+
+        <div style="clear:both; float:left;">
+            <label for="NNN_trigger" style="display:block;">trigger</label>
+            <select id="NNN_trigger" style="display:block;"></select>
+        </div>
+
+        <div id="NNN_timer_ms_div" style="float: left; margin-left: 40px;">
+            <label for="NNN_timer_ms" style="display:block;">timer</label>
+            <input id="NNN_timer_ms" style="display:block; width:80px;" title="how often to fire the timer" />&nbsp;ms
+        </div>
+
+        <div id="NNN_sensitivity_div" style="float: left; margin-left: 40px;">
+            <label for="NNN_sensitivity" style="display:block;">sensitivity</label>
+            <input id="NNN_sensitivity" style="display:block; width:80px;" title="control beat required for trigger" />
+        </div>
+
+        <div id="NNN_frequency_div" style="float:left; margin-left: 40px;">
+            <div>frequency range</div>
+            <div>
+                <input id="NNN_freq_low_hz" style="display:block; width:80px;" title="" />
+                to
+                <input id="NNN_freq_high_hz" style="display:block; width:80px;" title="" />
+            </div>
+        </div>
+
+        <div id="NNN_speed_adjust_div" style="clear: both; float:left; margin-top: 30px;">
+            <label for="NNN_speed_adjust" style="display:block;">dynamic timer</label>
+            <select id="NNN_speed_adjust" style="display:block;"></select>
+        </div>
+
+        <div style="float: left; margin: 30px 0px 0px 40px;">
+            <label for="NNN_off_ms" style="display:block;">source level reset timer (0 = off)</label>
+            <input id="NNN_off_ms" style="display:block; width:80px;" title="cancel source signal after trigger" />&nbsp;ms
+        </div>
+
+        <div class="animation_description" style="clear:both; float:left; margin-top: 20px;">
+            <hr />
+            The source generates a level (0-100) that is used by the animation to change fixture DMX values and/or animation speed.    
+        </div>
+
+        <div style="clear:both; float:left;">
+            <label for="NNN_source" style="display:block;">level source</label>
+            <select id="NNN_source" style="display:block;"></select>
+        </div>
+
+        <div style="clear:both; float:left; margin-top: 20px;">
+            output levels
+            <div >
+                <input id="NNN_level_floor" style="display:block; width:80px; margin-right: 4px;" title="minimum level" />
+                to
+                <input id="NNN_level_ceil" style="display:block; width:80px; margin-left: 4px;" title="maximum level" />
+            </div>
+        </div>
+
+        <div style="float:left; margin-left: 30px; margin-top: 20px;">
+            <label for="NNN_level_scale" style="display:block;" >scale factor</label>
+            <input id="NNN_level_scale" style="display:block; width:80px;" title="level multiplier" />
+        </div>
+
+        <div id="NNN_level_periods_div" style="float:left; margin-left: 30px;  margin-top: 20px; ">
+            <label for="NNN_level_periods" style="display:block;" >periods</label>
+            <input id="NNN_level_periods" style="display:block; width:80px;" title="numer of periods for one cycle of the waveform" />
+        </div>
+
+        <div id="NNN_level_hold_div" style="float:left; margin-left: 30px;  margin-top: 20px; ">
+            <label for="NNN_level_hold" style="display:block;">hold</label>
+            <input id="NNN_level_hold" style="display:block; width:80px;"  title="number of periods after waveform to maintain constant level" />
+        </div>
+
+        <div style="clear:both; float:left;  margin-top: 20px; ">
+            <input id="NNN_level_invert" type="checkbox" />
+            <label for="NNN_level_invert" title="inverts level waveform">invert level values</label>
+        </div>
+    </div>
+</div>
+
+<div id="FixtureSequencer_template" style="display:none;">
+    <div class="animation_description" style="display:block; margin: 10px 0px 4px 0px;">This animation has no properties.</div>
+</div>
+
+<div id="SoundLevel_template" style="display:none;">
+    <label for="sl_NNN_fade_what" style="display:block; margin: 8px 0px 4px 0px;">fade what</label>
+    <select id="sl_NNN_fade_what" style="display:block;"></select>
+</div>
+
+<div id="ScenePatternDimmer_template" style="display:none;">
+    <label for="spd_NNN_pattern" style="clear:both; display:block; margin: 10px 0px 4px 0px;">pattern</label>
+    <select id="spd_NNN_pattern" style="display:block;"></select>
+</div>
+
+<div id="SceneFixtureDimmer_template" style="display:none;">
+    <label for="sfd_NNN_dimmer_mode" style="clear:both; display:block; margin: 10px 0px 4px 0px;">dimmer mode</label>
+    <select id="sfd_NNN_dimmer_mode" style="display:block;"></select>
+
+    <label for="sfd_NNN_min_percent" style="display:block; margin-top: 10px;">minimum dimmer</label>
+    <input id="sfd_NNN_min_percent" style="display:block; width:70px;" />&nbsp;%
+
+    <label for="sfd_NNN_max_percent" style="display:block; margin-top: 10px;">maximum dimmer</label>
+    <input id="sfd_NNN_max_percent" style="display:block; width:70px;" />&nbsp;%
+</div>
+
+<div id="SceneStrobeAnimator_template" style="display:none;">
+
+    <div>
+        <label for="ssa_NNN_strobe_type" style="display:block;">strobe type</label>
+        <select id="ssa_NNN_strobe_type">
+            <option value="1" selected>Simulated</option>
+            <option value="2">Fixture</option>
+        </select>
+    </div>
+
+    <div id="ssa_NNN_strobe_type_1" style="margin-top: 10px;">
+        <div style="clear: both; float:left; margin: 10px 0px 8px 0px;">
+            <div>strobe color</div>
+            <div id="ssa_NNN_color" class="color_chip"></div>
+        </div>
+        <div style="float:left; margin: 10px 0px 8px 20px;">
+            <div>off color</div>
+            <div id="ssa_NNN_neg_color" class="color_chip"></div>
+        </div>
+
+        <div style="clear:both; float:left; margin-right: 20px;">
+            <label for="ssa_NNN_strobe_pos_ms" style="display:block;">strobe on</label>
+            <input id="ssa_NNN_strobe_pos_ms" style="display:block; width:70px;" />&nbsp;ms
+        </div>
+        <div style="float:left; margin-right: 20px;">
+            <label for="ssa_NNN_strobe_fade_in_ms" style="display:block;">strobe fade in (0=off)</label>
+            <input id="ssa_NNN_strobe_fade_in_ms" style="display:block; width:70px;" />&nbsp;ms
+        </div>
+        <div style="float:left; margin-right: 20px;">
+            <label for="ssa_NNN_strobe_flashes" style="display:block;">strobe flashes</label>
+            <input id="ssa_NNN_strobe_flashes" style="display:block; width:70px;" />
+        </div>
+
+        <div style="clear: both; float:left; margin-right: 20px; margin-top: 10px;">
+            <label for="ssa_NNN_strobe_neg_ms" style="display:block;">strobe off</label>
+            <input id="ssa_NNN_strobe_neg_ms" style="display:block; width:70px;" />&nbsp;ms
+        </div>
+        <div style="float:left; margin-right: 20px; margin-top: 10px;">
+            <label for="ssa_NNN_strobe_fade_out_ms" style="display:block;">strobe fade out (0=off)</label>
+            <input id="ssa_NNN_strobe_fade_out_ms" style="display:block; width:70px;" />&nbsp;ms
+        </div>
+    </div>
+
+    <div id="ssa_NNN_strobe_type_2" style="margin-top: 10px;">
+        <div style="clear: both; float:left; margin-right: 20px; margin-top: 10px;">
+            <label for="ssa_NNN_strobe_percent" style="display:block;">strobe speed (percent)</label>
+            <input id="ssa_NNN_strobe_percent" style="display:block; width:70px;" />
+        </div>
+    </div>
+
+</div>
+
+<div id="SceneColorSwitcher_template" style="display:none;">
+    <div style="clear:both;float:left; margin-top: 10px;">
+        <label for="scs_NNN_fader_effect" style="display:block;">fade</label>
+        <select id="scs_NNN_fader_effect" style="display:block;"></select>
+    </div>
+    <div style="clear:both; float:left; margin: 10px 20px 0px 00px; height: 120px;">
+        <div>custom color progression</div>
+        <div id="scs_NNN_color_progression"></div>
+    </div>
+
+    <div style="clear:both;float:left; margin-top: 8px; margin-bottom: 0px;" class="animation_description">Strobe timing is adjusted by the signal level (higher level = faster times).</div>
+
+    <div style="clear:both; float:left; margin: 5px 20px 0px 0px;">
+        <label for="scs_NNN_strobe_pos_ms" style="display:block;">strobe on</label>
+        <input id="scs_NNN_strobe_pos_ms" style="display:block; width:78px;" />&nbsp;ms
+    </div>
+    <div style="float:left; margin: 5px 20px 0px 0px;">
+        <label for="scs_NNN_strobe_fade_in_ms" style="display:block;">strobe fade in (0=off)</label>
+        <input id="scs_NNN_strobe_fade_in_ms" style="display:block; width:70px;" />&nbsp;ms
+    </div>
+    <div style="float:left; margin: 5px 20px 0px 0px;">
+        <label for="scs_NNN_strobe_flashes" style="display:block;">strobe flashes</label>
+        <input id="scs_NNN_strobe_flashes" style="display:block; width:70px;" />
+    </div>
+
+    <div style="clear: both; float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="scs_NNN_strobe_neg_ms" style="display:block;">strobe off</label>
+        <input id="scs_NNN_strobe_neg_ms" style="display:block; width:78px;" />&nbsp;ms
+    </div>
+
+    <div style="float:left; margin-right: 77px; margin-top: 10px;">
+        <label for="scs_NNN_strobe_fade_out_ms" style="display:block;">strobe fade out</label>
+        <input id="scs_NNN_strobe_fade_out_ms" style="display:block; width:70px;" />&nbsp;ms
+    </div>
+
+    <div style="float:left;  margin-top: 10px;">
+        <div>off color</div>
+        <div id="scs_NNN_colorpicker" class="color_chip"></div>
+    </div>
+</div>
+
+<div id="ScenePulse_template" style="display:none;">
+    <div style="clear:both;float:left; margin-top: 10px; margin-right: 20px;">
+        <label for="sp_NNN_pulse_effect" style="display:block;">effect</label>
+        <select id="sp_NNN_pulse_effect" style="display:block;"></select>
+    </div>
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sp_NNN_pulse_ms" style="display:block;">duration</label>
+        <input id="sp_NNN_pulse_ms" style="display:block; width:70px;" />&nbsp;ms
+    </div>
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sp_NNN_pulse_fixture_count" style="display:block;">fixtures per pulse</label>
+        <input id="sp_NNN_pulse_fixture_count" style="display:block; width:70px;" />
+    </div>
+    <div style="float:left; margin-top: 10px;">
+        <div>pulse color</div>
+        <div id="sp_NNN_pulse_color" class="color_chip"></div>
+    </div>
+    <div style="clear:both; float:left; margin-top: 20px;">
+        <div>
+            <input id="sp_NNN_select_random" type="checkbox" />
+            <label for="sp_NNN_select_random">select random fixture(s)</label>
+        </div>
+    </div>
+</div>
+
+<div id="SceneCueAnimator_template" style="display:none;">
+    <div style="clear:both; float:left; margin:10px 10px 0px 0px;">
+        <input type="checkbox" id="sca_NNN_tracking" />
+        <label for="sca_NNN_tracking">track values across cues</label>
+    </div>
+
+    <div style="clear:both; float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sca_NNN_group_size" style="display:block;">fixture group size (set to 0 for no grouping)</label>
+        <input id="sca_NNN_group_size" style="display:block; width:70px;" />
+    </div>
+
+    <div style="clear:both; float:left; margin-right: 20px; margin-top: 10px;">
+        <div>cues</div>
+        <div id="sca_NNN_cues" style="margin-top: 6px; margin-bottom: 8px;"></div>
+    </div>
+</div>
+
+<div id="SceneCueAnimatorCue_template" style="display:none;">
+    <div style="padding:10px; width:600px; background-color: black; border: 1px solid #808080; border-radius: 6pt 6pt;">
+        <select style="display:block;" multiple="multiple"></select>
+    </div>
+</div>
+
+<div id="ScenePixelAnimator_template" style="display:none;">
+    <div style="clear:both; float:left; margin-top: 10px;">
+        <input id="spa_NNN_combine" type="checkbox" />
+        <label for="spa_NNN_combine">combine fixtures</label>
+    </div>
+
+    <div style="clear:both;float:left; margin-top: 10px;">
+        <div style="clear:both;float:left; height: 60px;">
+            <label for="spa_NNN_pixel_effect" style="clear:both; display:block; margin-bottom: 4px;">pixel effect</label>
+            <select id="spa_NNN_pixel_effect" style="display:block; "></select>
+        </div>
+        <div id="spa_NNN_generations_div" style="float:left; margin-left: 20px;">
+            <label for="spa_NNN_generations" style="display:block; margin-bottom: 4px;">generations</label>
+            <input id="spa_NNN_generations" style="display:block; width:70px; " />
+        </div>
+        <div id="spa_NNN_pixels_div" style="float:left; margin-left: 20px;">
+            <label for="spa_NNN_pixels" style="display:block; margin-bottom: 4px;">pixels</label>
+            <input id="spa_NNN_pixels" style="display:block; width:70px;" />
+        </div>
+        <div id="spa_NNN_increment_div" style="float:left; margin-left: 20px;">
+            <label for="spa_NNN_increment" style="display:block; margin-bottom: 4px;">increment</label>
+            <input id="spa_NNN_increment" style="display:block; width:70px; " />
+        </div>
+        <div id="spa_NNN_fade_div" style="float:left; margin-left: 20px; margin-top: 30px;">
+            <input id="spa_NNN_fade" type="checkbox" />
+            <label for="spa_NNN_fade">fade colors</label>
+        </div>
+    </div>
+
+    <div style="clear:both;float:left; margin-top: 10px;">
+        <div style="float: left; margin-right:6px;">custom color progression</div>
+        <div style="float: left;" id="spa_NNN_color_progression"></div>
+    </div>
+
+    <div style="clear:both; float:left; margin-top: 10px;">
+        <div style="margin-bottom: 4px;">pixel off color</div>
+        <div id="spa_NNN_pixel_off_color" class="color_chip"></div>
+    </div>
+</div>
+
+<div id="SceneChannelFilter_template" style="display:none;">
+    <div style="clear:both;float:left; margin-top: 8px;">
+        <label for="scf_NNN_channels" style="clear:both; display:block; margin-bottom: 4px;">channels</label>
+        <select id="scf_NNN_channels" style="display:block; margin-bottom:10px;" multiple="multiple"></select>
+    </div>
+
+    <div style="clear:both;float:left; margin-top: 10px;">
+        <div style="clear:both;float:left;">
+            <label for="scf_NNN_filter" style="clear:both; display:block; margin-bottom: 4px;">filter</label>
+            <select id="scf_NNN_filter" style="display:block; "></select>
+        </div>
+
+        <div id="scf_NNN_step_div" style="float:left; margin-left: 10px;">
+            <label for="scf_NNN_step" style="display:block; margin-bottom: 4px;">step</label>
+            <input id="scf_NNN_step" style="display:block; width:70px; " />
+        </div>
+
+        <div id="scf_NNN_amplitude_div" style="float:left; margin-left: 10px;">
+            <label id="scf_NNN_amplitude_label" for="escf_amplitude" style="display:block; margin-bottom: 4px;">amplitude</label>
+            <input id="scf_NNN_amplitude" style="display:block; width:70px;" />
+        </div>
+
+        <div id="scf_NNN_offset_div" style="float:left; margin-left: 10px;">
+            <label for="scf_NNN_offset" style="display:block; margin-bottom: 4px;">offset</label>
+            <input id="scf_NNN_offset" style="display:block; width:70px;" />
+        </div>
+    </div>
+</div>
+
+<div id="SceneChannelAnimator_template" style="display:none;">
+    <div style="margin: 10px 0px 4px 0px;">channel animations</div>
+    <div id="sca_NNN_animations" style="margin-top: 6px; margin-bottom: 8px;"></div>
+</div>
+
+<div id="SceneChannelAnimatorChannel_template" style="display:none;">
+    <div style="padding:10px; width:600px; background-color: black; border: 1px solid #808080; border-radius: 6pt 6pt;">
+
+        <div style="margin-bottom:10px;">
+            <select class="sca_channel"></select>
+        </div>
+
+        <div style="margin-bottom:10px; margin-right: 10px; float:left;">
+            <select class="sca_style">
+                <option value="1" selected>Value List</option>
+                <option value="2">Value Range</option>
+                <option value="3">Scale Scene Value</option>
+                <option value="4">Signal Level</option>
+            </select>
+        </div>
+
+        <div class="sca_channel_list_container" style="float:left;">
+            <div class="sca_channel_list"></div>
+        </div>
+
+        <div class="sca_channel_range_container" style="float:left;">
+            <input class="sca_channel_range_start" style="width:50px;" value="1" /> - <input class="sca_channel_range_end" style="width:50px;" value="255" />
+        </div>
+    </div>
+</div>
+
+<div id="SceneMovementAnimator1_template" style="display:none;">
+    <div style="clear:both; float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma1_NNN_head" style="display:block;">head</label>
+        <input id="sma1_NNN_head" style="display:block; width:60px;" title="head number for fixures with multiple movements (0=all)" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma1_NNN_speed" style="display:block;">speed</label>
+        <input id="sma1_NNN_speed" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma1_NNN_dest_wait_periods" style="display:block;">target wait</label>
+        <input id="sma1_NNN_dest_wait_periods" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma1_NNN_group_size" style="display:block;">group size</label>
+        <input id="sma1_NNN_group_size" style="display:block; width:60px;margin-bottom: 4px;" />
+    </div>
+
+    <div style="clear:both; float:left; margin-top: 10px; height:30px;">
+        <div>
+            <input id="sma1_NNN_blackout_return" type="checkbox" />
+            <label for="sma1_NNN_blackout_return">blackout head movement (consumes one wait period)</label>
+        </div>
+        <div>
+            <input id="sma1_NNN_run_once" type="checkbox" />
+            <label for="sma1_NNN_run_once">run once</label>
+        </div>
+    </div>
+
+    <div style="margin-top: 20px; clear:both; float:left; width:100%;">
         <fieldset style="padding:8px;">
-            <legend class="animation_fieldset">animation input signal</legend>
-            <div class="animation_description">The input signal drives the animation effect. The signal can be a fixed timer or may be based on sound sampling at specified intervals.</div>
+            <legend class="animation_fieldset">random movement</legend>
 
-            <div id="NNN_signal_type_div" style="clear:both; float:left;">
-                <label for="NNN_signal_type" style="display:block;">signal</label>
-                <select id="NNN_signal_type" style="display:block;"></select>
-            </div>
+            <table style="float:left; margin-right: 20px; margin-top: 4px;">
+                <tr>
+                    <td style="width:50px;"></td>
+                    <td>start&deg;</td>
+                    <td>end&deg;</td>
+                </tr>
+                <tr>
+                    <td>pan</td>
+                    <td><input id="sma1_NNN_pan_start_angle" style="display:block; width:60px;" /></td>
+                    <td><input id="sma1_NNN_pan_end_angle" style="display:block; width:60px;" /></td>
+                </tr>
+                <tr>
+                    <td>tilt</td>
+                    <td><input id="sma1_NNN_tilt_start_angle" style="display:block; width:60px;" /></td>
+                    <td><input id="sma1_NNN_tilt_end_angle" style="display:block; width:60px;" /></td>
+                </tr>
+            </table>
 
-            <div id="NNN_apply_to_div" style="float:left; margin-left: 20px;">
-                <label for="NNN_apply_to" style="display:block;">apply to</label>
-                <select id="NNN_apply_to" style="display:block;">
-                </select>
-            </div>
-
-            <div style="clear:both; float: left; margin-top: 10px;">
-                <label for="NNN_sample_rate_ms" style="display:block;">sample rate</label>
-                <input id="NNN_sample_rate_ms" style="display:block; width:80px;" title="how often to sample this signal or fire the timer"/>&nbsp;ms
-            </div>
-
-            <div id="NNN_sample_decay_ms_div" style="float: left; margin-top: 10px; margin-left: 10px;">
-                <label for="NNN_sample_decay_ms" style="display:block;">decay rate</label>
-                <input id="NNN_sample_decay_ms" style="display:block; width:80px;" title="how long the sample persists"/>&nbsp;ms
-            </div>
-
-            <div style="clear:both; float: left;"></div>
-
-            <div id="NNN_frequency_div" style="float:left; margin: 10px 6px 0px 0px; border: 1px solid #808080; padding: 4px;border-radius: 6pt 6pt;">
-                frequency range
-                <div>
-                    <input id="NNN_input_low" style="display:block; width:80px;" title=""/>
-                    to
-                    <input id="NNN_input_high" style="display:block; width:80px;" title=""/>
-                </div>
-            </div>
-
-            <div id="NNN_random_div" style="float:left; margin: 10px 6px 0px 0px; border: 1px solid #808080; padding: 4px;border-radius: 6pt 6pt;">
-                random value range
-                <div> 
-                    <input id="NNN_random_low" style="display:block; width:50px;" title=""/>
-                    to
-                    <input id="NNN_random_high" style="display:block; width:50px;" title=""/>
-                </div>
-            </div>
-
-            <div id="NNN_level_div" style="float:left; margin: 10px 6px 0px 0px; border: 1px solid #808080; padding: 4px;border-radius: 6pt 6pt;">
-                signal level
-                <div>
-                    curve
-                    <input id="NNN_scale_factor" style="display:block; width:50px;" title=""/>
-                    max
-                    <input id="NNN_max_threshold" style="display:block; width:50px;" title=""/>
-                </div>
+            <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                <label for="sma1_NNN_positions" style="display:block;">positions to generate</label>
+                <input id="sma1_NNN_positions" style="display:block; width:60px;" />
             </div>
         </fieldset>
     </div>
 </div>
 
-<div id="edit_FixtureSequencer_dialog" style="display:none;">
-    <form style="height:300px;">
-        <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset">animation</legend>
-                <div id="essd_description" class="animation_description"></div>
+<div id="SceneMovementAnimator2_template" style="display:none;">
+    <div style="clear:both; float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma2_NNN_head" style="display:block;">head</label>
+        <input id="sma2_NNN_head" style="display:block; width:60px;" title="head number for fixures with multiple movements (0=all)" />
+    </div>
 
-                <label for="essd_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
-                <select id="essd_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma2_NNN_speed" style="display:block;">speed</label>
+        <input id="sma2_NNN_speed" style="display:block; width:60px;" />
+    </div>
 
-                <div style="display:block; margin: 10px 0px 4px 0px;">fixture order</div>
-                <div id="essd_fixture_order" style="display:block; margin-bottom:10px; width:500px;"></div>
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma2_NNN_home_wait_periods" style="display:block;">home wait</label>
+        <input id="sma2_NNN_home_wait_periods" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma2_NNN_dest_wait_periods" style="display:block;">target wait</label>
+        <input id="sma2_NNN_dest_wait_periods" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-left: 20px; margin-top: 10px; height:30px;">
+        <input id="sma2_NNN_run_once" type="checkbox" />
+        <label for="sma2_NNN_run_once">run once</label>
+        <input id="sma2_NNN_blackout_return" type="checkbox" />
+        <label for="sma2_NNN_blackout_return">return blackout </label>
+    </div>
+
+    <div style="margin-top: 10px; clear:both; float:left;width:100%;">
+        <fieldset style="padding:8px;">
+            <legend class="animation_fieldset">fan movement</legend>
+
+            <table style="float:left; margin-right: 20px; margin-top: 4px;">
+                <tr>
+                    <td style="width:50px;"></td>
+                    <td>start&deg;</td>
+                    <td>end&deg;</td>
+                    <td>increment&deg;</td>
+                </tr>
+                <tr>
+                    <td>pan</td>
+                    <td><input id="sma2_NNN_pan_start_angle" style="display:block; width:60px;" /></td>
+                    <td><input id="sma2_NNN_pan_end_angle" style="display:block; width:60px;" /></td>
+                    <td><input id="sma2_NNN_pan_increment" style="display:block; width:60px;" /></td>
+                </tr>
+                <tr>
+                    <td>tilt</td>
+                    <td><input id="sma2_NNN_tilt_start_angle" style="display:block; width:60px;" /></td>
+                    <td><input id="sma2_NNN_tilt_end_angle" style="display:block; width:60px;" /></td>
+                </tr>
+            </table>
         </fieldset>
-
-        <div id="essd_signal"></div>
-    </form>
+    </div>
 </div>
 
-<div id="edit_SoundLevel_dialog" style="display:none;">
-    <form style="height:300px;">
-        <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset">animation</legend>
-            <div id="essl_description" class="animation_description"></div>
+<div id="SceneMovementAnimator3_template" style="display:none;">
+    <div style="clear:both; float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma3_NNN_head" style="display:block;">head</label>
+        <input id="sma3_NNN_head" style="display:block; width:60px;" title="head number for fixures with multiple movements (0=all)" />
+    </div>
 
-            <label for="essl_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
-            <select id="essl_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma3_NNN_speed" style="display:block;">speed</label>
+        <input id="sma3_NNN_speed" style="display:block; width:60px;" />
+    </div>
 
-            <label for="essl_fade_what" style="display:block; margin: 8px 0px 4px 0px;">fade what</label>
-            <select id="essl_fade_what" style="display:block;"></select>
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma3_NNN_home_wait_periods" style="display:block;">home wait</label>
+        <input id="sma3_NNN_home_wait_periods" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma3_NNN_dest_wait_periods" style="display:block;">target wait</label>
+        <input id="sma3_NNN_dest_wait_periods" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma3_NNN_group_size" style="display:block;">group size</label>
+        <input id="sma3_NNN_group_size" style="display:block; width:60px;margin-bottom: 4px;" />
+    </div>
+
+    <div style="float:left; margin-left: 20px; margin-top: 10px; height:30px;">
+        <input id="sma3_NNN_run_once" type="checkbox" />
+        <label for="sma3_NNN_run_once">run once</label>
+        <input id="sma3_NNN_blackout_return" type="checkbox" />
+        <label for="sma3_NNN_blackout_return">return blackout </label>
+        <input id="sma3_NNN_alternate_groups" type="checkbox" />
+        <label for="sma3_NNN_alternate_groups">alernate groups</label>
+    </div>
+
+    <div style="margin-top: 10px; clear:both; float:left;width:100%;">
+        <fieldset style="padding:8px;">
+            <legend class="animation_fieldset">rotate movement</legend>
+
+            <table style="float:left; margin-right: 20px; margin-top: 4px;">
+                <tr>
+                    <td style="width:50px;"></td>
+                    <td>start&deg;</td>
+                    <td>end&deg;</td>
+                </tr>
+                <tr>
+                    <td>pan</td>
+                    <td><input id="sma3_NNN_pan_start_angle" style="display:block; width:60px;" /></td>
+                    <td><input id="sma3_NNN_pan_end_angle" style="display:block; width:60px;" /></td>
+                </tr>
+                <tr>
+                    <td>tilt</td>
+                    <td><input id="sma3_NNN_tilt_start_angle" style="display:block; width:60px;" /></td>
+                    <td><input id="sma3_NNN_tilt_end_angle" style="display:block; width:60px;" /></td>
+                </tr>
+            </table>
         </fieldset>
-
-        <div id="essl_signal"></div>
-    </form>
+    </div>
 </div>
 
-<div id="edit_ScenePatternDimmer_dialog" style="display:none;">
-    <form style="height:300px;">
-        <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset">animation</legend>
-            <div id="espd_description" class="animation_description"></div>
-        
-            <label for="espd_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
-            <select id="espd_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
+<div id="SceneMovementAnimator4_template" style="display:none;">
+    <div style="clear:both; float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma4_NNN_head" style="display:block;">head</label>
+        <input id="sma4_NNN_head" style="display:block; width:60px;" title="head number for fixures with multiple movements (0=all)" />
+    </div>
 
-            <div style="display:block; margin: 10px 0px 4px 0px;">fixture order</div>
-            <div id="espd_fixture_order" style="display:block; margin-bottom:10px; width:500px;"></div>
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma4_NNN_speed" style="display:block;">speed</label>
+        <input id="sma4_NNN_speed" style="display:block; width:60px;" />
+    </div>
 
-            <label for="espd_pattern" style="clear:both; display:block; margin: 10px 0px 4px 0px;">pattern</label>
-            <select id="espd_pattern" style="display:block;"></select>
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma4_NNN_home_wait_periods" style="display:block;">home wait</label>
+        <input id="sma4_NNN_home_wait_periods" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma4_NNN_dest_wait_periods" style="display:block;">target wait</label>
+        <input id="sma4_NNN_dest_wait_periods" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma4_NNN_group_size" style="display:block;">group size</label>
+        <input id="sma4_NNN_group_size" style="display:block; width:60px;margin-bottom: 4px;" />
+    </div>
+
+    <div style="float:left; margin-left: 20px; margin-top: 10px; height:30px;">
+        <input id="sma4_NNN_run_once" type="checkbox" />
+        <label for="sma4_NNN_run_once">run once</label>
+        <input id="sma4_NNN_blackout_return" type="checkbox" />
+        <label for="sma4_NNN_blackout_return">return blackout </label>
+        <input id="sma4_NNN_alternate_groups" type="checkbox" />
+        <label for="sma4_NNN_alternate_groups">alernate groups</label>
+    </div>
+
+    <div style="margin-top: 10px; clear:both; float:left;width:100%;">
+        <fieldset style="padding:8px;">
+            <legend class="animation_fieldset">up/down movement</legend>
+
+            <table style="float:left; margin-right: 20px; margin-top: 4px;">
+                <tr>
+                    <td style="width:50px;"></td>
+                    <td>start&deg;</td>
+                    <td>end&deg;</td>
+                    <td>increment&deg;</td>
+                </tr>
+                <tr>
+                    <td>pan</td>
+                    <td><input id="sma4_NNN_pan_start_angle" style="display:block; width:60px;" /></td>
+                    <td><input id="sma4_NNN_pan_end_angle" style="display:block; width:60px;" /></td>
+                    <td><input id="sma4_NNN_pan_increment" style="display:block; width:60px;" /></td>
+                </tr>
+                <tr>
+                    <td>tilt</td>
+                    <td><input id="sma4_NNN_tilt_start_angle" style="display:block; width:60px;" /></td>
+                    <td><input id="sma4_NNN_tilt_end_angle" style="display:block; width:60px;" /></td>
+                    <td></td>
+                </tr>
+            </table>
         </fieldset>
-
-        <div id="espd_signal"></div>
-    </form>
+    </div>
 </div>
 
-<div id="edit_SceneStrobeAnimator_dialog" style="display:none;">
-    <form style="height:300px;">
-        <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset">animation</legend>
-            <div id="essa_description" class="animation_description"></div>
-        
-            <div style="clear:both; float:left;">
-                <label for="essa_fixtures" style="display:block; margin: 10px 0px 10px 0px;">scene fixture(s)</label>
-                <select id="essa_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
-            </div>
-            <div style="clear:both; float:left; margin-right: 20px;">
-                <label for="essa_strobe_pos_ms" style="display:block;">strobe on</label>
-                <input id="essa_strobe_pos_ms" style="display:block; width:70px;"/>&nbsp;ms
-            </div>
-            <div style="float:left; margin-right: 20px;">
-                <label for="essa_strobe_neg_ms" style="display:block;">strobe off</label>
-                <input id="essa_strobe_neg_ms" style="display:block; width:70px;"/>&nbsp;ms
-            </div>
-            <div style="float:left; margin-right: 20px;">
-                <label for="essa_strobe_flashes" style="display:block;">strobe flashes</label>
-                <input id="essa_strobe_flashes" style="display:block; width:70px;" />&nbsp;ms
-            </div>
-            <div style="float:left;">
-                <div>negative color</div>
-                <div id="essa_colorpicker" style="height:30px; width:60px; border: 1px solid #808080; border-radius: 6pt 6pt;"></div>
-            </div>
-        </fieldset>
+<div id="SceneMovementAnimator5_template" style="display:none;">
+    <div style="clear:both; float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma5_NNN_head" style="display:block;">head</label>
+        <input id="sma5_NNN_head" style="display:block; width:60px;" title="head number for fixures with multiple movements (0=all)" />
+    </div>
 
-        <div id="essa_signal" style="clear:both;" ></div>
-    </form>
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma5_NNN_speed" style="display:block;">speed</label>
+        <input id="sma5_NNN_speed" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma5_NNN_home_wait_periods" style="display:block;">home wait</label>
+        <input id="sma5_NNN_home_wait_periods" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma5_NNN_dest_wait_periods" style="display:block;">target wait</label>
+        <input id="sma5_NNN_dest_wait_periods" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma5_NNN_group_size" style="display:block;">group size</label>
+        <input id="sma5_NNN_group_size" style="display:block; width:60px;margin-bottom: 4px;" />
+    </div>
+
+    <div style="float:left; margin-left: 20px; margin-top: 10px; height:30px;">
+        <input id="sma5_NNN_run_once" type="checkbox" />
+        <label for="sma5_NNN_run_once">run once</label>
+        <input id="sma5_NNN_blackout_return" type="checkbox" />
+        <label for="sma5_NNN_blackout_return">return blackout </label>
+        <input id="sma5_NNN_alternate_groups" type="checkbox" />
+        <label for="sma5_NNN_alternate_groups">alernate groups</label>
+    </div>
+
+    <div style="margin-top: 10px; clear:both; float:left;width:100%;">
+        <fieldset style="padding:8px;">
+            <legend class="animation_fieldset">Beam cross movement</legend>
+
+            <table style="float:left; margin-right: 20px; margin-top: 4px;">
+                <tr>
+                    <td style="width:50px;"></td>
+                    <td>start&deg;</td>
+                    <td>end&deg;</td>
+                </tr>
+                <tr>
+                    <td>pan</td>
+                    <td><input id="sma5_NNN_pan_start_angle" style="display:block; width:60px;" /></td>
+                    <td><input id="sma5_NNN_pan_end_angle" style="display:block; width:60px;" /></td>
+                </tr>
+                <tr>
+                    <td>tilt</td>
+                    <td><input id="sma5_NNN_tilt_start_angle" style="display:block; width:60px;" /></td>
+                    <td><input id="sma5_NNN_tilt_end_angle" style="display:block; width:60px;" /></td>
+                </tr>
+            </table>
+        </fieldset>
+    </div>
 </div>
 
-<div id="edit_SceneColorSwitcher_dialog" style="display:none;">
-    <form style="height:360px;">
-        <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset">animation</legend>
-            <div id="escs_description" class="animation_description"></div>
-        
-            <div style="clear:both; float:left;">
-                <label for="escs_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
-                <select id="escs_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
-            </div>
+<div id="SceneMovementAnimator6_template" style="display:none;">
+    <div style="clear:both; float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma6_NNN_head" style="display:block;">head</label>
+        <input id="sma6_NNN_head" style="display:block; width:60px;" title="head number for fixures with multiple movements (0=all)" />
+    </div>
 
-            <div style="clear:both;float:left; margin-right: 20px; margin-top: 10px;">
-                <label for="escs_strobe_pos_ms" style="display:block;">strobe on</label>
-                <input id="escs_strobe_pos_ms" style="display:block; width:70px;"/>&nbsp;ms
-            </div>
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma6_NNN_speed" style="display:block;">speed</label>
+        <input id="sma6_NNN_speed" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma6_NNN_dest_wait_periods" style="display:block;">target wait</label>
+        <input id="sma6_NNN_dest_wait_periods" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-left: 20px; margin-top: 10px; height:30px;">
+        <input id="sma6_NNN_run_once" type="checkbox" />
+        <label for="sma6_NNN_run_once">run once</label>
+        <input id="sma6_NNN_blackout_return" type="checkbox" />
+        <label for="sma6_NNN_blackout_return">return blackout </label>
+    </div>
+
+    <div style="margin-top: 10px; clear:both; float:left;width:100%;">
+        <fieldset style="padding:8px; margin-bottom: 10px;">
+            <legend class="animation_fieldset">programmed movement</legend>
+            coordinates
+            <div id="sma6_NNN_coordinates" style="margin-top: 6px;"></div>
+        </fieldset>
+    </div>
+</div>
+
+<div id="SceneMovementAnimator7_template" style="display:none;">
+    <div style="clear:both; float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma7_NNN_head" style="display:block;">head</label>
+        <input id="sma7_NNN_head" style="display:block; width:60px;" title="head number for fixures with multiple movements (0=all)" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma7_NNN_speed" style="display:block;">speed</label>
+        <input id="sma7_NNN_speed" style="display:block; width:60px;" />
+    </div>
+
+    <div tyle="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma7_NNN_home_wait_periods" style="display:block;">home wait</label>
+        <input id="sma7_NNN_home_wait_periods" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma7_NNN_dest_wait_periods" style="display:block;">target wait</label>
+        <input id="sma7_NNN_dest_wait_periods" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-left: 20px; margin-top: 10px; height:30px;">
+        <input id="sma7_NNN_run_once" type="checkbox" />
+        <label for="sma7_NNN_run_once">run once</label>
+    </div>
+
+    <div style="margin-top: 10px; clear:both; float:left;width:100%;">
+        <fieldset style="padding:8px;">
+            <legend class="animation_fieldset">moonflower movement</legend>
+
             <div style="float:left; margin-right: 20px; margin-top: 10px;">
-                <label for="escs_strobe_neg_ms" style="display:block;">strobe off</label>
-                <input id="escs_strobe_neg_ms" style="display:block; width:70px;" />&nbsp;ms
-            </div>
-            <div style="float:left; margin-top: 10px;">
-                <div>negative color</div>
-                <div id="escs_colorpicker" style="height:30px; width:60px; border: 1px solid #808080; border-radius: 6pt 6pt;"></div>
-            </div>
-            <div style="clear:both;float:left; margin-top: 10px;">
-                <label for="escs_fader_effect" style="display:block;">fade</label>
-                <select id="escs_fader_effect" style="display:block;"></select>
-            </div>
-            <div style="clear:both;float:left; margin-top: 10px;">
-                <div style ="float: left; margin-right:6px;">custom color progression</div>
-                <div style ="float: left;" id="escs_color_progression"></div>
-            </div>
-        </fieldset>
-        <div id="escs_signal" style="clear:both;" ></div>
-    </form>
-</div>
-
-<div id="edit_SceneMovementAnimator_dialog" style="display:none;">
-    <form style="height:300px;">
-        <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset">animation</legend>
-            <div id="esma_description" class="animation_description"></div>
-        
-            <div>
-                <label for="esma_fixtures" style="margin: 10px 0px 4px 0px;">scene fixture(s)</label>
-                <select id="esma_fixtures" style="margin-bottom:10px;" multiple="multiple" ></select>
-            </div>
-
-            <div id="esma_fixture_order_container">
-                <div style="display:block; margin: 10px 0px 4px 0px;">fixture order</div>
-                <div id="esma_fixture_order" style="display:block; margin-bottom:10px; width:500px;"></div>
-            </div>
-
-            <div style="clear:both; float:left; margin-right: 20px; margin-top: 10px;">
-                <label for="esma_head" style="display:block;">head</label>
-                <input id="esma_head" style="display:block; width:60px;" title="head number for fixures with multiple movements (0=all)"/>
+                <label for="sma7_NNN_height" style="display:block;">height</label>
+                <input id="sma7_NNN_height" style="display:block; width:60px;" />&nbsp;ft
             </div>
 
             <div style="float:left; margin-right: 20px; margin-top: 10px;">
-                <label for="esma_speed" style="display:block;">speed</label>
-                <input id="esma_speed" style="display:block; width:60px;" />
-            </div>
-
-            <div id="esma_home_wait_periods_container" style="float:left; margin-right: 20px; margin-top: 10px;">
-                <label for="esma_home_wait_periods" style="display:block;">home wait</label>
-                <input id="esma_home_wait_periods" style="display:block; width:60px;" />
+                <label for="sma7_NNN_fixture_spacing" style="display:block;">spacing</label>
+                <input id="sma7_NNN_fixture_spacing" style="display:block; width:60px;" />&nbsp;ft
             </div>
 
             <div style="float:left; margin-right: 20px; margin-top: 10px;">
-                <label for="esma_dest_wait_periods" style="display:block;">target wait</label>
-                <input id="esma_dest_wait_periods" style="display:block; width:60px;" />
+                <label for="sma7_NNN_home_x" style="display:block;">center X</label>
+                <input id="sma7_NNN_home_x" style="display:block; width:60px;" />&nbsp;ft
             </div>
 
-            <div id="esma_group_size_container" style="float:left; margin-right: 20px; margin-top: 10px;">
-                <label for="esma_group_size" style="display:block;">group size</label>
-                <input id="esma_group_size" style="display:block; width:60px;margin-bottom: 4px;" />
+            <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                <label for="sma7_NNN_home_y" style="display:block;">center Y</label>
+                <input id="sma7_NNN_home_y" style="display:block; width:60px;" />&nbsp;ft
             </div>
 
-            <div style="float:left; margin-left: 20px; margin-top: 10px; height:30px;">
-                <input id="esma_run_once" type="checkbox" />
-                <label for="esma_run_once">run once</label>
-                <div id="esma_blackout_return_container">
-                    <input id="esma_blackout_return" type="checkbox" />
-                    <label for="esma_blackout_return" >return blackout </label>
-                </div>
-                <div id="esma_alternate_groups_container">
-                    <input id="esma_alternate_groups" type="checkbox"/>
-                    <label for="esma_alternate_groups">alernate groups</label>
-                </div>
+            <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                <label for="sma7_NNN_radius" style="display:block;">radius</label>
+                <input id="sma7_NNN_radius" style="display:block; width:60px;" />&nbsp;ft
             </div>
 
-            <div id="esma_SceneMovementAnimator1" style="margin-top: 10px; clear:both; float:left; width:100%;">
-                <fieldset  style="padding:8px;">
-                    <legend class="animation_fieldset">random movement</legend>
-
-                    <table style="float:left; margin-right: 20px; margin-top: 4px;">
-                        <tr>
-                            <td style="width:50px;"></td>
-                            <td>start&deg;</td>
-                            <td>end&deg;</td>
-                        </tr>
-                        <tr>
-                            <td>pan</td>
-                            <td><input id="esma1_pan_start_angle" style="display:block; width:60px;" /></td>
-                            <td><input id="esma1_pan_end_angle" style="display:block; width:60px;" /></td>
-                        </tr>
-                        <tr>
-                            <td>tilt</td>
-                            <td><input id="esma1_tilt_start_angle" style="display:block; width:60px;" /></td>
-                            <td><input id="esma1_tilt_end_angle" style="display:block; width:60px;" /></td>
-                        </tr>
-                    </table>
-
-                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
-                        <label for="esma1_positions" style="display:block;">positions to generate</label>
-                        <input id="esma1_positions" style="display:block; width:60px;" />
-                    </div>
-                </fieldset>
+            <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                <label for="sma7_NNN_pan_increment" style="display:block;">rotation increment&deg;</label>
+                <input id="sma7_NNN_pan_increment" style="display:block; width:60px;" />
             </div>
 
-            <div id="esma_SceneMovementAnimator2" style="margin-top: 10px; clear:both; float:left;width:100%;">
-                <fieldset  style="padding:8px;">
-                    <legend class="animation_fieldset">fan movement</legend>
-
-                   <table style="float:left; margin-right: 20px; margin-top: 4px;">
-                        <tr>
-                            <td style="width:50px;"></td>
-                            <td>start&deg;</td>
-                            <td>end&deg;</td>
-                            <td>increment&deg;</td>
-                        </tr>
-                        <tr>
-                            <td>pan</td>
-                            <td><input id="esma2_pan_start_angle" style="display:block; width:60px;" /></td>
-                            <td><input id="esma2_pan_end_angle" style="display:block; width:60px;" /></td>
-                            <td><input id="esma2_pan_increment" style="display:block; width:60px;" /></td>
-                        </tr>
-                        <tr>
-                            <td>tilt</td>
-                            <td><input id="esma2_tilt_start_angle" style="display:block; width:60px;" /></td>
-                            <td><input id="esma2_tilt_end_angle" style="display:block; width:60px;" /></td>
-                        </tr>
-                    </table>
-                </fieldset>
+            <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                <label for="sma7_NNN_positions" style="display:block;">rotation positions</label>
+                <input id="sma7_NNN_positions" style="display:block; width:60px;" />
             </div>
-
-            <div id="esma_SceneMovementAnimator3" style="margin-top: 10px; clear:both; float:left;width:100%;">
-                <fieldset  style="padding:8px;">
-                    <legend class="animation_fieldset">rotate movement</legend>
-
-                     <table style="float:left; margin-right: 20px; margin-top: 4px;">
-                        <tr>
-                            <td style="width:50px;"></td>
-                            <td>start&deg;</td>
-                            <td>end&deg;</td>
-                        </tr>
-                        <tr>
-                            <td>pan</td>
-                            <td><input id="esma3_pan_start_angle" style="display:block; width:60px;" /></td>
-                            <td><input id="esma3_pan_end_angle" style="display:block; width:60px;" /></td>
-                        </tr>
-                        <tr>
-                            <td>tilt</td>
-                            <td><input id="esma3_tilt_start_angle" style="display:block; width:60px;" /></td>
-                            <td><input id="esma3_tilt_end_angle" style="display:block; width:60px;" /></td>
-                        </tr>
-                    </table>
-                </fieldset>
-            </div>
-
-            <div id="esma_SceneMovementAnimator4" style="margin-top: 10px; clear:both; float:left;width:100%;">
-                <fieldset  style="padding:8px;">
-                    <legend class="animation_fieldset">up/down movement</legend>
-
-                     <table style="float:left; margin-right: 20px; margin-top: 4px;">
-                        <tr>
-                            <td style="width:50px;"></td>
-                            <td>start&deg;</td>
-                            <td>end&deg;</td>
-                            <td>increment&deg;</td>
-                        </tr>
-                        <tr>
-                            <td>pan</td>
-                            <td><input id="esma4_pan_start_angle" style="display:block; width:60px;" /></td>
-                            <td><input id="esma4_pan_end_angle" style="display:block; width:60px;" /></td>
-                            <td><input id="esma4_pan_increment" style="display:block; width:60px;" /></td>
-                        </tr>
-                        <tr>
-                            <td>tilt</td>
-                            <td><input id="esma4_tilt_start_angle" style="display:block; width:60px;" /></td>
-                            <td><input id="esma4_tilt_end_angle" style="display:block; width:60px;" /></td>
-                            <td></td>
-                        </tr>
-                    </table>
-                </fieldset>
-            </div>
-
-            <div id="esma_SceneMovementAnimator5" style="margin-top: 10px; clear:both; float:left;width:100%;">
-                <fieldset  style="padding:8px;">
-                    <legend class="animation_fieldset">Beam cross movement</legend>
-
-                     <table style="float:left; margin-right: 20px; margin-top: 4px;">
-                        <tr>
-                            <td style="width:50px;"></td>
-                            <td>start&deg;</td>
-                            <td>end&deg;</td>
-                        </tr>
-                        <tr>
-                            <td>pan</td>
-                            <td><input id="esma5_pan_start_angle" style="display:block; width:60px;" /></td>
-                            <td><input id="esma5_pan_end_angle" style="display:block; width:60px;" /></td>
-                        </tr>
-                        <tr>
-                            <td>tilt</td>
-                            <td><input id="esma5_tilt_start_angle" style="display:block; width:60px;" /></td>
-                            <td><input id="esma5_tilt_end_angle" style="display:block; width:60px;" /></td>
-                        </tr>
-                    </table>
-                </fieldset>
-            </div>
-
-            <div id="esma_SceneMovementAnimator6" style="margin-top: 10px; clear:both; float:left;width:100%;">
-                <fieldset  style="padding:8px;">
-                    <legend class="animation_fieldset">programmed movement</legend>
-                    coordinates
-                    <div id="esma6_coordinates" style="margin-top: 6px;"></div>
-                </fieldset>
-            </div>
-
-            <div id="esma_SceneMovementAnimator7" style="margin-top: 10px; clear:both; float:left;width:100%;">
-                <fieldset  style="padding:8px;">
-                    <legend class="animation_fieldset">moonflower movement</legend>
-
-                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
-                        <label for="esma7_height" style="display:block;">height</label>
-                        <input id="esma7_height" style="display:block; width:60px;" />&nbsp;ft
-                    </div>
-
-                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
-                        <label for="esma7_fixture_spacing" style="display:block;">spacing</label>
-                        <input id="esma7_fixture_spacing" style="display:block; width:60px;" />&nbsp;ft
-                    </div>
-
-                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
-                        <label for="esma7_home_x" style="display:block;">center X</label>
-                        <input id="esma7_home_x" style="display:block; width:60px;" />&nbsp;ft
-                    </div>
-
-                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
-                        <label for="esma7_home_y" style="display:block;">center Y</label>
-                        <input id="esma7_home_y" style="display:block; width:60px;" />&nbsp;ft
-                    </div>
-
-                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
-                        <label for="esma7_radius" style="display:block;">radius</label>
-                        <input id="esma7_radius" style="display:block; width:60px;" />&nbsp;ft
-                    </div>
-
-                  <div style="float:left; margin-right: 20px; margin-top: 10px;">
-                        <label for="esma7_pan_increment" style="display:block;">rotation increment&deg;</label>
-                        <input id="esma7_pan_increment" style="display:block; width:60px;" />
-                    </div>
-
-                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
-                        <label for="esma7_positions" style="display:block;">rotation positions</label>
-                        <input id="esma7_positions" style="display:block; width:60px;" />
-                    </div>
-
-                </fieldset>
-            </div>
-
-            <div id="esma_SceneMovementAnimator8" style="margin-top: 10px; clear:both; float:left; width:100%;">
-                <fieldset  style="padding:8px;">
-                    <legend class="animation_fieldset">sine wave movement</legend>
-
-                    <table style="float:left; margin-right: 20px; margin-top: 4px;">
-                        <tr>
-                            <td style="width:50px;"></td>
-                            <td>start&deg;</td>
-                            <td>end&deg;</td>
-                        </tr>
-                        <tr>
-                            <td>pan</td>
-                            <td><input id="esma8_pan_start_angle" style="display:block; width:60px;" /></td>
-                            <td><input id="esma8_pan_end_angle" style="display:block; width:60px;" /></td>
-                        </tr>
-                        <tr>
-                            <td>tilt</td>
-                            <td><input id="esma8_tilt_start_angle" style="display:block; width:60px;" /></td>
-                            <td><input id="esma8_tilt_end_angle" style="display:block; width:60px;" /></td>
-                        </tr>
-                    </table>
-
-                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
-                        <label for="esma8_positions" style="display:block;">step</label>
-                        <input id="esma8_positions" style="display:block; width:60px;" />
-                    </div>
-
-                    <div style="float:left; margin-right: 20px; margin-top: 10px;">
-                        <label for="esma8_pan_increment" style="display:block;">offset</label>
-                        <input id="esma8_pan_increment" style="display:block; width:60px;" />
-                    </div>
-
-                </fieldset>
-            </div>
-
-            <div id="esma_signal" style="clear:both; float:left;" ></div>
 
         </fieldset>
-    </form>
+    </div>
 </div>
 
-<div id="edit_SceneChannelAnimator_dialog" style="display:none;">
-    <form style="height:300px;">
-        <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset">animation</legend>
-            <div id="esca_description" class="animation_description"></div>
+<div id="SceneMovementAnimator8_template" style="display:none;">
+    <div style="clear:both; float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma8_NNN_head" style="display:block;">head</label>
+        <input id="sma8_NNN_head" style="display:block; width:60px;" title="head number for fixures with multiple movements (0=all)" />
+    </div>
 
-            <div style="margin: 10px 0px 4px 0px;">channel animations</div>
-            <div id="esca_animations" style="margin-top: 6px;"></div>        
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma8_NNN_speed" style="display:block;">speed</label>
+        <input id="sma8_NNN_speed" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma8_NNN_dest_wait_periods" style="display:block;">target wait</label>
+        <input id="sma8_NNN_dest_wait_periods" style="display:block; width:60px;" />
+    </div>
+
+    <div style="float:left; margin-right: 20px; margin-top: 10px;">
+        <label for="sma8_NNN_group_size" style="display:block;">group size</label>
+        <input id="sma8_NNN_group_size" style="display:block; width:60px;margin-bottom: 4px;" />
+    </div>
+
+    <div style="float:left; margin-left: 20px; margin-top: 10px; height:30px;">
+        <input id="sma8_NNN_run_once" type="checkbox" />
+        <label for="sma8_NNN_run_once">run once</label>
+    </div>
+
+    <div style="margin-top: 10px; clear:both; float:left; width:100%;">
+        <fieldset style="padding:8px;">
+            <legend class="animation_fieldset">sine wave movement</legend>
+
+            <table style="float:left; margin-right: 20px; margin-top: 4px;">
+                <tr>
+                    <td style="width:50px;"></td>
+                    <td>start&deg;</td>
+                    <td>end&deg;</td>
+                </tr>
+                <tr>
+                    <td>pan</td>
+                    <td><input id="sma8_NNN_pan_start_angle" style="display:block; width:60px;" /></td>
+                    <td><input id="sma8_NNN_pan_end_angle" style="display:block; width:60px;" /></td>
+                </tr>
+                <tr>
+                    <td>tilt</td>
+                    <td><input id="sma8_NNN_tilt_start_angle" style="display:block; width:60px;" /></td>
+                    <td><input id="sma8_NNN_tilt_end_angle" style="display:block; width:60px;" /></td>
+                </tr>
+            </table>
+
+            <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                <label for="sma8_NNN_positions" style="display:block;">step</label>
+                <input id="sma8_NNN_positions" style="display:block; width:60px;" />
+            </div>
+
+            <div style="float:left; margin-right: 20px; margin-top: 10px;">
+                <label for="sma8_NNN_pan_increment" style="display:block;">offset</label>
+                <input id="sma8_NNN_pan_increment" style="display:block; width:60px;" />
+            </div>
 
         </fieldset>
-        <div id="esca_signal" style="clear:both;" ></div>
-    </form>
-</div>
-
-<div id="esca_channel_template" style="display:none;">
-    <div style="padding:10px; width:600px; background-color: black; border: 1px solid #808080; border-radius: 6pt 6pt;">
-        <div style="margin-bottom:10px;">
-            <select class="esca_fixture"></select>
-        </div>
-
-        <div style="margin-bottom:10px;">
-            <select class="esca_channel"></select>
-        </div>
-
-        <div style="margin-bottom:10px; margin-right: 10px; float:left;">
-            <select class="esca_style">
-                <option value="1" selected>Value List</option>
-                <option value="2">Value Range</option>
-                <option value="3">Scale Scene Value</option>
-            </select>
-        </div>
-
-        <div class="esca_channel_list_container" style="float:left;">
-            <div class="esca_channel_list"></div>
-        </div>
-
-        <div class="esca_channel_range_container" style="float:left;">
-            <input class="esca_channel_range_start" style="width:50px;" value="1"/> - <input class="esca_channel_range_end" style="width:50px;" value="255"/>
-        </div>
     </div>
 </div>
 
 <div id="track_list_dialog" style="display:none;">
-    <div id="tld_tracks" class="track_list">
+    
+    <div style="clear: both; float: left; margin-top: 2px;" >
+        <div class="tl_playlist_select">
+            <select id="tl_playlist_select" style="max-width: 400px; padding: 4px;"></select>
+        </div>
+
+        <div class="tl_title">
+            <div class="tl_item tl_icon">&nbsp;</div>
+            <div class="tl_item tl_track">TRACK</div>
+            <div class="tl_item tl_time">TIME</div>
+            <div class="tl_item tl_bpm">BPM</div>
+            <div class="tl_item tl_artist">ARTIST</div>
+        </div>
+    </div>
+
+    <div style="float: left; margin: 6px 0px 0px 50px;">
+        <input id="tl_track_filter" type="text" class="track_filter" placeholder="filter playlist tracks" />
+    </div>
+
+    <div style="clear: both; float: left; width: 800px; ">
+        <div id="tld_tracks" class="track_list" style="height: 340px !important;"></div>
+    </div>
+
+    <div id="tld_info" class="track_info" style="float: right;">
+        <div class="ti_controls" style="display:none;">
+            <div style="margin: 0px 0px 8px 0px;">
+                <div style="clear: both; float: left;">
+                    <img class="ti_img" src="" height="96" width="96" />
+                </div>
+
+                <div style="float: left; width: 270px; overflow: auto; height: 96px; ">
+                    <div class="ti_track" style="margin-bottom: 4px;"></div>
+                    <div class="ti_artist" style="margin-bottom: 10px;"></div>
+                    <div class="ti_album"></div>
+                </div>
+
+                <div style="clear: both;"></div>
+            </div>
+
+            <div>
+                <div class="track_play md-icon-disabled md-icon-track-play" title="track play" style="clear: both; float:left; margin-right: 16px;"></div>
+                <div class="track_stop md-icon-disabled md-icon-track-stop" title="track stop" style="float:left; margin-right: 16px;"></div>
+                <div class="track_pause md-icon-disabled md-icon-track-pause" title="track pause" style="float:left; margin-right: 16px;"></div>
+                <div class="track_queue md-icon-disabled md-icon-plus" title="queue track" style="float:left; margin-right: 16px;"></div>
+                <div style="clear: both;"></div>
+            </div>
+
+            <div style="margin: 8px 0px 0px 0px;">
+                <span class="ti_time"></span>
+                <span class="ti_bpm"></span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1341,10 +2029,10 @@ MA 02111-1307, USA.
     <div id="mmd_track_div">
         <div class="mm_track_label" style="clear:both; float:left; margin: 2px 0px 2px 0px;">
             <div>
-                <select id="mmd_playlist_list"></select>
+                <select id="mmd_playlist_list" style="max-width: 700px;"></select>
             </div>
             <div style="clear: both; float:left; margin-top: 4px;">
-                <select id="mmd_track_list"></select>
+                <select id="mmd_track_list" style="max-width: 700px;"></select>
             </div>
         </div>
 
@@ -1371,64 +2059,9 @@ MA 02111-1307, USA.
     </div>
 </div>
 
-<div id="edit_ScenePixelAnimator_dialog" style="display:none;">
-    <form style="height:390px;">
-        <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset">pixel animator</legend>
-            <div id="espa_description" class="animation_description"></div>
-            <div style="clear:both; float:left;">
-                <label for="espa_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
-                <select id="espa_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
-
-                <div style="display:block; margin: 10px 0px 4px 0px;">fixture order</div>
-                <div id="espa_fixture_order" style="display:block; margin-bottom:10px; width:500px;"></div>
-            </div>
-            <div style="clear:both; float:left; margin-top: 10px;">
-                <input id="espa_combine" type="checkbox" />
-                <label for="espa_combine" >combine fixtures</label>
-            </div>
-
-            <div style="clear:both;float:left; margin-top: 10px;">
-                <div style="clear:both;float:left; height: 60px;">
-                    <label for="espa_pixel_effect" style="clear:both; display:block; margin-bottom: 4px;">pixel effect</label>
-                    <select id="espa_pixel_effect" style="display:block; "></select>
-                </div>
-                <div id="espa_generations_div" style="float:left; margin-left: 20px;">
-                    <label for="espa_generations" style="display:block; margin-bottom: 4px;">generations</label>
-                    <input id="espa_generations" style="display:block; width:70px; "/>
-                </div>
-                <div id="espa_pixels_div" style="float:left; margin-left: 20px;">
-                    <label for="espa_pixels" style="display:block; margin-bottom: 4px;">pixels</label>
-                    <input id="espa_pixels" style="display:block; width:70px;"/>
-                </div>
-                <div id="espa_increment_div" style="float:left; margin-left: 20px;">
-                    <label for="espa_increment" style="display:block; margin-bottom: 4px;">increment</label>
-                    <input id="espa_increment" style="display:block; width:70px; "/>
-                </div>
-                <div id="espa_fade_div" style="float:left; margin-left: 20px; margin-top: 30px;">
-                    <input id="espa_fade" type="checkbox" />
-                    <label for="espa_fade" >fade colors</label>
-                </div>
-            </div>
-  
-            <div style="clear:both;float:left; margin-top: 10px;">
-                <div style ="float: left; margin-right:6px;">custom color progression</div>
-                <div style ="float: left;" id="espa_color_progression"></div>
-            </div>
-
-            <div style="clear:both; float:left; margin-top: 10px;">
-                <div style="margin-bottom: 4px;">pixel off color</div>
-                <div id="espa_pixel_off_color" style="height:30px; width:60px; border: 1px solid #808080; border-radius: 6pt 6pt;"></div>
-            </div>
-
-        </fieldset>
-        <div id="espa_signal" style="clear:both;" ></div>
-    </form>
-</div>
-
 <div id="music_player_login_dialog" style="display:none;">
     <form>
-        <div style="margin: 10px 0px 12px 0px;">Login to the music player to access playlists and tracks.</div>
+        <div style="margin: 10px 0px 12px 0px;">Login into the music player in order to play tracks.</div>
 
         <label for="mpl_username" style="display:block; margin: 8px 0px 4px 0px;">username</label>
         <input id="mpl_username" style="display:block;width: 400px;" />
@@ -1447,60 +2080,67 @@ MA 02111-1307, USA.
         </div>
 
         <div style="float: left; margin: 20px 0px 0px 0px; position: absolute; left: 220px;">
-            <label for="ptp_pan" style="display:block; margin: 8px 0px 4px 0px; font-size:8pt;">pan °</label>
-            <input id="ptp_pan" style="width: 60px; font-size:8pt;"/>
+            <label for="ptp_pan" style="display:block; margin: 8px 0px 4px 0px; font-size:10pt;">pan &deg;</label>
+            <input id="ptp_pan" style="width: 60px; font-size:10pt;"/>
 
-            <label for="ptp_tilt" style="display:block; margin: 12px 0px 4px 0px; font-size:8pt;">tilt °</label>
-            <input id="ptp_tilt" style="width: 60px; font-size:8pt;"/>
+            <label for="ptp_tilt" style="display:block; margin: 12px 0px 4px 0px; font-size:10pt;">tilt &deg;</label>
+            <input id="ptp_tilt" style="width: 60px; font-size:10pt;"/>
         </div>
     </form>
 </div>
 
-<div id="edit_SceneChannelFilter_dialog" style="display:none;">
-    <form style="height:390px;">
-        <fieldset style="padding:8px; margin-top:10px;">
-            <legend class="animation_fieldset">channel filter</legend>
-            <div id="escf_description" class="animation_description"></div>
-            <div style="clear:both; float:left;">
-                <label for="escf_fixtures" style="display:block; margin: 10px 0px 4px 0px;">scene fixture(s)</label>
-                <select id="escf_fixtures" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
-
-                <div style="display:block; margin: 10px 0px 4px 0px;">fixture order</div>
-                <div id="escf_fixture_order" style="display:block; margin-bottom:10px; width:500px;"></div>
-            </div>
-
-            <div style="clear:both;float:left; margin-top: 8px;">
-                <label for="escf_channels" style="clear:both; display:block; margin-bottom: 4px;">channels</label>
-                <select id="escf_channels" style="display:block; margin-bottom:10px;" multiple="multiple" ></select>
-            </div>
-
-            <div style="clear:both;float:left; margin-top: 10px;">
-                <div style="clear:both;float:left;" >
-                    <label for="escf_filter" style="clear:both; display:block; margin-bottom: 4px;">filter</label>
-                    <select id="escf_filter" style="display:block; "></select>
-                </div>
-
-                <div id="escf_step_div" style="float:left; margin-left: 10px;">
-                    <label for="escf_step" style="display:block; margin-bottom: 4px;">step</label>
-                    <input id="escf_step" style="display:block; width:70px; "/>
-                </div>
-
-                <div id="escf_amplitude_div" style="float:left; margin-left: 10px;">
-                    <label id="escf_amplitude_label" for="escf_amplitude" style="display:block; margin-bottom: 4px;">amplitude</label>
-                    <input id="escf_amplitude" style="display:block; width:70px;"/>
-                </div>
-
-                <div id="escf_offset_div" style="float:left; margin-left: 10px;">
-                    <label for="escf_offset" style="display:block; margin-bottom: 4px;">offset</label>
-                    <input id="escf_offset" style="display:block; width:70px;"/>
-                </div>
-            </div>
-
-        </fieldset>
-
-        <div id="escf_signal" style="clear:both;" ></div>
+<div id="edit_fixture_palette_dialog" style="display:none;">
+    <form style="height:420px;">
+        <div id="efp_palette_pane" style="margin: 10px 20px 0px 0px;"></div>
     </form>
 </div>
+
+<div id="save_fixture_preset_dialog" style="display:none;">
+    <form style="height:200px;">
+        <div>
+            <label class="field_title" for="sfpd_name">preset name</label>
+            <input id="sfpd_name" style="display:block;width: 400px;" />
+        </div>
+        <div style="margin-top: 10px;">
+            <label class="field_title" for="sfpd_description">description</label>
+            <input id="sfpd_description" style="display:block;width: 400px;" />
+        </div>
+        <div style="margin-top: 10px;">
+            <label class="field_title" for="sfpd_number" style="display:block;">number</label>
+            <input id="sfpd_number" style="display:block;width: 80px; color: white;" />
+        </div>
+        <div id="sfpd_channels_div" style="margin-top: 16px; font-size: 10pt;" title="channels to save in this preset">
+            <input type="radio" id="sfpd_channels_1" name="sfpd_channels" value="1" checked="checked" /><label for="sfpd_channels_1">save all channels</label>
+            <input type="radio" id="sfpd_channels_2" name="sfpd_channels" value="2" /><label for="sfpd_channels_2">save selected channels</label>
+        </div>
+    </form>
+</div>
+
+<div id="animation_level_visualizer_dialog" title="Animation Level Visualizer" style="display:none;" class="animation_level_visualizer">
+    <div>
+        <div style="margin: 10px 0px 0px 60px;">
+            <label for="animation_time_select" style="margin-right: 5px;">Visualizer periods</label>
+            <select id="animation_time_select">
+                <option value="0" selected>level change</option>
+                <option value="25">25 ms</option>
+                <option value="50">50 ms</option>
+                <option value="75">75 ms</option>
+                <option value="100">100 ms</option>
+                <option value="150">150 ms</option>
+                <option value="250">250 ms</option>
+                <option value="500">500 ms</option>
+                <option value="1000">1 sec</option>
+            </select>
+        </div>
+
+        <div class='amplitude_yaxis'>Animation Level</div>
+        <div id="animation_level_chart" style="width:1000px;height:280px; margin: 10px 0px 20px 20px;"></div>
+        <div class='amplitude_xaxis'>X-Axis</div>
+        <div id="animation_level_legend" style="width:980px;height:20px; margin: 10px 0px 20px 50px;"></div>
+    </div>
+</div>
+
+<span class="context-fixture-header"></span>
 
 </body>
 

@@ -25,7 +25,7 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
-ChannelAngle::ChannelAngle( int angle, BYTE channel_value ) :
+ChannelAngle::ChannelAngle( int angle, channel_value channel_value ) :
     m_angle( angle ),
     m_value( channel_value )
 {

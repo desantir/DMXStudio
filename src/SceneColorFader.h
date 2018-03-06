@@ -22,54 +22,30 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "Fixture.h"
-#include "AbstractAnimation.h"
+#include "AnimationDefinition.h"
+#include "AnimationSignalProcessor.h"
 #include "ColorFader.h"
 #include "ColorStrobe.h"
 
 enum FaderEffect {
-    FADER_EFFECT_CHANGE = 1,				// Simple color changer
-    FADER_EFFECT_STROBE = 2,				// Strobing color
-    FADER_EFFECT_BLEND = 3,					// Blending colors together
-    FADER_EFFECT_ALL = 4                    // Use all effects
+    FADER_EFFECT_CHANGE = 1,				// Simple color changer (single)
+	FADER_EFFECT_CHANGE_MULTI = 2,			// Simple color changer (distributes palette across multiple fixtures)
+    FADER_EFFECT_STROBE = 3,				// Strobing color
+    FADER_EFFECT_BLEND = 4,					// Blending colors together (single)
+	FADER_EFFECT_BLEND_MULTI = 5,			// Blending colors together (distributes palette across multiple fixtures)
+    FADER_EFFECT_ALL = 6                    // Use all effects
+
 } ;
 
-struct FaderFixture
-{
-    Fixture*				m_pf;
-    PixelArray*      	    m_pixels;               // Channel numbers for all colors
-    RGBWA                   m_color;                // Initial values for all colors
-    ColorFader				m_fader;
-
-    FaderFixture( Fixture* pf, PixelArray* pixels, RGBWA color ) :
-        m_pf( pf ),
-        m_color( color ),
-        m_pixels( pixels )
-    {}
-};
-
-typedef std::vector< FaderFixture > FaderFixtureArray;
-
-class SceneColorFader : public AbstractAnimation
+class SceneColorFader : public AnimationDefinition
 {
     friend class VenueWriter;
     friend class VenueReader;
 
 protected:
-    AnimationSignalProcessor*	m_signal_processor;
-    FaderFixtureArray		    m_fixtures;
-    FaderEffect					m_current_effect;
-    UINT       					m_color_index;
-    ColorStrobe					m_strobe;
-    UINT                        m_effect_periods;
-    RGBWAArray                  m_colors;
-    bool                        m_start_strobe;
-
     // Configuration
     RGBWA   					m_strobe_neg_color;
-    unsigned					m_strobe_neg_ms;
-    unsigned					m_strobe_pos_ms;
-    UINT                        m_strobe_flashes;
+	StrobeTime					m_strobe_time;
     RGBWAArray                  m_custom_colors;
     FaderEffect                 m_fader_effect;
 
@@ -78,25 +54,21 @@ public:
     static const char* animationName;
 
     SceneColorFader( UID animation_uid, 
-                        AnimationSignal signal,
-                        UIDArray actors,
-                        RGBWA strobe_neg_color,
-                        unsigned strobe_pos_ms,
-                        unsigned strobe_neg_ms,
-                        UINT m_strobe_flashes,
-                        RGBWAArray custom_colors,
-                        FaderEffect fader_effect );
+                     bool shared,
+					 UID reference_fixture,
+                     AnimationSignal signal, 
+					 StrobeTime strobeTime,
+                     RGBWA strobe_neg_color,
+                     RGBWAArray custom_colors,
+                     FaderEffect fader_effect );
 
-    SceneColorFader(void) :
-        m_signal_processor( NULL )
-    {}
+    SceneColorFader( void ) {}
 
     virtual ~SceneColorFader(void);
 
-    AbstractAnimation* clone();
     CString getSynopsis(void);
 
-    const char* getName() { return SceneColorFader::animationName; }
+    const char* getPrettyName() { return SceneColorFader::animationName; }
     const char* getClassName() { return SceneColorFader::className; }
 
     RGBWA getStrobeNegColor() const {
@@ -106,28 +78,14 @@ public:
         m_strobe_neg_color = strobe_neg_color;
     }
 
-    unsigned getStrobeNegMS() const {
-        return m_strobe_neg_ms;
-    }
-    void setStrobeNegMS( unsigned strobe_neg_ms ) {
-        m_strobe_neg_ms = strobe_neg_ms;
-    }
+	StrobeTime getStrobeTime() const {
+		return m_strobe_time;
+	}
+	void setStrobeTime(StrobeTime& strobe_time) {
+		m_strobe_time = strobe_time;
+	}
 
-    unsigned getStrobePosMS() const {
-        return m_strobe_pos_ms;
-    }
-    void setStrobePosMS( unsigned strobe_pos_ms ) {
-        m_strobe_pos_ms = strobe_pos_ms;
-    }
-
-    UINT getStrobeFlashes() const {
-        return m_strobe_flashes;
-    }
-    void setStrobeFlashes( UINT strobe_flashes ) {
-        m_strobe_flashes = strobe_flashes;
-    }
-
-    RGBWAArray getCustomColors( ) const {
+    RGBWAArray& getCustomColors( ) {
         return m_custom_colors;
     }
     void setCustomColors( RGBWAArray colors ) {
@@ -145,11 +103,8 @@ public:
         visitor->visit(this);
     }
 
-    virtual void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
-    virtual bool sliceAnimation( DWORD time_ms, BYTE* dmx_packet );
-    virtual void stopAnimation( void );
+    AnimationTask* createTask( AnimationEngine* engine, ActorList& actors, UID owner_uid );
 
-protected:
-    void loadColorChannels( BYTE* dmx_packet, FaderFixture& sfixture, RGBWA& rgbw );
+	AnimationDefinition* clone();
 };
 

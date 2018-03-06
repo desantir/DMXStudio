@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-2016 Robert DeSantis
+Copyright (C) 2011-2017 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -24,33 +24,39 @@ MA 02111-1307, USA.
 
 #include "IVisitor.h"
 #include "ChaseStep.h"
-#include "Act.h"
 
 #define DEFAULT_CHASE_DELAY		5000
 
 typedef ULONG ChaseNumber;
+
+enum ChaseStepTrigger {
+    CT_TIMER = 1,
+    CT_MANUAL = 2
+};
 
 class Chase : public DObject
 {
     friend class VenueWriter;
     friend class VenueReader;
 
-    ULONG			m_delay_ms;						// Scene delay in milliseconds
-    ULONG			m_fade_ms;						// Fade time - transition between scenes
-    ChaseStepArray	m_chase_steps;
-    Acts            m_acts;                         // List of acts this object belongs to
-    bool            m_repeat;                       // Chase will repeat indefinately
+    ULONG			    m_delay_ms;						// Scene delay in milliseconds
+    ULONG			    m_fade_ms;						// Fade time - transition between scenes
+    ChaseStepArray	    m_chase_steps;
+    bool                m_repeat;                       // Chase will repeat indefinately
+    ChaseStepTrigger    m_step_trigger;                 // Event used to trigger chase step advance
 
 public:
     Chase(void) : 
         m_delay_ms( DEFAULT_CHASE_DELAY ),
         m_fade_ms( 0 ),
         m_repeat( true ),
+        m_step_trigger( CT_TIMER ),
         DObject()
     {}
 
     Chase( Chase& other );
-    Chase( UID uid, ChaseNumber chase_number, ULONG delay_ms, ULONG fade_ms, const char * name, const char *description, bool repeat );
+    Chase( UID uid, ChaseNumber chase_number, ULONG delay_ms, ULONG fade_ms, 
+           const char * name, const char *description, bool repeat, ChaseStepTrigger step_trigger );
     ~Chase(void);
 
     void accept( IVisitor* visitor) {
@@ -78,6 +84,13 @@ public:
         return m_repeat;
     }
     
+    void setStepTrigger( ChaseStepTrigger step_trigger ) {
+        m_step_trigger = step_trigger;
+    }
+    ChaseStepTrigger getStepTrigger() const {
+        return m_step_trigger;
+    }
+
     void setFadeMS( ULONG fade_ms ) {
         m_fade_ms = fade_ms;
     }
@@ -128,13 +141,6 @@ public:
     }
     void setSteps( ChaseStepArray& steps ) {
         m_chase_steps = steps;
-    }
-
-    inline Acts getActs() const {
-        return m_acts;
-    }
-    inline void setActs( Acts& acts ) {
-        m_acts = acts;
     }
 };
 

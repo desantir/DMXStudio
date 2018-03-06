@@ -22,7 +22,7 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "IDefinitionVisitor.h"
 
 class ChannelValueRange
@@ -30,26 +30,26 @@ class ChannelValueRange
     friend class DefinitionWriter;
     friend class DefinitionReader;
 
-    BYTE		m_start;						// Start value (inclusive)
-    BYTE		m_end;							// End value (inclusive)
-    CString		m_name;							// Range name
-    int         m_extra;                        // Extra informations such as pan/tilt angle
+	channel_value	m_start;						// Start value (inclusive)
+	channel_value	m_end;							// End value (inclusive)
+    CString			m_name;							// Range name
+    int				m_extra;                        // Extra informations such as pan/tilt angle
 
     ChannelValueRange() {}
 
 public:
-    ChannelValueRange( BYTE start, BYTE end, const char *name, int extra=0 );
+    ChannelValueRange( channel_value start, channel_value end, const char *name, int extra=0 );
     ~ChannelValueRange(void);
 
     void accept( IDefinitionVisitor* visitor) {
         visitor->visit(this);
     }
 
-    BYTE getStart() const {
+	channel_value getStart() const {
         return m_start;
     }
 
-    BYTE getEnd() const {
+	channel_value getEnd() const {
         return m_end;
     }
 

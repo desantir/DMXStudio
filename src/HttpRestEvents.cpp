@@ -25,7 +25,7 @@ MA 02111-1307, USA.
 
 // ----------------------------------------------------------------------------
 //
-bool HttpRestServices::fetch_events( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
+void HttpRestServices::fetch_events( Venue* venue, DMXHttpSession* session, CString& response, LPCSTR data )
 {
     ULONG now = GetTickCount();
 
@@ -60,6 +60,4 @@ bool HttpRestServices::fetch_events( Venue* venue, DMXHttpSession* session, CStr
     json.endArray( "events" );
 
     json.endObject();
-
-    return true;
 }

@@ -57,6 +57,7 @@ static int populateEventNames() {
     sources[ ES_MUSIC_PLAYER ] = "MUSIC_PLAYER";
     sources[ ES_MASTER_DIMMER ] = "MASTER_DIMMER";
     sources[ ES_TRACK_QUEUES ] = "TRACK_QUEUES";
+    sources[ ES_ANIMATION ] = "ANIMATION";
 
     return 0;
 }
@@ -83,7 +84,7 @@ UINT EventBus::run() {
     CSingleLock lock( &m_bus_lock, FALSE );
 
     while ( isRunning() ) {
-        if ( ::WaitForSingleObject( m_event_fired, 10000 ) != WAIT_OBJECT_0 )
+        if ( ::WaitForSingleObject( m_event_fired, 2000 ) != WAIT_OBJECT_0 )
             continue;
 
         while ( m_event_queue.size() > 0 ) {

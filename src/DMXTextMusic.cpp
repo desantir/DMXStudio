@@ -29,8 +29,10 @@ MA 02111-1307, USA.
 //
 void DMXTextUI::musicPlayerLogin()
 {
-    if ( !studio.hasMusicPlayer() || studio.getMusicPlayer()->isLoggedIn() )
+    if ( !studio.hasMusicPlayer() || studio.getMusicPlayer()->isLoggedIn() ) {
+        m_text_io.printf( "User is already logged in or player not found\n" );
         return;
+    }
 
     InputField username_field( "Music Player Username", studio.getMusicPlayer()->getUsername() );
     InputField password_field( "Music Player Password", "" );
@@ -43,20 +45,14 @@ void DMXTextUI::musicPlayerLogin()
 
     m_text_io.printf( "\n" );
 
-    for ( ;; ) {
-        if ( !form.play() )
-            break;
-    
-        if ( studio.getMusicPlayer()->signon( username_field.getValue(), password_field.getValue() ) )
-            break;
+    if ( form.play() ) {
+        if ( !studio.getMusicPlayer()->signon( username_field.getValue(), password_field.getValue() ) ) {
+            CString login_error = studio.getMusicPlayer()->getLastPlayerError();
+            if ( login_error.GetLength() != 0 )
+                m_text_io.printf( "ERROR: %s\n\n", login_error );
 
-        CString login_error = studio.getMusicPlayer()->getLastPlayerError();
-        if ( login_error.GetLength() != 0 )
-            m_text_io.printf( "ERROR: %s\n\n", login_error );
-
-        m_text_io.printf( "Unable to logon - try again\n" );
-
-        password_field.setValue( "" );
+            m_text_io.printf( "Unable to logon\n" );
+        }
     }
 
     password_field.setValue( "               " );
@@ -76,9 +72,10 @@ public:
 
         int key = 1;
 
+		PlaylistInfo playlist_info;
         for ( PlayerItems::iterator it=m_playlists.begin(); it != m_playlists.end(); ++it ) {
-            CString name = studio.getMusicPlayer()->getPlaylistName( (*it) );
-            addKeyValue( key++, name );
+			if ( studio.getMusicPlayer()->getPlaylistInfo((*it), &playlist_info) )
+				addKeyValue( key++, playlist_info.playlist_name );
         }
         
         setDefaultListValue( 1 );      
@@ -110,14 +107,14 @@ public:
         int key = 1;
 
         for ( PlayerItems::iterator it=m_tracks.begin(); it != m_tracks.end(); ++it ) {
-            CString track_name, artist_name;
+            TrackInfo track_info;
 
-            studio.getMusicPlayer()->getTrackInfo( (*it), &track_name, &artist_name, NULL, NULL, NULL );
+            studio.getMusicPlayer()->getTrackInfo( (*it), &track_info );
 
-            track_name.AppendFormat( "by %s", artist_name );
+            CString key_text;
+            key_text.Format( "%s by %s", track_info.track_name, track_info.artist_name );
 
-            addKeyValue( key++, track_name );
-
+            addKeyValue( key++, key_text );
         }
         
         setDefaultListValue( 1 );  
@@ -151,8 +148,11 @@ void DMXTextUI::listPlaylists()
     PlayerItems playlists;
     studio.getMusicPlayer()->getPlaylists( playlists );
 
-    for ( PlayerItems::iterator it=playlists.begin(); it != playlists.end(); ++it )
-        m_text_io.printf( "   %s\n", studio.getMusicPlayer()->getPlaylistName( (*it) ) );
+	PlaylistInfo playlist_info;
+	for ( PlayerItems::iterator it = playlists.begin( ); it != playlists.end( ); ++it ) {
+		if ( studio.getMusicPlayer()->getPlaylistInfo((*it), &playlist_info) )
+	        m_text_io.printf( "   %s (%d)\n", playlist_info.playlist_name, playlist_info.playlist_tracks );
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -173,14 +173,12 @@ void DMXTextUI::listTracks()
         player->getTracks( playlist_field.getPlaylist(), tracks );
 
         for ( PlayerItems::iterator it=tracks.begin(); it != tracks.end(); ++it ) {
-            CString artist, name, album; 
-            DWORD duration = 0L;
-            bool stared;
+            TrackInfo track_info;
             AudioInfo audioInfo;
 
-            player->getTrackInfo( *it, &name, &artist, &album, &duration, &stared );
+            player->getTrackInfo( *it, &track_info );
 
-            m_text_io.printf( "%s by %s", name, artist );
+            m_text_io.printf( "%s by %s", track_info.track_name, track_info.artist_name );
 
             if ( player->getTrackAudioInfo( *it, &audioInfo, 0 ) == OK ) 
                 m_text_io.printf( " [Key: %d BPM: %f]\n", audioInfo.key, audioInfo.tempo );
@@ -382,6 +380,8 @@ void DMXTextUI::musicMapTrack(void)
             m_map_to_field.addKeyValue( 3, "Random Scene" );
             m_map_to_field.addKeyValue( 4, "Random Chase" );
             m_map_to_field.addKeyValue( 5, "Random Scene (BPM)" );
+			m_map_to_field.addKeyValue( 6, "Do Nothing" );
+
             m_map_to_field.setDefaultListValue( 1 );
 
             add( m_map_target_field );
@@ -488,6 +488,9 @@ void DMXTextUI::musicMapShow()
         else if ( it->second.m_selection_type == MST_SCENE_BY_BPM ) {
             target.Format( "Random Scene (BPM)" );
         }
+		else if (it->second.m_selection_type == MST_DO_NOTHING) {
+			target.Format( "Do Nothing" );
+		}
 
         m_text_io.printf( "   %s -> %s\n", it->second.m_track_full_name, target );
     }

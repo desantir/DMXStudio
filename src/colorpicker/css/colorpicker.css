@@ -1,6 +1,6 @@
 .colorpicker {
-	width: 356px;
-	height: 202px;
+	width: 370px;
+	height: 224px;
 	overflow: hidden;
 	position: absolute;
 	background: url(../images/colorpicker_background.png) no-repeat;
@@ -161,90 +161,147 @@
 }
 
 .colorpicker_chip {
-	width: 16px;
-	height: 16px;
-	position: absolute;
-	top: 175px;
-    left: 12px;
-	overflow: hidden;
-	cursor: pointer;
+    width: 16px;
+    height: 16px;
+    position: absolute;
+    overflow: hidden;
+    cursor: pointer;
     border: 1px solid #646464;
+    margin-left: 0px;
+}
+
+.palette_chip {
+    width: 38px !important;
+    font-family: Arial, san-serif;
+    font-size: 8pt;
+    color: white;
+    text-align: center;
 }
 
 .colorpicker_chip1 {
-	margin-left: 0px;
-	background: #FFFFFF;
+	top: 175px;
+    left: 12px;
 }
 
 .colorpicker_chip2 {
-	margin-left: 22px;
-	background: #FF0000;
+	top: 175px;
+    left: 34px;
 }
 
 .colorpicker_chip3 {
-	margin-left: 44px;
-	background: #00FF00;
+	top: 175px;
+    left: 56px;
 }
 
 .colorpicker_chip4 {
-	margin-left: 66px;
-	background: #0000FF;
+	top: 175px;
+    left: 78px;
 }
 
 .colorpicker_chip5 {
-	margin-left: 88px;
-	background: #FFFF00;
+	top: 175px;
+    left: 100px;
 }
 
 .colorpicker_chip6 {
-	margin-left: 110px;
-	background: #5900ff;
+	top: 175px;
+    left: 122px;
 }
 
 .colorpicker_chip7 {
-	margin-left: 132px;
-	background: #606dbc;
+	top: 175px;
+    left: 144px;
 }
 
 .colorpicker_chip8 {
-	margin-left: 154px;
-	background: #10FF7F;
+	top: 175px;
+    left: 166px;
 }
 
 .colorpicker_chip9 {
-	margin-left: 176px;
-	background: #FF00FF;
+	top: 175px;
+    left: 188px;
 }
 
 .colorpicker_chip10 {
-	margin-left: 198px;
-	background: #0f0061;
+	top: 175px;
+    left: 210px;
 }
 
 .colorpicker_chip11 {
-	margin-left: 220px;
-	background: #D4690B;
+	top: 175px;
+    left: 232px;
 }
 
 .colorpicker_chip12 {
-	margin-left: 242px;
-	background: #008080;
+	top: 175px;
+    left: 254px;
 }
 
 .colorpicker_chip13 {
-	margin-left: 264px;
-	background: #00d9ff;
+	top: 175px;
+    left: 276px;
 }
 
 .colorpicker_chip14 {
-	margin-left: 286px;
-	background: #000000;
+	top: 175px;
+    left: 298px;
 }
 
 .colorpicker_chip15 {
-	margin-left: 315px;
-	background: repeating-linear-gradient( 45deg, #606dbc, #606dbc 4px, #465298 4px, #465298 8px ) #010101; 
+	top: 175px;
+    left: 320px;
 }
 
+.colorpicker_chip16 {
+	top: 175px;
+    left: 342px;
+}
 
+.colorpicker_palette1 {
+	top: 197px;
+    left: 12px;
+	background-color: #010101; 
+}
 
+.colorpicker_palette2 {
+	top: 197px;
+    left: 56px;
+	background-color: #010102; 
+}
+
+.colorpicker_palette3 {
+	top: 197px;
+    left: 100px;
+	background-color: #010103; 
+}
+
+.colorpicker_palette4 {
+	top: 197px;
+    left: 144px;
+	background-color: #010104; 
+}
+
+.colorpicker_palette5 {
+	top: 197px;
+    left: 188px;
+	background-color: #010201; 
+}
+
+.colorpicker_palette6 {
+	top: 197px;
+    left: 232px;
+	background-color: #010202; 
+}
+
+.colorpicker_palette7 {
+	top: 197px;
+    left: 276px;
+	background-color: #010203; 
+}
+
+.colorpicker_palette8 {
+	top: 197px;
+    left: 320px;
+	background-color: #010204; 
+}

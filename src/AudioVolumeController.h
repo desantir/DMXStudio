@@ -22,7 +22,9 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
+
+#define MAXIMUM_VOLUME 100
 
 class AudioVolumeController : public IAudioEndpointVolumeCallback 
 {

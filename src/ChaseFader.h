@@ -23,48 +23,35 @@ MA 02111-1307, USA.
 #pragma once
 
 #include "Fixture.h"
-#include "AbstractAnimation.h"
+#include "AnimationDefinition.h"
 #include "ColorFader.h"
 #include "SceneActor.h"
 
-struct FadeDelta
-{
-    channel_t   m_dmx_address;              // This is the resolved multi-universe address
-    int         m_step;                     // Step (1 or -1)
-    ULONG       m_delta_ms;                 // MS between increments
-    ULONG       m_next_ms;                  // MS of next change
-
-    FadeDelta( channel_t dmx_address, int step, LONG delta_ms, ULONG next_ms ) :
-        m_dmx_address( dmx_address ),
-        m_step( step ),
-        m_delta_ms( delta_ms ),
-        m_next_ms( next_ms )
-    {}
-
-    ~FadeDelta() {}
-};
-
-typedef std::vector<FadeDelta> FadeDeltaList;
-
-class ChaseFader : public AbstractAnimation
+class ChaseFader : public AnimationDefinition
 {
     ULONG           m_fade_time;
     ActorPtrArray   m_target_actors;
-    FadeDeltaList   m_fades;
 
 public:
     ChaseFader( UID animation_uid, ULONG fade_time, ActorPtrArray& target_actors );
 
     virtual ~ChaseFader(void);
 
-    AbstractAnimation* clone() { return NULL; };
     CString getSynopsis(void) { CString dummy; return dummy; }
-    const char* getName() { return NULL; }
+    const char* getPrettyName() { return "Chase Fader"; }
     const char* getClassName() { return NULL; }
     void accept( IVisitor* visitor) { }
 
-    virtual void initAnimation( AnimationTask* task, DWORD time_ms, BYTE* dmx_packet );
-    virtual bool sliceAnimation( DWORD time_ms, BYTE* dmx_packet );
-    virtual void stopAnimation( void );
+    inline ULONG getFadeTime() const {
+        return m_fade_time;
+    }
+
+    inline ActorPtrArray& getTargetActors() {
+        return m_target_actors;
+    }
+
+    AnimationTask* createTask( AnimationEngine* engine, ActorList& actor_list, UID owner_uid );
+
+	AnimationDefinition* clone( );
 };
 

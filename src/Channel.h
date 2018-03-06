@@ -26,7 +26,7 @@ MA 02111-1307, USA.
 #include "ChannelAngle.h"
 #include "IDefinitionVisitor.h"
 
-typedef enum channel_type {
+enum ChannelType {
     CHNLT_UNKNOWN = 0,
     CHNLT_RED = 1,
     CHNLT_GREEN = 2,
@@ -51,17 +51,16 @@ typedef enum channel_type {
     CHNLT_LASER = 21,
     CHNLT_UV = 22,
     CHNLT_NUM_TYPES
+} ;
 
-} ChannelType;
-
-typedef std::map<int,BYTE> AngleTable;
+typedef std::map<int,channel_value> AngleTable;
 
 class Channel
 {
     friend class DefinitionWriter;
     friend class DefinitionReader;
 
-    channel_t				m_channel_offset;		// Channel offset
+	channel_address			m_channel_offset;		// Channel offset
     CString				    m_name;					// Channel name
     ChannelType				m_type;					// Channel type
     BYTE                    m_pixel_index;          // Pixel index (1-255)
@@ -69,16 +68,24 @@ class Channel
     bool					m_is_color;				// Is a color channel
     bool					m_can_blackout;			// Should be blacked out
     bool                    m_can_whiteout;         // Modify value on whiteout
-    BYTE                    m_default_value;        // Default channel value (when added to scenee)
-    BYTE                    m_home_value;           // Default home value for ALL scenes (use to park robot position)
+	channel_value           m_default_value;        // Default channel value (when added to scene)
+    bool                    m_dimmer_can_strobe;    // Fixture dimmer can be used to strobe
+	channel_value           m_home_value;           // Default home value for ALL scenes (use to park robot position)
 
     bool                    m_is_dimmer;            // Channel supports dimming
-    BYTE                    m_lowest_intensity;     // Dimmer value for lowest intensity
-    BYTE                    m_highest_intensity;    // Dimmer value for highest intensity
-    BYTE                    m_off_intensity;        // Dimmer value for off (usually same as lowest intensity)
+	channel_value           m_lowest_intensity;     // Dimmer value for lowest intensity
+	channel_value           m_highest_intensity;    // Dimmer value for highest intensity
+	channel_value           m_off_intensity;        // Dimmer value for off (usually same as lowest intensity)
+
+	bool					m_is_strobe;			// Channel supports strobing
+	channel_value           m_strobe_slow;			// Stobe slowest
+	channel_value           m_strobe_fast;			// Stobe fastest
+	channel_value           m_strobe_off;			// Strobe off
 
     ChannelValueRangeArray	m_ranges;				// Describes channel value ranges
-    ChannelAngleMap			m_angles;				// Angles for pan/tilt
+    ChannelAngleArray		m_angles;				// Angles for pan/tilt
+    int                     m_min_angle;            // Pan/tilt minimum angle
+    int                     m_max_angle;            // Pan/tilt maximum angle
 
     UINT                    m_head_number;          // For multiple pan/tilt heads
     AngleTable				m_angle_table;			// Table of angle -> DMX value
@@ -86,14 +93,14 @@ class Channel
     void generateAngleTable(void);
 
 public:
-    Channel( channel_t offset=0, ChannelType type=CHNLT_UNKNOWN, const char *name = NULL );
+    Channel( channel_address offset=0, ChannelType type=CHNLT_UNKNOWN, const char *name = NULL );
     ~Channel(void);
 
     void accept( IDefinitionVisitor* visitor) {
         visitor->visit(this);
     }
 
-    inline channel_t getOffset( ) const {
+    inline channel_address getOffset( ) const {
         return m_channel_offset;
     }
 
@@ -113,6 +120,10 @@ public:
         return m_can_whiteout;
     }
 
+    inline bool canDimmerStrobe() const {
+        return m_dimmer_can_strobe;
+    }
+
     inline bool isColor() const {
         return m_is_color;
     }
@@ -121,27 +132,50 @@ public:
         return m_is_dimmer;
     }
 
-    inline BYTE getDimmerLowestIntensity() const {
+    inline channel_value getDimmerLowestIntensity() const {
         return m_lowest_intensity;
     }
 
-    inline BYTE getDimmerHighestIntensity() const {
+    inline channel_value getDimmerHighestIntensity() const {
         return m_highest_intensity;
     }
 
-    inline BYTE getDimmerOffIntensity() const {
+    inline channel_value getDimmerOffIntensity() const {
         return m_off_intensity;
     }
 
+	inline bool isStrobe( ) const {
+		return m_is_strobe;
+	}
+
+	inline channel_value getStrobeSlow() const {
+		return m_strobe_slow;
+	}
+
+	inline channel_value getStrobeFast() const {
+		return m_strobe_fast;
+	}
+
+	inline channel_value getStrobeOff() const {
+		return m_strobe_off;
+	}
+
     static const char *getTypeName( ChannelType type );
 
-    BYTE convertAngleToValue( int angle );
+	channel_value convertAngleToValue( int angle );
 
-    inline BYTE getDefaultValue() const { 
+    inline int getMinAngle() const {
+        return m_min_angle;
+    }
+    inline int getMaxAngle() const {
+        return m_max_angle;
+    }
+
+    inline channel_value getDefaultValue() const { 
         return m_default_value;
     }
 
-    inline BYTE getHomeValue() const {
+    inline channel_value getHomeValue() const {
         return m_home_value;
     }
 
@@ -157,7 +191,7 @@ public:
         return m_ranges;
     }
 
-    ChannelValueRange* getRange( BYTE value ) {
+    ChannelValueRange* getRange( channel_value value ) {
         for ( ChannelValueRangeArray::iterator rit=m_ranges.begin(); rit != m_ranges.end(); rit++ ) {
             if ( value >= (*rit).getStart() && value <= (*rit).getEnd() ) {
                 return &(*rit);
@@ -173,3 +207,61 @@ private:
 
 typedef std::vector<Channel*> ChannelPtrArray;
 
+class ChannelValues {
+    size_t			m_num_channels;
+	channel_value   m_channel_values[64];      // Not worth a container for this
+
+public:
+    ChannelValues() :
+        m_num_channels( 0 ) 
+    {
+        clearAllValues();
+    }
+
+    ChannelValues( size_t num_channels, channel_value *values ) :
+        m_num_channels( num_channels )
+    {
+        STUDIO_ASSERT( m_num_channels < sizeof(m_channel_values), "Channel size out of bounds" );
+
+        clearAllValues();
+
+        memcpy( m_channel_values, values, m_num_channels );
+    }
+
+    inline size_t getNumChannels() const {
+        return m_num_channels;
+    }
+
+    inline void setNumChannels( size_t num_channels ) {
+        STUDIO_ASSERT( m_num_channels < sizeof(m_channel_values), "Channel size out of bounds" );
+        m_num_channels = num_channels;
+        clearAllValues();
+    }
+
+    inline const BYTE operator[]( size_t index ) const {
+        STUDIO_ASSERT( index < m_num_channels, "Channel request out of bounds" );
+        return m_channel_values[index];
+    }
+
+    inline void set( size_t index, channel_value value ) {
+        STUDIO_ASSERT( index < m_num_channels, "Channel request out of bounds" );
+        m_channel_values[index] = value;
+    }
+
+    inline void setWithGrow( size_t index, channel_value value ) {
+        if ( index >= m_num_channels )
+            m_num_channels = index + 1;
+		STUDIO_ASSERT( m_num_channels < sizeof(m_channel_values), "Channel size out of bounds" );
+        m_channel_values[index] = value;
+    }
+
+    inline void setAll( size_t num_channels, channel_value* values ) {
+        STUDIO_ASSERT( num_channels < sizeof(m_channel_values), "Channel size out of bounds" );
+        m_num_channels = num_channels;
+        memcpy( m_channel_values, values, m_num_channels );
+    }
+
+    inline void clearAllValues() {
+        memset( m_channel_values, 0, sizeof(m_channel_values) );
+    }
+};

@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2011-2016 Robert DeSantis
+Copyright (C) 2011-2017 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -76,6 +76,16 @@ void VenueWriter::writeDObject( TiXmlElement& element, DObject* dobject, LPCSTR 
     add_attribute( element, "created", dobject->m_created );
     add_text_element( element, "name", dobject->m_name );
     add_text_element( element, "description", dobject->m_description );
+
+    if ( dobject->m_acts.size() > 0 ) {
+        TiXmlElement acts( "acts" );
+        for ( ActNumber act_number : dobject->m_acts ) {
+            TiXmlElement uidElement( "act" );
+            add_attribute( uidElement, "number", act_number );
+            acts.InsertEndChild( uidElement );
+        }
+        element.InsertEndChild( acts );
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -86,6 +96,8 @@ void VenueWriter::visit( Venue* venue ) {
     add_attribute( venueElement, "version", "0.2" );
     add_attribute( venueElement, "next_uid", venue->m_uid_pool );
     add_attribute( venueElement, "current_scene", venue->m_current_scene );
+    add_attribute( venueElement, "track_fixtures", venue->m_track_fixtures );
+
     add_text_element( venueElement, "name", venue->m_name );
     add_text_element( venueElement, "description", venue->m_description );
 
@@ -98,8 +110,10 @@ void VenueWriter::visit( Venue* venue ) {
     TiXmlElement dimmer( "dimmer" );
     add_attribute( dimmer, "master_dimmer", (int)venue->m_master_dimmer );
     add_attribute( dimmer, "auto_blackout", venue->m_auto_backout_ms );
-    add_attribute( dimmer, "whiteout_strobe", venue->m_whiteout_strobe_ms );
+    add_attribute( dimmer, "whiteout_strobe_ms", venue->m_whiteout_strobe_ms );
+    add_attribute( dimmer, "whiteout_fade_ms", venue->m_whiteout_fade_ms );
     add_attribute( dimmer, "whiteout_color", venue->m_whiteout_color );
+    add_attribute( dimmer, "whiteout_effect", venue->m_whiteout_effect );
     venueElement.InsertEndChild( dimmer );
     
     // Add audio
@@ -134,11 +148,22 @@ void VenueWriter::visit( Venue* venue ) {
     visit_map<ChaseMap>( chases, venue->m_chases );
     venueElement.InsertEndChild( chases );
 
+    // Add animations
+    TiXmlElement animations( "animations" );
+    add_attribute( animations, "animation_speed", venue->m_animation_speed );
+    visit_ptr_map<AnimationMap>( animations, venue->m_animations );
+    venueElement.InsertEndChild( animations );
+
     // Add music mappings
     TiXmlElement music_scenes( "music_scenes" );
     add_attribute( music_scenes, "enabled", venue->m_music_scene_select_enabled );
     visit_map<MusicSceneSelectMap>( music_scenes, venue->m_music_scene_select_map );
     venueElement.InsertEndChild( music_scenes );
+
+    // Add palettes
+    TiXmlElement palettes( "palettes" );
+    visit_map<PaletteMap>( palettes, venue->m_palettes );
+    venueElement.InsertEndChild( palettes );
 
     getParent().InsertEndChild( venueElement );
 }
@@ -152,8 +177,8 @@ void VenueWriter::visit( Universe* universe )
     add_attribute(universe_element, "type", universe->getType() );
     add_attribute( universe_element, "minimum_delay_ms", universe->getDmxMinimumDelayMS() );
     add_attribute( universe_element, "packet_delay_ms", universe->getDmxPacketDelayMS() );
-    add_text_element( universe_element, "interface", "usb_dmx" );
-    add_text_element( universe_element, "comm_port", universe->getDmxPort() );
+    add_text_element( universe_element, "interface", universe->getInterface() );
+    add_text_element( universe_element, "dmx_config", universe->getDmxConfig() );
 
     getParent().InsertEndChild( universe_element );
 }
@@ -169,20 +194,10 @@ void VenueWriter::visit( Fixture* fixture )
     add_attribute( element, "fuid", fixture->m_fuid );
     add_attribute( element, "universe", (int)fixture->m_universe );
     add_attribute( element, "dmx_address", (int)fixture->m_address );
-
-    if ( fixture->m_channel_map.size() > 0 ) {
-        TiXmlElement channel_map( "channel_map" );
-
-        for ( channel_t channel=0; channel <  fixture->m_channel_map.size(); channel++ ) {
-            TiXmlElement channelElement( "map" );
-            add_attribute( channelElement, "logical", (int)channel );
-            add_attribute( channelElement, "physical", (int)fixture->m_channel_map[channel] );
-
-            channel_map.InsertEndChild( channelElement );
-        }
-
-        element.InsertEndChild( channel_map );
-    }
+    add_attribute( element, "allow_dimming", fixture->m_allow_master_dimming );
+    add_attribute( element, "allow_whiteout", fixture->m_allow_whiteout );
+	add_attribute( element, "grid_x", fixture->m_grid_position.m_x );
+	add_attribute( element, "grid_y", fixture->m_grid_position.m_y );
 
     getParent().InsertEndChild( element );
 }
@@ -202,17 +217,9 @@ void VenueWriter::visit( Scene* scene )
     visit_map<ActorMap>( actors, scene->m_actors );
     element.InsertEndChild( actors );
 
-    TiXmlElement acts( "acts" );
-    for ( ActNumber act_number : scene->m_acts ) {
-        TiXmlElement uidElement( "act" );
-        add_attribute( uidElement, "number", act_number );
-        acts.InsertEndChild( uidElement );
-    }
-    element.InsertEndChild( acts );
-
     if ( scene->m_animations.size() > 0 ) {
-        TiXmlElement animations( "animations" );
-        visit_ptr_array<AnimationPtrArray>( animations, scene->m_animations );
+        TiXmlElement animations( "animation_refs" );
+        visit_array<AnimationReferenceArray>( animations, scene->m_animations );
         element.InsertEndChild( animations );
     }
 
@@ -229,8 +236,7 @@ void VenueWriter::visit( SceneActor* actor )
     add_attribute( element, "group", actor->m_group );
 
     TiXmlElement channels( "channels" );
-
-    for ( channel_t channel=0; channel < actor->m_channels; channel++ ) {
+    for ( size_t channel=0; channel < actor->getNumChannels(); channel++ ) {
         TiXmlElement channelElement( "channel" );
 
         add_attribute( channelElement, "number", (int)channel );
@@ -238,8 +244,11 @@ void VenueWriter::visit( SceneActor* actor )
 
         channels.InsertEndChild( channelElement );
     }
-
     element.InsertEndChild( channels );
+
+    if ( actor->m_palette_references.size() > 0 ) {
+        add_uid_element<UIDArray>( element, "palette_refs", actor->m_palette_references );
+    }
 
     getParent().InsertEndChild( element );
 }
@@ -255,18 +264,11 @@ void VenueWriter::visit( Chase* chase )
     add_attribute( chase_element, "delay_ms", chase->m_delay_ms );
     add_attribute( chase_element, "fade_ms", chase->m_fade_ms );
     add_attribute( chase_element, "repeat", chase->m_repeat );
+    add_attribute( chase_element, "step_trigger", chase->m_step_trigger );
 
     TiXmlElement steps( "chase_steps" );
     visit_array<ChaseStepArray>( steps, chase->m_chase_steps );
     chase_element.InsertEndChild( steps );
-
-    TiXmlElement acts( "acts" );
-    for ( ActNumber act_number : chase->m_acts ) {
-        TiXmlElement uidElement( "act" );
-        add_attribute( uidElement, "number", act_number );
-        acts.InsertEndChild( uidElement );
-    }
-    chase_element.InsertEndChild( acts );
 
     getParent().InsertEndChild( chase_element );
 }
@@ -279,11 +281,13 @@ void VenueWriter::visit( FixtureGroup* fixture_group )
 
     writeDObject( element, fixture_group, "group_number" );
 
-    add_pfuids_element<UIDSet>( element, fixture_group->m_fixtures );
+    add_uid_element<UIDSet>( element, "pfuids", fixture_group->m_fixtures );
+	add_attribute(element, "grid_x", fixture_group->m_grid_position.m_x );
+	add_attribute(element, "grid_y", fixture_group->m_grid_position.m_y );
 
     TiXmlElement channels( "channels" );
 
-    for ( channel_t channel=0; channel < fixture_group->m_channels; channel++ ) {
+    for ( channel_address channel=0; channel < fixture_group->m_channels; channel++ ) {
         TiXmlElement channelElement( "channel" );
 
         add_attribute( channelElement, "number", (int)channel );
@@ -313,23 +317,54 @@ void VenueWriter::visit( MusicSceneSelector* music_scene_selection )
 
 // ----------------------------------------------------------------------------
 //
+void VenueWriter::visit( AnimationReference* animation ) 
+{
+    TiXmlElement element( "animation" );
+
+    add_attribute( element, "uid", animation->m_animation_uid );
+    add_uid_element<UIDArray>( element, "pfuids", animation->m_actors );
+
+    getParent().InsertEndChild( element );
+}
+
+// ----------------------------------------------------------------------------
+//
+void VenueWriter::writeAbstractAnimation( TiXmlElement& element, AnimationDefinition* animation )
+{
+    writeDObject( element, animation, "animation_number" );
+
+    add_attribute( element, "shared", animation->isShared() );
+    add_attribute( element, "class", animation->getClassName() );
+    add_attribute( element, "reference_fixture", animation->m_reference_fixture );
+
+    visit_object<AnimationSignal>( element, animation->m_signal );
+}
+
+// ----------------------------------------------------------------------------
+//
 void VenueWriter::visit( SceneStrobeAnimator* animation )
 {
     TiXmlElement element( "animation" );
 
-    writeDObject( element, animation, "number" );
-
-    add_attribute( element, "class", animation->getClassName() );
+    writeAbstractAnimation( element, animation );
+	writeStrobeTime( element, animation->getStrobeTime() );
     add_attribute( element, "strobe_neg_color", animation->m_strobe_neg_color );
-    add_attribute( element, "strobe_pos_ms", animation->m_strobe_pos_ms );
-    add_attribute( element, "strobe_neg_ms", animation->m_strobe_neg_ms );
-    add_attribute( element, "strobe_flashes", animation->m_strobe_flashes );
-
-    visit_object<AnimationSignal>( element, animation->m_signal );
-
-    add_pfuids_element<UIDArray>( element, animation->m_actors );
+	add_attribute( element, "strobe_color", animation->m_strobe_color );
+	add_attribute( element, "strobe_percent", animation->m_strobe_percent );
+	add_attribute( element, "strobe_type", animation->m_strobe_type );
 
     getParent().InsertEndChild( element );
+}
+
+// ----------------------------------------------------------------------------
+//
+void VenueWriter::writeStrobeTime( TiXmlElement& element, StrobeTime& strobe_time )
+{
+	add_attribute( element, "strobe_pos_ms", strobe_time.getOnMS() );
+	add_attribute( element, "strobe_neg_ms", strobe_time.getOffMS() );
+	add_attribute( element, "strobe_flashes", strobe_time.getFlashes() );
+	add_attribute( element, "strobe_fade_in_ms", strobe_time.getFadeInMS() );
+	add_attribute( element, "strobe_fade_out_ms", strobe_time.getFadeOutMS() );
 }
 
 // ----------------------------------------------------------------------------
@@ -338,14 +373,24 @@ void VenueWriter::visit( ScenePatternDimmer* animation )
 {
     TiXmlElement element( "animation" );
 
-    writeDObject( element, animation, "number" );
+    writeAbstractAnimation( element, animation );
 
-    add_attribute( element, "class", animation->getClassName() );
     add_attribute( element, "dimmer_pattern", (int)animation->m_dimmer_pattern );
 
-    visit_object<AnimationSignal>( element, animation->m_signal );
+    getParent().InsertEndChild( element );
+}
 
-    add_pfuids_element<UIDArray>( element, animation->m_actors );
+// ----------------------------------------------------------------------------
+//
+void VenueWriter::visit( SceneFixtureDimmer* animation )
+{
+    TiXmlElement element( "animation" );
+
+    writeAbstractAnimation( element, animation );
+
+    add_attribute( element, "dimmer_mode", (int)animation->m_dimmer_mode );
+    add_attribute( element, "min_percent", (int)animation->m_min_percent );
+    add_attribute( element, "max_percent", (int)animation->m_max_percent );
 
     getParent().InsertEndChild( element );
 }
@@ -356,13 +401,7 @@ void VenueWriter::visit( SceneMovementAnimator* animation )
 {
     TiXmlElement element( "animation" );
 
-    writeDObject( element, animation, "number" );
-
-    add_attribute( element, "class", animation->getClassName() );
-
-    visit_object<AnimationSignal>( element, animation->m_signal );
-
-    add_pfuids_element<UIDArray>( element, animation->m_actors );
+    writeAbstractAnimation( element, animation );
 
     visit_object<MovementAnimation>( element, animation->m_movement );
 
@@ -375,21 +414,52 @@ void VenueWriter::visit( SceneColorFader* animation )
 {
     TiXmlElement element( "animation" );
 
-    writeDObject( element, animation, "number" );
-
-    add_attribute( element, "class", animation->getClassName() );
+    writeAbstractAnimation( element, animation );
+	writeStrobeTime( element, animation->getStrobeTime() );
     add_attribute( element, "fader_effect", (unsigned)animation->m_fader_effect );
     add_attribute( element, "strobe_neg_color", animation->m_strobe_neg_color );
-    add_attribute( element, "strobe_pos_ms", animation->m_strobe_pos_ms );
-    add_attribute( element, "strobe_neg_ms", animation->m_strobe_neg_ms );
-    add_attribute( element, "strobe_flahes", animation->m_strobe_flashes );
-
-    visit_object<AnimationSignal>( element, animation->m_signal );
-
-    add_pfuids_element<UIDArray>( element, animation->m_actors );
 
     if ( animation->m_custom_colors.size() )
         add_colors_element( element, "custom_colors", animation->m_custom_colors );
+
+    getParent().InsertEndChild( element );
+}
+
+// ----------------------------------------------------------------------------
+//
+void VenueWriter::visit( SceneCueAnimator* animation )
+{
+    TiXmlElement element( "animation" );
+
+    writeAbstractAnimation( element, animation );
+
+    add_attribute( element, "tracking", animation->m_tracking );
+    add_attribute( element, "group_size", animation->m_group_size );
+
+    TiXmlElement cues( "cues" );
+    for ( UIDArray& palette_references : animation->m_cues ) {
+        TiXmlElement cueElement( "cue" );
+        add_uid_element<UIDArray>( cueElement, "palette_refs", palette_references );
+        cues.InsertEndChild( cueElement );
+    }
+    element.InsertEndChild( cues );
+
+    getParent().InsertEndChild( element );
+}
+
+// ----------------------------------------------------------------------------
+//
+void VenueWriter::visit( ScenePulse* animation )
+{
+    TiXmlElement element( "animation" );
+
+    writeAbstractAnimation( element, animation );
+
+    add_attribute( element, "pulse_effect", (unsigned)animation->m_pulse_effect );
+    add_attribute( element, "pulse_color", animation->m_pulse_color );
+    add_attribute( element, "pulse_ms", animation->m_pulse_ms );
+    add_attribute( element, "pulse_fixture_count", animation->m_pulse_fixture_count );
+    add_attribute( element, "select_random", animation->m_select_random );
 
     getParent().InsertEndChild( element );
 }
@@ -400,9 +470,8 @@ void VenueWriter::visit( ScenePixelAnimator* animation )
 {
     TiXmlElement element( "animation" );
 
-    writeDObject( element, animation, "number" );
+    writeAbstractAnimation( element, animation );
 
-    add_attribute( element, "class", animation->getClassName() );
     add_attribute( element, "pixel_effect", animation->m_effect );
     add_attribute( element, "generations", animation->m_generations );
     add_attribute( element, "pixels", animation->m_num_pixels );
@@ -410,10 +479,6 @@ void VenueWriter::visit( ScenePixelAnimator* animation )
     add_attribute( element, "fade", animation->m_color_fade );
     add_attribute( element, "combine", animation->m_combine_fixtures );
     add_attribute( element, "pixel_off_color", animation->m_empty_color );
-
-    visit_object<AnimationSignal>( element, animation->m_signal );
-
-    add_pfuids_element<UIDArray>( element, animation->m_actors );
 
     if ( animation->m_custom_colors.size() )
         add_colors_element( element, "custom_colors", animation->m_custom_colors );
@@ -427,11 +492,7 @@ void VenueWriter::visit( SceneChannelAnimator* animation )
 {
     TiXmlElement element( "animation" );
 
-    writeDObject( element, animation, "number" );
-
-    add_attribute( element, "class", animation->getClassName() );
-
-    visit_object<AnimationSignal>( element, animation->m_signal );
+    writeAbstractAnimation( element, animation );
 
     TiXmlElement channel_animations( "channel_animations" );
     visit_array<ChannelAnimationArray>( channel_animations, animation->m_channel_animations );
@@ -446,9 +507,8 @@ void VenueWriter::visit( SceneChannelFilter* animation )
 {
     TiXmlElement element( "animation" );
 
-    writeDObject( element, animation, "number" );
+    writeAbstractAnimation( element, animation );
 
-    add_attribute( element, "class", animation->getClassName() );
     add_attribute( element, "filter", animation->getFilter() );
     add_attribute( element, "step", animation->getStep() );
     add_attribute( element, "amplitude", animation->getAmplitude() );
@@ -457,10 +517,6 @@ void VenueWriter::visit( SceneChannelFilter* animation )
     TiXmlElement channels( "channels" );
     write_value_list<ChannelList>( channels, "channel", animation->getChannels() );
     element.InsertEndChild( channels );
-
-    visit_object<AnimationSignal>( element, animation->m_signal );
-
-    add_pfuids_element<UIDArray>( element, animation->m_actors );
 
     getParent().InsertEndChild( element );
 }
@@ -471,13 +527,7 @@ void VenueWriter::visit( SceneSequence* animation )
 {
     TiXmlElement element( "animation" );
 
-    writeDObject( element, animation, "number" );
-
-    add_attribute( element, "class", animation->getClassName() );
-
-    visit_object<AnimationSignal>( element, animation->m_signal );
-
-    add_pfuids_element<UIDArray>( element, animation->m_actors );
+    writeAbstractAnimation( element, animation );
 
     getParent().InsertEndChild( element );
 }
@@ -488,14 +538,9 @@ void VenueWriter::visit( SceneSoundLevel* animation )
 {
     TiXmlElement element( "animation" );
 
-    writeDObject( element, animation, "number" );
+    writeAbstractAnimation( element, animation );
 
-    add_attribute( element, "class", animation->getClassName() );
     add_attribute( element, "fade", animation->m_fade_what );
-
-    visit_object<AnimationSignal>( element, animation->m_signal );
-
-    add_pfuids_element<UIDArray>( element, animation->m_actors );
 
     getParent().InsertEndChild( element );
 }
@@ -506,19 +551,20 @@ void VenueWriter::visit( AnimationSignal* signal )
 {
     TiXmlElement element( "signal" );
 
-    add_attribute( element, "sample_rate_ms", signal->m_sample_rate_ms );
-    add_attribute( element, "sample_decay_ms", signal->m_sample_decay_ms );
-    add_attribute( element, "input_type", signal->m_input_type );
-    add_attribute( element, "scale_factor", signal->m_scale_factor );
-    add_attribute( element, "max_threshold", signal->m_max_threshold );
-    add_attribute( element, "apply_to", signal->m_apply_to );
-
-    if ( signal->m_input_type != CAI_TIMER_ONLY &&
-         signal->m_input_type != CAI_SOUND_LEVEL &&
-         signal->m_input_type != CAI_AVG_SOUND_LEVEL ) {
-        add_attribute( element, "input_low", signal->m_input_low );
-        add_attribute( element, "input_high", signal->m_input_high );
-    }
+    add_attribute( element, "trigger", signal->m_trigger );
+    add_attribute( element, "source", signal->m_source );
+    add_attribute( element, "timer_ms", signal->m_timer_ms );
+    add_attribute( element, "off_ms", signal->m_off_ms );
+    add_attribute( element, "level_floor", signal->m_level_floor );
+    add_attribute( element, "level_ceil", signal->m_level_ceil );
+    add_attribute( element, "level_invert", signal->m_level_invert );
+    add_attribute( element, "level_scale", signal->m_level_scale  );
+    add_attribute( element, "level_periods", signal->m_level_periods );
+    add_attribute( element, "freq_low_hz", signal->m_freq_low_hz );
+    add_attribute( element, "freq_high_hz", signal->m_freq_high_hz );
+    add_attribute( element, "speed_adjust", signal->m_speed_adjust );
+    add_attribute( element, "level_hold", signal->m_level_hold );
+    add_attribute( element, "sensitivity", signal->m_sensitivity );
 
     getParent().InsertEndChild( element );
 }
@@ -585,7 +631,6 @@ void VenueWriter::visit( ChannelAnimation* channel_animation )
 {
     TiXmlElement element( "channel_animation" );
 
-    add_attribute( element, "actor_uid", channel_animation->m_actor_uid );
     add_attribute( element, "channel", (int)channel_animation->m_channel );
     add_attribute( element, "style", (int)channel_animation->m_animation_style );
 
@@ -600,6 +645,70 @@ void VenueWriter::visit( ChannelAnimation* channel_animation )
             values.InsertEndChild( valueElement );
         }
         element.InsertEndChild( values );
+    }
+
+    getParent().InsertEndChild( element );
+}
+
+// ----------------------------------------------------------------------------
+//
+void VenueWriter::visit( PaletteEntry* palette_entry ) {
+
+    TiXmlElement element( "palette_entry" );
+
+    add_attribute( element, "target_uid", palette_entry->getTargetUID() );
+    add_attribute( element, "addressing", palette_entry->getAddressing() );
+
+    if ( palette_entry->m_values.size() > 0 ) {
+        TiXmlElement values( "channel_values" );
+
+        for ( PaletteValues::iterator it=palette_entry->m_values.begin(); it != palette_entry->m_values.end(); it++ ) {
+            TiXmlElement valueElement( "channel_value" );
+            add_attribute( valueElement, "id", it->first );
+            add_attribute( valueElement, "value", (unsigned)it->second );
+            values.InsertEndChild( valueElement );
+        }
+        element.InsertEndChild( values );
+    }
+
+    getParent().InsertEndChild( element );
+}
+
+// ----------------------------------------------------------------------------
+//
+void VenueWriter::visit( Palette* palette ) {
+    TiXmlElement element( "palette" );
+
+    writeDObject( element, palette, "palette_number" );
+
+    add_attribute( element, "type", palette->getType() );
+
+    // Write color palette
+    if ( palette->m_palette_colors.size() )
+        add_colors_element( element, "palette_colors", palette->m_palette_colors );
+
+    if ( palette->m_palette_weights.size() ) {
+        TiXmlElement color_weights_element( "color_weights" );
+        write_value_list( color_weights_element, "weight", palette->m_palette_weights );
+        element.InsertEndChild( color_weights_element );
+    }
+
+    if ( palette->m_fixture_map.size() > 0 ) {
+        TiXmlElement entries( "fixture_palettes" );
+        visit_map<PaletteEntryMap>( entries, palette->m_fixture_map );
+        element.InsertEndChild( entries );
+    }
+
+    if ( palette->m_fixture_definition_map.size() > 0 ) {
+        TiXmlElement entries( "definition_palettes" );
+        visit_map<PaletteEntryMap>( entries, palette->m_fixture_definition_map );
+        element.InsertEndChild( entries );
+    }
+
+    if ( palette->m_global.hasValues() ) {
+        TiXmlElement global( "default_palette" );
+        visit_object<PaletteEntry>( global, palette->m_global );
+        element.InsertEndChild( global );
     }
 
     getParent().InsertEndChild( element );

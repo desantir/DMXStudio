@@ -22,7 +22,7 @@ MA 02111-1307, USA.
 
 #pragma once
 
-#include "DMXStudio.h"
+#include "stdafx.h"
 #include "Threadable.h"
 #include "DMXHttpSession.h"
 #include "DMXHttpWorker.h"

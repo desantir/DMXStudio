@@ -1,5 +1,5 @@
 /* 
-Copyright (C) 2012,2013 Robert DeSantis
+Copyright (C) 2012,2017 Robert DeSantis
 hopluvr at gmail dot com
 
 This file is part of DMX Studio.
@@ -20,10 +20,17 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
+// Event action type
+var LayoutType = {
+     SCROLL: 0,
+     WRAP: 1,
+     MAP: 2
+};
+
 // ----------------------------------------------------------------------------
 // class ScrollPanel
 //
-function TileScrollPanel( panel_id, object_name, tooltip_name ) {
+function TileScrollPanel( panel_id, object_name, tooltip_name /*, layout_modes */ ) {
     // method getPanelId
     this.getPanelId = function () {
         return this.panel_id;
@@ -37,7 +44,7 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
 
         for (var i = 0; i < this.tiles.length; i++) {
             if (this.tiles[i] == id)
-                return $("#" + this.panel_id + '_' + '_icon_' + id);
+                return $("#" + this.panel_id + '_icon_' + id);
         }
 
         return null;
@@ -48,6 +55,8 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
         var tile = this.getTile(id);
         if (tile == null)
             return false;
+
+        removeTileChipStrobe( id );
 
         tile.remove();
 
@@ -64,23 +73,30 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
         return true;
     }
 
-    // method make_click_event
-    this.make_click_event = function (action, id, object_name, tooltip_name) {
-        if (!this.actions[action].used)
-            return "";
+    // method fire_action
+    this.fire_action = function( event, id, action_function ) {
+        stopEventPropagation( event );
 
-        return 'onclick="' + this.actions[action].action + object_name + '(event, ' + id + ');" title="' +
-               this.actions[action].action + " " + tooltip_name + '"';
+        var tile = $("#" + this.panel_id + '_icon_' + id );
+
+        if ( tile.hasClass( 'dragging' ) ) {
+            tile.removeClass( 'dragging' );
+        }
+        else {
+            eval( action_function + '(null, ' + id + ');' );
+        }
     }
 
     // method addTile
-    this.addTile = function (id, number, title, allow_modify /*, object_name, tooltip_name */ ) {  
-        object_name = this.object_name;
-        tooltip_name = this.tooltip_name;
+    this.addTile = function (id, number, title, allow_modify, allow_delete, grid_x, grid_y, tile_chip /*, object_name, tooltip_name, item_class */ ) {  
+        var object_name = this.object_name;
+        var tooltip_name = this.tooltip_name;
+        var item_class = "tile_header";
 
-        if (arguments.length == 6) {            // override object and tooltip names
-            object_name = arguments[4];
-            tooltip_name = arguments[5];
+        if (arguments.length == 11) {            // override object and tooltip names
+            object_name = arguments[8];
+            tooltip_name = arguments[9];
+            item_class = arguments[10];
         }
 
         var content_div = $("#" + this.panel_id).find(".scroll-content");
@@ -91,20 +107,21 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
 
         this.tiles[this.tiles.length] = id;
 
-        var new_icon = '<div id="' + this.panel_id + '_' + '_icon_' + id + '" class="scroll-content-item ui-widget-header" tile_id="' + id + '" ' +
-                        this.make_click_event(this.ACTION_PLAY, id, object_name, tooltip_name) + '>';
+        var new_icon = '<div id="' + this.panel_id + '_icon_' + id + '" class="' + item_class + ' scroll-content-item ui-widget-content"' +
+                        ' title="' + this.actions[this.ACTION_PLAY].action + " " + tooltip_name + '">';
 
-        new_icon += '<div class="scroll-content-header">' + number;
+        new_icon += '<div class="scroll-content-header"><span class="tile_number">' + number + "</span>";
+
+        if ( tile_chip )
+            new_icon += '<div class="tile_chip"></div>';
 
         for (var i=1; i < this.actions.length; i++) {   // Skip play icon
-            if (!allow_modify && (this.actions[i].tag_class == "edit_item" || this.actions[i].tag_class == "delete_item"))
+            if ( this.actions[i].tile_class == null || (!allow_modify && this.actions[i].tag_class == "edit_item") || (!allow_delete && this.actions[i].tag_class == "delete_item") )
                 continue;
 
-            if (this.actions[i].used) {
-                new_icon += '<span class="tile_icon ' + this.actions[i].tile_class + " " + this.actions[i].tag_class +
-                            '" style="display:none; ' + this.actions[i].style + '" ' +
-                            this.make_click_event(i, id, object_name, tooltip_name) + '></span>';
-            }
+            new_icon += '<span class="tile_icon ' + this.actions[i].tile_class + " " + this.actions[i].tag_class +
+                        ' icon_button" style="display:none; ' + this.actions[i].style + '" ' +
+                        ' title="' + this.actions[i].action + " " + tooltip_name + '"></span>';
         }
 
         new_icon += '</div>';
@@ -113,22 +130,68 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
 
         content_div.append(new_icon);
 
-        this.adjustSize();
-
-        var tile = $("#" + this.panel_id + '_' + '_icon_' + id);
-
         var self = this;
+
+        var tile = $("#" + this.panel_id + '_icon_' + id);
+
+        tile.data( 'grid_x', grid_x );
+        tile.data( 'grid_y', grid_y );
+        tile.data( 'id', id );
+
+        clickAction( tile, this, this.fire_action, id, this.actions[this.ACTION_PLAY].action + object_name );
+
+        for (var i=1; i < this.actions.length; i++) {
+            if ( this.actions[i].tile_class == null || (!allow_modify && this.actions[i].tag_class == "edit_item") || (!allow_delete && this.actions[i].tag_class == "delete_item") )
+                continue;
+
+            var icon = tile.find( "." + this.actions[i].tag_class );
+            if ( icon.length == 1 )
+                clickAction( icon, this, this.fire_action, id, this.actions[i].action + object_name );
+        }
 
         tile.hover(
             function () { self.hover(id, true) },
             function () { self.hover(id, false) }
         );
 
+        if ( this.tile_width == 0 ) {
+            this.tile_width = tile.outerWidth(true);
+            this.tile_height = tile.outerHeight(true);
+        }
+
+        if ( this.contentLayout == LayoutType.MAP )
+            tile.css( "top", grid_y ).css( "left", grid_x ).css( "position", "absolute" );
+
+        // Adjust tile positions - must be done after tile size is set
+        this.adjustSize();
+
         return tile;
     }
 
+    // method updateTile
+    this.updateTile = function ( id, number, title, grid_x, grid_y ) {
+        var tile = this.getTile( id );
+        if ( tile == null )
+            return false;
+
+        tile.find( ".tile_number" ).html( number );
+        tile.find( ".scroll-content-interior" ).html( title );
+
+        tile.data( 'grid_x', grid_x );
+        tile.data( 'grid_y', grid_y );
+
+        if ( this.contentLayout == LayoutType.MAP )
+            tile.css( "top", grid_y ).css( "left", grid_x );
+
+        return true;
+    }
+
     this.hover = function (id, is_in) {
-        var tile = $("#" + this.panel_id + '_' + '_icon_' + id);
+        var tile = $("#" + this.panel_id + '_icon_' + id);
+
+        var tile_chip = tile.find(".tile_chip");
+
+        tile_chip.css('display', is_in ? 'none' : '');
 
         $.each(tile.find(".tile_icon"), function () {
             if (is_in) {
@@ -146,6 +209,24 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
 
         if (this.actions[this.ACTION_HOVER].used)
             eval('hover' + object_name + '(' + id + ',' + is_in + ')');
+    }
+
+    // method setTileChipColor
+    this.setTileChipColor = function (id, color, strobe) {
+        var tile = this.getTile(id);
+        if (tile == null)
+            return;
+
+        var tile_chip = tile.find(".tile_chip");
+
+        if ( !strobe ) {
+            removeTileChipStrobe( id );
+            tile_chip.css( 'background', color );
+        }
+        else {
+            addTileChipStrobe( id, tile_chip, color );
+            tile_chip.css( 'background', "#000000;" );
+        }
     }
 
     // method selectTile
@@ -188,6 +269,18 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
             tile.addClass("highlight-scroll-item");
     }
 
+    // method highlightAllTile
+    this.highlightAllTiles = function (highlight) {
+        for (var i = 0; i < this.tiles.length; i++) {
+            var tile = $("#" + this.panel_id + '_icon_' + this.tiles[i]);
+
+            if (!highlight)
+                tile.removeClass("highlight-scroll-item");
+            else
+                tile.addClass("highlight-scroll-item");
+        }
+    }
+
     // method empty
     this.empty = function () {
         var content_div = $("#" + this.panel_id).find(".scroll-content");
@@ -221,33 +314,125 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
         if (this.adjustSizeTimeout != null)
             clearTimeout(this.adjustSizeTimeout);
 
-        var self = this;
-
-        this.adjustSizeTimeout = setTimeout(function () {
+        this.adjustSizeTimeout = setTimeout( function ( self ) {
+            self.adjustSizeTimeout = null;
+            
             var scrollPane = $("#" + self.panel_id);
             var content_div = scrollPane.find(".scroll-content");
             var scrollWrap = scrollPane.find(".scroll-bar-wrap");
 
-            var tile_width = 0;
-            var tile_height = 0;
-
-            if (self.tiles.length > 0) {
-                tile_width = self.getTile(self.tiles[0]).outerWidth(true);
-                tile_height = self.getTile(self.tiles[0]).outerWidth(true);
+            if (self.tiles.length == 0 || this.tile_height == 0 || this.tile_width == 0 ) {
+                self.lock_icon.hide();
+                scrollWrap.hide();
+                content_div.css('width', '100%').css("margin-left", 0);
+                return;
             }
 
-            if (self.scrollContent) {
-                var width = self.tiles.length * tile_width;
-                content_div.css('width', width + 'px');
+            if ( self.getContentLayout() == LayoutType.MAP ) {
+                var max_x = 0;
+                var max_y = 0;
+                var orphan = 0;
+
+                if ( edit_mode )
+                    self.lock_icon.show();
+
+                for (var i = 0; i < self.tiles.length; i++) {
+                    var tile = $("#" + self.panel_id + '_icon_' + self.tiles[i] );
+                    tile.css( 'position', 'absolute' ).css( 'float', 'none' );
+
+                    if ( !self.getTileLock() && edit_mode ) {
+                        tile.draggable( { 
+                            revert: "invalid",
+                            containment: content_div,
+                            grid: [ 1, 1 ],
+                            start: function(event, ui) {
+                                $(this).addClass('dragging');
+                            },
+                            zIndex: 100
+                        } );
+                        tile.data( 'drag_enabled', true );
+                    }
+                    else if ( tile.data( 'drag_enabled' ) ) {
+                        tile.draggable( "destroy" );
+                    }
+
+                    var x = parseInt( tile.data('grid_x') );
+                    var y = parseInt( tile.data('grid_y') );
+
+                    // Position the orphans (those without coords) - sticky for the session
+                    if ( x == 0 && y == 0 ) {
+                        x = 1 + (orphan++ * self.tile_width);
+                        y = 1;
+
+                        tile.data('grid_y', y );
+                        tile.data('grid_x', x );
+                    }
+
+                    if ( x > 0 || y > 0 ) {
+                        max_x = Math.max( max_x, x );
+                        max_y = Math.max( max_y, y );
+
+                        tile.css( 'top', y + "px");
+                        tile.css( 'left', x + "px");
+                    }
+                }
+
+                var width = Math.max( max_x/self.tile_width+1, 18 ) * self.tile_width;
+                var height = Math.max( max_y/self.tile_height+1, 4 ) * self.tile_height;
+
+                content_div.css('width', width + "px" );
+                content_div.css('height', height + "px" );
+
+                if ( !self.getTileLock() && edit_mode ) {
+                    content_div.droppable( { 
+                        classes: { "ui-droppable": "highlight" },
+                        "tolerance": "pointer",
+                        drop: function( event, ui ) { 
+                            ui.draggable.data( 'grid_x', ui.position.left ); 
+                            ui.draggable.data( 'grid_y', ui.position.top );    
+                        
+                            eval( "move" + self.object_name + '(' + ui.draggable.data( 'id' ) + ',' + ui.position.left + ',' + ui.position.top + ')' );
+                        
+                            var scrollPane = $("#" + self.panel_id);
+                            var content_div = scrollPane.find(".scroll-content");
+
+                            if ( ui.position.top + self.tile_height + self.tile_height/3 > content_div.innerHeight() ) {
+                                var height = Math.max( ui.position.top/self.tile_height+2, 4 ) * self.tile_height;
+                                content_div.css('height', height + "px" );
+                            }
+                            if ( ui.position.left + self.tile_width + self.tile_width/3 > content_div.parent().innerWidth() ) {
+                                var width = Math.max( ui.position.left/self.tile_width+2, 20 ) * self.tile_width;
+                                content_div.css('width', width + "px" );
+                            }
+                        }
+                    } );
+                }
+
                 scrollWrap.show();
                 self.setupScroller();
             }
             else {
-                scrollWrap.hide();
-                content_div.css('width', '100%').css( 'margin-left', 0);
-            }
+                content_div.css('height', '');
+                self.lock_icon.hide();
 
-        }, 1 );
+                for (var i = 0; i < self.tiles.length; i++) {
+                    var tile = $("#" + self.panel_id + '_icon_' + self.tiles[i]);
+                    tile.css('position', 'static');
+                    tile.css('float', 'left');
+                }
+
+                if (self.getContentLayout() == LayoutType.SCROLL) {
+                    var width = self.tiles.length * self.tile_width;
+                    content_div.css('width', width + 'px').css("margin-left", 0);
+                    scrollWrap.show();
+                    self.setupScroller();
+                }
+                else if ( self.getContentLayout() == LayoutType.WRAP ) {
+                    scrollWrap.hide();
+                    content_div.css('width', '100%').css("margin-left", 0);
+                }
+            }
+        }, 100, this );
     }
 
     // method setupScroller
@@ -255,34 +440,79 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
         initializeScrollPane( $("#" + this.panel_id) );
     }
 
-    // method setScrollContent
-    this.setScrollContent = function (scroll) {
-        this.scrollContent = scroll;
+    // method setContentLayout
+    this.setContentLayout = function ( layout ) {
+        if ( typeof layout == "boolean" )
+            layout = layout ? LayoutType.SCROLL : LayoutType.WRAP;
+
+        this.contentLayout = layout;
         this.adjustSize();
 
-        var scroll_or_grid_icon = $("#" + this.panel_id).find(".scroll_or_grid_icon");
-        if (scroll_or_grid_icon != null) {
-            if (!scroll)
-                scroll_or_grid_icon.removeClass('ui-icon-arrowthickstop-1-s')
-                                   .addClass('ui-icon-arrowthickstop-1-n')
-                                   .attr('title', 'scroll');
-            else
-                scroll_or_grid_icon.removeClass('ui-icon-arrowthickstop-1-n')
-                                   .addClass('ui-icon-arrowthickstop-1-s')
-                                   .attr('title', 'grid');
+        switch ( this.contentLayout ) {
+            case LayoutType.SCROLL:
+                this.scroll_or_grid_icon.addClass('ui-icon-arrowthickstop-1-n')
+                                    .removeClass('ui-icon-arrowthickstop-1-s')
+                                    .attr('title', 'wrap');
+                break;
+
+            case LayoutType.WRAP:
+                if ( this.layout_modes.length == 3 ) {          // Grid mode is next
+                    this.scroll_or_grid_icon.addClass('ui-icon-arrowthickstop-1-e')
+                                    .removeClass('ui-icon-arrowthickstop-1-n')
+                                    .attr('title', 'map');
+                    break;
+                }
+
+                // fall through
+
+            case LayoutType.MAP:
+                this.scroll_or_grid_icon.addClass('ui-icon-arrowthickstop-1-s')
+                                    .removeClass('ui-icon-arrowthickstop-1-n')
+                                    .removeClass('ui-icon-arrowthickstop-1-e')
+                                    .attr('title', 'scroll');
+                break;
         }
     }
 
-    // method setScrollContent
-    this.isScrollContent = function (scroll) {
-       return this.scrollContent;
+    // method getContentLayout
+    this.getContentLayout = function () {
+       return this.contentLayout;
+    }
+
+    // method setTileLock
+    this.setTileLock = function ( locked ) {
+       this.tile_lock = locked;
+       this.adjustSize();
+
+        if ( locked ) {
+            this.lock_icon.addClass('ui-icon-locked')
+                .removeClass('ui-icon-unlocked')
+                .attr('title', 'unlock grid positions');
+        }
+        else {
+            this.lock_icon.addClass('ui-icon-unlocked')
+                .removeClass('ui-icon-locked')
+                .attr('title', 'lock grid positions');
+        }
+    }
+
+    // method isTileLock
+    this.getTileLock = function ( ) {
+        return this.tile_lock;
     }
 
     // Constructor
     this.panel_id = panel_id;
     this.object_name = object_name;
     this.tooltip_name = tooltip_name;
-    this.tiles = new Array();
+    this.layout_modes = (arguments.length == 3) ? [ LayoutType.SCROLL, LayoutType.WRAP ] : arguments[3];
+    this.tile_lock = false;
+
+    this.tile_width = 0;                        // Tile sizes will be set when a tile is constructed
+    this.tile_height = 0;
+
+    this.contentLayout = 1;                     // 1=scroll, 2=grid, 3=positioned
+    this.tiles = []
 
     this.ACTION_PLAY = 0;
     this.ACTION_HOVER = 4;
@@ -292,115 +522,59 @@ function TileScrollPanel( panel_id, object_name, tooltip_name ) {
         { action: "describe", tile_class: "ui-icon ui-icon-tag ", tag_class: "describe_item", style: "float:right;", used: true },
         { action: "delete", tile_class: "ui-icon ui-icon-trash ", tag_class: "delete_item", style: "float:right; display:none;", used: true },
         { action: "edit", tile_class: "ui-icon ui-icon-pencil ", tag_class: "edit_item", style: "float:right; display:none;", used: true },
-        { action: "hover", tile_class: "", tag_class: "", style: "", used: false },
+        { action: "hover", tile_class: null, tag_class: null, style: "", used: false }
     ];
 
-    var scroll_or_grid_icon = $("#" + this.panel_id).find(".scroll_or_grid_icon");
-    if (scroll_or_grid_icon != null) {
-        var self = this;
-        scroll_or_grid_icon.addClass('ui-icon');
-        scroll_or_grid_icon.click(function (event) {
-            stopEventPropagation(event);
-            self.setScrollContent(!self.isScrollContent());
-            client_config_update = true;
-        });
-    }
+    var self = this;
 
-    this.setScrollContent(true);
+    this.scroll_or_grid_icon = $("#" + this.panel_id).find(".scroll_or_grid_icon");
+    this.scroll_or_grid_icon.addClass('ui-icon');
+    this.scroll_or_grid_icon.click(function (event) {
+        stopEventPropagation(event);
+        self.setContentLayout( (self.getContentLayout() + 1) % self.layout_modes.length );
+        client_config_update = true;
+    });
+
+    this.lock_icon = $("#" + this.panel_id).find(".tile_lock");
+    this.lock_icon.hide();
+    this.lock_icon.unbind('click').on( 'click', function ( event ) {
+        stopEventPropagation( event );
+        self.setTileLock( !self.getTileLock() );
+        client_config_update = true;
+    } );
+
+    this.setContentLayout( LayoutType.SCROLL );
 }
 
-// ----------------------------------------------------------------------------
-//
-function initializeScrollPane( scrollPane ) {
-    var scrollbar = scrollPane.find(".scroll-bar");
-    var scrollContent = scrollPane.find(".scroll-content");
-    var scrollWrap = scrollPane.find(".scroll-bar-wrap");
+// Stobing color chip support functions
+var strobeTimer = null;
+var strobeChips = [];
 
-    //change overflow to hidden now that slider handles the scrolling
-    scrollPane.css("overflow", "hidden");
+function removeTileChipStrobe( id ) {
+    for ( var i=0; i < strobeChips.length; i++ )
+        if ( strobeChips[i].id == id ) {
+            strobeChips.splice( i, 1 );
+            break;
+        }
 
-    function isScrollable() {
-        return (scrollContent.width() > scrollPane.width());
+    if ( strobeChips.length == 0 && strobeTimer != null ) {
+        clearTimeout( strobeTimer );
+        strobeTimer = null;
     }
+}
 
-    //build slider
-    scrollbar.slider({
-        min: 0,
-        max: 100,
-        slide: function (event, ui) {
-            if ( isScrollable() ) {
-                scrollContent.css("margin-left", Math.round(ui.value / 100 * (scrollPane.width() - scrollContent.width())) + "px");
-            } else {
-                scrollContent.css("margin-left", 0);
-            }
-        }
-    });
+function addTileChipStrobe( id, tile_chip, color ) {
+    removeTileChipStrobe( id );
 
-    // Because the scroll bar is sized and centered in the scroll wrapper, this leaves empty zones before and after
-    // the scroll bar.  This handler on the wrapper will move the scroll bar to the appropriate min and max.
-    scrollWrap.mousedown( function (event) {
-        stopEventPropagation(event);
+    strobeChips.push( { id: id, tile: tile_chip, color: color } );
 
-        if ( isScrollable() ) {
-            if (event.pageX < scrollbar.offset().left) {
-                scrollbar.slider("value", 0);
-                scrollContent.css("margin-left", 0);
-            }
-            else if (event.pageX > scrollbar.offset().left + scrollbar.width()) {
-                scrollbar.slider("value", 100);
-                scrollContent.css("margin-left", Math.round((scrollPane.width() - scrollContent.width())) + "px");
-            }
-        }
-    });
+    if ( strobeTimer == null )
+        strobeTimer = setTimeout( strobe, 1000, true );
+}
 
-    //append icon to handle
-    var handleHelper = scrollbar.find(".ui-slider-handle").parent();
-    scrollbar.find(".ui-slider-handle").html("<span class='ui-icon ui-icon-grip-dotted-vertical'></span>");
+function strobe( on ) {
+    for ( var i=0; i < strobeChips.length; i++ )
+        strobeChips[i].tile.css( 'background', on ? strobeChips[i].color : "#000000" );
 
-    //size scrollbar and handle proportionally to scroll distance
-    function sizeScrollbar() {
-        if (isScrollable()) {
-            scrollWrap.show();
-
-            scrollContent.css("margin-left", Math.round(scrollbar.slider("value") / 100 * (scrollPane.width() - scrollContent.width())) + "px");
-
-            var remainder = scrollContent.width() - scrollPane.width();
-            var proportion = remainder / scrollContent.width();
-            var handleSize = scrollPane.width() - (proportion * scrollPane.width());
-
-            scrollbar.find(".ui-slider-handle").css({ width: handleSize, "margin-left": -handleSize / 2 });
-            handleHelper.width("").width(scrollbar.width() - handleSize);
-        }
-        else {
-            scrollWrap.hide();
-            scrollContent.css("margin-left", 0);
-        }
-    }
-
-    //reset slider value based on scroll content position        
-    function resetValue() {
-        var remainder = scrollPane.width() - scrollContent.width();
-        var leftVal = scrollContent.css("margin-left") === "auto" ? 0 : parseInt(scrollContent.css("margin-left"));
-        var percentage = Math.round(leftVal / remainder * 100);
-        scrollbar.slider("value", percentage);
-    }
-
-    //if the slider is 100% and window gets larger, reveal content        
-    function reflowContent() {
-        if (isScrollable()) {
-            var showing = scrollContent.width() + parseInt(scrollContent.css("margin-left"), 10);
-            var gap = scrollPane.width() - showing;
-            if (gap > 0) {
-                scrollContent.css("margin-left", parseInt(scrollContent.css("margin-left"), 10) + gap);
-            }
-        }
-    }
-
-    //change handle position on window resize        
-    $(window).resize(function () {
-        resetValue(); sizeScrollbar(); reflowContent();
-    });
-
-    //init scrollbar size        
-    setTimeout(sizeScrollbar, 10);//safari wants a timeout
+    strobeTimer = setTimeout( strobe, on ? 250 : 1000, !on );
 }
