@@ -1,12 +1,14 @@
 DMXStudio DMX Controller
 
+See details in the wiki https://github.com/desantir/DMXStudio/wiki
+
 Target environment:
 
-- Windows 10 (only tested 32 bit)
+- Tested with Windows 10 32 bit
 
 Build Environment:
 
-- Microsoft Visual Studio 2017
+- Microsoft Visual Studio 2015 or 17
 
 To use this you will need one or more of the following:
 
