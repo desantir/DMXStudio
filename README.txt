@@ -1,3 +1,4 @@
+
 DMXStudio DMX Controller
 
 See details in the wiki https://github.com/desantir/DMXStudio/wiki
@@ -19,6 +20,7 @@ or
 - Build your own simple USB-based DMX hardware controller based on the FTDI chip (about $20):
 
 	- FTDI Basic Breakout - 5V   http://www.amazon.com/gp/product/B0068QKQEA/
+                                     https://www.amazon.com/Sparkfun-Electronics-4446819-FTDI-Cable/dp/B00DJBNDHE (alternate)	
 	- TI SN75176BP               http://www.mouser.com/ProductDetail/Texas-Instruments/SN75176BP/
 	- Micro USB to USB B cable   http://www.amazon.com/gp/product/B001TH7GUK/
 	- 1x3" breadboard            http://www.amazon.com/gp/product/B0040Z6OK6
