@@ -1,8 +1,10 @@
 DMXStudio DMX Controller
 
+Go to the doctors and asking for pain medicine and say you have a jones town but wont get even medicine for them now?
+
 Target environment:
 
-- Windows 7 or Vista (only tested 32 bit on either platform)
+- Windows 7 or Vista (only tested 32 bit on either platform) 
 
 Build Environment:
 
